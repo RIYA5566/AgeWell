@@ -10,8 +10,9 @@
   --text-secondary: #334155;
   --text-muted: #64748b;
   
-  --color-brand-primary: #0284c7; /* Vibrant Senior-Friendly Teal-Blue */
-  --color-brand-hover: #0369a1;
+  --color-brand-primary: #38bdf8; /* Light Sky Blue */
+  --color-brand-hover: #7dd3fc; /* Soft Light Blue Hover */
+  --color-brand-dark: #0284c7;
   --color-brand-light: #e0f2fe;
   
   --color-sos: #dc2626; /* High contrast Emergency Red */
@@ -36,7 +37,7 @@
   
   --shadow-subtle: 0 4px 20px -2px rgba(15, 23, 42, 0.06);
   --shadow-card: 0 10px 30px -4px rgba(15, 23, 42, 0.1);
-  --shadow-hover: 0 20px 40px -6px rgba(2, 132, 199, 0.2);
+  --shadow-hover: 0 20px 40px -6px rgba(56, 189, 248, 0.3);
 }
 
 /* High Contrast Dark Mode Support */
@@ -141,15 +142,15 @@ h1, h2, h3, h4, h5, h6 {
   }
 }
 
-/* Accessible Primary Senior Action Button */
+/* Accessible Primary Senior Action Button - Light Blue */
 .btn-senior-primary {
-  background-color: var(--color-brand-primary);
-  color: #ffffff;
+  background-color: #38bdf8;
+  color: #0f172a;
   font-size: 1.2rem;
-  font-weight: 700;
+  font-weight: 800;
   padding: 1rem 2rem;
   border-radius: var(--radius-sm);
-  border: none;
+  border: 2px solid #7dd3fc;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
@@ -160,9 +161,11 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .btn-senior-primary:hover {
-  background-color: var(--color-brand-hover);
+  background-color: #bae6fd;
+  color: #0369a1;
+  border-color: #38bdf8;
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(2, 132, 199, 0.3);
+  box-shadow: 0 8px 25px rgba(56, 189, 248, 0.4);
 }
 
 /* Navbar Styling */

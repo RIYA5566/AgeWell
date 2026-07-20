@@ -43,7 +43,7 @@ const Home = () => {
     <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem 1rem' }}>
       {/* Hero Header with SOS & Voice Banner */}
       <div style={{
-        background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
+        background: 'linear-gradient(135deg, #0ea5e9 0%, #38bdf8 100%)',
         color: '#ffffff',
         borderRadius: 'var(--radius-lg)',
         padding: '2.5rem 2rem',
@@ -57,7 +57,8 @@ const Home = () => {
       }}>
         <div style={{ maxWidth: '600px' }}>
           <span style={{
-            background: 'rgba(255, 255, 255, 0.2)',
+            background: 'rgba(255, 255, 255, 0.25)',
+            color: '#ffffff',
             padding: '0.4rem 1rem',
             borderRadius: '999px',
             fontSize: '0.95rem',
@@ -69,7 +70,7 @@ const Home = () => {
           <h1 style={{ color: '#ffffff', fontSize: 'var(--font-hero)', marginTop: '0.75rem', marginBottom: '0.5rem' }}>
             Hello, Welcome Home 👋
           </h1>
-          <p style={{ fontSize: '1.25rem', opacity: 0.95 }}>
+          <p style={{ fontSize: '1.25rem', opacity: 0.98, color: '#f0f9ff' }}>
             Your personal AI health companion and emergency safety network. Everything you need is right here.
           </p>
         </div>
@@ -88,16 +89,16 @@ const Home = () => {
       </div>
 
       {/* Voice Companion Banner */}
-      <div className="senior-card" style={{ marginBottom: '2.5rem', borderLeft: '6px solid var(--color-brand-primary)', backgroundColor: 'var(--color-brand-light)' }}>
+      <div className="senior-card" style={{ marginBottom: '2.5rem', borderLeft: '6px solid #38bdf8', backgroundColor: '#f0f9ff' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <div style={{ backgroundColor: 'var(--color-brand-primary)', color: '#ffffff', padding: '1rem', borderRadius: '50%' }}>
+            <div style={{ backgroundColor: '#38bdf8', color: '#0f172a', padding: '1rem', borderRadius: '50%' }}>
               <Mic size={32} />
             </div>
             <div>
               <h2 style={{ fontSize: '1.4rem' }}>CareNest Voice AI Assistant</h2>
               <p style={{ color: 'var(--text-secondary)' }}>Click the button and speak. Ask about your medicine, doctors, or talk freely.</p>
-              {voiceText && <p style={{ fontWeight: 'bold', marginTop: '0.5rem', color: 'var(--color-brand-primary)' }}>{voiceText}</p>}
+              {voiceText && <p style={{ fontWeight: 'bold', marginTop: '0.5rem', color: '#0ea5e9' }}>{voiceText}</p>}
             </div>
           </div>
           <button className="btn-senior-primary" onClick={handleVoiceListen}>
