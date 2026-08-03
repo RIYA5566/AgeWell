@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard - AgeWell</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <!-- Accessibility Skip-Link -->
+  <a href="#mainContent" class="skip-link">Skip to main content</a>
+
+  <!-- Navigation Header -->
+  <header>
+    <div class="nav-container">
+      <div class="logo">
+        <span class="logo-icon">🌸</span>
+        <span>AgeWell Control Panel</span>
+      </div>
+
+      <!-- User Nav info -->
+      <div class="user-nav">
+        <span id="navUserName" class="nav-user-name">Hello, Administrator</span>
+        <button id="btnLogout" class="btn btn-secondary" style="padding: 8px 16px; min-height: 44px; min-width: 80px; font-size: 1rem; border-color: transparent;">
+          🚪 Log Out
+        </button>
+      </div>
+
+      <!-- Text Sizing Widget -->
+      <div class="accessibility-panel" role="region" aria-label="Accessibility Sizing Controls">
+        <span>Text Size:</span>
+        <button id="btnTextDecrease" class="font-btn" aria-label="Make text smaller">A-</button>
+        <button id="btnTextReset" class="font-btn" aria-label="Reset text size to normal">Reset</button>
+        <button id="btnTextIncrease" class="font-btn" aria-label="Make text larger">A+</button>
+        <span id="fontSizeIndicator" style="font-size: 0.9rem; font-weight: bold; min-width: 44px; text-align: center;">18px</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main id="mainContent">
+    <!-- Welcome Bar -->
+    <div class="dashboard-welcome">
+      <div class="welcome-icon" aria-hidden="true">🛡️</div>
+      <div>
+        <h1 id="welcomeTitle">Admin Control Panel</h1>
+        <p>Manage users, monitor help requests, and review platform statistics below.</p>
+      </div>
+    </div>
+
+    <!-- Stats Panel -->
+    <div class="admin-stats-grid">
+      <div class="stat-card" style="border-color: var(--color-emergency); transition: background-color 0.3s;">
+        <div class="stat-card-title">🚨 Active SOS Alerts</div>
+        <div id="statSosAlerts" class="stat-card-number">0</div>
+      </div>
+      <div class="stat-card" style="border-color: #f57f17;">
+        <div class="stat-card-title">⏳ Awaiting Family Approval</div>
+        <div id="statAwaitingApproval" class="stat-card-number" style="color: #e65100;">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-title">👥 Total Users</div>
+        <div id="statTotalUsers" class="stat-card-number">0</div>
+        <div style="font-size: 0.85rem; color: #555; margin-top: 5px; line-height: 1.5;">
+          Seniors: <span id="statSeniors">0</span><br>
+          Volunteers: <span id="statVolunteers">0</span><br>
+          Family: <span id="statFamily">0</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-title">📝 Total Help Requests</div>
+        <div id="statTotalRequests" class="stat-card-number">0</div>
+        <div style="font-size: 0.85rem; color: #555; margin-top: 5px; text-align: left; line-height: 1.4;">
+          ⏳ Pending: <span id="statPendingRequests">0</span><br>
+          🤝 Accepted: <span id="statAcceptedRequests">0</span><br>
+          ✅ Completed: <span id="statCompletedRequests">0</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Management Panels -->
+    <div class="dashboard-grid admin-grid">
+      <!-- Section 1: User Management -->
+      <div class="dashboard-card" style="margin-bottom: 2rem; overflow: hidden;">
+        <h2>👤 Platform User Directory</h2>
+        <p style="font-size: 0.95rem; color: #666; margin-bottom: 1rem;">
+          View and moderate all accounts registered on AgeWell. Deleting an account removes their records.
+        </p>
+        <div class="admin-table-container">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Name</th>
+                <th scope="col">Email</th>
+                <th scope="col">Phone</th>
+                <th scope="col">Role</th>
+                <th scope="col">Address & Details</th>
+                <th scope="col">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="usersTableBody">
+              <!-- Populated dynamically via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Section 2: Request Management -->
+      <div class="dashboard-card" style="overflow: hidden;">
+        <h2>📋 System Support Requests</h2>
+        <p style="font-size: 0.95rem; color: #666; margin-bottom: 1rem;">
+          Track all request states. Admins can delete/cancel duplicate or inappropriate requests.
+        </p>
+        <div class="admin-table-container">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Request Summary</th>
+                <th scope="col">Category</th>
+                <th scope="col">Urgency</th>
+                <th scope="col">Status</th>
+                <th scope="col">Senior</th>
+                <th scope="col">Assigned Volunteer</th>
+                <th scope="col">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="requestsTableBody">
+              <!-- Populated dynamically via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    <p>&copy; 2026 AgeWell Platform. Designed with care for Senior Citizens, Volunteers, and Admins.</p>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="/js/api.js"></script>
+  <script src="/js/admin.js"></script>
+</body>
+</html>

@@ -1,256 +1,174 @@
-# 🌟 AgeWell – AI-Powered Elder Care Ecosystem
+# 🌸 AgeWell – Senior Citizen Assistance Platform
 
-## 📖 Overview
-
-**AgeWell** is a comprehensive **AI-powered MERN web application** designed to enhance the quality of life of senior citizens by bringing healthcare management, emergency assistance, verified caregiver services, social engagement, digital health records, and government service guidance into a single, user-friendly platform.
-
-The platform serves as a digital companion, enabling seniors to live more independently while keeping their families, caregivers, and healthcare professionals connected through dedicated role-based dashboards.
-
-Built with accessibility as a priority, AgeWell provides voice assistance, multilingual support, large-font interfaces, and simplified navigation to ensure that elderly users can interact with technology comfortably and confidently.
+A clean, modern, and fully accessible full-stack web application connecting **Senior Citizens** with compassionate **Volunteers** for daily assistance.
 
 ---
 
-# ✨ Key Features
+## 🚀 Tech Stack
 
-## 🩺 Healthcare Management
-
-* Medicine reminders and daily schedules
-* Appointment reminders
-* Digital prescriptions and health records
-* Medical report storage
-* Health profile management
-* QR-based emergency medical information
-
----
-
-## 🚨 Emergency Assistance
-
-* One-tap SOS button
-* Emergency contact notifications
-* Live location sharing
-* Medical profile access during emergencies
-* Emergency event history
+| Layer | Technology |
+|---|---|
+| **Frontend** | HTML5, Vanilla CSS, Vanilla JavaScript |
+| **Backend** | Node.js + Express.js |
+| **Database** | MongoDB + Mongoose |
+| **Auth** | JWT (JSON Web Tokens) + bcryptjs |
+| **Accessibility** | WCAG AA+, large typography, voice input, SOS |
 
 ---
 
-## 🤝 Verified Caregiver Services
+## 📁 Project Structure
 
-* Book trusted caregivers for daily assistance
-* Grocery and medicine pickup
-* Hospital visit assistance
-* Home support services
-* Booking history and status tracking
-
----
-
-## 🤖 AI Companion
-
-* Conversational AI assistant
-* Voice-assisted navigation
-* Health report explanations
-* Prescription summaries
-* Government scheme guidance
-* Everyday companionship and wellness check-ins
-
----
-
-## 🏥 Digital Health Records
-
-* Medical reports
-* Prescriptions
-* Blood group
-* Allergies
-* Chronic conditions
-* Vaccination history
-* Secure document storage
-
----
-
-## 👨👩👧 Family Dashboard
-
-* Monitor senior health updates
-* Medicine adherence tracking
-* Emergency alerts
-* Appointment monitoring
-* Shared medical records
-
----
-
-## 👩⚕️ Doctor Dashboard
-
-* Patient management
-* Medical history access
-* Prescription management
-* Appointment scheduling
-
----
-
-## 👷 Caregiver Dashboard
-
-* View service requests
-* Accept or decline bookings
-* Task tracking
-* Service completion
-* Ratings and reviews
-
----
-
-## 👥 Community Platform
-
-* Hobby clubs
-* Walking groups
-* Local events
-* Community discussions
-* Virtual meetups
-* Birthday celebrations
-
----
-
-## 🧠 Memory Care
-
-* Daily schedules
-* Memory exercises
-* Reminder cards
-* Family photo recognition
-* Cognitive games
-
----
-
-## 🛡️ Fraud Shield
-
-* Detect suspicious SMS and emails
-* AI-powered scam analysis
-* Scam awareness resources
-* Fraud reporting
-
----
-
-## 🏛 Government Services Hub
-
-* Pension guidance
-* Government scheme information
-* Utility service guidance
-* Important document management
-
----
-
-# 👤 User Roles
-
-* 👴 Senior Citizen
-* 👨👩👧 Family Member
-* 👩⚕️ Doctor
-* 👷 Caregiver
-* 🛠 Admin
-
-Each role has a dedicated dashboard with role-based access control for enhanced security and personalized functionality.
-
----
-
-# 🛠 Tech Stack
-
-### Frontend
-
-* React.js
-* Vite
-* Tailwind CSS
-* Shadcn UI
-
-### Backend
-
-* Node.js
-* Express.js
-
-### Database
-
-* MongoDB
-
-### Authentication
-
-* JWT Authentication
-* Role-Based Access Control (RBAC)
-
-### APIs & Services
-
-* Google Maps API
-* Socket.io
-* Cloudinary
-* OpenAI API
-* Firebase Cloud Messaging (planned)
-
----
-
-# 🚀 Core Modules
-
-* Authentication & Authorization
-* Healthcare Management
-* Medicine Reminder System
-* Digital Health Records
-* Emergency SOS
-* AI Companion
-* Caregiver Booking
-* Community Platform
-* Fraud Shield
-* Government Services Hub
-* Notifications & Alerts
-
----
-
-# 🌍 Accessibility Features
-
-* Large-font interface
-* High-contrast mode
-* Voice-assisted navigation
-* Simple and intuitive UI
-* Multilingual support
-* Responsive design
-
----
-
-# 🔒 Security Features
-
-* JWT Authentication
-* Password Encryption
-* Protected Routes
-* Role-Based Access Control
-* Secure Medical Record Access
-* Input Validation & Error Handling
-
----
-
-# 📂 Project Structure
-
-```text
+```
 AgeWell/
-├── client/
-├── server/
-├── docs/
-├── README.md
-└── .gitignore
+├── config/
+│   └── db.js                    # MongoDB connection
+├── controllers/
+│   ├── authController.js        # Register, Login, Logout, Profile
+│   ├── requestController.js     # CRUD + Workflow (Pending→Accepted→Completed)
+│   └── adminController.js       # Stats, User management
+├── models/
+│   ├── User.js                  # Senior, Volunteer, Admin schema
+│   └── HelpRequest.js           # Help request schema with status machine
+├── routes/
+│   ├── authRoutes.js
+│   ├── requestRoutes.js
+│   └── adminRoutes.js
+├── middleware/
+│   └── authMiddleware.js        # JWT protect + role authorize guards
+├── public/                      # Static frontend
+│   ├── index.html               # Landing page + Login
+│   ├── register.html            # Registration (role-aware)
+│   ├── senior-dashboard.html    # Senior Citizen dashboard
+│   ├── volunteer-dashboard.html # Volunteer dashboard
+│   ├── admin-dashboard.html     # Admin panel
+│   ├── css/style.css            # Accessibility-first design system
+│   └── js/
+│       ├── api.js               # Fetch helper + accessibility controls
+│       ├── auth.js              # Login/Register logic
+│       ├── senior.js            # Senior dashboard + SOS + Voice
+│       ├── volunteer.js         # Volunteer workflow
+│       └── admin.js             # Admin stats + tables
+├── seed.js                      # Database seeder with demo data
+├── server.js                    # Express app entry point
+├── package.json
+└── .env                         # Environment variables
 ```
 
 ---
 
-# 📌 Future Enhancements
+## ⚙️ Setup & Running
 
-* Video consultation with doctors
-* Wearable device integration
-* AI-powered health insights
-* Smart fall detection
-* Voice-only interaction mode
-* IoT-based home monitoring
-* Mobile application (Android & iOS)
+### Prerequisites
+- Node.js ≥ 18
+- MongoDB running locally on `127.0.0.1:27017` (or MongoDB Atlas)
+
+### 1. Install Dependencies
+```bash
+npm install
+```
+
+### 2. Configure Environment
+Copy `.env.example` to `.env` (already done). Edit if needed:
+```
+PORT=5000
+MONGODB_URI=mongodb://127.0.0.1:27017/agewell
+JWT_SECRET=agewell_secret_key_2026_xyz
+```
+
+### 3. Seed Demo Data
+```bash
+npm run seed
+```
+This creates 5 demo users and sample requests.
+
+### 4. Start the Server
+```bash
+npm start          # Production
+# or
+npm run dev        # With nodemon (auto-restart)
+```
+
+### 5. Open in Browser
+```
+http://localhost:5000
+```
 
 ---
 
-# 🎯 Project Goal
+## 👥 Demo Accounts
 
-AgeWell aims to bridge the gap between senior citizens, healthcare providers, caregivers, and families by providing an accessible, secure, and intelligent digital platform. By combining healthcare management, emergency support, AI assistance, and community engagement, the platform promotes independent living while ensuring safety, connection, and peace of mind for both seniors and their loved ones.
+| Role | Email | Password |
+|---|---|---|
+| 👵 Senior Citizen | eleanor@agewell.com | seniorpassword |
+| 👴 Senior Citizen | arthur@agewell.com | seniorpassword |
+| 🤝 Volunteer | sarah@agewell.com | volunteerpassword |
+| 🤝 Volunteer | david@agewell.com | volunteerpassword |
+| 🛡️ Admin | admin@agewell.com | adminpassword |
 
 ---
 
-## 👩💻 Developed By
+## 🔄 Request Workflow
 
-**Riya Gandhi**
+```
+Senior Creates Request  →  Status: PENDING
+          ↓
+Volunteer Accepts it    →  Status: ACCEPTED  (Senior's contact shown to Volunteer)
+          ↓
+Volunteer Completes it  →  Status: COMPLETED (Resolution notes saved)
+```
 
-B.Tech – Artificial Intelligence & Data Science
-Full-Stack MERN Developer | AI Enthusiast | Software Development Aspirant
+---
+
+## 🌐 API Reference
+
+### Auth Routes (`/api/auth`)
+| Method | Endpoint | Access | Description |
+|---|---|---|---|
+| POST | `/register` | Public | Register new user |
+| POST | `/login` | Public | Login, returns JWT cookie |
+| POST | `/logout` | Public | Clear session cookie |
+| GET | `/me` | Private | Get current user profile |
+
+### Request Routes (`/api/requests`)
+| Method | Endpoint | Access | Description |
+|---|---|---|---|
+| POST | `/` | Senior | Create help request |
+| GET | `/` | All (role-filtered) | Get requests |
+| GET | `/:id` | All | Get single request |
+| PUT | `/:id` | Senior | Edit pending request |
+| DELETE | `/:id` | Senior/Admin | Cancel/delete request |
+| PUT | `/:id/accept` | Volunteer | Accept a pending request |
+| PUT | `/:id/complete` | Volunteer/Admin | Mark request completed |
+
+### Admin Routes (`/api/admin`)
+| Method | Endpoint | Access | Description |
+|---|---|---|---|
+| GET | `/stats` | Admin | Platform statistics |
+| GET | `/users` | Admin | All registered users |
+| DELETE | `/users/:id` | Admin | Delete a user |
+
+---
+
+## ♿ Accessibility Features
+
+- **Large Typography**: 18px minimum body text (scalable up to 30px via A+/A- widget)
+- **High Contrast**: Deep forest green (#1b5e20) on white — WCAG AAA compliant
+- **Oversized Buttons**: Minimum 56px height/width for easy touch/click targeting
+- **Skip Navigation**: Skip-to-content link for screen readers
+- **ARIA Labels**: Comprehensive aria-label, aria-required, aria-live attributes
+- **Voice Input**: Web Speech API for typing-free request descriptions
+- **Emergency SOS**: One-tap pulsing alert with dual-tone synthesizer alarm
+- **Focus Styles**: 4px visible outline on all interactive elements
+- **Responsive**: Works on mobile/tablet for seniors who use large phones
+
+---
+
+## 🔮 Future Roadmap
+
+- [ ] Push notifications via Web Push API
+- [ ] Real-time chat between Senior and Volunteer
+- [ ] Google Maps integration for location sharing
+- [ ] Multilingual support (Hindi, Spanish, French)
+- [ ] Automated daily check-in reminders
+- [ ] Family portal for monitoring senior activity
+- [ ] SMS/WhatsApp alerts via Twilio

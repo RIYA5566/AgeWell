@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Senior Citizen Dashboard - AgeWell</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <!-- Accessibility Skip-Link -->
+  <a href="#mainContent" class="skip-link">Skip to main content</a>
+
+  <!-- Navigation Header -->
+  <header>
+    <div class="nav-container">
+      <div class="logo">
+        <span class="logo-icon">🌸</span>
+        <span>AgeWell</span>
+      </div>
+
+      <!-- User Nav info -->
+      <div class="user-nav">
+        <span id="navUserName" class="nav-user-name">Hello, Senior Citizen</span>
+        <button id="btnLogout" class="btn btn-secondary" style="padding: 8px 16px; min-height: 44px; min-width: 80px; font-size: 1rem; border-color: transparent;">
+          🚪 Log Out
+        </button>
+      </div>
+
+      <!-- Text Sizing Widget -->
+      <div class="accessibility-panel" role="region" aria-label="Accessibility Sizing Controls">
+        <span>Text Size:</span>
+        <button id="btnTextDecrease" class="font-btn" aria-label="Make text smaller">A-</button>
+        <button id="btnTextReset" class="font-btn" aria-label="Reset text size to normal">Reset</button>
+        <button id="btnTextIncrease" class="font-btn" aria-label="Make text larger">A+</button>
+        <span id="fontSizeIndicator" style="font-size: 0.9rem; font-weight: bold; min-width: 44px; text-align: center;">18px</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- SOS Overlay Siren (Hidden by Default) -->
+  <div id="sosOverlay" class="sos-overlay" role="dialog" aria-modal="true" aria-labelledby="sosTitle">
+    <div class="sos-overlay-content">
+      <div class="sos-pulse-ring" aria-hidden="true">🚨</div>
+      <h2 id="sosTitle">EMERGENCY SOS ACTIVE</h2>
+      <p>An emergency help request has been created and broadcasted to all local volunteers and administrators. Help is on the way!</p>
+      <p style="font-size: 1.2rem; background-color: rgba(0,0,0,0.3); padding: 15px; border-radius: var(--border-radius);">
+        🔊 A loud alarm is playing. Please stay calm.
+      </p>
+      <button id="btnCancelSos" class="btn btn-primary" style="background-color: var(--color-white); color: var(--color-emergency); font-size: 1.4rem; padding: 20px 40px; margin-top: 1rem; width: 100%; border: 4px solid var(--color-emergency);">
+        🔕 Cancel Emergency SOS
+      </button>
+    </div>
+  </div>
+
+  <!-- Main Content Area -->
+  <main id="mainContent">
+    <!-- Welcome Bar -->
+    <div class="dashboard-welcome" id="welcomeBar">
+      <div class="welcome-icon" aria-hidden="true">👵</div>
+      <div>
+        <h1 id="welcomeTitle">Welcome back!</h1>
+        <p>You can request help, track your requests, or activate SOS from this dashboard.</p>
+      </div>
+    </div>
+
+    <div class="dashboard-grid">
+      <!-- Left Column: Actions -->
+      <div class="dashboard-card" style="display: flex; flex-direction: column; gap: 1.5rem; justify-content: flex-start;">
+        <h2>Actions Panel</h2>
+        
+        <button id="btnNewRequest" class="btn btn-primary" style="width: 100%; font-size: 1.4rem; padding: 22px 20px; min-height: 70px;">
+          ➕ Request Help
+        </button>
+
+        <div style="border-top: 2px solid var(--color-primary-light); margin: 10px 0;"></div>
+        
+        <p style="font-size: 1rem; color: #555; text-align: center;">
+          In case of immediate danger, medical emergency, or severe accidents, tap the button below.
+        </p>
+
+        <button id="btnSos" class="btn btn-emergency" style="width: 100%; font-size: 1.5rem; padding: 25px 20px; min-height: 80px; letter-spacing: 1px;">
+          🚨 EMERGENCY SOS
+        </button>
+      </div>
+
+      <!-- Right Column: Request log list -->
+      <div class="dashboard-card">
+        <h2>My Support Requests</h2>
+        <div id="requestList" class="request-list">
+          <div class="loading-wrapper">
+            <div class="spinner"></div>
+            <span>Loading your requests...</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Request Creation Modal -->
+    <div id="requestModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 id="modalTitle">Raise a Help Request</h3>
+          <button id="modalClose" class="modal-close" aria-label="Close Modal">&times;</button>
+        </div>
+
+        <div id="modalAlertArea" aria-live="polite"></div>
+
+        <form id="requestForm" novalidate>
+          
+          <!-- Category button selection grid -->
+          <div class="form-group">
+            <label style="margin-bottom: 8px;">1. Select What You Need Help With:</label>
+            <div class="category-selector" role="group" aria-label="Support Categories">
+              <button type="button" class="category-option-btn" data-category="Grocery Shopping">
+                <span class="category-icon" aria-hidden="true">🛒</span>
+                <span>Groceries</span>
+              </button>
+              <button type="button" class="category-option-btn" data-category="Medical Escort">
+                <span class="category-icon" aria-hidden="true">🏥</span>
+                <span>Doctor Visit</span>
+              </button>
+              <button type="button" class="category-option-btn" data-category="Tech Support">
+                <span class="category-icon" aria-hidden="true">📱</span>
+                <span>Tech Help</span>
+              </button>
+              <button type="button" class="category-option-btn" data-category="Housekeeping">
+                <span class="category-icon" aria-hidden="true">🧹</span>
+                <span>Housework</span>
+              </button>
+              <button type="button" class="category-option-btn" data-category="Companionship">
+                <span class="category-icon" aria-hidden="true">💬</span>
+                <span>Companionship</span>
+              </button>
+              <button type="button" class="category-option-btn" data-category="Other">
+                <span class="category-icon" aria-hidden="true">❓</span>
+                <span>Other Task</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Title -->
+          <div class="form-group">
+            <label for="requestTitle">2. Short Request Summary</label>
+            <input 
+              type="text" 
+              id="requestTitle" 
+              class="form-input" 
+              placeholder="e.g. Need medicine from pharmacy, light bulb change, etc." 
+              required
+            >
+          </div>
+
+          <!-- Description and Voice -->
+          <div class="form-group">
+            <label for="requestDescription">3. Detailed Explanation (Include details like timing, location, list of items):</label>
+            <div class="voice-input-wrapper">
+              <button type="button" id="btnVoice" class="btn-voice" aria-label="Use voice to text to describe request" title="Record Voice">
+                🎙️
+              </button>
+              <div id="voiceWaveform" class="voice-waveform" aria-hidden="true">
+                <div class="waveform-bar"></div>
+                <div class="waveform-bar"></div>
+                <div class="waveform-bar"></div>
+                <div class="waveform-bar"></div>
+                <div class="waveform-bar"></div>
+              </div>
+            </div>
+            <textarea 
+              id="requestDescription" 
+              class="form-textarea" 
+              placeholder="Describe what you need help with (you can also use the voice button)..."
+              style="margin-top: 8px;"
+              required
+            ></textarea>
+          </div>
+
+          <!-- Urgency -->
+          <div class="form-group">
+            <label for="requestUrgency">4. How Urgent Is This?</label>
+            <select id="requestUrgency" class="form-select">
+              <option value="low" selected>Normal / Low (Can wait a few days)</option>
+              <option value="medium">Medium (Needs help within 24 hours)</option>
+              <option value="high">High Priority (Urgent assistance today)</option>
+            </select>
+          </div>
+
+          <!-- Footer Actions -->
+          <div class="modal-footer">
+            <button type="button" id="btnCancelRequest" class="btn btn-secondary">Cancel</button>
+            <button type="submit" class="btn btn-primary">Submit Request</button>
+          </div>
+
+        </form>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    <p>&copy; 2026 AgeWell Platform. Designed with care for Senior Citizens, Volunteers, and Admins.</p>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="/js/api.js"></script>
+  <script src="/js/senior.js"></script>
+</body>
+</html>

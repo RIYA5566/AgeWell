@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Volunteer Dashboard - AgeWell</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <!-- Accessibility Skip-Link -->
+  <a href="#mainContent" class="skip-link">Skip to main content</a>
+
+  <!-- Navigation Header -->
+  <header>
+    <div class="nav-container">
+      <div class="logo">
+        <span class="logo-icon">🌸</span>
+        <span>AgeWell</span>
+      </div>
+
+      <!-- User Nav info -->
+      <div class="user-nav">
+        <span id="navUserName" class="nav-user-name">Hello, Volunteer</span>
+        <button id="btnLogout" class="btn btn-secondary" style="padding: 8px 16px; min-height: 44px; min-width: 80px; font-size: 1rem; border-color: transparent;">
+          🚪 Log Out
+        </button>
+      </div>
+
+      <!-- Text Sizing Widget -->
+      <div class="accessibility-panel" role="region" aria-label="Accessibility Sizing Controls">
+        <span>Text Size:</span>
+        <button id="btnTextDecrease" class="font-btn" aria-label="Make text smaller">A-</button>
+        <button id="btnTextReset" class="font-btn" aria-label="Reset text size to normal">Reset</button>
+        <button id="btnTextIncrease" class="font-btn" aria-label="Make text larger">A+</button>
+        <span id="fontSizeIndicator" style="font-size: 0.9rem; font-weight: bold; min-width: 44px; text-align: center;">18px</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main id="mainContent">
+    <!-- Welcome Bar -->
+    <div class="dashboard-welcome">
+      <div class="welcome-icon" aria-hidden="true">🤝</div>
+      <div>
+        <h1 id="welcomeTitle">Welcome, Volunteer!</h1>
+        <p>Thank you for giving your time. Browse requests below and make a difference today.</p>
+      </div>
+    </div>
+
+    <div class="dashboard-grid volunteer-grid">
+      <!-- Section 1: Awaiting Family Approval -->
+      <div class="dashboard-card" style="margin-bottom: 2rem; border-color: #f57f17;">
+        <h2 style="color: #e65100;">⏳ Awaiting Family Approval</h2>
+        <p style="font-size: 1rem; color: #666; margin-bottom: 1rem;">
+          You have accepted these requests. The senior's family/caregiver is reviewing your profile before you can proceed.
+        </p>
+        <div id="awaitingList" class="request-list">
+          <!-- Populated dynamically via JS -->
+        </div>
+      </div>
+
+      <!-- Section 2: Active Commitments -->
+      <div class="dashboard-card" style="margin-bottom: 2rem; border-color: var(--color-primary);">
+        <h2 style="color: var(--color-primary-dark);">
+          🤝 My Active Commitments (Tasks in Progress)
+        </h2>
+        <div id="activeList" class="request-list">
+          <!-- Populated dynamically via JS -->
+        </div>
+      </div>
+
+      <!-- Section 3: Available Help Requests -->
+      <div class="dashboard-card" style="margin-bottom: 2rem;">
+        <h2>🔍 Help Requests Seeking Volunteers</h2>
+        <div id="pendingList" class="request-list">
+          <!-- Populated dynamically via JS -->
+        </div>
+      </div>
+
+      <!-- Section 4: History -->
+      <div class="dashboard-card">
+        <h2>📜 My Service History (Completed Tasks)</h2>
+        <div id="historyList" class="request-list">
+          <!-- Populated dynamically via JS -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Completion Modal -->
+    <div id="completionModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 id="modalTitle">Mark Request as Completed</h3>
+          <button id="modalClose" class="modal-close" aria-label="Close Modal">&times;</button>
+        </div>
+
+        <form id="completionForm" novalidate>
+          <div class="form-group">
+            <label for="resolutionNotes">Please add a brief description of how you helped the Senior Citizen (e.g. Grocery items delivered, remote control repaired, etc.):</label>
+            <textarea 
+              id="resolutionNotes" 
+              class="form-textarea" 
+              placeholder="e.g. Successfully bought the items on list and brought them inside their home..." 
+              required
+            ></textarea>
+          </div>
+
+          <!-- Footer Actions -->
+          <div class="modal-footer">
+            <button type="button" id="btnCancelComplete" class="btn btn-secondary">Cancel</button>
+            <button type="submit" class="btn btn-primary" style="background-color: var(--color-primary-dark);">
+              💾 Save & Complete
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    <p>&copy; 2026 AgeWell Platform. Designed with care for Senior Citizens, Volunteers, and Admins.</p>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="/js/api.js"></script>
+  <script src="/js/volunteer.js"></script>
+</body>
+</html>

@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register - AgeWell Senior Assistance Platform</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <!-- Accessibility Skip-Link -->
+  <a href="#mainContent" class="skip-link">Skip to main content</a>
+
+  <!-- Global Header -->
+  <header>
+    <div class="nav-container">
+      <div class="logo">
+        <span class="logo-icon">🌸</span>
+        <span>AgeWell</span>
+      </div>
+      
+      <!-- Text Sizing Widget -->
+      <div class="accessibility-panel" role="region" aria-label="Accessibility Sizing Controls">
+        <span>Text Size:</span>
+        <button id="btnTextDecrease" class="font-btn" aria-label="Make text smaller">A-</button>
+        <button id="btnTextReset" class="font-btn" aria-label="Reset text size to normal">Reset</button>
+        <button id="btnTextIncrease" class="font-btn" aria-label="Make text larger">A+</button>
+        <span id="fontSizeIndicator" style="font-size: 0.9rem; font-weight: bold; min-width: 44px; text-align: center;">18px</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main id="mainContent">
+    <div class="auth-container" style="max-width: 700px;">
+      <div class="auth-header">
+        <h1>Create your AgeWell Account</h1>
+        <p>Register as a Senior Citizen to request assistance, or join as a Volunteer to offer support.</p>
+      </div>
+
+      <!-- User Alert Area -->
+      <div id="alertArea" aria-live="polite"></div>
+
+      <!-- Registration Form -->
+      <form id="registerForm" novalidate>
+        <!-- Step 1: Select User Role -->
+        <fieldset style="border: none; margin-bottom: 2rem;">
+          <legend style="font-weight: 700; color: var(--color-primary-dark); margin-bottom: 0.8rem; font-size: 1.2rem;">
+            Choose your Role:
+          </legend>
+          <div class="role-options">
+            <label class="role-card selected">
+              <input type="radio" name="role" value="senior" checked aria-label="Register as Senior Citizen">
+              <div style="font-size: 2.2rem; margin-bottom: 8px;">👵👴</div>
+              <strong>Senior Citizen</strong>
+              <p style="font-size: 0.9rem; margin-top: 4px; color: #555;">I need help with daily tasks.</p>
+            </label>
+            
+            <label class="role-card">
+              <input type="radio" name="role" value="volunteer" aria-label="Register as Volunteer">
+              <div style="font-size: 2.2rem; margin-bottom: 8px;">🤝</div>
+              <strong>Volunteer</strong>
+              <p style="font-size: 0.9rem; margin-top: 4px; color: #555;">I want to help seniors in my area.</p>
+            </label>
+
+            <label class="role-card">
+              <input type="radio" name="role" value="family" aria-label="Register as Family/Caregiver">
+              <div style="font-size: 2.2rem; margin-bottom: 8px;">❤️</div>
+              <strong>Family / Caregiver</strong>
+              <p style="font-size: 0.9rem; margin-top: 4px; color: #555;">I look after a senior and approve their helpers.</p>
+            </label>
+          </div>
+        </fieldset>
+
+        <!-- Step 2: Shared Details -->
+        <div class="form-group">
+          <label for="name">Full Name</label>
+          <input type="text" id="name" name="name" class="form-input" placeholder="Enter your full name" required>
+        </div>
+
+        <div class="form-group">
+          <label for="email">Email Address</label>
+          <input type="email" id="email" name="email" class="form-input" placeholder="example@email.com" required autocomplete="email">
+        </div>
+
+        <div class="form-group">
+          <label for="password">Password (Minimum 6 characters)</label>
+          <input type="password" id="password" name="password" class="form-input" placeholder="Choose a secure password" required minlength="6">
+        </div>
+
+        <div class="form-group">
+          <label for="phone">Phone Number</label>
+          <input type="tel" id="phone" name="phone" class="form-input" placeholder="Enter your phone number" required autocomplete="tel">
+        </div>
+
+        <div class="form-group">
+          <label for="address">Home Address</label>
+          <input type="text" id="address" name="address" class="form-input" placeholder="Enter your full address" required>
+        </div>
+
+        <!-- Role Specific Fields: Senior Citizen -->
+        <div id="seniorFields" class="form-group">
+          <label for="emergencyContact">Emergency Contact Details (Name & Phone Number)</label>
+          <input 
+            type="text" 
+            id="emergencyContact" 
+            name="emergencyContact" 
+            class="form-input" 
+            placeholder="e.g. Son: John Doe - 555-0199" 
+            required
+          >
+        </div>
+
+        <!-- Role Specific Fields: Volunteer -->
+        <div id="volunteerFields" class="form-group" style="display: none;">
+          <fieldset style="border: 3px solid var(--color-primary-light); padding: 1.5rem; border-radius: var(--border-radius);">
+            <legend style="font-weight: 700; color: var(--color-primary-dark); padding: 0 10px;">
+              Select the Skills / Areas you can support:
+            </legend>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px;">
+              <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                <input type="checkbox" name="skills" value="Grocery Shopping" style="width: 22px; height: 22px; accent-color: var(--color-primary);">
+                <span>Grocery Shopping</span>
+              </label>
+              <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                <input type="checkbox" name="skills" value="Medical Escort" style="width: 22px; height: 22px; accent-color: var(--color-primary);">
+                <span>Medical Escort</span>
+              </label>
+              <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                <input type="checkbox" name="skills" value="Tech Support" style="width: 22px; height: 22px; accent-color: var(--color-primary);">
+                <span>Tech Support</span>
+              </label>
+              <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                <input type="checkbox" name="skills" value="Housekeeping" style="width: 22px; height: 22px; accent-color: var(--color-primary);">
+                <span>Housekeeping</span>
+              </label>
+              <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                <input type="checkbox" name="skills" value="Companionship" style="width: 22px; height: 22px; accent-color: var(--color-primary);">
+                <span>Companionship</span>
+              </label>
+              <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                <input type="checkbox" name="skills" value="Other" style="width: 22px; height: 22px; accent-color: var(--color-primary);">
+                <span>Other Assistance</span>
+              </label>
+            </div>
+          </fieldset>
+        </div>
+
+        <!-- Role Specific Fields: Family / Caregiver -->
+        <div id="familyFields" class="form-group" style="display: none;">
+          <fieldset style="border: 3px solid var(--color-primary-light); padding: 1.5rem; border-radius: var(--border-radius);">
+            <legend style="font-weight: 700; color: var(--color-primary-dark); padding: 0 10px;">
+              Caregiver Details
+            </legend>
+            <div class="form-group" style="margin-top: 1rem;">
+              <label for="linkedSeniorEmail">Senior Citizen's Registered Email Address</label>
+              <input 
+                type="email" 
+                id="linkedSeniorEmail" 
+                name="linkedSeniorEmail" 
+                class="form-input" 
+                placeholder="Enter the senior's email (e.g. eleanor@agewell.com)"
+              >
+              <p style="font-size: 0.9rem; color: #666; margin-top: 6px;">This links your account to your senior. They must already be registered.</p>
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+              <label for="relationship">Your Relationship to the Senior</label>
+              <select id="relationship" name="relationship" class="form-select">
+                <option value="Son">Son</option>
+                <option value="Daughter">Daughter</option>
+                <option value="Spouse">Spouse</option>
+                <option value="Sibling">Sibling</option>
+                <option value="Grandchild">Grandchild</option>
+                <option value="Professional Caregiver">Professional Caregiver</option>
+                <option value="Family Friend">Family Friend</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+          </fieldset>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1.5rem;">
+          ✍️ Complete Registration
+        </button>
+      </form>
+
+      <div style="text-align: center; margin-top: 2rem; border-top: 2px solid var(--color-primary-light); padding-top: 1.5rem;">
+        <p style="font-weight: 500; margin-bottom: 0.8rem;">Already have an account?</p>
+        <a href="/" class="btn btn-secondary" style="width: 100%;">
+          🔑 Go to Login Page
+        </a>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    <p>&copy; 2026 AgeWell Platform. Designed with care for Senior Citizens, Volunteers, and Admins.</p>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="/js/api.js"></script>
+  <script src="/js/auth.js"></script>
+</body>
+</html>

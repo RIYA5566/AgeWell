@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="AgeWell Family/Caregiver Portal — Review and approve volunteers for your loved one.">
+  <title>Family Caregiver Portal - AgeWell</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    /* Family portal specific styles */
+    .notification-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background-color: var(--color-emergency);
+      color: white;
+      font-weight: 800;
+      font-size: 1rem;
+      border-radius: 50%;
+      width: 36px;
+      height: 36px;
+      margin-left: 10px;
+      animation: pulse-sos 2s infinite;
+      flex-shrink: 0;
+    }
+
+    .approval-card {
+      border: 4px solid #f57f17;
+      border-radius: var(--border-radius);
+      background: linear-gradient(135deg, #fff8e1, #ffffff);
+      padding: 1.8rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 4px 16px rgba(245, 127, 23, 0.15);
+      animation: fadeInUp 0.3s ease-out both;
+    }
+
+    .approval-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 1.2rem;
+      border-bottom: 2px solid #ffe082;
+      padding-bottom: 1rem;
+    }
+
+    .volunteer-profile-card {
+      display: flex;
+      align-items: flex-start;
+      gap: 1.5rem;
+      background: var(--color-white);
+      border: 3px solid var(--color-primary-light);
+      border-radius: var(--border-radius);
+      padding: 1.2rem;
+      margin: 1rem 0;
+    }
+
+    .volunteer-avatar {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--color-primary-dark), #43a047);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.2rem;
+      flex-shrink: 0;
+    }
+
+    .volunteer-info h4 {
+      color: var(--color-primary-dark);
+      font-size: 1.3rem;
+      font-weight: 700;
+    }
+
+    .volunteer-info p {
+      font-size: 0.95rem;
+      color: #555;
+      margin-top: 4px;
+    }
+
+    .volunteer-skills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .skill-tag {
+      background: var(--color-primary-light);
+      color: var(--color-primary-dark);
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+
+    .approval-actions {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      margin-top: 1.5rem;
+    }
+
+    .btn-approve {
+      background: var(--color-primary);
+      color: white;
+      border: none;
+      flex: 1;
+      min-width: 160px;
+    }
+
+    .btn-approve:hover {
+      background: var(--color-primary-dark);
+    }
+
+    .btn-reject {
+      background: white;
+      color: var(--color-emergency);
+      border: 3px solid var(--color-emergency);
+      flex: 1;
+      min-width: 160px;
+    }
+
+    .btn-reject:hover {
+      background: var(--color-emergency);
+      color: white;
+    }
+
+    .senior-info-banner {
+      background: linear-gradient(135deg, #e8f5e9, #f1f8e9);
+      border: 3px solid var(--color-primary-light);
+      border-radius: var(--border-radius);
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+    }
+
+    .senior-avatar {
+      font-size: 3rem;
+      flex-shrink: 0;
+    }
+
+    .senior-meta h3 {
+      color: var(--color-primary-dark);
+      font-size: 1.4rem;
+      font-weight: 700;
+    }
+
+    .senior-meta p {
+      font-size: 0.95rem;
+      color: #555;
+      margin-top: 4px;
+    }
+
+    .poll-indicator {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.9rem;
+      color: #666;
+      margin-top: 1rem;
+    }
+
+    .poll-dot {
+      width: 10px;
+      height: 10px;
+      background: var(--color-primary);
+      border-radius: 50%;
+      animation: pulse-dot 2s infinite;
+    }
+
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.8); }
+    }
+
+    .request-timeline {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-top: 8px;
+      flex-wrap: wrap;
+    }
+
+    .timeline-step {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.9rem;
+    }
+
+    .timeline-step.done {
+      color: var(--color-primary-dark);
+      font-weight: 600;
+    }
+
+    .timeline-step.active {
+      color: #e65100;
+      font-weight: 700;
+    }
+
+    .timeline-step.future {
+      color: #bbb;
+    }
+
+    .timeline-arrow {
+      color: #bbb;
+      font-size: 1rem;
+    }
+
+    /* Rejection modal */
+    .rejection-reason-area {
+      width: 100%;
+      padding: 12px 16px;
+      font-family: inherit;
+      font-size: 1rem;
+      border: 3px solid var(--color-primary-light);
+      border-radius: var(--border-radius);
+      min-height: 100px;
+      resize: vertical;
+    }
+
+    .rejection-reason-area:focus {
+      border-color: var(--color-emergency);
+    }
+  </style>
+</head>
+<body>
+  <!-- Accessibility Skip-Link -->
+  <a href="#mainContent" class="skip-link">Skip to main content</a>
+
+  <!-- Navigation Header -->
+  <header>
+    <div class="nav-container">
+      <div class="logo">
+        <span class="logo-icon">🌸</span>
+        <span>AgeWell</span>
+      </div>
+
+      <!-- User Nav -->
+      <div class="user-nav">
+        <span id="navUserName" class="nav-user-name">Hello, Family Member</span>
+        <button id="btnLogout" class="btn btn-secondary" style="padding: 8px 16px; min-height: 44px; font-size: 1rem; border-color: transparent;">
+          🚪 Log Out
+        </button>
+      </div>
+
+      <!-- Text Sizing Widget -->
+      <div class="accessibility-panel" role="region" aria-label="Accessibility Sizing Controls">
+        <span>Text Size:</span>
+        <button id="btnTextDecrease" class="font-btn" aria-label="Make text smaller">A-</button>
+        <button id="btnTextReset" class="font-btn" aria-label="Reset text size">Reset</button>
+        <button id="btnTextIncrease" class="font-btn" aria-label="Make text larger">A+</button>
+        <span id="fontSizeIndicator" style="font-size: 0.9rem; font-weight: bold; min-width: 44px; text-align: center;">18px</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main id="mainContent">
+    <!-- Welcome Bar -->
+    <div class="dashboard-welcome" style="background: linear-gradient(90deg, #880e4f, #c2185b);">
+      <div class="welcome-icon" aria-hidden="true">❤️</div>
+      <div>
+        <h1 id="welcomeTitle">Family Caregiver Portal</h1>
+        <p id="welcomeSubtitle">Review and approve volunteers before they assist your loved one.</p>
+      </div>
+    </div>
+
+    <!-- Senior Info Banner -->
+    <div class="senior-info-banner" id="seniorInfoBanner" style="display: none;">
+      <div class="senior-avatar" aria-hidden="true">👵</div>
+      <div class="senior-meta">
+        <h3 id="linkedSeniorName">Loading...</h3>
+        <p id="linkedSeniorPhone"></p>
+        <p id="linkedSeniorAddress"></p>
+      </div>
+    </div>
+
+    <!-- SECTION 1: Pending Approvals (the main action area) -->
+    <div class="dashboard-card" style="margin-bottom: 2rem; border-color: #f57f17;" id="approvalSection">
+      <h2 style="color: #e65100;">
+        ⏳ Volunteer Approval Requests
+        <span class="notification-badge" id="approvalBadge" style="display: none;">0</span>
+      </h2>
+      <p style="margin-bottom: 1.5rem; color: #555;">
+        When a volunteer accepts your senior's help request, they appear here.
+        <strong>Review their profile and approve or reject them.</strong>
+      </p>
+      <div id="approvalList">
+        <div class="loading-wrapper">
+          <div class="spinner"></div>
+          <span>Loading pending approvals...</span>
+        </div>
+      </div>
+
+      <!-- Auto-refresh indicator -->
+      <div class="poll-indicator">
+        <div class="poll-dot"></div>
+        <span>This page auto-refreshes every 30 seconds to check for new approval requests.</span>
+      </div>
+    </div>
+
+    <!-- SECTION 2: All Requests History -->
+    <div class="dashboard-card">
+      <h2>📋 All of <span id="seniorNameInline">Your Senior's</span> Help Requests</h2>
+      <p style="margin-bottom: 1.5rem; color: #555;">Full history of requests raised, their current status, and outcomes.</p>
+      <div id="allRequestsList" class="request-list">
+        <div class="loading-wrapper">
+          <div class="spinner"></div>
+          <span>Loading requests history...</span>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Rejection Reason Modal -->
+  <div id="rejectModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="rejectModalTitle">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="rejectModalTitle">Reject Volunteer</h3>
+        <button id="rejectModalClose" class="modal-close" aria-label="Close">&times;</button>
+      </div>
+      <p style="margin-bottom: 1rem; color: #555;">
+        Please provide a brief reason for rejecting this volunteer (optional).
+        The request will reset and become available for other volunteers.
+      </p>
+      <textarea id="rejectionReasonInput" class="rejection-reason-area"
+        placeholder="e.g. We prefer a female caregiver / We know this person is not available / etc."
+      ></textarea>
+      <div class="modal-footer">
+        <button type="button" id="btnCancelReject" class="btn btn-secondary">Cancel</button>
+        <button type="button" id="btnConfirmReject" class="btn btn-outline-danger">
+          ❌ Confirm Rejection
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer>
+    <p>&copy; 2026 AgeWell Platform. Family Caregiver Portal.</p>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="/js/api.js"></script>
+  <script src="/js/family.js"></script>
+</body>
+</html>

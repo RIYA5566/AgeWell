@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="AgeWell - Senior Citizen Assistance Platform. Connecting seniors with compassionate volunteers for daily support.">
+  <title>AgeWell - Senior Citizen Assistance Platform</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    /* Landing page specific styles */
+    .landing-wrapper {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+    }
+
+    .landing-layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      align-items: start;
+      margin-top: 2.5rem;
+    }
+
+    @media (max-width: 800px) {
+      .landing-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .features-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 1.2rem;
+    }
+
+    .feature-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+      background: var(--color-white);
+      border-radius: var(--border-radius);
+      padding: 1.2rem 1.5rem;
+      border: 3px solid var(--color-primary-light);
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .feature-item:hover {
+      border-color: var(--color-primary);
+      box-shadow: 0 4px 12px rgba(46, 125, 50, 0.12);
+    }
+
+    .feature-icon {
+      font-size: 2rem;
+      flex-shrink: 0;
+    }
+
+    .feature-text h3 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--color-primary-dark);
+      margin-bottom: 4px;
+    }
+
+    .feature-text p {
+      font-size: 0.95rem;
+      color: #555;
+      line-height: 1.4;
+    }
+
+    .demo-credentials {
+      background: var(--color-bg-light);
+      border: 3px solid var(--color-primary-light);
+      border-radius: var(--border-radius);
+      padding: 1.2rem 1.5rem;
+      margin-top: 0.5rem;
+    }
+
+    .demo-credentials h4 {
+      color: var(--color-primary-dark);
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: 0.6rem;
+    }
+
+    .demo-cred-item {
+      font-size: 0.9rem;
+      margin-bottom: 0.3rem;
+      font-family: monospace;
+      background: var(--color-white);
+      padding: 4px 10px;
+      border-radius: 6px;
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <!-- Accessibility Skip-Link -->
+  <a href="#mainContent" class="skip-link">Skip to main content</a>
+
+  <!-- Global Accessibility Header -->
+  <header>
+    <div class="nav-container">
+      <div class="logo" role="img" aria-label="AgeWell Logo">
+        <span class="logo-icon">🌸</span>
+        <span>AgeWell</span>
+      </div>
+      
+      <!-- Text Sizing Widget -->
+      <div class="accessibility-panel" role="region" aria-label="Accessibility Sizing Controls">
+        <span>Text Size:</span>
+        <button id="btnTextDecrease" class="font-btn" aria-label="Make text smaller">A-</button>
+        <button id="btnTextReset" class="font-btn" aria-label="Reset text size to normal">Reset</button>
+        <button id="btnTextIncrease" class="font-btn" aria-label="Make text larger">A+</button>
+        <span id="fontSizeIndicator" style="font-size: 0.9rem; font-weight: bold; min-width: 44px; text-align: center;">18px</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main id="mainContent">
+    <div class="landing-wrapper">
+      <!-- Hero Banner -->
+      <div class="hero-banner">
+        <div style="font-size: 3.5rem; margin-bottom: 1rem;">🌸</div>
+        <h1>AgeWell</h1>
+        <p>Connecting Senior Citizens with compassionate local Volunteers for everyday support and peace of mind.</p>
+      </div>
+
+      <div class="landing-layout">
+        <!-- Left: Features -->
+        <div class="features-panel">
+          <div class="feature-item">
+            <div class="feature-icon" aria-hidden="true">🛒</div>
+            <div class="feature-text">
+              <h3>Request Help</h3>
+              <p>Easily ask for help with groceries, tech support, medical visits, housekeeping, or companionship.</p>
+            </div>
+          </div>
+          <div class="feature-item">
+            <div class="feature-icon" aria-hidden="true">🤝</div>
+            <div class="feature-text">
+              <h3>Volunteer Support</h3>
+              <p>Volunteers can browse and accept pending requests, and stay connected with seniors throughout.</p>
+            </div>
+          </div>
+          <div class="feature-item">
+            <div class="feature-icon" aria-hidden="true">🚨</div>
+            <div class="feature-text">
+              <h3>Emergency SOS</h3>
+              <p>One tap emergency alert instantly notifies volunteers and admins for immediate support.</p>
+            </div>
+          </div>
+          <div class="feature-item">
+            <div class="feature-icon" aria-hidden="true">🎙️</div>
+            <div class="feature-text">
+              <h3>Voice Requests</h3>
+              <p>Use your voice to describe what you need. No typing required — just speak!</p>
+            </div>
+          </div>
+          <div class="feature-item">
+            <div class="feature-icon" aria-hidden="true">🔠</div>
+            <div class="feature-text">
+              <h3>Accessibility First</h3>
+              <p>Large text, high contrast, oversized buttons, and adjustable font size for easy use by all.</p>
+            </div>
+          </div>
+
+          <!-- Demo Credentials Box -->
+          <div class="demo-credentials">
+            <h4>🔐 Demo Login Credentials:</h4>
+            <span class="demo-cred-item">👵 Senior: eleanor@agewell.com / seniorpassword</span>
+            <span class="demo-cred-item">🤝 Volunteer: sarah@agewell.com / volunteerpassword</span>
+            <span class="demo-cred-item">🛡️ Admin: admin@agewell.com / adminpassword</span>
+          </div>
+        </div>
+
+        <!-- Right: Login Form -->
+        <div class="auth-container" style="margin: 0;">
+          <div class="auth-header">
+            <h2 style="font-size: 1.7rem; color: var(--color-primary-dark); margin-bottom: 0.5rem;">Sign In to AgeWell</h2>
+            <p>Welcome back! Please log in to continue.</p>
+          </div>
+
+          <!-- User Alert Area -->
+          <div id="alertArea" aria-live="polite"></div>
+
+          <!-- Login Form -->
+          <form id="loginForm" novalidate>
+            <div class="form-group">
+              <label for="email">Email Address</label>
+              <input 
+                type="email" 
+                id="email" 
+                name="email" 
+                class="form-input" 
+                placeholder="example@email.com" 
+                required 
+                autocomplete="email"
+                aria-required="true"
+              >
+            </div>
+
+            <div class="form-group">
+              <label for="password">Password</label>
+              <input 
+                type="password" 
+                id="password" 
+                name="password" 
+                class="form-input" 
+                placeholder="Enter your password" 
+                required
+                autocomplete="current-password"
+                aria-required="true"
+              >
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">
+              🔑 Log In to AgeWell
+            </button>
+          </form>
+
+          <div style="text-align: center; margin-top: 2rem; border-top: 2px solid var(--color-primary-light); padding-top: 1.5rem;">
+            <p style="font-weight: 500; margin-bottom: 0.8rem; color: var(--color-primary-dark);">New to AgeWell?</p>
+            <a href="/register.html" class="btn btn-secondary" style="width: 100%;">
+              ✍️ Create a New Account
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    <p>&copy; 2026 AgeWell Platform. Designed with care and compassion for Senior Citizens, Volunteers, and Administrators.</p>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="/js/api.js"></script>
+  <script src="/js/auth.js"></script>
+</body>
+</html>
