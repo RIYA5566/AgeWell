@@ -101,6 +101,7 @@ async function loadVolunteerRequests() {
         pendingList.innerHTML = pendingRequests.map(req => {
           let urgencyClass = req.urgency === 'high' ? 'urgency-high' : req.urgency === 'emergency' ? 'urgency-emergency' : '';
           let urgencyLabel = req.urgency === 'emergency' ? 'SOS EMERGENCY' : req.urgency === 'high' ? 'High Priority' : 'Normal';
+          let audioHtml = req.audioFile ? `<div class="request-audio-player"><label>🎙️ Senior's Voice Message:</label><audio controls src="${req.audioFile}"></audio></div>` : '';
 
           return `
             <div class="request-card ${urgencyClass}">
@@ -111,8 +112,8 @@ async function loadVolunteerRequests() {
                   <span class="badge badge-urgency">${escapeHTML(req.category)}</span>
                 </div>
               </div>
-              <div class="request-description">${escapeHTML(req.description)}</div>
-              
+              ${req.description ? `<div class="request-description">${escapeHTML(req.description)}</div>` : ''}
+              ${audioHtml}
               <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; flex-wrap: wrap; gap: 10px;">
                 <span style="font-size: 0.9rem; color: #666;">Requested on: ${new Date(req.createdAt).toLocaleDateString()}</span>
                 <button class="btn btn-primary" onclick="acceptHelpRequest('${req._id}')" style="padding: 10px 20px; font-size: 1rem; min-height: 48px;">
@@ -133,6 +134,8 @@ async function loadVolunteerRequests() {
       } else {
         awaitingList.innerHTML = awaitingRequests.map(req => {
           const seniorName = req.senior ? req.senior.name : 'Senior Citizen';
+          let audioHtml = req.audioFile ? `<div class="request-audio-player"><label>🎙️ Senior's Voice Message:</label><audio controls src="${req.audioFile}"></audio></div>` : '';
+
           return `
             <div class="request-card" style="border-left: 8px solid #f57f17; background: #fff8e1;">
               <div class="request-card-header">
@@ -142,7 +145,8 @@ async function loadVolunteerRequests() {
                   <span class="badge badge-urgency">${escapeHTML(req.category)}</span>
                 </div>
               </div>
-              <div class="request-description">${escapeHTML(req.description)}</div>
+              ${req.description ? `<div class="request-description">${escapeHTML(req.description)}</div>` : ''}
+              ${audioHtml}
               <div class="request-details" style="background: #fff3e0; border-color: #ffcc02;">
                 <p><strong>Senior Citizen:</strong> ${escapeHTML(seniorName)}</p>
                 <p style="margin-top: 6px; font-size: 0.95rem; color: #6d4c00;">
@@ -172,6 +176,7 @@ async function loadVolunteerRequests() {
           const seniorPhone = req.senior ? req.senior.phone : 'Not shared';
           const seniorAddress = req.senior ? req.senior.address : 'Not shared';
           const emergencyContact = req.senior ? req.senior.emergencyContact : 'Not shared';
+          let audioHtml = req.audioFile ? `<div class="request-audio-player"><label>🎙️ Senior's Voice Message:</label><audio controls src="${req.audioFile}"></audio></div>` : '';
 
           return `
             <div class="request-card" style="border-color: var(--color-primary);">
@@ -182,7 +187,8 @@ async function loadVolunteerRequests() {
                   <span class="badge badge-urgency">${escapeHTML(req.category)}</span>
                 </div>
               </div>
-              <div class="request-description">${escapeHTML(req.description)}</div>
+              ${req.description ? `<div class="request-description">${escapeHTML(req.description)}</div>` : ''}
+              ${audioHtml}
               
               <div class="request-details" style="background-color: var(--color-bg-light); border: 2px solid var(--color-primary-light);">
                 <p style="font-size: 1.1rem; border-bottom: 2px solid var(--color-primary-light); padding-bottom: 5px; margin-bottom: 8px;"><strong>Senior Citizen Information:</strong></p>
@@ -209,6 +215,8 @@ async function loadVolunteerRequests() {
         historyList.innerHTML = `<div style="text-align: center; color: #666; padding: 1rem;">No completed requests logged yet.</div>`;
       } else {
         historyList.innerHTML = completedRequests.map(req => {
+          let audioHtml = req.audioFile ? `<div class="request-audio-player"><label>🎙️ Senior's Voice Message:</label><audio controls src="${req.audioFile}"></audio></div>` : '';
+
           return `
             <div class="request-card" style="opacity: 0.85; border-color: #ddd;">
               <div class="request-card-header">
@@ -218,7 +226,17 @@ async function loadVolunteerRequests() {
                   <span class="badge badge-urgency">${escapeHTML(req.category)}</span>
                 </div>
               </div>
-              <div class="request-description">${escapeHTML(req.description)}</div>
+              ${req.description ? `<div class="request-description">${escapeHTML(req.description)}</div>` : ''}
+              ${audioHtml}
+              <div class="request-details">
+                <p><strong>Senior Assisted:</strong> ${req.senior ? req.senior.name : 'Senior Citizen'}</p>
+                <p><strong>Completion Notes:</strong> ${escapeHTML(req.resolutionNotes)}</p>
+                <p><strong>Completed On:</strong> ${new Date(req.completedAt).toLocaleDateString()}</p>
+              </div>
+            </div>`;
+        }).join('');
+      }
+    }
               <div class="request-details">
                 <p><strong>Senior Assisted:</strong> ${req.senior ? req.senior.name : 'Senior Citizen'}</p>
                 <p><strong>Completion Notes:</strong> ${escapeHTML(req.resolutionNotes)}</p>

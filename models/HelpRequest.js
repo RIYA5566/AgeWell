@@ -3,19 +3,25 @@ const mongoose = require('mongoose');
 const helpRequestSchema = new mongoose.Schema({
   title: {
     type: String,
-    required: [true, 'Please provide a request title'],
     trim: true,
-    maxlength: [100, 'Title cannot exceed 100 characters']
+    maxlength: [100, 'Title cannot exceed 100 characters'],
+    default: ''
   },
   description: {
     type: String,
-    required: [true, 'Please provide a request description'],
-    trim: true
+    trim: true,
+    default: ''
   },
   category: {
     type: String,
-    required: [true, 'Please specify a category'],
-    enum: ['Grocery Shopping', 'Medical Escort', 'Tech Support', 'Housekeeping', 'Companionship', 'Other']
+    enum: ['Grocery Shopping', 'Medical Escort', 'Tech Support', 'Housekeeping', 'Companionship', 'Other'],
+    default: 'Other'
+  },
+
+  // ─── Audio attachment ───────────────────────────────────────────────────────
+  audioFile: {
+    type: String,
+    default: ''
   },
   urgency: {
     type: String,

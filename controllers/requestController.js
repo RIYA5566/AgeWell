@@ -13,12 +13,32 @@ const seniorHasFamily = async (seniorId) => {
 exports.createRequest = async (req, res) => {
   try {
     const { title, description, category, urgency } = req.body;
+    const audioFile = req.file ? `/uploads/audio/${req.file.filename}` : '';
+
+    // Ensure at least some content was provided
+    const hasCategory = category && category !== 'Other';
+    const hasTitle = title && title.trim().length > 0;
+    const hasDescription = description && description.trim().length > 0;
+    const hasAudio = !!req.file;
+
+    if (!hasCategory && !hasTitle && !hasDescription && !hasAudio) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide at least a category, title, description, or voice recording'
+      });
+    }
+
+    // Auto-generate a default title if not provided
+    const finalTitle = (title && title.trim())
+      ? title.trim()
+      : `Help Request - ${new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}`;
 
     const newRequest = new HelpRequest({
-      title,
-      description,
-      category,
+      title: finalTitle,
+      description: description || '',
+      category: category || 'Other',
       urgency: urgency || 'low',
+      audioFile,
       senior: req.user.id,
       status: 'pending'
     });
@@ -26,8 +46,8 @@ exports.createRequest = async (req, res) => {
     const request = await newRequest.save();
     res.status(201).json({ success: true, message: 'Help request created successfully', request });
   } catch (error) {
-    console.error('Create Request Error:', error);
-    res.status(500).json({ success: false, message: 'Server error creating request' });
+    console.error('Create Request Error Details:', error);
+    res.status(500).json({ success: false, message: error.message || 'Server error creating request' });
   }
 };
 

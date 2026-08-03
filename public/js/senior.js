@@ -93,130 +93,136 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // --- Voice-to-Text Input logic ---
-  const btnVoice = document.getElementById('btnVoice');
+  // --- Real Voice Recording Logic (MediaRecorder API) ---
+  const btnStartRecording = document.getElementById('btnStartRecording');
+  const btnStopRecording = document.getElementById('btnStopRecording');
+  const btnClearRecording = document.getElementById('btnClearRecording');
+  const recordingIndicator = document.getElementById('recordingIndicator');
+  const recordingTimer = document.getElementById('recordingTimer');
   const waveform = document.getElementById('voiceWaveform');
-  const descriptionInput = document.getElementById('requestDescription');
+  const audioPreview = document.getElementById('audioPreview');
+  const audioPlayback = document.getElementById('audioPlayback');
 
-  if (btnVoice) {
-    let recognition = null;
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  let mediaRecorder = null;
+  let audioChunks = [];
+  let recordedAudioBlob = null;
+  let timerInterval = null;
+  let secondsRecorded = 0;
 
-    if (SpeechRecognition) {
-      recognition = new SpeechRecognition();
-      recognition.continuous = false;
-      recognition.lang = 'en-US';
-      recognition.interimResults = false;
+  if (btnStartRecording) {
+    btnStartRecording.addEventListener('click', async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorder = new MediaRecorder(stream);
+        audioChunks = [];
 
-      recognition.onstart = () => {
-        btnVoice.classList.add('recording');
+        mediaRecorder.ondataavailable = (e) => {
+          if (e.data.size > 0) audioChunks.push(e.data);
+        };
+
+        mediaRecorder.onstop = () => {
+          const mimeType = mediaRecorder.mimeType || 'audio/webm';
+          recordedAudioBlob = new Blob(audioChunks, { type: mimeType });
+          const audioUrl = URL.createObjectURL(recordedAudioBlob);
+          audioPlayback.src = audioUrl;
+          if (audioPreview) audioPreview.style.display = 'block';
+
+          // Stop all audio stream tracks
+          stream.getTracks().forEach(track => track.stop());
+        };
+
+        mediaRecorder.start();
+        btnStartRecording.style.display = 'none';
+        btnStopRecording.style.display = 'inline-flex';
+        recordingIndicator.style.display = 'flex';
         waveform.classList.add('active');
-        descriptionInput.placeholder = "Listening to your voice... Speak now!";
-      };
 
-      recognition.onerror = (event) => {
-        console.error('Speech recognition error', event.error);
-        stopVoiceRecording();
-      };
+        // Timer
+        secondsRecorded = 0;
+        recordingTimer.textContent = '0:00';
+        timerInterval = setInterval(() => {
+          secondsRecorded++;
+          const mins = Math.floor(secondsRecorded / 60);
+          const secs = secondsRecorded % 60;
+          recordingTimer.textContent = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
 
-      recognition.onend = () => {
-        stopVoiceRecording();
-      };
-
-      recognition.onresult = (event) => {
-        const transcript = event.results[0][0].transcript;
-        if (descriptionInput.value) {
-          descriptionInput.value += ' ' + transcript;
-        } else {
-          descriptionInput.value = transcript;
-        }
-      };
-    }
-
-    btnVoice.addEventListener('click', () => {
-      if (btnVoice.classList.contains('recording')) {
-        if (recognition) {
-          recognition.stop();
-        } else {
-          stopVoiceSimulation();
-        }
-      } else {
-        if (recognition) {
-          try {
-            recognition.start();
-          } catch (e) {
-            console.error(e);
-            startVoiceSimulation();
+          // Max 2 minutes limit
+          if (secondsRecorded >= 120) {
+            stopRecording();
           }
-        } else {
-          startVoiceSimulation();
-        }
+        }, 1000);
+
+      } catch (err) {
+        console.error('Error accessing microphone:', err);
+        alert('Microphone access was denied or is not supported in this browser. Please check browser permissions.');
       }
     });
+  }
 
-    function stopVoiceRecording() {
-      btnVoice.classList.remove('recording');
-      waveform.classList.remove('active');
-      descriptionInput.placeholder = "Describe what you need help with (you can also use the voice button)...";
+  function stopRecording() {
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+      mediaRecorder.stop();
     }
-
-    let simulationTimeout = null;
-    function startVoiceSimulation() {
-      btnVoice.classList.add('recording');
-      waveform.classList.add('active');
-      descriptionInput.placeholder = "Simulating voice input (Speak now)...";
-      
-      const simulatedPhrases = [
-        "I need help getting fresh milk, eggs, and bread from the grocery store today.",
-        "Could someone please help me set up my new TV remote? I am having trouble with the buttons.",
-        "I have a doctor appointment tomorrow at 10 AM at the clinic and need a medical escort to walk with me.",
-        "My living room lightbulb burned out. I would be very grateful if someone could help me replace it."
-      ];
-
-      simulationTimeout = setTimeout(() => {
-        const randomPhrase = simulatedPhrases[Math.floor(Math.random() * simulatedPhrases.length)];
-        descriptionInput.value = randomPhrase;
-        stopVoiceSimulation();
-      }, 3000);
+    if (timerInterval) {
+      clearInterval(timerInterval);
+      timerInterval = null;
     }
+    if (btnStartRecording) btnStartRecording.style.display = 'inline-flex';
+    if (btnStopRecording) btnStopRecording.style.display = 'none';
+    if (recordingIndicator) recordingIndicator.style.display = 'none';
+    if (waveform) waveform.classList.remove('active');
+  }
 
-    function stopVoiceSimulation() {
-      if (simulationTimeout) clearTimeout(simulationTimeout);
-      btnVoice.classList.remove('recording');
-      waveform.classList.remove('active');
-      descriptionInput.placeholder = "Describe what you need help with (you can also use the voice button)...";
-    }
+  if (btnStopRecording) {
+    btnStopRecording.addEventListener('click', stopRecording);
+  }
+
+  if (btnClearRecording) {
+    btnClearRecording.addEventListener('click', () => {
+      recordedAudioBlob = null;
+      if (audioPlayback) audioPlayback.src = '';
+      if (audioPreview) audioPreview.style.display = 'none';
+    });
   }
 
   // --- Help Request Form Submit ---
   const requestForm = document.getElementById('requestForm');
+  const descriptionInput = document.getElementById('requestDescription');
+
   if (requestForm) {
     requestForm.addEventListener('submit', async (e) => {
       e.preventDefault();
 
       const title = document.getElementById('requestTitle').value.trim();
-      const description = descriptionInput.value.trim();
+      const description = descriptionInput ? descriptionInput.value.trim() : '';
       const urgency = document.getElementById('requestUrgency').value;
 
       const alertArea = document.getElementById('modalAlertArea');
       alertArea.innerHTML = '';
 
-      if (!selectedCategory) {
-        alertArea.innerHTML = `<div class="alert alert-danger">Please choose a category from the buttons above</div>`;
+      // Check if at least one input is provided
+      const hasCategory = selectedCategory && selectedCategory !== '';
+      const hasTitle = title.length > 0;
+      const hasDescription = description.length > 0;
+      const hasAudio = recordedAudioBlob !== null;
+
+      if (!hasCategory && !hasTitle && !hasDescription && !hasAudio) {
+        alertArea.innerHTML = `<div class="alert alert-danger">Please select a category, type details, or record a voice message.</div>`;
         return;
       }
 
-      if (!title || !description) {
-        alertArea.innerHTML = `<div class="alert alert-danger">Please fill in the title and description</div>`;
-        return;
+      // Build FormData for upload
+      const formData = new FormData();
+      if (selectedCategory) formData.append('category', selectedCategory);
+      if (title) formData.append('title', title);
+      if (description) formData.append('description', description);
+      formData.append('urgency', urgency);
+
+      if (recordedAudioBlob) {
+        formData.append('audio', recordedAudioBlob, 'voice-recording.webm');
       }
 
-      const res = await apiCall('/requests', 'POST', {
-        title,
-        description,
-        category: selectedCategory,
-        urgency
-      });
+      const res = await apiCall('/requests', 'POST', formData);
 
       if (res.ok && res.data.success) {
         alertArea.innerHTML = `<div class="alert alert-success">Request raised successfully!</div>`;
@@ -242,6 +248,21 @@ function resetForm() {
 
   const alertArea = document.getElementById('modalAlertArea');
   if (alertArea) alertArea.innerHTML = '';
+
+  // Clear audio recording state
+  const audioPreview = document.getElementById('audioPreview');
+  const audioPlayback = document.getElementById('audioPlayback');
+  if (audioPlayback) audioPlayback.src = '';
+  if (audioPreview) audioPreview.style.display = 'none';
+
+  const btnStartRecording = document.getElementById('btnStartRecording');
+  const btnStopRecording = document.getElementById('btnStopRecording');
+  const recordingIndicator = document.getElementById('recordingIndicator');
+  const waveform = document.getElementById('voiceWaveform');
+  if (btnStartRecording) btnStartRecording.style.display = 'inline-flex';
+  if (btnStopRecording) btnStopRecording.style.display = 'none';
+  if (recordingIndicator) recordingIndicator.style.display = 'none';
+  if (waveform) waveform.classList.remove('active');
 }
 
 // Fetch and Render Requests
@@ -287,6 +308,15 @@ async function loadRequests() {
         urgencyBadge = `<span class="badge badge-urgency-emergency">SOS EMERGENCY</span>`;
       }
 
+      let audioPlayerHtml = '';
+      if (req.audioFile) {
+        audioPlayerHtml = `
+          <div class="request-audio-player">
+            <label>🎙️ Voice Recording:</label>
+            <audio controls src="${req.audioFile}"></audio>
+          </div>`;
+      }
+
       let assignmentInfo = '';
       if (req.status === 'awaiting_approval' && req.volunteer) {
         assignmentInfo = `
@@ -327,7 +357,8 @@ async function loadRequests() {
               <span class="badge badge-urgency">${escapeHTML(req.category)}</span>
             </div>
           </div>
-          <div class="request-description">${escapeHTML(req.description)}</div>
+          ${req.description ? `<div class="request-description">${escapeHTML(req.description)}</div>` : ''}
+          ${audioPlayerHtml}
           ${assignmentInfo}
           <div class="request-card-footer" style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem;">
             <span style="font-size: 0.9rem; color: #666;">Requested on: ${new Date(req.createdAt).toLocaleDateString()}</span>

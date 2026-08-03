@@ -109,7 +109,7 @@
           
           <!-- Category button selection grid -->
           <div class="form-group">
-            <label style="margin-bottom: 8px;">1. Select What You Need Help With:</label>
+            <label style="margin-bottom: 8px;">1. Select What You Need Help With: <span style="color:#888; font-size:0.9rem;">(Optional)</span></label>
             <div class="category-selector" role="group" aria-label="Support Categories">
               <button type="button" class="category-option-btn" data-category="Grocery Shopping">
                 <span class="category-icon" aria-hidden="true">🛒</span>
@@ -140,23 +140,44 @@
 
           <!-- Title -->
           <div class="form-group">
-            <label for="requestTitle">2. Short Request Summary</label>
+            <label for="requestTitle">2. Short Request Summary <span style="color:#888; font-size:0.9rem;">(Optional)</span></label>
             <input 
               type="text" 
               id="requestTitle" 
               class="form-input" 
               placeholder="e.g. Need medicine from pharmacy, light bulb change, etc." 
-              required
             >
           </div>
 
-          <!-- Description and Voice -->
+          <!-- Description and Voice Recording -->
           <div class="form-group">
-            <label for="requestDescription">3. Detailed Explanation (Include details like timing, location, list of items):</label>
-            <div class="voice-input-wrapper">
-              <button type="button" id="btnVoice" class="btn-voice" aria-label="Use voice to text to describe request" title="Record Voice">
-                🎙️
-              </button>
+            <label for="requestDescription">3. Detailed Explanation <span style="color:#888; font-size:0.9rem;">(Optional — you can also record a voice message below)</span></label>
+            <textarea 
+              id="requestDescription" 
+              class="form-textarea" 
+              placeholder="Describe what you need help with..."
+            ></textarea>
+          </div>
+
+          <!-- Audio Recorder -->
+          <div class="form-group">
+            <label>4. Record a Voice Message <span style="color:#888; font-size:0.9rem;">(Optional — max 2 minutes)</span></label>
+            <div class="audio-recorder-panel" id="audioRecorderPanel">
+              <div class="audio-recorder-controls">
+                <button type="button" id="btnStartRecording" class="btn-record" aria-label="Start recording voice message" title="Start Recording">
+                  🎙️ <span>Record</span>
+                </button>
+                <button type="button" id="btnStopRecording" class="btn-record btn-stop-record" aria-label="Stop recording" title="Stop Recording" style="display:none;">
+                  ⏹️ <span>Stop</span>
+                </button>
+                <div id="recordingIndicator" class="recording-indicator" style="display:none;">
+                  <div class="recording-dot"></div>
+                  <span id="recordingTimer">0:00</span>
+                  <span style="color:#c62828; font-weight:600;">Recording...</span>
+                </div>
+              </div>
+
+              <!-- Waveform Animation -->
               <div id="voiceWaveform" class="voice-waveform" aria-hidden="true">
                 <div class="waveform-bar"></div>
                 <div class="waveform-bar"></div>
@@ -164,19 +185,24 @@
                 <div class="waveform-bar"></div>
                 <div class="waveform-bar"></div>
               </div>
+
+              <!-- Playback Preview -->
+              <div id="audioPreview" class="audio-preview" style="display:none;">
+                <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+                  <span style="font-size:1.5rem;">🔊</span>
+                  <audio id="audioPlayback" controls style="flex:1; min-width:180px;"></audio>
+                  <button type="button" id="btnClearRecording" class="btn btn-outline-danger" style="padding:8px 14px; font-size:0.9rem; min-height:40px;">
+                    🗑️ Remove
+                  </button>
+                </div>
+                <p style="font-size:0.85rem; color:#388e3c; margin-top:6px;">✅ Voice message recorded. It will be sent to the volunteer and your caregiver.</p>
+              </div>
             </div>
-            <textarea 
-              id="requestDescription" 
-              class="form-textarea" 
-              placeholder="Describe what you need help with (you can also use the voice button)..."
-              style="margin-top: 8px;"
-              required
-            ></textarea>
           </div>
 
           <!-- Urgency -->
           <div class="form-group">
-            <label for="requestUrgency">4. How Urgent Is This?</label>
+            <label for="requestUrgency">5. How Urgent Is This?</label>
             <select id="requestUrgency" class="form-select">
               <option value="low" selected>Normal / Low (Can wait a few days)</option>
               <option value="medium">Medium (Needs help within 24 hours)</option>

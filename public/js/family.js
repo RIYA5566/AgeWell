@@ -185,7 +185,8 @@ function renderApprovalQueue(awaitingRequests) {
           </div>
         </div>
 
-        <p style="margin-bottom: 1.2rem; color: #444;">${escapeHTML(req.description)}</p>
+        ${req.description ? `<p style="margin-bottom: 1.2rem; color: #444;">${escapeHTML(req.description)}</p>` : ''}
+        ${req.audioFile ? `<div class="request-audio-player"><label>🎙️ Senior's Voice Message:</label><audio controls src="${req.audioFile}"></audio></div>` : ''}
 
         <!-- Volunteer Profile Card -->
         <div class="volunteer-profile-card">
@@ -282,6 +283,8 @@ function renderAllRequests(requests) {
         </div>`;
     }
 
+    let audioHtml = req.audioFile ? `<div class="request-audio-player"><label>🎙️ Senior's Voice Message:</label><audio controls src="${req.audioFile}"></audio></div>` : '';
+
     return `
       <div class="request-card">
         <div class="request-card-header">
@@ -291,7 +294,8 @@ function renderAllRequests(requests) {
             <span class="badge badge-urgency">${escapeHTML(req.category)}</span>
           </div>
         </div>
-        <div class="request-description">${escapeHTML(req.description)}</div>
+        ${req.description ? `<div class="request-description">${escapeHTML(req.description)}</div>` : ''}
+        ${audioHtml}
         ${timeline}
         ${volunteerInfo}
         <div style="font-size: 0.85rem; color: #999; margin-top: 0.8rem;">

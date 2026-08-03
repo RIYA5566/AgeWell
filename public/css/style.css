@@ -1040,3 +1040,125 @@ html {
     border: 2px solid #333;
   }
 }
+
+/* Audio Recorder & Audio Player Styles */
+.audio-recorder-panel {
+  background: var(--color-bg-light);
+  border: 3px dashed var(--color-primary-light);
+  border-radius: var(--border-radius);
+  padding: 1.2rem;
+  margin-top: 6px;
+}
+
+.audio-recorder-controls {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+
+.btn-record {
+  background: var(--color-white);
+  border: 3px solid var(--color-primary-dark);
+  color: var(--color-primary-dark);
+  font-size: 1.1rem;
+  font-weight: 700;
+  padding: 10px 20px;
+  border-radius: 30px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+  transition: all 0.2s;
+}
+
+.btn-record:hover {
+  background: var(--color-primary-light);
+}
+
+.btn-stop-record {
+  border-color: var(--color-emergency);
+  color: var(--color-emergency);
+}
+
+.btn-stop-record:hover {
+  background: #ffebee;
+}
+
+.recording-indicator {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.recording-dot {
+  width: 14px;
+  height: 14px;
+  background-color: var(--color-emergency);
+  border-radius: 50%;
+  animation: pulse-sos 1s infinite;
+}
+
+.voice-waveform {
+  display: none;
+  align-items: center;
+  gap: 4px;
+  height: 30px;
+  margin-top: 10px;
+}
+
+.voice-waveform.active {
+  display: flex;
+}
+
+.waveform-bar {
+  width: 6px;
+  height: 100%;
+  background-color: var(--color-primary);
+  border-radius: 3px;
+  animation: wave-bar 0.8s ease-in-out infinite alternate;
+}
+
+.waveform-bar:nth-child(1) { animation-delay: 0.1s; }
+.waveform-bar:nth-child(2) { animation-delay: 0.3s; }
+.waveform-bar:nth-child(3) { animation-delay: 0.2s; }
+.waveform-bar:nth-child(4) { animation-delay: 0.4s; }
+.waveform-bar:nth-child(5) { animation-delay: 0.15s; }
+
+@keyframes wave-bar {
+  0% { height: 20%; }
+  100% { height: 100%; }
+}
+
+.audio-preview {
+  margin-top: 12px;
+  background: var(--color-white);
+  border: 2px solid var(--color-primary-light);
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.request-audio-player {
+  margin: 12px 0;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #e8f5e9, #f1f8e9);
+  border: 2px solid var(--color-primary-light);
+  border-radius: 12px;
+}
+
+.request-audio-player label {
+  display: block;
+  font-weight: 700;
+  color: var(--color-primary-dark);
+  font-size: 0.95rem;
+  margin-bottom: 6px;
+}
+
+.request-audio-player audio {
+  width: 100%;
+  height: 40px;
+}
+

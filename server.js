@@ -25,6 +25,9 @@ app.use(cookieParser());
 // Serve static assets from the public folder
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Serve uploaded files (audio recordings, etc.)
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 // API Routes
 app.use('/api/auth',    require('./routes/authRoutes'));
 app.use('/api/requests', require('./routes/requestRoutes'));

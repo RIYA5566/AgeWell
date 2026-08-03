@@ -15,3 +15,9 @@ Thumbs.db
 # Logs
 *.log
 npm-debug.log*
+
+# Uploaded user files
+uploads/*
+!uploads/.gitkeep
+!uploads/audio/.gitkeep
+

@@ -37,9 +37,11 @@ function redirectToDashboard(role) {
 // Fetch wrapper with automatic authentication headers
 async function apiCall(endpoint, method = 'GET', data = null) {
   const token = localStorage.getItem('token');
-  const headers = {
-    'Content-Type': 'application/json'
-  };
+  const headers = {};
+
+  if (!(data instanceof FormData)) {
+    headers['Content-Type'] = 'application/json';
+  }
 
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
@@ -51,7 +53,11 @@ async function apiCall(endpoint, method = 'GET', data = null) {
   };
 
   if (data && (method === 'POST' || method === 'PUT')) {
-    config.body = JSON.stringify(data);
+    if (data instanceof FormData) {
+      config.body = data;
+    } else {
+      config.body = JSON.stringify(data);
+    }
   }
 
   try {
