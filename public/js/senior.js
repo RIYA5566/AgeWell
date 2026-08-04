@@ -19,6 +19,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // Load requests
   loadRequests();
 
+  // Initialize Voice Confirmation Assistant workflow
+  initVoiceConfirmationAssistant();
+
   // --- SOS Alert Logic ---
   const btnSos = document.getElementById('btnSos');
   const sosOverlay = document.getElementById('sosOverlay');
@@ -279,6 +282,18 @@ async function loadRequests() {
   const res = await apiCall('/requests', 'GET');
   if (res.ok && res.data.success) {
     const requests = res.data.requests;
+
+    // Check if any completed request requires automated senior IVR voice call confirmation
+    const pendingVoiceRequest = requests.find(r => 
+      r.status === 'completed' && 
+      r.completionVerified === 'pending_verification' && 
+      r.requiresSeniorVoiceCall === true
+    );
+
+    if (pendingVoiceRequest) {
+      triggerSeniorVoiceConfirmationCall(pendingVoiceRequest);
+    }
+
     if (requests.length === 0) {
       requestList.innerHTML = `
         <div style="text-align: center; padding: 3rem; background: var(--color-white); border-radius: var(--border-radius); border: 3px dashed var(--color-primary-light);">
@@ -291,12 +306,14 @@ async function loadRequests() {
 
     requestList.innerHTML = requests.map(req => {
       let statusBadge = '';
-      if (req.status === 'pending') {
+      if (req.status === 'fulfilled_by_family' || req.fulfilledByFamily) {
+        statusBadge = `<span class="badge" style="background:#e8f5e9;color:#1b5e20;border:2px solid #2e7d32;font-weight:bold;">🏡 Fulfilled by Family Caregiver</span>`;
+      } else if (req.status === 'pending') {
         statusBadge = `<span class="badge badge-pending">🔍 Finding Volunteer</span>`;
       } else if (req.status === 'awaiting_approval') {
-        statusBadge = `<span class="badge" style="background:#ffe082;color:#e65100;">⏳ Awaiting Family Approval</span>`;
+        statusBadge = `<span class="badge" style="background:#ffe082;color:#e65100;">⏳ Awaiting Family Decision</span>`;
       } else if (req.status === 'accepted') {
-        statusBadge = `<span class="badge badge-accepted">🤝 Volunteer Approved &amp; Assigned</span>`;
+        statusBadge = `<span class="badge badge-accepted">🤝 Volunteer Assigned</span>`;
       } else if (req.status === 'completed') {
         statusBadge = `<span class="badge badge-completed">✅ Service Completed</span>`;
       }
@@ -448,5 +465,458 @@ function stopEmergencyAlarm() {
   if (alarmInterval) {
     clearInterval(alarmInterval);
     alarmInterval = null;
+  }
+}
+
+// ──────────────────────────────────────────────────────────
+// VOICE CONFIRMATION ASSISTANT (STT → TTS → Voice YES/NO)
+// ──────────────────────────────────────────────────────────
+let voiceRecognition = null;
+let confirmRecognition = null;
+let voiceAudioStream = null;
+let voiceMediaRecorder = null;
+let voiceAudioChunks = [];
+let voiceAudioBlob = null;
+let currentTranscript = '';
+let currentConfidence = 85;
+
+function initVoiceConfirmationAssistant() {
+  const btnVoiceConfirmation = document.getElementById('btnVoiceConfirmation');
+  const voiceModal = document.getElementById('voiceModal');
+  const voiceModalClose = document.getElementById('voiceModalClose');
+  const btnVoiceConfirmYes = document.getElementById('btnVoiceConfirmYes');
+  const btnVoiceConfirmNo = document.getElementById('btnVoiceConfirmNo');
+
+  if (btnVoiceConfirmation) {
+    btnVoiceConfirmation.addEventListener('click', () => {
+      openVoiceModal();
+    });
+  }
+
+  if (voiceModalClose) {
+    voiceModalClose.addEventListener('click', () => {
+      closeVoiceModal();
+    });
+  }
+
+  if (btnVoiceConfirmYes) {
+    btnVoiceConfirmYes.addEventListener('click', () => {
+      confirmVoiceRequest(true);
+    });
+  }
+
+  if (btnVoiceConfirmNo) {
+    btnVoiceConfirmNo.addEventListener('click', () => {
+      confirmVoiceRequest(false);
+    });
+  }
+
+  window.addEventListener('click', (e) => {
+    if (e.target === voiceModal) {
+      closeVoiceModal();
+    }
+  });
+}
+
+async function openVoiceModal() {
+  const voiceModal = document.getElementById('voiceModal');
+  if (voiceModal) voiceModal.style.display = 'flex';
+
+  resetVoiceModalState();
+  startRecordingAndSpeechRecognition();
+}
+
+function closeVoiceModal() {
+  const voiceModal = document.getElementById('voiceModal');
+  if (voiceModal) voiceModal.style.display = 'none';
+
+  stopSpeechAndAudioRecording();
+  if (window.speechSynthesis) window.speechSynthesis.cancel();
+}
+
+function resetVoiceModalState() {
+  currentTranscript = '';
+  currentConfidence = 85;
+  voiceAudioBlob = null;
+  voiceAudioChunks = [];
+
+  const stepStatus = document.getElementById('voiceStepStatus');
+  const subStatus = document.getElementById('voiceSubStatus');
+  const transcriptBox = document.getElementById('voiceTranscriptBox');
+  const confirmArea = document.getElementById('voiceConfirmationArea');
+  const confidenceBadge = document.getElementById('voiceAiConfidenceBadge');
+  const pulse = document.getElementById('voiceMicPulse');
+
+  if (stepStatus) stepStatus.textContent = 'Speak your request now...';
+  if (subStatus) subStatus.textContent = 'Listening to what you need help with.';
+  if (transcriptBox) transcriptBox.innerHTML = '<em style="color: #999;">Listening to your voice...</em>';
+  if (confirmArea) confirmArea.style.display = 'none';
+  if (confidenceBadge) confidenceBadge.style.display = 'none';
+  if (pulse) {
+    pulse.style.background = 'linear-gradient(135deg, #1976d2, #0288d1)';
+    pulse.textContent = '🎙️';
+  }
+}
+
+async function startRecordingAndSpeechRecognition() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+  try {
+    voiceAudioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    voiceAudioChunks = [];
+    voiceMediaRecorder = new MediaRecorder(voiceAudioStream);
+
+    voiceMediaRecorder.ondataavailable = (e) => {
+      if (e.data.size > 0) voiceAudioChunks.push(e.data);
+    };
+
+    voiceMediaRecorder.onstop = () => {
+      const mimeType = voiceMediaRecorder.mimeType || 'audio/webm';
+      voiceAudioBlob = new Blob(voiceAudioChunks, { type: mimeType });
+    };
+
+    voiceMediaRecorder.start();
+
+    if (SpeechRecognition) {
+      voiceRecognition = new SpeechRecognition();
+      voiceRecognition.continuous = false;
+      voiceRecognition.interimResults = true;
+      voiceRecognition.lang = 'en-US';
+
+      voiceRecognition.onresult = (event) => {
+        let interimTranscript = '';
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          if (event.results[i].isFinal) {
+            currentTranscript += event.results[i][0].transcript;
+            if (event.results[i][0].confidence) {
+              currentConfidence = Math.round(event.results[i][0].confidence * 100);
+            }
+          } else {
+            interimTranscript += event.results[i][0].transcript;
+          }
+        }
+
+        const displayText = currentTranscript || interimTranscript;
+        const box = document.getElementById('voiceTranscriptBox');
+        if (box && displayText) {
+          box.textContent = `"${displayText.trim()}"`;
+        }
+      };
+
+      voiceRecognition.onerror = (err) => {
+        console.warn('Voice STT error:', err.error);
+      };
+
+      voiceRecognition.onend = () => {
+        finishRecordingAndReadback();
+      };
+
+      voiceRecognition.start();
+    } else {
+      setTimeout(() => {
+        if (!currentTranscript) {
+          currentTranscript = 'Voice assistance request recorded';
+        }
+        finishRecordingAndReadback();
+      }, 5000);
+    }
+
+  } catch (err) {
+    console.error('Mic access error:', err);
+    alert('Microphone access is required for voice request confirmation.');
+    closeVoiceModal();
+  }
+}
+
+function stopSpeechAndAudioRecording() {
+  if (voiceRecognition) {
+    try { voiceRecognition.stop(); } catch (e) {}
+    voiceRecognition = null;
+  }
+  if (confirmRecognition) {
+    try { confirmRecognition.stop(); } catch (e) {}
+    confirmRecognition = null;
+  }
+  if (voiceMediaRecorder && voiceMediaRecorder.state !== 'inactive') {
+    try { voiceMediaRecorder.stop(); } catch (e) {}
+  }
+  if (voiceAudioStream) {
+    voiceAudioStream.getTracks().forEach(track => track.stop());
+    voiceAudioStream = null;
+  }
+}
+
+function finishRecordingAndReadback() {
+  stopSpeechAndAudioRecording();
+
+  if (!currentTranscript || currentTranscript.trim().length === 0) {
+    currentTranscript = 'Help request recorded via voice';
+  }
+
+  const cleanTranscript = currentTranscript.trim();
+  const box = document.getElementById('voiceTranscriptBox');
+  if (box) box.textContent = `"${cleanTranscript}"`;
+
+  // Evaluate AI confidence
+  let isLowConfidence = false;
+  if (cleanTranscript.length < 15 || currentConfidence < 70) {
+    isLowConfidence = true;
+    const badge = document.getElementById('voiceAiConfidenceBadge');
+    if (badge) badge.style.display = 'block';
+  }
+
+  // Update Status for TTS Readback
+  const stepStatus = document.getElementById('voiceStepStatus');
+  const subStatus = document.getElementById('voiceSubStatus');
+  const pulse = document.getElementById('voiceMicPulse');
+  if (stepStatus) stepStatus.textContent = '🔊 Reading your request back...';
+  if (subStatus) subStatus.textContent = 'Please listen carefully to confirm.';
+  if (pulse) {
+    pulse.style.background = 'linear-gradient(135deg, #43a047, #2e7d32)';
+    pulse.textContent = '🔊';
+  }
+
+  // TTS Readback
+  const readbackPhrase = `I recorded your request: ${cleanTranscript}. Should I send this request?`;
+
+  const confirmArea = document.getElementById('voiceConfirmationArea');
+  if (confirmArea) confirmArea.style.display = 'block';
+
+  if (window.speechSynthesis) {
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(readbackPhrase);
+    utterance.rate = 0.95;
+
+    utterance.onend = () => {
+      listenForVoiceConfirmation();
+    };
+
+    utterance.onerror = () => {
+      listenForVoiceConfirmation();
+    };
+
+    window.speechSynthesis.speak(utterance);
+  } else {
+    listenForVoiceConfirmation();
+  }
+}
+
+function listenForVoiceConfirmation() {
+  const stepStatus = document.getElementById('voiceStepStatus');
+  const subStatus = document.getElementById('voiceSubStatus');
+  const pulse = document.getElementById('voiceMicPulse');
+
+  if (stepStatus) stepStatus.textContent = '🎙️ Listening for "Yes" or "No"...';
+  if (subStatus) subStatus.textContent = 'Say "Yes" to send or "No" to discard.';
+  if (pulse) {
+    pulse.style.background = 'linear-gradient(135deg, #e65100, #f57f17)';
+    pulse.textContent = '👂';
+  }
+
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (SpeechRecognition) {
+    confirmRecognition = new SpeechRecognition();
+    confirmRecognition.continuous = true;
+    confirmRecognition.interimResults = false;
+    confirmRecognition.lang = 'en-US';
+
+    confirmRecognition.onresult = (event) => {
+      for (let i = event.resultIndex; i < event.results.length; ++i) {
+        if (event.results[i].isFinal) {
+          const word = event.results[i][0].transcript.trim().toLowerCase();
+          console.log('Voice confirmation input:', word);
+
+          if (word.includes('yes') || word.includes('yeah') || word.includes('sure') || word.includes('send') || word.includes('correct') || word.includes('yep') || word.includes('do it') || word.includes('ok')) {
+            confirmVoiceRequest(true);
+            return;
+          }
+          if (word.includes('no') || word.includes('cancel') || word.includes('delete') || word.includes('stop') || word.includes('don\'t') || word.includes('nah') || word.includes('discard') || word.includes('nope')) {
+            confirmVoiceRequest(false);
+            return;
+          }
+        }
+      }
+    };
+
+    confirmRecognition.onerror = (err) => {
+      console.warn('Confirmation listener error:', err.error);
+    };
+
+    try {
+      confirmRecognition.start();
+    } catch (e) {}
+  }
+}
+
+async function confirmVoiceRequest(shouldSend) {
+  if (window.speechSynthesis) window.speechSynthesis.cancel();
+  stopSpeechAndAudioRecording();
+
+  if (!shouldSend) {
+    if (window.speechSynthesis) {
+      const cancelUtterance = new SpeechSynthesisUtterance('Request cancelled and discarded.');
+      window.speechSynthesis.speak(cancelUtterance);
+    }
+    closeVoiceModal();
+    return;
+  }
+
+  const stepStatus = document.getElementById('voiceStepStatus');
+  const subStatus = document.getElementById('voiceSubStatus');
+  if (stepStatus) stepStatus.textContent = '⏳ Submitting request...';
+  if (subStatus) subStatus.textContent = 'Please wait a moment.';
+
+  if (window.speechSynthesis) {
+    const confirmUtterance = new SpeechSynthesisUtterance('Sending your request now.');
+    window.speechSynthesis.speak(confirmUtterance);
+  }
+
+  const cleanTranscript = currentTranscript.trim();
+  let isLowConfidence = false;
+  if (cleanTranscript.length < 15 || currentConfidence < 70) {
+    isLowConfidence = true;
+  }
+
+  let category = 'Other';
+  const lower = cleanTranscript.toLowerCase();
+  if (lower.includes('grocery') || lower.includes('buy') || lower.includes('food') || lower.includes('store') || lower.includes('milk') || lower.includes('bread')) {
+    category = 'Grocery Shopping';
+  } else if (lower.includes('doctor') || lower.includes('hospital') || lower.includes('clinic') || lower.includes('medicine') || lower.includes('pharmacy')) {
+    category = 'Medical Escort';
+  } else if (lower.includes('phone') || lower.includes('computer') || lower.includes('tech') || lower.includes('tv') || lower.includes('wifi')) {
+    category = 'Tech Support';
+  } else if (lower.includes('clean') || lower.includes('house') || lower.includes('laundry') || lower.includes('sweep') || lower.includes('trash')) {
+    category = 'Housekeeping';
+  } else if (lower.includes('talk') || lower.includes('chat') || lower.includes('walk') || lower.includes('companion') || lower.includes('lonely')) {
+    category = 'Companionship';
+  }
+
+  const formData = new FormData();
+  formData.append('title', cleanTranscript.slice(0, 60));
+  formData.append('description', cleanTranscript);
+  formData.append('transcript', cleanTranscript);
+  formData.append('category', category);
+  formData.append('urgency', lower.includes('urgent') || lower.includes('emergency') || lower.includes('today') ? 'high' : 'low');
+  formData.append('aiConfidenceScore', currentConfidence);
+  formData.append('aiLowConfidence', isLowConfidence);
+
+  if (voiceAudioBlob) {
+    formData.append('audio', voiceAudioBlob, 'voice-request.webm');
+  }
+
+  const res = await apiCall('/requests', 'POST', formData);
+
+  closeVoiceModal();
+
+  if (res.ok && res.data.success) {
+    if (res.data.isLowConfidence) {
+      alert('✅ Voice request created! Because AI speech confidence was low, your family caregiver has been notified to verify it.');
+    } else {
+      alert('✅ Help request created successfully!');
+    }
+    loadRequests();
+  } else {
+    alert(`❌ Failed to submit request: ${res.data?.message || 'Server error'}`);
+  }
+}
+
+// ──────────────────────────────────────────────────────────
+// AUTOMATED IVR VOICE CALL CONFIRMATION FOR SENIOR CITIZENS
+// ──────────────────────────────────────────────────────────
+let currentIvrRequestId = null;
+let ivrSpeechRecognition = null;
+
+function triggerSeniorVoiceConfirmationCall(req) {
+  currentIvrRequestId = req._id;
+  const modal = document.getElementById('ivrCallModal');
+  const titleEl = document.getElementById('ivrRequestTitle');
+  if (!modal) return;
+
+  const itemLabel = req.extractedItems || req.title || 'Delivery Items';
+  if (titleEl) titleEl.textContent = `"${itemLabel}"`;
+
+  modal.style.display = 'flex';
+
+  // Read aloud automated voice call message via SpeechSynthesis
+  const callText = `Hello! Your volunteer has completed your request for ${itemLabel}. Please confirm if you received your items. Press 1 or say Yes if you received the items. Press 2 or say No if you did not.`;
+  
+  if (window.speechSynthesis) {
+    window.speechSynthesis.cancel();
+    const callUtterance = new SpeechSynthesisUtterance(callText);
+    callUtterance.rate = 0.95;
+    window.speechSynthesis.speak(callUtterance);
+  }
+
+  // Bind Dialpad Button Handlers
+  const btn1 = document.getElementById('btnIvrPress1');
+  const btn2 = document.getElementById('btnIvrPress2');
+
+  if (btn1) {
+    btn1.onclick = () => submitSeniorVoiceIVRResponse(req._id, 1);
+  }
+  if (btn2) {
+    btn2.onclick = () => submitSeniorVoiceIVRResponse(req._id, 2);
+  }
+
+  // Activate Spoken Voice Listener for "Yes" or "No" / "1" or "2"
+  startIvrVoiceListener(req._id);
+}
+
+function startIvrVoiceListener(requestId) {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) return;
+
+  try {
+    if (ivrSpeechRecognition) {
+      try { ivrSpeechRecognition.stop(); } catch (e) {}
+    }
+
+    ivrSpeechRecognition = new SpeechRecognition();
+    ivrSpeechRecognition.continuous = false;
+    ivrSpeechRecognition.interimResults = false;
+    ivrSpeechRecognition.lang = 'en-US';
+
+    ivrSpeechRecognition.onresult = (event) => {
+      const transcript = event.results[0][0].transcript.toLowerCase().trim();
+      console.log('IVR Spoken Response Detected:', transcript);
+
+      if (transcript.includes('yes') || transcript.includes('one') || transcript === '1' || transcript.includes('receive')) {
+        submitSeniorVoiceIVRResponse(requestId, 1);
+      } else if (transcript.includes('no') || transcript.includes('two') || transcript === '2' || transcript.includes('not')) {
+        submitSeniorVoiceIVRResponse(requestId, 2);
+      }
+    };
+
+    ivrSpeechRecognition.start();
+  } catch (err) {
+    console.warn('IVR Speech Recognition listener error:', err);
+  }
+}
+
+async function submitSeniorVoiceIVRResponse(requestId, selection) {
+  if (window.speechSynthesis) {
+    window.speechSynthesis.cancel();
+  }
+  if (ivrSpeechRecognition) {
+    try { ivrSpeechRecognition.stop(); } catch (e) {}
+  }
+
+  const isYes = (selection == 1 || selection === '1');
+  const feedbackMsg = isYes ? "Thank you! Your delivery confirmation has been verified." : "We have recorded your report. Support will follow up with your volunteer.";
+
+  if (window.speechSynthesis) {
+    window.speechSynthesis.speak(new SpeechSynthesisUtterance(feedbackMsg));
+  }
+
+  const modal = document.getElementById('ivrCallModal');
+  if (modal) modal.style.display = 'none';
+
+  const res = await apiCall(`/requests/${requestId}/verify-completion-voice`, 'PUT', { selection });
+
+  if (res.ok && res.data.success) {
+    alert(isYes ? '✅ Delivery confirmed! Thank you.' : '⚠️ Issue reported: Item not received.');
+    loadRequests();
+  } else {
+    alert(res.data?.message || 'Error submitting response');
   }
 }

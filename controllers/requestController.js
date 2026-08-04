@@ -1,5 +1,6 @@
 const HelpRequest = require('../models/HelpRequest');
 const User = require('../models/User');
+const { recommendPlatforms } = require('../utils/platformRecommender');
 
 // ─── Helper: check if a senior has any linked family members ──────────────
 const seniorHasFamily = async (seniorId) => {
@@ -12,16 +13,17 @@ const seniorHasFamily = async (seniorId) => {
 // @access  Private (Senior Citizens only)
 exports.createRequest = async (req, res) => {
   try {
-    const { title, description, category, urgency } = req.body;
+    const { title, description, category, urgency, transcript, aiConfidenceScore, aiLowConfidence } = req.body;
     const audioFile = req.file ? `/uploads/audio/${req.file.filename}` : '';
 
     // Ensure at least some content was provided
     const hasCategory = category && category !== 'Other';
     const hasTitle = title && title.trim().length > 0;
     const hasDescription = description && description.trim().length > 0;
+    const hasTranscript = transcript && transcript.trim().length > 0;
     const hasAudio = !!req.file;
 
-    if (!hasCategory && !hasTitle && !hasDescription && !hasAudio) {
+    if (!hasCategory && !hasTitle && !hasDescription && !hasTranscript && !hasAudio) {
       return res.status(400).json({
         success: false,
         message: 'Please provide at least a category, title, description, or voice recording'
@@ -29,22 +31,65 @@ exports.createRequest = async (req, res) => {
     }
 
     // Auto-generate a default title if not provided
-    const finalTitle = (title && title.trim())
-      ? title.trim()
-      : `Help Request - ${new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}`;
+    let finalTitle = (title && title.trim()) ? title.trim() : '';
+    if (!finalTitle && hasTranscript) {
+      finalTitle = transcript.trim().slice(0, 60);
+      if (transcript.trim().length > 60) finalTitle += '...';
+    }
+    if (!finalTitle) {
+      finalTitle = `Help Request - ${new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}`;
+    }
+
+    // Parse AI confidence score & flag
+    let parsedConfidence = parseInt(aiConfidenceScore, 10);
+    if (isNaN(parsedConfidence)) {
+      parsedConfidence = 85;
+    }
+
+    let isLowConfidence = aiLowConfidence === true || aiLowConfidence === 'true';
+    if (hasTranscript && transcript.trim().length < 15) {
+      isLowConfidence = true;
+      if (parsedConfidence > 65) parsedConfidence = 55;
+    }
+    if (parsedConfidence < 70) {
+      isLowConfidence = true;
+    }
+
+    // All senior help requests are published to volunteers immediately ('pending') so all volunteers can see them right away!
+    const initialStatus = 'pending';
+
+    // Generate AI Platform Recommendations & Pre-filled Search URLs
+    const { extractedItems, suggestedPlatforms } = recommendPlatforms({
+      title: finalTitle,
+      description: description || '',
+      transcript: transcript || '',
+      category: category || 'Other'
+    });
 
     const newRequest = new HelpRequest({
       title: finalTitle,
-      description: description || '',
+      description: description || (hasTranscript ? transcript : ''),
+      transcript: transcript || '',
       category: category || 'Other',
       urgency: urgency || 'low',
       audioFile,
+      aiConfidenceScore: parsedConfidence,
+      aiLowConfidence: isLowConfidence,
+      extractedItems,
+      suggestedPlatforms,
       senior: req.user.id,
-      status: 'pending'
+      status: initialStatus,
+      familyApprovalStatus: 'approved'
     });
 
     const request = await newRequest.save();
-    res.status(201).json({ success: true, message: 'Help request created successfully', request });
+
+    let message = 'Help request created successfully';
+    if (isLowConfidence && hasFamily) {
+      message = 'Request created! Because voice AI confidence was low, your family caregiver has been notified to review and approve it.';
+    }
+
+    res.status(201).json({ success: true, message, request, isLowConfidence });
   } catch (error) {
     console.error('Create Request Error Details:', error);
     res.status(500).json({ success: false, message: error.message || 'Server error creating request' });
@@ -66,15 +111,17 @@ exports.getRequests = async (req, res) => {
         .sort({ createdAt: -1 });
 
     } else if (req.user.role === 'volunteer') {
-      // Volunteers see: all pending + their own (awaiting/accepted/completed)
+      // Volunteers see: all pending & awaiting approval requests + their own accepted/completed tasks
       requests = await HelpRequest.find({
         $or: [
           { status: 'pending' },
+          { status: 'awaiting_approval' },
           { volunteer: req.user.id }
         ]
       })
         .populate('senior', 'name phone address emergencyContact')
         .populate('volunteer', 'name phone email')
+        .populate('volunteerQuotes.volunteer', 'name phone email skills')
         .sort({ createdAt: -1 });
 
     } else if (req.user.role === 'family') {
@@ -85,6 +132,7 @@ exports.getRequests = async (req, res) => {
       requests = await HelpRequest.find({ senior: req.user.linkedSenior })
         .populate('senior', 'name phone address emergencyContact')
         .populate('volunteer', 'name phone email skills')
+        .populate('volunteerQuotes.volunteer', 'name phone email skills')
         .populate('familyReviewedBy', 'name relationship')
         .sort({ createdAt: -1 });
 
@@ -187,30 +235,52 @@ exports.deleteRequest = async (req, res) => {
 // @desc    Volunteer accepts a request
 //          → moves to 'awaiting_approval' if senior has family, else straight to 'accepted'
 // @route   PUT /api/requests/:id/accept
+// @desc    Volunteer ACCEPTS & Quotes on a help request
+// @route   PUT /api/requests/:id/accept
 // @access  Private (Volunteers only)
 exports.acceptRequest = async (req, res) => {
   try {
     let request = await HelpRequest.findById(req.params.id);
 
     if (!request) return res.status(404).json({ success: false, message: 'Help request not found' });
-    if (request.status !== 'pending') {
+    if (request.status !== 'pending' && request.status !== 'awaiting_approval') {
       return res.status(400).json({ success: false, message: 'Request is no longer available to accept' });
     }
 
-    // Assign volunteer
-    request.volunteer = req.user.id;
+    const { serviceFee, volunteerNotes } = req.body;
+    const feeNum = serviceFee !== undefined && serviceFee !== null ? Math.max(0, Number(serviceFee)) : 0;
+    const notesStr = volunteerNotes ? String(volunteerNotes).trim() : '';
+
+    // Record or update quote in volunteerQuotes array
+    if (!request.volunteerQuotes) request.volunteerQuotes = [];
+    const existingIndex = request.volunteerQuotes.findIndex(q => q.volunteer && q.volunteer.toString() === req.user.id.toString());
+    if (existingIndex >= 0) {
+      request.volunteerQuotes[existingIndex].serviceFee = feeNum;
+      request.volunteerQuotes[existingIndex].volunteerNotes = notesStr;
+      request.volunteerQuotes[existingIndex].quotedAt = Date.now();
+    } else {
+      request.volunteerQuotes.push({
+        volunteer: req.user.id,
+        serviceFee: feeNum,
+        volunteerNotes: notesStr,
+        quotedAt: Date.now()
+      });
+    }
 
     // Determine if senior has any linked family members
     const hasFamilyCaregiver = await seniorHasFamily(request.senior);
 
     if (hasFamilyCaregiver) {
-      // Wait for family approval before officially accepted
-      request.status = 'awaiting_approval';
-      request.familyApprovalStatus = 'none';
+      // Keep request open in 'pending' status so it remains visible to ALL volunteers until caregiver selects a volunteer!
+      request.status = 'pending';
+      request.familyApprovalStatus = 'approved';
     } else {
-      // No family linked — skip straight to accepted
+      // No family linked — auto-accept for this volunteer immediately!
+      request.volunteer = req.user.id;
+      request.serviceFee = feeNum;
+      request.volunteerNotes = notesStr;
       request.status = 'accepted';
-      request.familyApprovalStatus = 'approved'; // implicitly auto-approved
+      request.familyApprovalStatus = 'approved';
       request.acceptedAt = Date.now();
     }
 
@@ -218,10 +288,11 @@ exports.acceptRequest = async (req, res) => {
 
     request = await HelpRequest.findById(request._id)
       .populate('senior', 'name phone address emergencyContact')
-      .populate('volunteer', 'name phone email');
+      .populate('volunteer', 'name phone email')
+      .populate('volunteerQuotes.volunteer', 'name phone email skills');
 
     const message = hasFamilyCaregiver
-      ? 'Request accepted! Waiting for family/caregiver approval before you can proceed.'
+      ? 'Quote submitted! Waiting for family/caregiver approval before you can proceed.'
       : 'Request accepted! The senior has no caregiver link — you may proceed immediately.';
 
     res.status(200).json({ success: true, message, request, awaitingFamilyApproval: hasFamilyCaregiver });
@@ -231,7 +302,7 @@ exports.acceptRequest = async (req, res) => {
   }
 };
 
-// @desc    Family/Caregiver APPROVES the volunteer
+// @desc    Family/Caregiver APPROVES a specific volunteer
 //          → moves request to 'accepted'; volunteer may now proceed
 // @route   PUT /api/requests/:id/family-approve
 // @access  Private (Family only)
@@ -250,30 +321,95 @@ exports.familyApproveRequest = async (req, res) => {
       return res.status(403).json({ success: false, message: 'You are not the caregiver for this senior' });
     }
 
-    request.status = 'accepted';
+    const { volunteerId } = req.body || {};
+    let selectedVolId = volunteerId || request.volunteer;
+
+    if (selectedVolId) {
+      request.volunteer = selectedVolId;
+      request.status = 'accepted';
+      request.acceptedAt = Date.now();
+
+      // Set final service fee & notes from the selected volunteer's quote
+      if (request.volunteerQuotes && request.volunteerQuotes.length > 0) {
+        const match = request.volunteerQuotes.find(q => q.volunteer && (q.volunteer._id || q.volunteer).toString() === selectedVolId.toString());
+        if (match) {
+          request.serviceFee = match.serviceFee;
+          request.volunteerNotes = match.volunteerNotes;
+        }
+      }
+    } else {
+      // Approved low-confidence voice request — publish to volunteers
+      request.status = 'pending';
+      request.aiLowConfidence = false;
+    }
     request.familyApprovalStatus = 'approved';
     request.familyReviewedBy = req.user.id;
     request.familyReviewedAt = Date.now();
-    request.acceptedAt = Date.now();
     await request.save();
 
     request = await HelpRequest.findById(request._id)
       .populate('senior', 'name phone address emergencyContact')
-      .populate('volunteer', 'name phone email skills');
+      .populate('volunteer', 'name phone email skills')
+      .populate('volunteerQuotes.volunteer', 'name phone email skills');
+
+    const approveMsg = request.volunteer
+      ? `Volunteer approved! They can now proceed to assist ${request.senior.name}.`
+      : `Voice request approved! It is now published for volunteers to assist ${request.senior.name}.`;
 
     res.status(200).json({
       success: true,
-      message: `Volunteer approved! They can now proceed to assist ${request.senior.name}.`,
+      message: approveMsg,
       request
     });
   } catch (error) {
     console.error('Family Approve Error:', error);
-    res.status(500).json({ success: false, message: 'Server error approving volunteer' });
+    res.status(500).json({ success: false, message: 'Server error approving request' });
   }
 };
 
-// @desc    Family/Caregiver REJECTS the volunteer
-//          → request resets to 'pending'; volunteer is unassigned
+// @desc    Family/Caregiver chooses to FULFILL the request themselves
+//          → sets status to 'fulfilled_by_family', completedAt, and completionVerified = 'verified'
+// @route   PUT /api/requests/:id/family-fulfill
+// @access  Private (Family only)
+exports.familyFulfillSelf = async (req, res) => {
+  try {
+    let request = await HelpRequest.findById(req.params.id)
+      .populate('senior', 'name');
+
+    if (!request) return res.status(404).json({ success: false, message: 'Help request not found' });
+
+    // Verify this family member is linked to the request's senior
+    if (req.user.linkedSenior?.toString() !== request.senior._id.toString()) {
+      return res.status(403).json({ success: false, message: 'You are not the caregiver for this senior' });
+    }
+
+    request.status = 'fulfilled_by_family';
+    request.familyApprovalStatus = 'fulfilled_by_family';
+    request.fulfilledByFamily = true;
+    request.completionVerified = 'verified';
+    request.resolutionNotes = 'Fulfilled directly by Family Caregiver';
+    request.familyReviewedBy = req.user.id;
+    request.familyReviewedAt = Date.now();
+    request.completedAt = Date.now();
+
+    await request.save();
+
+    request = await HelpRequest.findById(request._id)
+      .populate('senior', 'name phone address emergencyContact');
+
+    res.status(200).json({
+      success: true,
+      message: `Request marked as fulfilled by you! ${request.senior.name} has been notified.`,
+      request
+    });
+  } catch (error) {
+    console.error('Family Fulfill Error:', error);
+    res.status(500).json({ success: false, message: 'Server error fulfilling request' });
+  }
+};
+
+// @desc    Family/Caregiver REJECTS the volunteer or low-confidence request
+//          → resets to 'pending' (if volunteer rejected) or marks rejected (if request rejected)
 // @route   PUT /api/requests/:id/family-reject
 // @access  Private (Family only)
 exports.familyRejectRequest = async (req, res) => {
@@ -293,19 +429,32 @@ exports.familyRejectRequest = async (req, res) => {
 
     const { rejectionReason } = req.body;
 
-    // Reset back to pending and clear volunteer assignment
-    request.status = 'pending';
+    const hadVolunteer = !!request.volunteer;
+
+    if (hadVolunteer) {
+      // Reset back to pending for other volunteers
+      request.status = 'pending';
+      request.volunteer = null;
+      request.acceptedAt = undefined;
+    } else {
+      // Caregiver rejected low-confidence voice request
+      request.status = 'completed';
+      request.resolutionNotes = rejectionReason || 'Rejected by family caregiver';
+    }
+
     request.familyApprovalStatus = 'rejected';
     request.familyReviewedBy = req.user.id;
     request.familyReviewedAt = Date.now();
     request.familyRejectionReason = rejectionReason || 'Rejected by family caregiver';
-    request.volunteer = null;
-    request.acceptedAt = undefined;
     await request.save();
+
+    const rejectMsg = hadVolunteer
+      ? 'Volunteer rejected. The request has been reset and is available for other volunteers.'
+      : 'Help request rejected and dismissed.';
 
     res.status(200).json({
       success: true,
-      message: 'Volunteer rejected. The request has been reset and is available for other volunteers.',
+      message: rejectMsg,
       request
     });
   } catch (error) {
@@ -314,16 +463,16 @@ exports.familyRejectRequest = async (req, res) => {
   }
 };
 
-// @desc    Volunteer / Admin completes a request
+// @desc    Volunteer / Admin completes a request with receipt or delivery photo proof
 // @route   PUT /api/requests/:id/complete
 // @access  Private (Volunteer or Admin)
 exports.completeRequest = async (req, res) => {
   try {
-    let request = await HelpRequest.findById(req.params.id);
+    let request = await HelpRequest.findById(req.params.id).populate('senior');
 
     if (!request) return res.status(404).json({ success: false, message: 'Help request not found' });
-    if (request.status !== 'accepted') {
-      return res.status(400).json({ success: false, message: 'Request must be in accepted status to mark complete' });
+    if (request.status !== 'accepted' && request.status !== 'completed') {
+      return res.status(400).json({ success: false, message: 'Request must be in accepted or completed status to mark complete or re-apply for verification' });
     }
     if (req.user.role !== 'admin' && request.volunteer.toString() !== req.user.id) {
       return res.status(403).json({ success: false, message: 'Not authorized to complete this request' });
@@ -333,15 +482,114 @@ exports.completeRequest = async (req, res) => {
     request.status = 'completed';
     request.completedAt = Date.now();
     request.resolutionNotes = resolutionNotes || 'Assistance successfully provided.';
+
+    // Save receipt/photo proof if uploaded
+    if (req.file) {
+      request.completionProof = `/uploads/proofs/${req.file.filename}`;
+    }
+
+    // Check if senior citizen has a linked family caregiver
+    const seniorId = request.senior._id || request.senior;
+    const hasFamily = await seniorHasFamily(seniorId);
+
+    request.completionVerified = 'pending_verification';
+    request.verificationRejectionReason = '';
+
+    if (hasFamily) {
+      request.requiresSeniorVoiceCall = false;
+      await request.save();
+      return res.status(200).json({
+        success: true,
+        message: 'Task marked completed! Receipt/delivery photo proof submitted to the senior\'s family caregiver for verification.',
+        request,
+        verificationChannel: 'family'
+      });
+    } else {
+      // No family linked -> Dispatch automated IVR voice confirmation call to senior
+      request.requiresSeniorVoiceCall = true;
+      await request.save();
+      return res.status(200).json({
+        success: true,
+        message: 'Task marked completed! Receipt photo saved. Automated IVR voice confirmation call dispatched to senior citizen.',
+        request,
+        verificationChannel: 'senior_voice_ivr'
+      });
+    }
+  } catch (error) {
+    console.error('Complete Request Error:', error);
+    res.status(500).json({ success: false, message: 'Server error completing request' });
+  }
+};
+
+// @desc    Family caregiver verifies delivery completion & receipt proof
+// @route   PUT /api/requests/:id/verify-completion-family
+// @access  Private (Family)
+exports.verifyCompletionByFamily = async (req, res) => {
+  try {
+    const request = await HelpRequest.findById(req.params.id);
+    if (!request) return res.status(404).json({ success: false, message: 'Help request not found' });
+
+    const { approved, rejectionReason } = req.body;
+
+    request.verifiedBy = req.user.id;
+    request.verifierRole = 'family';
+    request.verifiedAt = Date.now();
+
+    if (approved) {
+      request.status = 'completed';
+      request.completionVerified = 'verified';
+    } else {
+      // Unmark completed: return task to active status ('accepted') for volunteer to re-upload proof & re-apply!
+      request.status = 'accepted';
+      request.completionVerified = 'rejected';
+      request.verificationRejectionReason = rejectionReason || 'Rejected by family caregiver';
+    }
+
     await request.save();
 
     res.status(200).json({
       success: true,
-      message: 'Request marked as completed. Thank you for your service!',
+      message: approved ? 'Delivery completion verified successfully!' : 'Task completion rejected. Unmarked and returned to volunteer to re-upload proof.',
       request
     });
   } catch (error) {
-    console.error('Complete Request Error:', error);
-    res.status(500).json({ success: false, message: 'Server error completing request' });
+    console.error('Verify Completion Error:', error);
+    res.status(500).json({ success: false, message: 'Server error verifying completion' });
+  }
+};
+
+// @desc    Senior citizen responds to automated IVR voice confirmation call ("Press 1 / Say Yes" or "Press 2 / Say No")
+// @route   PUT /api/requests/:id/verify-completion-voice
+// @access  Private (Senior or Admin)
+exports.verifyCompletionBySeniorVoice = async (req, res) => {
+  try {
+    const request = await HelpRequest.findById(req.params.id);
+    if (!request) return res.status(404).json({ success: false, message: 'Help request not found' });
+
+    const { selection } = req.body; // 1 = Received (Yes), 2 = Not Received (No)
+    const isApproved = (selection == 1 || selection === '1' || selection === true || selection === 'yes');
+
+    request.completionVerified = isApproved ? 'verified' : 'rejected';
+    request.verifiedBy = req.user.id;
+    request.verifierRole = 'senior_voice_ivr';
+    request.verifiedAt = Date.now();
+    request.seniorVoiceCallConfirmed = true;
+    request.requiresSeniorVoiceCall = false;
+
+    if (!isApproved) {
+      request.verificationRejectionReason = 'Senior reported items not received during IVR voice call confirmation.';
+    }
+
+    await request.save();
+
+    res.status(200).json({
+      success: true,
+      message: isApproved ? 'Voice confirmation recorded! Delivery verified.' : 'Voice response recorded: Senior reported items not received.',
+      request,
+      isApproved
+    });
+  } catch (error) {
+    console.error('Senior Voice Verification Error:', error);
+    res.status(500).json({ success: false, message: 'Server error recording voice verification' });
   }
 };

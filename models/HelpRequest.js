@@ -18,11 +18,44 @@ const helpRequestSchema = new mongoose.Schema({
     default: 'Other'
   },
 
-  // ─── Audio attachment ───────────────────────────────────────────────────────
+  // ─── Audio attachment & AI Speech Transcript ──────────────────────────────────
   audioFile: {
     type: String,
     default: ''
   },
+  transcript: {
+    type: String,
+    trim: true,
+    default: ''
+  },
+  aiConfidenceScore: {
+    type: Number,
+    min: 0,
+    max: 100,
+    default: 85
+  },
+  aiLowConfidence: {
+    type: Boolean,
+    default: false
+  },
+
+  // ─── AI Extracted Items & Platform Recommendations ───────────────────────
+  extractedItems: {
+    type: String,
+    trim: true,
+    default: ''
+  },
+  suggestedPlatforms: [
+    {
+      name: String,
+      category: String,
+      url: String,
+      icon: String,
+      color: String,
+      searchQuery: String
+    }
+  ],
+
   urgency: {
     type: String,
     enum: ['low', 'medium', 'high', 'emergency'],
@@ -30,17 +63,18 @@ const helpRequestSchema = new mongoose.Schema({
   },
 
   // ─── Workflow status ───────────────────────────────────────────────────────
-  // pending           → request raised, waiting for a volunteer
-  // awaiting_approval → volunteer stepped up; waiting for family/caregiver OK
-  // accepted          → family approved the volunteer (or no family linked)
-  // completed         → volunteer finished the task
+  // pending             → request raised, open for volunteers
+  // awaiting_approval   → request raised, waiting for family decision (fulfill self vs allot to volunteers)
+  // accepted            → volunteer assigned and working
+  // completed           → completed by volunteer
+  // fulfilled_by_family → fulfilled directly by family caregiver
   status: {
     type: String,
-    enum: ['pending', 'awaiting_approval', 'accepted', 'completed'],
+    enum: ['pending', 'awaiting_approval', 'accepted', 'completed', 'fulfilled_by_family'],
     default: 'pending'
   },
 
-  // ─── People involved ──────────────────────────────────────────────────────
+  // ─── People involved & Volunteer Quote ─────────────────────────────────────
   senior: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
@@ -51,15 +85,50 @@ const helpRequestSchema = new mongoose.Schema({
     ref: 'User',
     default: null
   },
+  serviceFee: {
+    type: Number,
+    min: 0,
+    default: 0
+  },
+  volunteerNotes: {
+    type: String,
+    trim: true,
+    default: ''
+  },
+  volunteerQuotes: [{
+    volunteer: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    },
+    serviceFee: {
+      type: Number,
+      min: 0,
+      default: 0
+    },
+    volunteerNotes: {
+      type: String,
+      trim: true,
+      default: ''
+    },
+    quotedAt: {
+      type: Date,
+      default: Date.now
+    }
+  }],
 
-  // ─── Family / Caregiver approval ──────────────────────────────────────────
-  // 'none'     → no approval action yet
-  // 'approved' → family gave the green light
-  // 'rejected' → family rejected this volunteer
+  // ─── Family / Caregiver decision & fulfillment ────────────────────────────
+  // 'none'                → no decision taken yet
+  // 'approved'            → family allotted to volunteers
+  // 'rejected'            → family rejected request / volunteer
+  // 'fulfilled_by_family' → family fulfilled request themselves
   familyApprovalStatus: {
     type: String,
-    enum: ['none', 'approved', 'rejected'],
+    enum: ['none', 'approved', 'rejected', 'fulfilled_by_family'],
     default: 'none'
+  },
+  fulfilledByFamily: {
+    type: Boolean,
+    default: false
   },
   familyReviewedBy: {
     type: mongoose.Schema.Types.ObjectId,
@@ -73,6 +142,43 @@ const helpRequestSchema = new mongoose.Schema({
     type: String,
     trim: true,
     default: ''
+  },
+
+  // ─── Task Completion Verification & Proof ───────────────────────────
+  completionProof: {
+    type: String,
+    default: ''
+  },
+  completionVerified: {
+    type: String,
+    enum: ['none', 'pending_verification', 'verified', 'rejected'],
+    default: 'none'
+  },
+  verifiedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: null
+  },
+  verifierRole: {
+    type: String,
+    enum: ['none', 'family', 'senior_voice_ivr'],
+    default: 'none'
+  },
+  verifiedAt: {
+    type: Date
+  },
+  verificationRejectionReason: {
+    type: String,
+    trim: true,
+    default: ''
+  },
+  requiresSeniorVoiceCall: {
+    type: Boolean,
+    default: false
+  },
+  seniorVoiceCallConfirmed: {
+    type: Boolean,
+    default: false
   },
 
   // ─── Timestamps ────────────────────────────────────────────────────────────

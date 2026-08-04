@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const path = require('path');
 const multer = require('multer');
+const fs = require('fs');
 const {
   createRequest,
   getRequests,
@@ -11,24 +12,25 @@ const {
   acceptRequest,
   completeRequest,
   familyApproveRequest,
-  familyRejectRequest
+  familyFulfillSelf,
+  familyRejectRequest,
+  verifyCompletionByFamily,
+  verifyCompletionBySeniorVoice
 } = require('../controllers/requestController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
-const fs = require('fs');
-
-// ─── Multer config for audio uploads ──────────────────────────────────────────
-const uploadDir = path.join(__dirname, '..', 'uploads', 'audio');
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
+// ─── Multer config for Audio uploads ──────────────────────────────────────────
+const audioDir = path.join(__dirname, '..', 'uploads', 'audio');
+if (!fs.existsSync(audioDir)) {
+  fs.mkdirSync(audioDir, { recursive: true });
 }
 
-const storage = multer.diskStorage({
+const audioStorage = multer.diskStorage({
   destination: function (req, file, cb) {
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
+    if (!fs.existsSync(audioDir)) {
+      fs.mkdirSync(audioDir, { recursive: true });
     }
-    cb(null, uploadDir);
+    cb(null, audioDir);
   },
   filename: function (req, file, cb) {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
@@ -37,11 +39,10 @@ const storage = multer.diskStorage({
   }
 });
 
-const upload = multer({
-  storage,
-  limits: { fileSize: 15 * 1024 * 1024 }, // 15 MB max
+const uploadAudio = multer({
+  storage: audioStorage,
+  limits: { fileSize: 15 * 1024 * 1024 },
   fileFilter: function (req, file, cb) {
-    // Accept audio and webm/mp4 recordings from browser MediaRecorder
     if (
       !file.mimetype ||
       file.mimetype.startsWith('audio/') ||
@@ -58,12 +59,58 @@ const upload = multer({
   }
 });
 
-// Middleware wrapper to handle Multer errors cleanly
 const handleAudioUpload = (req, res, next) => {
-  upload.single('audio')(req, res, (err) => {
+  uploadAudio.single('audio')(req, res, (err) => {
     if (err) {
       console.error('Multer Audio Upload Error:', err);
       return res.status(400).json({ success: false, message: err.message || 'Error uploading audio file' });
+    }
+    next();
+  });
+};
+
+// ─── Multer config for Receipt & Delivery Photo Proof Uploads ──────────────
+const proofDir = path.join(__dirname, '..', 'uploads', 'proofs');
+if (!fs.existsSync(proofDir)) {
+  fs.mkdirSync(proofDir, { recursive: true });
+}
+
+const proofStorage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    if (!fs.existsSync(proofDir)) {
+      fs.mkdirSync(proofDir, { recursive: true });
+    }
+    cb(null, proofDir);
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const ext = path.extname(file.originalname) || '.jpg';
+    cb(null, `proof-${uniqueSuffix}${ext}`);
+  }
+});
+
+const uploadProof = multer({
+  storage: proofStorage,
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB max
+  fileFilter: function (req, file, cb) {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files (JPEG, PNG, WEBP) are allowed for receipt/delivery proof'), false);
+    }
+  }
+});
+
+const handleProofUpload = (req, res, next) => {
+  // Catch any uploaded receipt or delivery proof photo file
+  uploadProof.any()(req, res, (err) => {
+    if (err) {
+      console.error('Multer Proof Upload Error:', err);
+      return res.status(400).json({ success: false, message: err.message || 'Error uploading delivery proof photo' });
+    }
+    if (req.files && req.files.length > 0) {
+      req.file = req.files[0];
+      console.log('📸 Delivery proof photo captured by Multer:', req.file.filename);
     }
     next();
   });
@@ -82,11 +129,16 @@ router.route('/:id')
   .delete(authorize('senior', 'admin'), deleteRequest);
 
 // Volunteer workflow
-router.put('/:id/accept',   authorize('volunteer'),        acceptRequest);
-router.put('/:id/complete', authorize('volunteer', 'admin'), completeRequest);
+router.put('/:id/accept',   authorize('volunteer'), acceptRequest);
+router.put('/:id/complete', authorize('volunteer', 'admin'), handleProofUpload, completeRequest);
 
-// Family/Caregiver approval workflow
+// Family/Caregiver volunteer approval & fulfillment workflow
 router.put('/:id/family-approve', authorize('family'), familyApproveRequest);
+router.put('/:id/family-fulfill', authorize('family'), familyFulfillSelf);
 router.put('/:id/family-reject',  authorize('family'), familyRejectRequest);
+
+// Task Completion Verification Workflow (Family Caregiver & Senior Voice IVR Call)
+router.put('/:id/verify-completion-family', authorize('family'), verifyCompletionByFamily);
+router.put('/:id/verify-completion-voice',  authorize('senior', 'admin'), verifyCompletionBySeniorVoice);
 
 module.exports = router;

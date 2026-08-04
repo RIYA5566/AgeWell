@@ -162,3 +162,45 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 });
+
+// Global Toast Notification Helper
+function showToast(message, type = 'info') {
+  const existing = document.getElementById('agewellToast');
+  if (existing) existing.remove();
+
+  const colors = {
+    success: { bg: '#e8f5e9', border: '#2e7d32', text: '#1b5e20' },
+    error:   { bg: '#ffebee', border: '#c62828', text: '#b71c1c' },
+    info:    { bg: '#e3f2fd', border: '#1976d2', text: '#0d47a1' }
+  };
+
+  const c = colors[type] || colors.info;
+  const toast = document.createElement('div');
+  toast.id = 'agewellToast';
+  toast.style.cssText = `
+    position: fixed;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background: ${c.bg};
+    border: 3px solid ${c.border};
+    color: ${c.text};
+    padding: 1rem 2rem;
+    border-radius: 12px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+    z-index: 100000;
+    max-width: 90vw;
+    text-align: center;
+  `;
+
+  toast.innerHTML = message;
+  document.body.appendChild(toast);
+
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transition = 'opacity 0.5s ease';
+    setTimeout(() => toast.remove(), 500);
+  }, 4000);
+}

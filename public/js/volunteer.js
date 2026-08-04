@@ -17,6 +17,11 @@ document.addEventListener('DOMContentLoaded', () => {
   // Load requests
   loadVolunteerRequests();
 
+  // Auto-refresh requests every 15 seconds so new requests pop up live
+  setInterval(() => {
+    loadVolunteerRequests(true);
+  }, 15000);
+
   // --- Modal Logic ---
   const completionModal = document.getElementById('completionModal');
   const modalClose = document.getElementById('modalClose');
@@ -38,6 +43,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // Lightbox Modal Bindings
+  const lightboxClose = document.getElementById('lightboxClose');
+  const btnCloseLightbox = document.getElementById('btnCloseLightbox');
+  const lightboxModal = document.getElementById('imageLightboxModal');
+
+  if (lightboxClose) lightboxClose.addEventListener('click', closeImageLightbox);
+  if (btnCloseLightbox) btnCloseLightbox.addEventListener('click', closeImageLightbox);
+  window.addEventListener('click', (e) => {
+    if (e.target === lightboxModal) closeImageLightbox();
+  });
+
   // --- Completion Form Submit ---
   const completionForm = document.getElementById('completionForm');
   if (completionForm) {
@@ -47,12 +63,19 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!activeRequestIdForCompletion) return;
 
       const resolutionNotes = document.getElementById('resolutionNotes').value.trim();
+      const receiptPhotoInput = document.getElementById('receiptPhoto');
 
-      const res = await apiCall(`/requests/${activeRequestIdForCompletion}/complete`, 'PUT', {
-        resolutionNotes: resolutionNotes || 'Assistance successfully provided.'
-      });
+      const formData = new FormData();
+      formData.append('resolutionNotes', resolutionNotes || 'Assistance successfully provided.');
+      
+      if (receiptPhotoInput && receiptPhotoInput.files && receiptPhotoInput.files[0]) {
+        formData.append('receiptPhoto', receiptPhotoInput.files[0]);
+      }
+
+      const res = await apiCall(`/requests/${activeRequestIdForCompletion}/complete`, 'PUT', formData);
 
       if (res.ok && res.data.success) {
+        alert(res.data.message || 'Request completed successfully!');
         closeCompletionModal();
         loadVolunteerRequests();
       } else {
@@ -60,34 +83,110 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
+  // --- Quote Modal Bindings ---
+  const quoteModal = document.getElementById('acceptQuoteModal');
+  const quoteModalClose = document.getElementById('quoteModalClose');
+  const btnCancelQuote = document.getElementById('btnCancelQuote');
+  const quoteForm = document.getElementById('quoteForm');
+
+  const closeQuoteModal = () => {
+    if (quoteModal) quoteModal.style.display = 'none';
+    currentQuoteRequestId = null;
+    if (quoteForm) quoteForm.reset();
+  };
+
+  if (quoteModalClose) quoteModalClose.addEventListener('click', closeQuoteModal);
+  if (btnCancelQuote) btnCancelQuote.addEventListener('click', closeQuoteModal);
+  window.addEventListener('click', (e) => {
+    if (e.target === quoteModal) closeQuoteModal();
+  });
+
+  if (quoteForm) {
+    quoteForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const targetId = currentQuoteRequestId;
+
+      if (!targetId) {
+        alert('Request ID missing. Please try clicking Volunteer to Help again.');
+        return;
+      }
+
+      const feeEl = document.getElementById('quoteServiceFee');
+      const notesEl = document.getElementById('quoteVolunteerNotes');
+
+      const rawFee = feeEl ? feeEl.value : '0';
+      const serviceFee = isNaN(parseFloat(rawFee)) ? 0 : Math.max(0, parseFloat(rawFee));
+      const volunteerNotes = notesEl ? notesEl.value.trim() : '';
+
+      const res = await apiCall(`/requests/${targetId}/accept`, 'PUT', {
+        serviceFee,
+        volunteerNotes
+      });
+
+      if (res.ok && res.data && res.data.success) {
+        showToast('🤝 Service fee quote submitted! Task is now sent to the family caregiver for approval.', 'success');
+        closeQuoteModal();
+        loadVolunteerRequests();
+      } else {
+        alert(res.data?.message || 'Failed to accept request');
+      }
+    });
+  }
 });
 
 // Fetch and Render requests for Volunteers
-async function loadVolunteerRequests() {
+async function loadVolunteerRequests(silent = false) {
   const pendingList  = document.getElementById('pendingList');
   const awaitingList = document.getElementById('awaitingList');
   const activeList   = document.getElementById('activeList');
   const historyList  = document.getElementById('historyList');
 
-  const spinnerHtml = `<div class="loading-wrapper"><div class="spinner"></div><span>Loading...</span></div>`;
-  if (pendingList)  pendingList.innerHTML  = spinnerHtml;
-  if (awaitingList) awaitingList.innerHTML = spinnerHtml;
-  if (activeList)   activeList.innerHTML   = spinnerHtml;
-  if (historyList)  historyList.innerHTML  = spinnerHtml;
+  if (!silent) {
+    const spinnerHtml = `<div class="loading-wrapper"><div class="spinner"></div><span>Loading...</span></div>`;
+    if (pendingList)  pendingList.innerHTML  = spinnerHtml;
+    if (awaitingList) awaitingList.innerHTML = spinnerHtml;
+    if (activeList)   activeList.innerHTML   = spinnerHtml;
+    if (historyList)  historyList.innerHTML  = spinnerHtml;
+  }
 
   const res = await apiCall('/requests', 'GET');
 
   if (res.ok && res.data.success) {
     const requests = res.data.requests;
     const userStr = localStorage.getItem('user');
-    const currentUserId = userStr ? JSON.parse(userStr).id : '';
+    let currentUserId = '';
+    if (userStr) {
+      try {
+        const u = JSON.parse(userStr);
+        currentUserId = String(u._id || u.id || '');
+      } catch (e) {
+        console.error('Error parsing user from localStorage:', e);
+      }
+    }
 
-    // Split by status, each volunteer only sees their own non-pending
-    const pendingRequests   = requests.filter(r => r.status === 'pending');
-    const awaitingRequests  = requests.filter(r => r.status === 'awaiting_approval' && r.volunteer && (r.volunteer._id === currentUserId || r.volunteer === currentUserId));
-    // Note: volunteer is populated as an object {_id, name, ...} from the API
-    const activeRequests    = requests.filter(r => r.status === 'accepted'  && r.volunteer && (r.volunteer._id === currentUserId || r.volunteer === currentUserId));
-    const completedRequests = requests.filter(r => r.status === 'completed' && r.volunteer && (r.volunteer._id === currentUserId || r.volunteer === currentUserId));
+    const isMyApprovedTask = (r) => {
+      if (!r || !r.volunteer || !currentUserId) return false;
+      const volId = typeof r.volunteer === 'object' ? (r.volunteer._id || r.volunteer.id) : r.volunteer;
+      return String(volId) === String(currentUserId);
+    };
+
+    const hasMyQuote = (r) => {
+      if (!r || !currentUserId) return false;
+      if (r.volunteerQuotes && r.volunteerQuotes.length > 0) {
+        return r.volunteerQuotes.some(q => q.volunteer && String(q.volunteer._id || q.volunteer.id || q.volunteer) === String(currentUserId));
+      }
+      return isMyApprovedTask(r);
+    };
+
+    // Split by status:
+    // 1. Available Help Requests: Any request with status 'pending' or 'awaiting_approval' (visible to ALL volunteers until caregiver approves!)
+    const pendingRequests   = requests.filter(r => r.status === 'pending' || r.status === 'awaiting_approval');
+    // 2. Awaiting Family Approval: Requests where this volunteer submitted a quote and status is 'awaiting_approval'
+    const awaitingRequests  = requests.filter(r => r.status === 'awaiting_approval' && hasMyQuote(r));
+    // 3. Active Commitments: Requests where caregiver APPROVED this volunteer
+    const activeRequests    = requests.filter(r => r.status === 'accepted' && isMyApprovedTask(r));
+    // 4. Completed History: Tasks completed by this volunteer
+    const completedRequests = requests.filter(r => r.status === 'completed' && isMyApprovedTask(r));
 
     // --- Render Available (Pending) Requests ---
     if (pendingList) {
@@ -103,6 +202,34 @@ async function loadVolunteerRequests() {
           let urgencyLabel = req.urgency === 'emergency' ? 'SOS EMERGENCY' : req.urgency === 'high' ? 'High Priority' : 'Normal';
           let audioHtml = req.audioFile ? `<div class="request-audio-player"><label>🎙️ Senior's Voice Message:</label><audio controls src="${req.audioFile}"></audio></div>` : '';
 
+          let existingQuoteBadge = '';
+          let myQuote = null;
+          let otherQuote = null;
+
+          if (req.volunteerQuotes && req.volunteerQuotes.length > 0) {
+            myQuote = req.volunteerQuotes.find(q => q.volunteer && String(q.volunteer._id || q.volunteer.id || q.volunteer) === String(currentUserId));
+            otherQuote = req.volunteerQuotes.find(q => q.volunteer && String(q.volunteer._id || q.volunteer.id || q.volunteer) !== String(currentUserId));
+          }
+
+          if (myQuote) {
+            const feeStr = (myQuote.serviceFee !== undefined && myQuote.serviceFee > 0) ? `₹${myQuote.serviceFee}` : '₹0 (Free)';
+            existingQuoteBadge = `
+              <div style="margin-top: 10px; padding: 10px 14px; background: #e8f5e9; border-left: 4px solid #2e7d32; border-radius: 8px; font-size: 0.92rem; color: #1b5e20;">
+                ✅ <strong>You submitted a quote: ${feeStr}</strong> (Awaiting Caregiver Selection). You can update your quote below!
+              </div>`;
+          } else if (otherQuote) {
+            const volObj = otherQuote.volunteer;
+            const otherVolName = (typeof volObj === 'object' && volObj.name) ? escapeHTML(volObj.name) : 'Another volunteer';
+            const feeStr = (otherQuote.serviceFee !== undefined && otherQuote.serviceFee > 0) ? `₹${otherQuote.serviceFee}` : '₹0 (Free)';
+            const countStr = req.volunteerQuotes.length > 1 ? ` (${req.volunteerQuotes.length} quotes submitted)` : '';
+            existingQuoteBadge = `
+              <div style="margin-top: 10px; padding: 10px 14px; background: #e3f2fd; border-left: 4px solid #1976d2; border-radius: 8px; font-size: 0.92rem; color: #0d47a1;">
+                ℹ️ <strong>${otherVolName}</strong> quoted <strong>${feeStr}</strong>${countStr} (Awaiting Caregiver Selection). You can also submit your quote!
+              </div>`;
+          }
+
+          const btnText = myQuote ? '✏️ Update Your Quote' : '🤝 Volunteer to Help';
+
           return `
             <div class="request-card ${urgencyClass}">
               <div class="request-card-header">
@@ -114,10 +241,12 @@ async function loadVolunteerRequests() {
               </div>
               ${req.description ? `<div class="request-description">${escapeHTML(req.description)}</div>` : ''}
               ${audioHtml}
+              ${existingQuoteBadge}
+              ${renderPlatformHelperHtml(req)}
               <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; flex-wrap: wrap; gap: 10px;">
-                <span style="font-size: 0.9rem; color: #666;">Requested on: ${new Date(req.createdAt).toLocaleDateString()}</span>
-                <button class="btn btn-primary" onclick="acceptHelpRequest('${req._id}')" style="padding: 10px 20px; font-size: 1rem; min-height: 48px;">
-                  🤝 Accept Request
+                <span style="font-size: 0.9rem; color: #666;">Posted: ${new Date(req.createdAt).toLocaleDateString()}</span>
+                <button class="btn btn-primary" onclick="acceptHelpRequest('${req._id}', '${escapeHTML(req.title).replace(/'/g, "\\'")}')" style="padding: 10px 20px; font-size: 1rem; min-height: 48px;">
+                  ${btnText}
                 </button>
               </div>
             </div>`;
@@ -127,35 +256,19 @@ async function loadVolunteerRequests() {
     // --- Render Awaiting Family Approval ---
     if (awaitingList) {
       if (awaitingRequests.length === 0) {
-        awaitingList.innerHTML = `
-          <div style="padding: 1.2rem; text-align: center; border: 2px dashed #f57f17; border-radius: var(--border-radius); background: #fff8e1;">
-            <p style="color: #e65100; font-weight: bold;">No requests awaiting approval right now.</p>
-          </div>`;
+        awaitingList.innerHTML = `<div style="text-align: center; color: #666; padding: 1rem;">No tasks currently awaiting family approval.</div>`;
       } else {
         awaitingList.innerHTML = awaitingRequests.map(req => {
-          const seniorName = req.senior ? req.senior.name : 'Senior Citizen';
-          let audioHtml = req.audioFile ? `<div class="request-audio-player"><label>🎙️ Senior's Voice Message:</label><audio controls src="${req.audioFile}"></audio></div>` : '';
-
           return `
-            <div class="request-card" style="border-left: 8px solid #f57f17; background: #fff8e1;">
+            <div class="request-card" style="border-left: 4px solid var(--color-warning);">
               <div class="request-card-header">
                 <div class="request-title">${escapeHTML(req.title)}</div>
-                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                  <span class="badge" style="background: #ffe082; color: #e65100;">⏳ Awaiting Family Approval</span>
-                  <span class="badge badge-urgency">${escapeHTML(req.category)}</span>
-                </div>
+                <span class="badge badge-warning">⏳ Awaiting Family Approval</span>
               </div>
               ${req.description ? `<div class="request-description">${escapeHTML(req.description)}</div>` : ''}
-              ${audioHtml}
-              <div class="request-details" style="background: #fff3e0; border-color: #ffcc02;">
-                <p><strong>Senior Citizen:</strong> ${escapeHTML(seniorName)}</p>
-                <p style="margin-top: 6px; font-size: 0.95rem; color: #6d4c00;">
-                  🔒 The senior's family/caregiver is reviewing your profile.
-                  Contact details will be revealed once approved. Please stand by.
-                </p>
-              </div>
-              <div style="margin-top: 0.8rem; font-size: 0.9rem; color: #888;">
-                You accepted this on: ${new Date(req.createdAt).toLocaleDateString()}
+              <div class="request-details">
+                <p><strong>Senior:</strong> ${req.senior ? req.senior.name : 'Senior Citizen'}</p>
+                <p><em>You have accepted this task. The senior's family caregiver has been notified to review and approve your commitment.</em></p>
               </div>
             </div>`;
         }).join('');
@@ -165,30 +278,38 @@ async function loadVolunteerRequests() {
     // --- Render Active Commitments (Accepted) ---
     if (activeList) {
       if (activeRequests.length === 0) {
-        activeList.innerHTML = `
-          <div style="padding: 1.5rem; background: var(--color-white); border-radius: var(--border-radius); text-align: center; border: 2px dashed var(--color-primary-light);">
-            <p style="color: var(--color-primary-dark); font-weight: bold;">You have no active commitments.</p>
-            <p style="font-size: 0.95rem; margin-top: 5px;">Accept a request above to make a difference in someone's life!</p>
-          </div>`;
+        activeList.innerHTML = `<div style="text-align: center; color: #666; padding: 1rem;">You have no active help commitments right now.</div>`;
       } else {
         activeList.innerHTML = activeRequests.map(req => {
-          const seniorName = req.senior ? req.senior.name : 'Senior Citizen';
-          const seniorPhone = req.senior ? req.senior.phone : 'Not shared';
-          const seniorAddress = req.senior ? req.senior.address : 'Not shared';
-          const emergencyContact = req.senior ? req.senior.emergencyContact : 'Not shared';
-          let audioHtml = req.audioFile ? `<div class="request-audio-player"><label>🎙️ Senior's Voice Message:</label><audio controls src="${req.audioFile}"></audio></div>` : '';
+          let seniorName    = req.senior ? req.senior.name : 'Senior Citizen';
+          let seniorPhone   = req.senior ? req.senior.phone : 'Not provided';
+          let seniorAddress = req.senior ? req.senior.address : 'Not provided';
+          let emergencyContact = req.senior ? req.senior.emergencyContact : 'Not provided';
+
+          const isRejected = req.completionVerified === 'rejected';
+
+          let rejectionWarningBox = '';
+          if (isRejected) {
+            rejectionWarningBox = `
+              <div style="margin: 1rem 0; padding: 12px 16px; background-color: #ffebee; border: 2px solid var(--color-emergency); border-radius: 12px;">
+                <p style="color: var(--color-emergency); font-weight: bold; font-size: 1.05rem; margin-bottom: 4px;">
+                  ⚠️ Delivery Verification Rejected by Family Caregiver
+                </p>
+                <p style="color: #c62828; font-size: 0.95rem; margin: 0;">
+                  <strong>Reason:</strong> "${escapeHTML(req.verificationRejectionReason || 'Caregiver requested updated receipt or delivery photo proof.')}"
+                </p>
+                <p style="color: #444; font-size: 0.9rem; margin-top: 6px;">
+                  This task has been un-marked as complete. Please re-upload the updated receipt or delivery photo below and re-apply for verification.
+                </p>
+              </div>`;
+          }
 
           return `
-            <div class="request-card" style="border-color: var(--color-primary);">
+            <div class="request-card" style="border-left: 5px solid ${isRejected ? 'var(--color-emergency)' : 'var(--color-primary-dark)'};">
               <div class="request-card-header">
                 <div class="request-title">${escapeHTML(req.title)}</div>
-                <div>
-                  <span class="badge badge-accepted">Active Commitment</span>
-                  <span class="badge badge-urgency">${escapeHTML(req.category)}</span>
-                </div>
+                <span class="badge ${isRejected ? 'badge-urgency-emergency' : 'badge-active'}">${isRejected ? '⚠️ Action Required: Re-apply' : 'In Progress'}</span>
               </div>
-              ${req.description ? `<div class="request-description">${escapeHTML(req.description)}</div>` : ''}
-              ${audioHtml}
               
               <div class="request-details" style="background-color: var(--color-bg-light); border: 2px solid var(--color-primary-light);">
                 <p style="font-size: 1.1rem; border-bottom: 2px solid var(--color-primary-light); padding-bottom: 5px; margin-bottom: 8px;"><strong>Senior Citizen Information:</strong></p>
@@ -198,10 +319,14 @@ async function loadVolunteerRequests() {
                 <p><strong>Emergency Contact:</strong> ${escapeHTML(emergencyContact)}</p>
               </div>
 
+              ${rejectionWarningBox}
+
+              ${renderPlatformHelperHtml(req)}
+
               <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; flex-wrap: wrap; gap: 10px;">
                 <span style="font-size: 0.9rem; color: #666;">Accepted: ${new Date(req.acceptedAt || Date.now()).toLocaleDateString()}</span>
-                <button class="btn btn-primary" onclick="openCompletionModal('${req._id}')" style="padding: 10px 20px; font-size: 1rem; min-height: 48px; background-color: var(--color-primary-dark);">
-                  ✅ Complete Request
+                <button class="btn btn-primary" onclick="openCompletionModal('${req._id}')" style="padding: 10px 20px; font-size: 1rem; min-height: 48px; background-color: ${isRejected ? '#c62828' : 'var(--color-primary-dark)'};">
+                  ${isRejected ? '📸 Re-upload Receipt & Re-apply for Verification' : '✅ Complete Request & Upload Receipt'}
                 </button>
               </div>
             </div>`;
@@ -209,39 +334,77 @@ async function loadVolunteerRequests() {
       }
     }
 
-    // --- Render Service History (Completed) ---
+    // --- Render Service History (Completed Tasks with Verification Status) ---
     if (historyList) {
       if (completedRequests.length === 0) {
         historyList.innerHTML = `<div style="text-align: center; color: #666; padding: 1rem;">No completed requests logged yet.</div>`;
       } else {
         historyList.innerHTML = completedRequests.map(req => {
           let audioHtml = req.audioFile ? `<div class="request-audio-player"><label>🎙️ Senior's Voice Message:</label><audio controls src="${req.audioFile}"></audio></div>` : '';
+          
+          let proofHtml = req.completionProof ? `
+            <div style="margin-top: 10px; background: #fff; padding: 10px; border-radius: 8px; border: 1px solid #ddd;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <label style="font-weight: bold; color: var(--color-primary-dark); font-size: 0.9rem;">📸 Uploaded Receipt / Delivery Photo:</label>
+                <button type="button" onclick="openImageLightbox('${escapeHTML(req.completionProof)}')" class="btn btn-secondary" style="padding: 4px 10px; font-size: 0.85rem; min-height: 32px;">🔍 View Photo</button>
+              </div>
+              <img src="${escapeHTML(req.completionProof)}" alt="Receipt Photo Proof" onclick="openImageLightbox('${escapeHTML(req.completionProof)}')" style="max-width: 100%; max-height: 180px; border-radius: 6px; margin-top: 5px; display: block; object-fit: contain; cursor: pointer;">
+            </div>` : '<div style="margin-top: 8px; font-size: 0.85rem; color: #888;">No receipt/delivery photo attached.</div>';
+
+          let verifyBadge = '';
+          let reapplyButtonHtml = '';
+          let rejectionReasonAlert = '';
+
+          if (req.completionVerified === 'verified') {
+            verifyBadge = `<span class="badge" style="background-color: #2e7d32; color: #fff;">✅ Delivery Verified</span>`;
+          } else if (req.completionVerified === 'rejected') {
+            verifyBadge = `<span class="badge" style="background-color: #c62828; color: #fff;">❌ VERIFICATION REJECTED</span>`;
+            
+            rejectionReasonAlert = `
+              <div style="margin-top: 10px; padding: 12px 16px; background-color: #ffebee; border: 2px solid var(--color-emergency); border-radius: 10px;">
+                <p style="color: var(--color-emergency); font-weight: bold; font-size: 1rem; margin-bottom: 4px;">
+                  ⚠️ Verification Rejected by Family Caregiver
+                </p>
+                <p style="color: #c62828; font-size: 0.95rem; margin: 0;">
+                  <strong>Reason:</strong> "${escapeHTML(req.verificationRejectionReason || 'Caregiver requested updated receipt or delivery photo proof.')}"
+                </p>
+              </div>`;
+
+            reapplyButtonHtml = `
+              <div style="margin-top: 14px; text-align: right;">
+                <button 
+                  class="btn" 
+                  onclick="openCompletionModal('${req._id}')" 
+                  style="background-color: #c62828; color: #ffffff !important; font-weight: 700; padding: 14px 22px; font-size: 1.05rem; border-radius: 10px; border: none; cursor: pointer; box-shadow: 0 4px 12px rgba(198,40,40,0.3);"
+                >
+                  📸 Re-upload Receipt &amp; Re-apply for Verification
+                </button>
+              </div>`;
+          } else if (req.requiresSeniorVoiceCall) {
+            verifyBadge = `<span class="badge" style="background-color: #0288d1; color: #fff;">📞 Voice Call Sent to Senior</span>`;
+          } else {
+            verifyBadge = `<span class="badge" style="background-color: #f57c00; color: #fff;">⏳ Pending Caregiver Verification</span>`;
+          }
 
           return `
-            <div class="request-card" style="opacity: 0.85; border-color: #ddd;">
+            <div class="request-card" style="opacity: 1; border-color: ${req.completionVerified === 'rejected' ? 'var(--color-emergency)' : '#ddd'}; border-left: 5px solid ${req.completionVerified === 'rejected' ? 'var(--color-emergency)' : '#ddd'};">
               <div class="request-card-header">
-                <div class="request-title" style="color: #666;">${escapeHTML(req.title)}</div>
-                <div>
-                  <span class="badge badge-completed">Completed</span>
+                <div class="request-title" style="color: #444;">${escapeHTML(req.title)}</div>
+                <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                  ${verifyBadge}
                   <span class="badge badge-urgency">${escapeHTML(req.category)}</span>
                 </div>
               </div>
               ${req.description ? `<div class="request-description">${escapeHTML(req.description)}</div>` : ''}
               ${audioHtml}
-              <div class="request-details">
-                <p><strong>Senior Assisted:</strong> ${req.senior ? req.senior.name : 'Senior Citizen'}</p>
+              ${proofHtml}
+              ${rejectionReasonAlert}
+              <div class="request-details" style="margin-top: 10px;">
+                <p><strong>Senior Assisted:</strong> ${req.senior ? escapeHTML(req.senior.name) : 'Senior Citizen'}</p>
                 <p><strong>Completion Notes:</strong> ${escapeHTML(req.resolutionNotes)}</p>
-                <p><strong>Completed On:</strong> ${new Date(req.completedAt).toLocaleDateString()}</p>
+                <p><strong>Completed On:</strong> ${new Date(req.completedAt || Date.now()).toLocaleDateString()}</p>
               </div>
-            </div>`;
-        }).join('');
-      }
-    }
-              <div class="request-details">
-                <p><strong>Senior Assisted:</strong> ${req.senior ? req.senior.name : 'Senior Citizen'}</p>
-                <p><strong>Completion Notes:</strong> ${escapeHTML(req.resolutionNotes)}</p>
-                <p><strong>Completed On:</strong> ${new Date(req.completedAt).toLocaleDateString()}</p>
-              </div>
+              ${reapplyButtonHtml}
             </div>`;
         }).join('');
       }
@@ -252,16 +415,21 @@ async function loadVolunteerRequests() {
   }
 }
 
-// Volunteer claims a request
-async function acceptHelpRequest(id) {
-  if (confirm("Would you like to accept this task and commit to helping this Senior Citizen?")) {
-    const res = await apiCall(`/requests/${id}/accept`, 'PUT');
-    if (res.ok && res.data.success) {
-      loadVolunteerRequests();
-    } else {
-      alert(res.data.message || "Failed to accept request");
-    }
-  }
+let currentQuoteRequestId = null;
+
+// Volunteer opens quote modal to accept request and specify service charge
+function acceptHelpRequest(id, title) {
+  currentQuoteRequestId = id;
+  const modal = document.getElementById('acceptQuoteModal');
+  const titleEl = document.getElementById('quoteRequestTitle');
+  const feeInput = document.getElementById('quoteServiceFee');
+  const notesInput = document.getElementById('quoteVolunteerNotes');
+
+  if (titleEl && title) titleEl.textContent = title;
+  if (feeInput) feeInput.value = '';
+  if (notesInput) notesInput.value = '';
+
+  if (modal) modal.style.display = 'flex';
 }
 
 // Open Completion Modal
@@ -283,4 +451,175 @@ function escapeHTML(str) {
       '"': '&quot;'
     }[tag] || tag)
   );
+}
+
+// ──────────────────────────────────────────────────────────
+// AI DYNAMIC PLATFORM RECOMMENDATION & PRE-FILLED LINK HELPER
+// ──────────────────────────────────────────────────────────
+function renderPlatformHelperHtml(req) {
+  let platforms = req.suggestedPlatforms;
+  
+  // Client-side fallback if request doesn't have stored platforms
+  if (!platforms || platforms.length === 0) {
+    const text = `${req.title || ''} ${req.description || ''} ${req.transcript || ''}`.toLowerCase();
+    const query = req.extractedItems || req.title || 'items';
+    const enc = encodeURIComponent(query);
+
+    if (text.includes('crocin') || text.includes('medicine') || text.includes('tablet') || text.includes('dolo') || text.includes('syrup')) {
+      platforms = [
+        { name: 'Apollo 24|7', icon: '🏥', url: `https://www.apollo247.com/search-medicines/${enc}`, color: '#005b9f', searchQuery: query },
+        { name: 'PharmEasy', icon: '💊', url: `https://pharmeasy.in/search/all?name=${enc}`, color: '#10847e', searchQuery: query },
+        { name: 'Tata 1mg', icon: '🧪', url: `https://www.1mg.com/search/all?name=${enc}`, color: '#ff6f61', searchQuery: query },
+        { name: 'NetMeds', icon: '🩹', url: `https://www.netmeds.com/catalogsearch/result?q=${enc}`, color: '#24aeb1', searchQuery: query }
+      ];
+    } else if (text.includes('pizza') || text.includes('burger') || text.includes('biryani') || text.includes('paratha') || text.includes('food')) {
+      platforms = [
+        { name: 'Swiggy', icon: '🍕', url: `https://www.swiggy.com/search?query=${enc}`, color: '#fc8019', searchQuery: query },
+        { name: 'Zomato', icon: '🔴', url: `https://www.zomato.com/search?q=${enc}`, color: '#cb202d', searchQuery: query },
+        { name: 'EatSure', icon: '🍲', url: `https://www.eatsure.com/`, color: '#ff4f00', searchQuery: query }
+      ];
+    } else if (text.includes('cab') || text.includes('taxi') || text.includes('uber') || text.includes('ola') || text.includes('ride')) {
+      platforms = [
+        { name: 'Uber', icon: '🚕', url: `https://m.uber.com/`, color: '#000000', searchQuery: query },
+        { name: 'Ola', icon: '🚖', url: `https://book.olacabs.com/`, color: '#2bb673', searchQuery: query },
+        { name: 'Rapido', icon: '🛵', url: `https://www.rapido.bike/`, color: '#f9a825', searchQuery: query }
+      ];
+    } else if (text.includes('bill') || text.includes('electricity') || text.includes('recharge') || text.includes('pay')) {
+      platforms = [
+        { name: 'Google Pay', icon: '💳', url: `https://pay.google.com/`, color: '#1a73e8', searchQuery: query },
+        { name: 'PhonePe', icon: '🟣', url: `https://www.phonepe.com/`, color: '#5f259f', searchQuery: query },
+        { name: 'Paytm', icon: '📲', url: `https://paytm.com/`, color: '#00b9f1', searchQuery: query },
+        { name: 'BHIM', icon: '🇮🇳', url: `https://www.bhimupi.org.in/`, color: '#003975', searchQuery: query }
+      ];
+    } else if (text.includes('doctor') || text.includes('appointment') || text.includes('hospital') || text.includes('clinic')) {
+      platforms = [
+        { name: 'Practo', icon: '👨‍⚕️', url: `https://www.practo.com/search?q=${enc}`, color: '#28328c', searchQuery: query },
+        { name: 'Apollo 24|7', icon: '🏥', url: `https://www.apollo247.com/specialties`, color: '#005b9f', searchQuery: query },
+        { name: 'MediBuddy', icon: '🩺', url: `https://www.medibuddy.in/`, color: '#1a73e8', searchQuery: query }
+      ];
+    } else {
+      platforms = [
+        { name: 'Blinkit', icon: '⚡', url: `https://blinkit.com/s/?q=${enc}`, color: '#f5c518', searchQuery: query },
+        { name: 'Instamart', icon: '🛒', url: `https://www.swiggy.com/instamart/search?custom_back=true&query=${enc}`, color: '#fc8019', searchQuery: query },
+        { name: 'Zepto', icon: '💜', url: `https://www.zeptonow.com/search?q=${enc}`, color: '#7b1fa2', searchQuery: query },
+        { name: 'BigBasket', icon: '🧺', url: `https://www.bigbasket.com/ps/?q=${enc}`, color: '#689f38', searchQuery: query },
+        { name: 'Amazon Fresh', icon: '🥬', url: `https://www.amazon.in/s?k=${enc}`, color: '#232f3e', searchQuery: query }
+      ];
+    }
+  }
+
+  const cleanQ = cleanProductQuery(req.extractedItems || req.description || req.transcript || '');
+  const queryLabel = escapeHTML(cleanQ);
+
+  const chipsHtml = platforms.map(p => {
+    const q = cleanProductQuery(p.searchQuery || req.extractedItems || req.description || req.transcript || '');
+    return `
+      <button 
+        type="button" 
+        class="platform-chip-btn" 
+        style="border-color: ${p.color || '#1976d2'};"
+        onclick="openPlatformWithPreFill('${escapeHTML(p.url)}', '${escapeHTML(q)}', '${escapeHTML(p.name)}')"
+        title="Open ${escapeHTML(p.name)} pre-filled search for '${escapeHTML(q)}'"
+      >
+        <span>${p.icon || '🚀'}</span>
+        <span>${escapeHTML(p.name)}</span>
+        <span style="font-size:0.75rem; color:#888; font-weight:normal;">↗</span>
+      </button>`;
+  }).join('');
+
+  return `
+    <div class="ai-platform-recommendation-box">
+      <div class="ai-platform-header">
+        <span class="ai-platform-title">🤖 AI Suggested Ordering Platforms</span>
+        ${queryLabel ? `<span class="platform-items-pill">🔍 Items: "${queryLabel}"</span>` : ''}
+      </div>
+      <div class="platform-chips-grid">
+        ${chipsHtml}
+      </div>
+    </div>`;
+}
+
+function openPlatformWithPreFill(savedUrl, searchQuery, platformName) {
+  const itemQuery = cleanProductQuery(searchQuery);
+  const finalUrl = getDynamicPlatformSearchUrl(platformName, itemQuery) || savedUrl;
+
+  // Copy product items to clipboard for smooth paste fallback
+  if (itemQuery && navigator.clipboard) {
+    navigator.clipboard.writeText(itemQuery).catch(() => {});
+  }
+
+  // Open search URL pre-filled with requested product in new tab
+  window.open(finalUrl, '_blank');
+}
+
+/**
+ * Sanitizes search query string so it never contains auto-generated 'Help Request' titles
+ */
+function cleanProductQuery(q) {
+  if (!q || typeof q !== 'string') return 'bread milk';
+  let cleaned = q.replace(/Help Request\s*[-–—]?\s*\d{1,2}\s+\w+\s+\d{4}/gi, ' ')
+                 .replace(/Help Request\s*[-–—]?\s*/gi, ' ')
+                 .replace(/\bHelp Request\b/gi, ' ')
+                 .replace(/\bEMERGENCY ALARM ACTIVE\b/gi, ' ')
+                 .replace(/\b\d{1,2}\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{4}\b/gi, ' ')
+                 .trim();
+  if (!cleaned || cleaned.toLowerCase().includes('help request')) {
+    return 'bread milk';
+  }
+  return cleaned;
+}
+
+/**
+ * Ensures the generated URL always contains the exact pre-filled search query in the platform's searchbar
+ */
+function getDynamicPlatformSearchUrl(platformName, query) {
+  const cleanQ = cleanProductQuery(query);
+  const enc = encodeURIComponent(cleanQ);
+  const p = (platformName || '').toLowerCase();
+
+  if (p.includes('blinkit')) return `https://blinkit.com/s/?q=${enc}`;
+  if (p.includes('instamart')) return `https://www.swiggy.com/instamart/search?custom_back=true&query=${enc}`;
+  if (p.includes('zepto')) return `https://www.zeptonow.com/search?q=${enc}`;
+  if (p.includes('bigbasket')) return `https://www.bigbasket.com/ps/?q=${enc}`;
+  if (p.includes('amazon fresh')) return `https://www.amazon.in/s?k=${enc}`;
+  if (p.includes('swiggy')) return `https://www.swiggy.com/search?query=${enc}`;
+  if (p.includes('zomato')) return `https://www.zomato.com/search?q=${enc}`;
+  if (p.includes('apollo')) return `https://www.apollo247.com/search-medicines/${enc}`;
+  if (p.includes('pharmeasy')) return `https://pharmeasy.in/search/all?name=${enc}`;
+  if (p.includes('1mg') || p.includes('tata')) return `https://www.1mg.com/search/all?name=${enc}`;
+  if (p.includes('netmeds')) return `https://www.netmeds.com/catalogsearch/result?q=${enc}`;
+  if (p.includes('practo')) return `https://www.practo.com/search/doctors?results_type=doctor&q=${enc}`;
+  if (p.includes('medibuddy')) return `https://www.medibuddy.in/search?q=${enc}`;
+  if (p.includes('croma')) return `https://www.croma.com/searchB?q=${enc}`;
+  if (p.includes('reliance')) return `https://www.reliancedigital.in/search?q=${enc}`;
+  if (p.includes('flipkart')) return `https://www.flipkart.com/search?q=${enc}`;
+  if (p.includes('amazon')) return `https://www.amazon.in/s?k=${enc}`;
+  if (p.includes('myntra')) return `https://www.myntra.com/${enc}`;
+  if (p.includes('fnp')) return `https://www.fnp.com/search?q=${enc}`;
+  if (p.includes('igp')) return `https://www.igp.com/search?q=${enc}`;
+  if (p.includes('headsup') || p.includes('tails')) return `https://headsupfortails.com/search?q=${enc}`;
+  if (p.includes('supertails')) return `https://supertails.com/search?q=${enc}`;
+
+  return `https://www.google.com/search?q=${encodeURIComponent(platformName + ' ' + cleanQ)}`;
+}
+
+// ──────────────────────────────────────────────────────────
+// IMAGE LIGHTBOX MODAL FUNCTIONS
+// ──────────────────────────────────────────────────────────
+function openImageLightbox(imageUrl) {
+  if (!imageUrl) return;
+  const cleanUrl = imageUrl.startsWith('/') ? imageUrl : '/' + imageUrl;
+
+  const modal = document.getElementById('imageLightboxModal');
+  const imgEl = document.getElementById('lightboxImage');
+  const linkEl = document.getElementById('lightboxDirectLink');
+
+  if (imgEl) imgEl.src = cleanUrl;
+  if (linkEl) linkEl.href = cleanUrl;
+  if (modal) modal.style.display = 'flex';
+}
+
+function closeImageLightbox() {
+  const modal = document.getElementById('imageLightboxModal');
+  if (modal) modal.style.display = 'none';
 }

@@ -61,6 +61,17 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // Lightbox Modal Bindings
+  const lightboxClose = document.getElementById('lightboxClose');
+  const btnCloseLightbox = document.getElementById('btnCloseLightbox');
+  const lightboxModal = document.getElementById('imageLightboxModal');
+
+  if (lightboxClose) lightboxClose.addEventListener('click', closeImageLightbox);
+  if (btnCloseLightbox) btnCloseLightbox.addEventListener('click', closeImageLightbox);
+  window.addEventListener('click', (e) => {
+    if (e.target === lightboxModal) closeImageLightbox();
+  });
+
   // Initial load
   loadFamilyDashboard();
 
@@ -97,10 +108,24 @@ async function loadFamilyDashboard(silent = false) {
   // Update notification badge
   updateApprovalBadge(pendingApprovalCount);
 
-  // Render approval queue
-  renderApprovalQueue(requests.filter(r => r.status === 'awaiting_approval'));
+  // Separate new senior requests (no volunteer quotes yet) from volunteer approval candidates (1+ volunteer quotes submitted)
+  const seniorRequests = requests.filter(r => (r.status === 'pending' || r.status === 'awaiting_approval') && (!r.volunteerQuotes || r.volunteerQuotes.length === 0));
+  const volunteerApprovals = requests.filter(r => (r.status === 'pending' || r.status === 'awaiting_approval') && r.volunteerQuotes && r.volunteerQuotes.length > 0);
+  const completionVerifications = requests.filter(r => r.status === 'completed' && r.completionVerified !== 'verified' && r.completionVerified !== 'rejected');
 
-  // Render full request history
+  // Update notification badges
+  updateApprovalBadge(seniorRequests.length + volunteerApprovals.length);
+
+  // Render Senior Help Requests & Fulfillment Decisions (Section 1)
+  renderSeniorHelpRequests(seniorRequests);
+
+  // Render Volunteer Approvals & Quoted Fees (Section 2)
+  renderApprovalQueue(volunteerApprovals);
+
+  // Render completion verification queue (Section 3)
+  renderCompletionVerificationQueue(completionVerifications);
+
+  // Render full request history (Section 4)
   renderAllRequests(requests);
 }
 
@@ -140,7 +165,95 @@ function updateApprovalBadge(count) {
 }
 
 // ──────────────────────────────────────────────────────────
-// RENDER APPROVAL QUEUE
+// RENDER SECTION 1: SENIOR HELP REQUESTS & FULFILLMENT DECISIONS
+// ──────────────────────────────────────────────────────────
+function renderSeniorHelpRequests(seniorRequests) {
+  const container = document.getElementById('seniorRequestsList');
+  const badge = document.getElementById('seniorReqBadge');
+  if (!container) return;
+
+  if (badge) {
+    if (seniorRequests.length > 0) {
+      badge.textContent = seniorRequests.length;
+      badge.style.display = 'inline-flex';
+    } else {
+      badge.style.display = 'none';
+    }
+  }
+
+  if (seniorRequests.length === 0) {
+    container.innerHTML = `
+      <div style="padding: 2rem; text-align: center; border: 3px dashed #e65100; border-radius: var(--border-radius); background: #fff8e1;">
+        <p style="font-size: 1.2rem; color: #e65100; font-weight: bold;">✅ No new senior help requests requiring decision right now.</p>
+        <p style="font-size: 0.95rem; color: #777; margin-top: 6px;">When your senior citizen submits a request, it will appear here for you to fulfill yourself, allot to volunteers, or reject.</p>
+      </div>`;
+    return;
+  }
+
+  container.innerHTML = seniorRequests.map(req => {
+    const urgencyBadge = req.urgency === 'emergency'
+      ? `<span class="badge badge-urgency-emergency">🚨 SOS Emergency</span>`
+      : req.urgency === 'high'
+        ? `<span class="badge badge-urgency-high">⚠️ High Priority</span>`
+        : `<span class="badge badge-urgency">${req.urgency.charAt(0).toUpperCase() + req.urgency.slice(1)} Priority</span>`;
+
+    return `
+      <div class="approval-card" id="seniorCard-${req._id}" style="border-left: 5px solid #e65100;">
+        <div class="approval-card-header">
+          <div>
+            <div style="font-size: 1.3rem; font-weight: 700; color: #e65100;">📋 ${escapeHTML(req.title)}</div>
+            <div style="font-size: 0.95rem; color: #777; margin-top: 4px;">
+              Category: <strong>${escapeHTML(req.category)}</strong> · Raised: ${new Date(req.createdAt).toLocaleDateString()}
+            </div>
+          </div>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            ${urgencyBadge}
+            <span class="badge" style="background:#ffe082;color:#e65100;font-weight:bold;">⏳ Awaiting Fulfillment Decision</span>
+          </div>
+        </div>
+
+        ${req.description ? `<p style="margin-bottom: 1.2rem; color: #444; font-size: 1.05rem;">${escapeHTML(req.description)}</p>` : ''}
+        ${req.audioFile ? `<div class="request-audio-player"><label>🎙️ Senior's Spoken Voice Message:</label><audio controls src="${req.audioFile}"></audio></div>` : ''}
+
+        <!-- Fulfillment Decision Action Buttons -->
+        <div class="approval-actions" style="display: flex; gap: 12px; flex-wrap: wrap; margin-top: 1.2rem;">
+          <button
+            class="btn"
+            onclick="fulfillRequestSelf('${req._id}')"
+            style="background-color: #2e7d32; color: #ffffff !important; font-weight: 700; flex: 1; min-width: 180px; padding: 14px; font-size: 1.05rem;"
+            aria-label="Fulfill request yourself"
+          >
+            🙋 I will fulfill this myself
+          </button>
+
+          <button
+            class="btn"
+            onclick="approveVolunteer('${req._id}')"
+            style="background-color: #1565c0; color: #ffffff !important; font-weight: 700; flex: 1; min-width: 180px; padding: 14px; font-size: 1.05rem;"
+            aria-label="Allot to volunteers"
+          >
+            🤝 Allot to Volunteers
+          </button>
+
+          <button
+            class="btn btn-reject"
+            onclick="openRejectModal('${req._id}')"
+            style="background-color: #c62828; color: #ffffff !important; font-weight: 700; flex: 1; min-width: 140px; padding: 14px; font-size: 1.05rem;"
+            aria-label="Reject request"
+          >
+            ❌ Reject Request
+          </button>
+        </div>
+
+        <p style="font-size: 0.9rem; color: #777; margin-top: 1rem; margin-bottom: 0;">
+          🛡️ Choose whether you want to fulfill this request directly for your loved one, publish it to community volunteers, or reject it.
+        </p>
+      </div>`;
+  }).join('');
+}
+
+// ──────────────────────────────────────────────────────────
+// RENDER SECTION 2: VOLUNTEER APPROVALS & QUOTED FEES
 // ──────────────────────────────────────────────────────────
 function renderApprovalQueue(awaitingRequests) {
   const approvalList = document.getElementById('approvalList');
@@ -148,16 +261,16 @@ function renderApprovalQueue(awaitingRequests) {
 
   if (awaitingRequests.length === 0) {
     approvalList.innerHTML = `
-      <div style="padding: 2rem; text-align: center; border: 3px dashed #f57f17; border-radius: var(--border-radius); background: #fff8e1;">
-        <p style="font-size: 1.3rem; color: #e65100;">✅ No volunteers waiting for approval right now.</p>
-        <p style="font-size: 1rem; color: #888; margin-top: 8px;">When a volunteer accepts your senior's request, their profile will appear here for your review.</p>
+      <div style="padding: 2rem; text-align: center; border: 3px dashed #1565c0; border-radius: var(--border-radius); background: #e3f2fd;">
+        <p style="font-size: 1.2rem; color: #0d47a1; font-weight: bold;">✅ No volunteers waiting for approval right now.</p>
+        <p style="font-size: 0.95rem; color: #555; margin-top: 6px;">When a community volunteer accepts an allotted request and quotes their service fee, their profile will appear here for your review.</p>
       </div>`;
     return;
   }
 
   approvalList.innerHTML = awaitingRequests.map(req => {
     const vol = req.volunteer;
-    const volName = vol ? escapeHTML(vol.name) : 'Unknown Volunteer';
+    const volName = vol ? escapeHTML(vol.name) : 'Volunteer Assigned';
     const volPhone = vol ? escapeHTML(vol.phone || 'Not provided') : '—';
     const volEmail = vol ? escapeHTML(vol.email || 'Not provided') : '—';
     const volSkills = vol && vol.skills && vol.skills.length > 0
@@ -171,57 +284,235 @@ function renderApprovalQueue(awaitingRequests) {
         : `<span class="badge badge-urgency">${req.urgency.charAt(0).toUpperCase() + req.urgency.slice(1)} Priority</span>`;
 
     return `
-      <div class="approval-card" id="approvalCard-${req._id}">
+      <div class="approval-card" id="approvalCard-${req._id}" style="border-left: 5px solid #1565c0;">
         <div class="approval-card-header">
           <div>
-            <div style="font-size: 1.3rem; font-weight: 700; color: #e65100;">📋 ${escapeHTML(req.title)}</div>
+            <div style="font-size: 1.3rem; font-weight: 700; color: #1565c0;">📋 ${escapeHTML(req.title)}</div>
             <div style="font-size: 0.95rem; color: #777; margin-top: 4px;">
               Category: <strong>${escapeHTML(req.category)}</strong> · Raised: ${new Date(req.createdAt).toLocaleDateString()}
             </div>
           </div>
           <div style="display: flex; gap: 8px; flex-wrap: wrap;">
             ${urgencyBadge}
-            <span class="badge" style="background:#ffe082;color:#e65100;">⏳ Awaiting Your Approval</span>
+            <span class="badge" style="background:#bbdefb;color:#0d47a1;font-weight:bold;">⏳ Volunteer Approval Needed</span>
           </div>
         </div>
 
         ${req.description ? `<p style="margin-bottom: 1.2rem; color: #444;">${escapeHTML(req.description)}</p>` : ''}
         ${req.audioFile ? `<div class="request-audio-player"><label>🎙️ Senior's Voice Message:</label><audio controls src="${req.audioFile}"></audio></div>` : ''}
 
-        <!-- Volunteer Profile Card -->
-        <div class="volunteer-profile-card">
-          <div class="volunteer-avatar" aria-hidden="true">🙋</div>
-          <div class="volunteer-info" style="flex: 1;">
-            <h4>${volName}</h4>
-            <p>📞 <a href="tel:${vol ? vol.phone : ''}" style="color: var(--color-primary-dark);">${volPhone}</a></p>
-            <p>📧 ${volEmail}</p>
-            <div class="volunteer-skills">${volSkills}</div>
-          </div>
+        <div style="margin-top: 1rem;">
+          <h4 style="color: #1565c0; margin-bottom: 0.5rem; font-size: 1.1rem;">
+            👥 Volunteers Who Accepted &amp; Quoted Service Fees (${(req.volunteerQuotes && req.volunteerQuotes.length) ? req.volunteerQuotes.length : 1}):
+          </h4>
+          
+          ${(() => {
+            const quotes = (req.volunteerQuotes && req.volunteerQuotes.length > 0)
+              ? req.volunteerQuotes
+              : (req.volunteer ? [{ volunteer: req.volunteer, serviceFee: req.serviceFee || 0, volunteerNotes: req.volunteerNotes || '' }] : []);
+
+            return quotes.map((q, idx) => {
+              const volObj = q.volunteer;
+              if (!volObj) return '';
+              const vId = typeof volObj === 'object' ? (volObj._id || volObj.id) : volObj;
+              const vName = typeof volObj === 'object' ? escapeHTML(volObj.name) : 'Volunteer ' + (idx + 1);
+              const vPhone = typeof volObj === 'object' ? escapeHTML(volObj.phone || 'Not provided') : '—';
+              const vEmail = typeof volObj === 'object' ? escapeHTML(volObj.email || 'Not provided') : '—';
+              const vSkills = (typeof volObj === 'object' && volObj.skills && volObj.skills.length > 0)
+                ? volObj.skills.map(s => `<span class="skill-tag">${escapeHTML(s)}</span>`).join('')
+                : `<span class="skill-tag" style="background:#eee; color:#888;">No specific skills listed</span>`;
+
+              const feeText = (q.serviceFee !== undefined && q.serviceFee > 0) ? `₹${q.serviceFee}` : '₹0 (Voluntary / Free Service)';
+
+              return `
+                <div class="volunteer-profile-card" style="background: #ffffff; border: 2px solid #1565c0; border-radius: 12px; padding: 1.2rem; margin-top: 0.8rem; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+                  <div style="display: flex; gap: 16px; align-items: flex-start; flex-wrap: wrap;">
+                    <div class="volunteer-avatar" aria-hidden="true" style="font-size: 2rem;">🙋</div>
+                    <div class="volunteer-info" style="flex: 1; min-width: 200px;">
+                      <h4 style="margin: 0; font-size: 1.2rem; color: var(--color-primary-dark);">${vName}</h4>
+                      <p style="margin: 4px 0;">📞 <a href="tel:${vPhone}" style="color: var(--color-primary-dark); font-weight: bold;">${vPhone}</a></p>
+                      <p style="margin: 4px 0;">📧 ${vEmail}</p>
+                      <div class="volunteer-skills" style="margin-top: 6px;">${vSkills}</div>
+                    </div>
+
+                    <div style="flex: 1; min-width: 250px;">
+                      <div style="padding: 12px 16px; background-color: #e8f5e9; border: 3px solid #2e7d32; border-radius: 10px;">
+                        <span style="font-size: 1.15rem; font-weight: 800; color: #1b5e20;">
+                          💰 Quoted Service Charge: ${feeText}
+                        </span>
+                        <p style="color: #2e7d32; font-size: 0.9rem; margin-top: 4px; margin-bottom: 0;">
+                          🛒 Extra purchase costs (receipts) added upon completion.
+                        </p>
+                        ${q.volunteerNotes ? `<p style="color: #333; font-size: 0.92rem; margin-top: 6px; margin-bottom: 0; font-style: italic; background: #fff; padding: 6px 10px; border-radius: 6px; border-left: 3px solid #2e7d32;">💬 "${escapeHTML(q.volunteerNotes)}"</p>` : ''}
+                      </div>
+
+                      <div style="margin-top: 10px;">
+                        <button
+                          class="btn"
+                          onclick="approveVolunteer('${req._id}', '${vId}')"
+                          style="background-color: #1565c0; color: #ffffff !important; font-weight: 700; width: 100%; padding: 12px; font-size: 1.05rem;"
+                          aria-label="Select and approve this volunteer"
+                        >
+                          ✅ Select &amp; Approve ${vName} (${feeText})
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>`;
+            }).join('');
+          })()}
         </div>
 
-        <!-- Action Buttons -->
-        <div class="approval-actions">
+        <!-- Additional Actions: Caregiver Decision -->
+        <div class="approval-actions" style="display: flex; gap: 12px; flex-wrap: wrap; margin-top: 1.2rem;">
           <button
-            class="btn btn-approve"
-            onclick="approveVolunteer('${req._id}')"
-            aria-label="Approve ${volName} to assist with ${escapeHTML(req.title)}"
+            class="btn"
+            onclick="fulfillRequestSelf('${req._id}')"
+            style="background-color: #2e7d32; color: #ffffff !important; font-weight: 700; flex: 1; min-width: 180px; padding: 12px; font-size: 1rem;"
+            aria-label="Fulfill request yourself"
           >
-            ✅ Approve Volunteer
+            🙋 Fulfill Myself Instead
           </button>
+
           <button
             class="btn btn-reject"
             onclick="openRejectModal('${req._id}')"
-            aria-label="Reject ${volName}"
+            style="background-color: #c62828; color: #ffffff !important; font-weight: 700; flex: 1; min-width: 140px; padding: 12px; font-size: 1rem;"
+            aria-label="Reject volunteer requests"
           >
-            ❌ Reject &amp; Find Another
+            ❌ Reject All Volunteer Quotes
           </button>
         </div>
 
-        <p style="font-size: 0.9rem; color: #888; margin-top: 1rem;">
-          🔒 The volunteer's full contact details are only shared with your senior after your approval.
+        <p style="font-size: 0.9rem; color: #777; margin-top: 1rem; margin-bottom: 0;">
+          🔒 Once you select a volunteer, the task will be assigned exclusively to them.
         </p>
       </div>`;
   }).join('');
+}
+
+// ──────────────────────────────────────────────────────────
+// RENDER COMPLETION VERIFICATION QUEUE (RECEIPT & DELIVERY PHOTO)
+// ──────────────────────────────────────────────────────────
+function renderCompletionVerificationQueue(pendingVerifications) {
+  const container = document.getElementById('completionVerificationList');
+  const badge = document.getElementById('completionBadge');
+  if (!container) return;
+
+  if (badge) {
+    if (pendingVerifications.length > 0) {
+      badge.textContent = pendingVerifications.length;
+      badge.style.display = 'inline-flex';
+    } else {
+      badge.style.display = 'none';
+    }
+  }
+
+  if (pendingVerifications.length === 0) {
+    container.innerHTML = `
+      <div style="padding: 1.2rem; text-align: center; border: 2px dashed var(--color-primary-light); border-radius: var(--border-radius); background: #f1f8e9;">
+        <p style="color: var(--color-primary-dark); font-weight: bold;">No pending delivery verifications at this time.</p>
+        <p style="font-size: 0.95rem; margin-top: 5px;">When a volunteer completes a task and uploads a receipt, it will appear here for your review.</p>
+      </div>`;
+    return;
+  }
+
+  container.innerHTML = pendingVerifications.map(req => {
+    const volName  = req.volunteer ? req.volunteer.name : 'Assigned Volunteer';
+    const volPhone = req.volunteer ? req.volunteer.phone || 'Phone not available' : '';
+
+    let proofUrl = req.completionProof ? (req.completionProof.startsWith('/') ? req.completionProof : '/' + req.completionProof) : '';
+
+    let proofHtml = proofUrl ? `
+      <div style="margin: 1rem 0; background: #ffffff; padding: 12px; border-radius: 12px; border: 2px solid var(--color-primary-light);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <label style="font-weight: bold; color: var(--color-primary-dark); font-size: 1rem;">📸 Uploaded Receipt / Delivery Photo Proof:</label>
+          <button type="button" onclick="openImageLightbox('${escapeHTML(proofUrl)}')" class="btn btn-secondary" style="padding: 6px 14px; font-size: 0.9rem; min-height: 36px;">🔍 Enlarge Photo</button>
+        </div>
+        <img 
+          src="${escapeHTML(proofUrl)}" 
+          alt="Delivery Receipt Proof" 
+          onclick="openImageLightbox('${escapeHTML(proofUrl)}')"
+          style="max-width: 100%; max-height: 250px; border-radius: 8px; display: block; margin: 0 auto; object-fit: contain; cursor: pointer;"
+          title="Click to enlarge image"
+        >
+      </div>` : `<div style="margin: 10px 0; color: #888; font-style: italic;">No photo proof attached by volunteer.</div>`;
+
+    return `
+      <div class="approval-card" id="completionCard-${req._id}" style="border-color: var(--color-primary-dark); background: #f9fbe7;">
+        <div class="approval-card-header">
+          <div>
+            <span class="badge badge-urgency">${escapeHTML(req.category)}</span>
+            <h3 style="color: var(--color-primary-dark); margin-top: 6px; font-size: 1.3rem;">${escapeHTML(req.title)}</h3>
+          </div>
+          <span class="badge" style="background-color: var(--color-primary-dark); color: #fff;">📸 Needs Verification</span>
+        </div>
+
+        <div style="font-size: 1rem; color: #444; margin-bottom: 10px;">
+          <strong>Volunteer Completion Notes:</strong> "${escapeHTML(req.resolutionNotes || 'Assistance successfully provided.')}"
+        </div>
+
+        ${proofHtml}
+
+        <div class="volunteer-profile-card">
+          <div class="volunteer-avatar">🤝</div>
+          <div class="volunteer-info">
+            <h4>${escapeHTML(volName)}</h4>
+            <p>📞 Phone: ${escapeHTML(volPhone)}</p>
+            <p>Completed on: ${new Date(req.completedAt || Date.now()).toLocaleDateString()}</p>
+          </div>
+        </div>
+
+        <div class="approval-actions" style="display: flex; gap: 12px; margin-top: 1rem;">
+          <button
+            class="btn btn-approve"
+            onclick="verifyTaskCompletion('${req._id}', true)"
+            style="background-color: #2e7d32; flex: 1; padding: 12px; font-size: 1.05rem;"
+          >
+            ✅ Verify & Approve Completion
+          </button>
+          <button
+            class="btn btn-reject"
+            onclick="verifyTaskCompletion('${req._id}', false)"
+            style="background-color: #c62828; color: #ffffff !important; flex: 1; padding: 12px; font-size: 1.05rem; font-weight: 700;"
+          >
+            ❌ Reject / Report Issue
+          </button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// Verification action endpoint for family caregivers
+async function verifyTaskCompletion(requestId, approved) {
+  let reason = '';
+  if (!approved) {
+    reason = prompt("Please enter the reason for rejecting or reporting an issue with this completion:") || 'Rejected by family caregiver';
+  }
+
+  const res = await apiCall(`/requests/${requestId}/verify-completion-family`, 'PUT', {
+    approved,
+    rejectionReason: reason
+  });
+
+  if (res.ok && res.data.success) {
+    showToast(approved ? '✅ Task completion verified successfully!' : 'Task completion marked as rejected.', approved ? 'success' : 'error');
+    loadFamilyDashboard();
+  } else {
+    showToast(res.data?.message || 'Error updating completion verification.', 'error');
+  }
+}
+
+// Caregiver Fulfills Request Self Action
+async function fulfillRequestSelf(requestId) {
+  const res = await apiCall(`/requests/${requestId}/family-fulfill`, 'PUT');
+
+  if (res.ok && res.data.success) {
+    showToast('✅ Request marked as fulfilled by you! Your senior has been notified.', 'success');
+    loadFamilyDashboard();
+  } else {
+    showToast(res.data?.message || 'Error updating request fulfillment status.', 'error');
+  }
 }
 
 // ──────────────────────────────────────────────────────────
@@ -240,25 +531,37 @@ function renderAllRequests(requests) {
     let statusBadge = '';
     let statusColor = 'var(--color-primary-dark)';
 
-    if (req.status === 'pending') {
-      statusBadge = `<span class="badge badge-pending">🔍 Looking for Volunteer</span>`;
+    const isFulfilledByFamily = req.status === 'fulfilled_by_family' || req.fulfilledByFamily;
+
+    if (isFulfilledByFamily) {
+      statusBadge = `<span class="badge" style="background:#e8f5e9;color:#1b5e20;border:2px solid #2e7d32;font-weight:bold;">🏡 Fulfilled by Family Caregiver</span>`;
+      statusColor = '#2e7d32';
+    } else if (req.status === 'pending') {
+      statusBadge = `<span class="badge badge-pending">🔍 Allotted to Volunteers</span>`;
     } else if (req.status === 'awaiting_approval') {
-      statusBadge = `<span class="badge" style="background:#ffe082;color:#e65100;">⏳ Awaiting Your Approval</span>`;
+      statusBadge = `<span class="badge" style="background:#ffe082;color:#e65100;">⏳ Awaiting Your Decision</span>`;
       statusColor = '#e65100';
     } else if (req.status === 'accepted') {
-      statusBadge = `<span class="badge badge-accepted">✅ Volunteer Approved</span>`;
+      statusBadge = `<span class="badge badge-accepted">✅ Volunteer Assigned</span>`;
     } else if (req.status === 'completed') {
-      statusBadge = `<span class="badge badge-completed">🏆 Completed</span>`;
+      statusBadge = `<span class="badge badge-completed">🏆 Completed by Volunteer</span>`;
     }
 
     // Status timeline
-    const timeline = `
+    const timeline = isFulfilledByFamily ? `
       <div class="request-timeline">
         <div class="timeline-step done">📝 Submitted</div>
         <span class="timeline-arrow">→</span>
-        <div class="timeline-step ${req.status !== 'pending' ? 'done' : 'future'}">🙋 Volunteer Found</div>
+        <div class="timeline-step done">❤️ Family Decision</div>
         <span class="timeline-arrow">→</span>
-        <div class="timeline-step ${req.status === 'awaiting_approval' ? 'active' : (req.status === 'accepted' || req.status === 'completed') ? 'done' : 'future'}">❤️ Your Approval</div>
+        <div class="timeline-step done" style="color:#2e7d32; font-weight:bold;">🏡 Fulfilled by You</div>
+      </div>` : `
+      <div class="request-timeline">
+        <div class="timeline-step done">📝 Submitted</div>
+        <span class="timeline-arrow">→</span>
+        <div class="timeline-step ${req.status !== 'pending' ? 'done' : 'future'}">🙋 Volunteer Assigned</div>
+        <span class="timeline-arrow">→</span>
+        <div class="timeline-step ${req.status === 'awaiting_approval' ? 'active' : (req.status === 'accepted' || req.status === 'completed') ? 'done' : 'future'}">❤️ Your Decision</div>
         <span class="timeline-arrow">→</span>
         <div class="timeline-step ${req.status === 'accepted' || req.status === 'completed' ? 'done' : 'future'}">🤝 In Progress</div>
         <span class="timeline-arrow">→</span>
@@ -267,12 +570,15 @@ function renderAllRequests(requests) {
 
     let volunteerInfo = '';
     if (req.volunteer && (req.status === 'accepted' || req.status === 'completed' || req.status === 'awaiting_approval')) {
+      const feeLabel = (req.serviceFee !== undefined && req.serviceFee > 0) ? `₹${req.serviceFee}` : '₹0 (Voluntary / Free Service)';
       volunteerInfo = `
-        <div class="request-details" style="margin-top: 1rem;">
+        <div class="request-details" style="margin-top: 1rem; background: #f9f9f9; padding: 12px; border-radius: 8px; border-left: 4px solid var(--color-primary-dark);">
           <p><strong>Volunteer:</strong> ${escapeHTML(req.volunteer.name)}</p>
+          <p><strong>💰 Quoted Service Charge:</strong> <span style="color: #2e7d32; font-weight: bold;">${feeLabel}</span></p>
           ${req.status !== 'awaiting_approval' ? `<p><strong>Contact:</strong> ${escapeHTML(req.volunteer.phone || '—')}</p>` : ''}
-          ${req.status === 'completed' && req.resolutionNotes ? `<p style="margin-top:6px;"><strong>Notes:</strong> ${escapeHTML(req.resolutionNotes)}</p>` : ''}
-          ${req.familyReviewedBy ? `<p style="margin-top:4px; font-size: 0.9rem; color: #666;">Reviewed by you on ${new Date(req.familyReviewedAt).toLocaleDateString()}</p>` : ''}
+          ${req.volunteerNotes ? `<p style="margin-top:4px; font-style: italic;"><strong>Volunteer Message:</strong> "${escapeHTML(req.volunteerNotes)}"</p>` : ''}
+          ${req.status === 'completed' && req.resolutionNotes ? `<p style="margin-top:6px;"><strong>Completion Notes:</strong> ${escapeHTML(req.resolutionNotes)}</p>` : ''}
+          ${req.familyReviewedBy ? `<p style="margin-top:4px; font-size: 0.9rem; color: #666;">Reviewed by caregiver on ${new Date(req.familyReviewedAt).toLocaleDateString()}</p>` : ''}
         </div>`;
     }
 
@@ -285,6 +591,23 @@ function renderAllRequests(requests) {
 
     let audioHtml = req.audioFile ? `<div class="request-audio-player"><label>🎙️ Senior's Voice Message:</label><audio controls src="${req.audioFile}"></audio></div>` : '';
 
+    let proofUrl = req.completionProof ? (req.completionProof.startsWith('/') ? req.completionProof : '/' + req.completionProof) : '';
+
+    let proofHtml = proofUrl ? `
+      <div style="margin-top: 10px; background: #ffffff; padding: 10px; border-radius: 8px; border: 1px solid var(--color-primary-light);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+          <label style="font-weight: bold; color: var(--color-primary-dark); font-size: 0.9rem;">📸 Uploaded Receipt / Delivery Photo Proof:</label>
+          <button type="button" onclick="openImageLightbox('${escapeHTML(proofUrl)}')" class="btn btn-secondary" style="padding: 4px 10px; font-size: 0.85rem; min-height: 32px;">🔍 View Photo</button>
+        </div>
+        <img 
+          src="${escapeHTML(proofUrl)}" 
+          alt="Delivery Receipt Proof" 
+          onclick="openImageLightbox('${escapeHTML(proofUrl)}')"
+          style="max-width: 100%; max-height: 180px; border-radius: 6px; margin-top: 5px; display: block; object-fit: contain; cursor: pointer;"
+          title="Click to view full image"
+        >
+      </div>` : '';
+
     return `
       <div class="request-card">
         <div class="request-card-header">
@@ -296,6 +619,7 @@ function renderAllRequests(requests) {
         </div>
         ${req.description ? `<div class="request-description">${escapeHTML(req.description)}</div>` : ''}
         ${audioHtml}
+        ${proofHtml}
         ${timeline}
         ${volunteerInfo}
         <div style="font-size: 0.85rem; color: #999; margin-top: 0.8rem;">
@@ -308,13 +632,17 @@ function renderAllRequests(requests) {
 // ──────────────────────────────────────────────────────────
 // APPROVE VOLUNTEER
 // ──────────────────────────────────────────────────────────
-async function approveVolunteer(requestId) {
-  const btn = event.target;
-  const originalText = btn.textContent;
-  btn.textContent = 'Approving...';
-  btn.disabled = true;
+async function approveVolunteer(requestId, volunteerId = null) {
+  const btn = (typeof event !== 'undefined' && event && event.target) ? event.target : null;
+  let originalText = '';
+  if (btn) {
+    originalText = btn.textContent;
+    btn.textContent = 'Approving...';
+    btn.disabled = true;
+  }
 
-  const res = await apiCall(`/requests/${requestId}/family-approve`, 'PUT');
+  const payload = volunteerId ? { volunteerId } : {};
+  const res = await apiCall(`/requests/${requestId}/family-approve`, 'PUT', payload);
 
   if (res.ok && res.data.success) {
     showToast('✅ Volunteer approved! They can now assist your senior.', 'success');
@@ -330,8 +658,10 @@ async function approveVolunteer(requestId) {
     }
   } else {
     showToast(res.data?.message || 'Error approving volunteer. Please try again.', 'error');
-    btn.textContent = originalText;
-    btn.disabled = false;
+    if (btn) {
+      btn.textContent = originalText;
+      btn.disabled = false;
+    }
   }
 }
 
@@ -416,4 +746,25 @@ function showError(msg) {
   return `<div style="padding: 1.5rem; background: #ffebee; border: 3px solid var(--color-emergency); border-radius: var(--border-radius); color: var(--color-emergency);">
     <strong>Error:</strong> ${escapeHTML(msg)}
   </div>`;
+}
+
+// ──────────────────────────────────────────────────────────
+// IMAGE LIGHTBOX MODAL FUNCTIONS
+// ──────────────────────────────────────────────────────────
+function openImageLightbox(imageUrl) {
+  if (!imageUrl) return;
+  const cleanUrl = imageUrl.startsWith('/') ? imageUrl : '/' + imageUrl;
+
+  const modal = document.getElementById('imageLightboxModal');
+  const imgEl = document.getElementById('lightboxImage');
+  const linkEl = document.getElementById('lightboxDirectLink');
+
+  if (imgEl) imgEl.src = cleanUrl;
+  if (linkEl) linkEl.href = cleanUrl;
+  if (modal) modal.style.display = 'flex';
+}
+
+function closeImageLightbox() {
+  const modal = document.getElementById('imageLightboxModal');
+  if (modal) modal.style.display = 'none';
 }

@@ -106,6 +106,18 @@
             ></textarea>
           </div>
 
+          <div class="form-group" style="margin-top: 1rem;">
+            <label for="receiptPhoto">📸 Upload Receipt or Delivery Photo Proof:</label>
+            <input 
+              type="file" 
+              id="receiptPhoto" 
+              name="receiptPhoto" 
+              class="form-control" 
+              accept="image/*"
+            >
+            <small style="color: #666; display: block; margin-top: 4px;">Upload photo of delivery item or store receipt for family caregiver verification.</small>
+          </div>
+
           <!-- Footer Actions -->
           <div class="modal-footer">
             <button type="button" id="btnCancelComplete" class="btn btn-secondary">Cancel</button>
@@ -114,6 +126,89 @@
             </button>
           </div>
         </form>
+      </div>
+    </div>
+
+    <!-- Quote Service Charge & Commit Modal -->
+    <div id="acceptQuoteModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="quoteModalTitle" style="display: none;">
+      <div class="modal-content" style="max-width: 550px;">
+        <div class="modal-header">
+          <h3 id="quoteModalTitle" style="color: var(--color-primary-dark); font-size: 1.4rem;">🤝 Quote Service Charge &amp; Commit to Help</h3>
+          <button id="quoteModalClose" class="modal-close" aria-label="Close">&times;</button>
+        </div>
+
+        <form id="quoteForm">
+          <p style="color: #444; font-size: 1rem; margin-bottom: 1.2rem; line-height: 1.4;">
+            You are accepting to assist with request: <strong id="quoteRequestTitle" style="color: var(--color-primary-dark);">Help Request</strong>. Please enter your service fee quote below.
+          </p>
+
+          <div class="form-group">
+            <label for="quoteServiceFee" style="font-weight: bold; color: var(--color-primary-dark); font-size: 1.05rem;">
+              💰 Service Fee Quote (₹):
+            </label>
+            <input 
+              type="number" 
+              id="quoteServiceFee" 
+              class="form-input" 
+              min="0" 
+              step="1" 
+              placeholder="e.g. 100 (enter 0 for Voluntary / Free Service)"
+              style="font-size: 1.2rem; font-weight: bold; border-color: var(--color-primary);"
+              required
+            >
+            <small style="color: #666; display: block; margin-top: 6px;">
+              Enter your voluntary assistance or service charge fee (₹).
+            </small>
+          </div>
+
+          <!-- Purchase & Receipt Charges Disclaimer -->
+          <div style="background-color: #e8f5e9; border: 2px solid var(--color-primary); border-radius: 12px; padding: 1rem; margin-bottom: 1.2rem;">
+            <p style="color: var(--color-primary-dark); font-weight: bold; font-size: 1rem; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+              🧾 Purchase &amp; Bill Charges Note:
+            </p>
+            <p style="color: #2e7d32; font-size: 0.92rem; margin: 0; line-height: 1.4;">
+              <strong>Extra charges for item purchases (groceries, medicines, bill payments) will be added separately according to the receipt/bill uploaded upon task completion.</strong>
+            </p>
+          </div>
+
+          <div class="form-group">
+            <label for="quoteVolunteerNotes">📝 Message for Family Caregiver &amp; Senior (Optional):</label>
+            <textarea 
+              id="quoteVolunteerNotes" 
+              class="form-textarea" 
+              placeholder="e.g. I am nearby and can collect the medicines within 30 minutes."
+              style="min-height: 80px;"
+            ></textarea>
+          </div>
+
+          <div class="modal-footer" style="display: flex; gap: 10px; margin-top: 1rem;">
+            <button type="button" id="btnCancelQuote" class="btn btn-secondary" style="flex: 1;">Cancel</button>
+            <button type="submit" class="btn btn-primary" style="flex: 2; background-color: var(--color-primary-dark); font-size: 1.05rem;">
+              🤝 Submit Quote &amp; Commit to Help
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Image Lightbox Modal for Receipt / Delivery Proofs -->
+    <div id="imageLightboxModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="lightboxTitle" style="display: none; z-index: 10050; background: rgba(0, 0, 0, 0.85);">
+      <div class="modal-content" style="max-width: 800px; text-align: center; background: #ffffff; padding: 1.5rem; border-radius: 16px;">
+        <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 15px;">
+          <h3 id="lightboxTitle" style="color: var(--color-primary-dark); margin: 0;">📸 Receipt / Delivery Photo Proof</h3>
+          <button id="lightboxClose" class="modal-close" style="font-size: 2rem; border: none; background: none; cursor: pointer;">&times;</button>
+        </div>
+        <div style="max-height: 70vh; overflow: auto; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px; padding: 5px; background: #fafafa;">
+          <img id="lightboxImage" src="" alt="Full Resolution Receipt Proof" style="max-width: 100%; height: auto; display: block; margin: 0 auto; border-radius: 6px;">
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+          <a id="lightboxDirectLink" href="" target="_blank" class="btn btn-secondary" style="padding: 10px 18px; font-size: 0.95rem;">
+            🔗 Open Image Directly in New Tab
+          </a>
+          <button type="button" id="btnCloseLightbox" class="btn btn-primary" style="padding: 10px 24px; font-size: 1rem;">
+            Close Preview
+          </button>
+        </div>
       </div>
     </div>
   </main>

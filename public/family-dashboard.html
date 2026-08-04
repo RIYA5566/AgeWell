@@ -116,16 +116,17 @@
     }
 
     .btn-reject {
-      background: white;
-      color: var(--color-emergency);
+      background: var(--color-emergency);
+      color: #ffffff !important;
       border: 3px solid var(--color-emergency);
       flex: 1;
       min-width: 160px;
+      font-weight: 700;
     }
 
     .btn-reject:hover {
-      background: var(--color-emergency);
-      color: white;
+      background: #b71c1c;
+      color: #ffffff !important;
     }
 
     .senior-info-banner {
@@ -281,27 +282,58 @@
       </div>
     </div>
 
-    <!-- SECTION 1: Pending Approvals (the main action area) -->
-    <div class="dashboard-card" style="margin-bottom: 2rem; border-color: #f57f17;" id="approvalSection">
+    <!-- SECTION 1: Senior Help Requests & Fulfillment Decisions -->
+    <div class="dashboard-card" style="margin-bottom: 2rem; border-color: #e65100;" id="seniorRequestsSection">
       <h2 style="color: #e65100;">
-        ⏳ Volunteer Approval Requests
-        <span class="notification-badge" id="approvalBadge" style="display: none;">0</span>
+        📋 Senior Help Requests &amp; Fulfillment Decisions
+        <span class="notification-badge" id="seniorReqBadge" style="display: none; background-color: #e65100;">0</span>
       </h2>
       <p style="margin-bottom: 1.5rem; color: #555;">
-        When a volunteer accepts your senior's help request, they appear here.
-        <strong>Review their profile and approve or reject them.</strong>
+        New help requests submitted by your senior citizen appear here. Choose whether to <strong>fulfill them yourself</strong>, <strong>allot them to community volunteers</strong>, or <strong>reject</strong> them.
+      </p>
+      <div id="seniorRequestsList">
+        <div class="loading-wrapper">
+          <div class="spinner"></div>
+          <span>Loading senior help requests...</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION 2: Volunteer Approvals & Quoted Fees -->
+    <div class="dashboard-card" style="margin-bottom: 2rem; border-color: #1565c0;" id="approvalSection">
+      <h2 style="color: #1565c0;">
+        ⏳ Volunteer Approvals &amp; Quoted Fees
+        <span class="notification-badge" id="approvalBadge" style="display: none; background-color: #1565c0;">0</span>
+      </h2>
+      <p style="margin-bottom: 1.5rem; color: #555;">
+        Volunteers who have stepped up to help your senior and quoted their service charge appear here for your review and approval.
       </p>
       <div id="approvalList">
         <div class="loading-wrapper">
           <div class="spinner"></div>
-          <span>Loading pending approvals...</span>
+          <span>Loading pending volunteer approvals...</span>
         </div>
       </div>
 
       <!-- Auto-refresh indicator -->
       <div class="poll-indicator">
         <div class="poll-dot"></div>
-        <span>This page auto-refreshes every 30 seconds to check for new approval requests.</span>
+        <span>This page auto-refreshes every 30 seconds to check for new requests and volunteer quotes.</span>
+      </div>
+    </div>
+
+    <!-- SECTION 1.5: Completion Verification Queue (Receipt & Delivery Proof) -->
+    <div class="dashboard-card" style="margin-bottom: 2rem; border-color: var(--color-primary-dark);" id="completionVerificationSection">
+      <h2 style="color: var(--color-primary-dark);">
+        📸 Delivery & Receipt Proof Verifications
+        <span class="notification-badge" id="completionBadge" style="display: none; background-color: var(--color-primary-dark);">0</span>
+      </h2>
+      <p style="margin-bottom: 1.5rem; color: #555;">
+        Volunteers who completed tasks have uploaded delivery photos or receipts. 
+        <strong>Verify that the delivery was completed accurately for your loved one.</strong>
+      </p>
+      <div id="completionVerificationList">
+        <div style="text-align: center; color: #666; padding: 1rem;">No completion verification requests at this time.</div>
       </div>
     </div>
 
@@ -334,8 +366,29 @@
       ></textarea>
       <div class="modal-footer">
         <button type="button" id="btnCancelReject" class="btn btn-secondary">Cancel</button>
-        <button type="button" id="btnConfirmReject" class="btn btn-outline-danger">
+        <button type="button" id="btnConfirmReject" class="btn" style="background-color: var(--color-emergency); color: #ffffff !important; font-weight: 700;">
           ❌ Confirm Rejection
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Image Lightbox Modal for Receipt / Delivery Proofs -->
+  <div id="imageLightboxModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="lightboxTitle" style="display: none; z-index: 10050; background: rgba(0, 0, 0, 0.85);">
+    <div class="modal-content" style="max-width: 800px; text-align: center; background: #ffffff; padding: 1.5rem; border-radius: 16px;">
+      <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 15px;">
+        <h3 id="lightboxTitle" style="color: var(--color-primary-dark); margin: 0;">📸 Receipt / Delivery Photo Proof</h3>
+        <button id="lightboxClose" class="modal-close" style="font-size: 2rem; border: none; background: none; cursor: pointer;">&times;</button>
+      </div>
+      <div style="max-height: 70vh; overflow: auto; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px; padding: 5px; background: #fafafa;">
+        <img id="lightboxImage" src="" alt="Full Resolution Receipt Proof" style="max-width: 100%; height: auto; display: block; margin: 0 auto; border-radius: 6px;">
+      </div>
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+        <a id="lightboxDirectLink" href="" target="_blank" class="btn btn-secondary" style="padding: 10px 18px; font-size: 0.95rem;">
+          🔗 Open Image Directly in New Tab
+        </a>
+        <button type="button" id="btnCloseLightbox" class="btn btn-primary" style="padding: 10px 24px; font-size: 1rem;">
+          Close Preview
         </button>
       </div>
     </div>
