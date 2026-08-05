@@ -306,12 +306,16 @@ async function loadRequests() {
 
     requestList.innerHTML = requests.map(req => {
       let statusBadge = '';
-      if (req.status === 'fulfilled_by_family' || req.fulfilledByFamily) {
+      if (req.status === 'fulfilled_by_family' || req.familyApprovalStatus === 'fulfilled_by_family' || req.fulfilledByFamily) {
         statusBadge = `<span class="badge" style="background:#e8f5e9;color:#1b5e20;border:2px solid #2e7d32;font-weight:bold;">🏡 Fulfilled by Family Caregiver</span>`;
-      } else if (req.status === 'pending') {
-        statusBadge = `<span class="badge badge-pending">🔍 Finding Volunteer</span>`;
+      } else if (req.status === 'rejected' || req.familyApprovalStatus === 'rejected') {
+        statusBadge = `<span class="badge" style="background:#ffebee;color:#c62828;border:2px solid #b71c1c;font-weight:bold;">❌ Request Rejected by Caregiver</span>`;
+      } else if (req.status === 'pending' && req.familyApprovalStatus === 'none') {
+        statusBadge = `<span class="badge" style="background:#fff8e1;color:#e65100;border:2px solid #ffa000;font-weight:bold;">⏳ Awaiting Caregiver Allotment</span>`;
+      } else if (req.status === 'pending' && req.familyApprovalStatus === 'approved') {
+        statusBadge = `<span class="badge badge-pending">🔍 Allotted to Volunteers (Seeking Help)</span>`;
       } else if (req.status === 'awaiting_approval') {
-        statusBadge = `<span class="badge" style="background:#ffe082;color:#e65100;">⏳ Awaiting Family Decision</span>`;
+        statusBadge = `<span class="badge" style="background:#ffe082;color:#e65100;font-weight:bold;">⏳ Caregiver Reviewing Volunteer Quotes</span>`;
       } else if (req.status === 'accepted') {
         statusBadge = `<span class="badge badge-accepted">🤝 Volunteer Assigned</span>`;
       } else if (req.status === 'completed') {
@@ -335,12 +339,23 @@ async function loadRequests() {
       }
 
       let assignmentInfo = '';
-      if (req.status === 'awaiting_approval' && req.volunteer) {
+      if (req.status === 'rejected' || req.familyApprovalStatus === 'rejected') {
+        assignmentInfo = `
+          <div class="request-details" style="background:#ffebee; border-color:#c62828;">
+            <p style="color:#c62828; font-weight:bold;">❌ Request Rejected by Family Caregiver</p>
+            <p style="margin-top:4px; color:#b71c1c;"><strong>Reason:</strong> "${escapeHTML(req.familyRejectionReason || 'Caregiver marked this request as invalid.')}"</p>
+          </div>`;
+      } else if (req.status === 'fulfilled_by_family' || req.fulfilledByFamily) {
+        assignmentInfo = `
+          <div class="request-details" style="background:#e8f5e9; border-color:#2e7d32;">
+            <p style="color:#1b5e20; font-weight:bold;">🏡 Completed Directly by Family Caregiver</p>
+            <p style="margin-top:4px; color:#2e7d32;">Your family caregiver took care of this request for you!</p>
+          </div>`;
+      } else if (req.status === 'awaiting_approval' && req.volunteer) {
         assignmentInfo = `
           <div class="request-details" style="background:#fff8e1; border-color:#f57f17;">
             <p><strong>Volunteer Candidate:</strong> ${escapeHTML(req.volunteer.name)}</p>
-            <p style="margin-top:6px; color:#e65100;">🔐 Your family caregiver is reviewing this volunteer's profile.
-              Contact details will appear once they approve.</p>
+            <p style="margin-top:6px; color:#e65100;">🔐 Your family caregiver is reviewing volunteer quotes. Contact details will appear once they approve.</p>
           </div>`;
       } else if (req.status === 'accepted' && req.volunteer) {
         assignmentInfo = `

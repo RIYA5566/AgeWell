@@ -49,6 +49,17 @@
     </div>
 
     <div class="dashboard-grid volunteer-grid">
+      <!-- Section 0: Task Assignment Notifications -->
+      <div id="notificationsCard" class="dashboard-card" style="margin-bottom: 2rem; border-color: #0288d1; display: none; background: #f0f4c3;">
+        <h2 style="color: #2e7d32; display: flex; align-items: center; gap: 8px;">📢 Task Assignment Notifications</h2>
+        <p style="font-size: 0.98rem; color: #33691e; margin-bottom: 1rem;">
+          Updates regarding help requests where you submitted a quote:
+        </p>
+        <div id="notificationsList" class="request-list">
+          <!-- Populated dynamically via JS -->
+        </div>
+      </div>
+
       <!-- Section 1: Awaiting Family Approval -->
       <div class="dashboard-card" style="margin-bottom: 2rem; border-color: #f57f17;">
         <h2 style="color: #e65100;">⏳ Awaiting Family Approval</h2>

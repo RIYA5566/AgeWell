@@ -70,7 +70,7 @@ const helpRequestSchema = new mongoose.Schema({
   // fulfilled_by_family → fulfilled directly by family caregiver
   status: {
     type: String,
-    enum: ['pending', 'awaiting_approval', 'accepted', 'completed', 'fulfilled_by_family'],
+    enum: ['pending', 'awaiting_approval', 'accepted', 'completed', 'fulfilled_by_family', 'rejected'],
     default: 'pending'
   },
 

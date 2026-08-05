@@ -136,10 +136,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Fetch and Render requests for Volunteers
 async function loadVolunteerRequests(silent = false) {
-  const pendingList  = document.getElementById('pendingList');
-  const awaitingList = document.getElementById('awaitingList');
-  const activeList   = document.getElementById('activeList');
-  const historyList  = document.getElementById('historyList');
+  const pendingList       = document.getElementById('pendingList');
+  const awaitingList      = document.getElementById('awaitingList');
+  const activeList        = document.getElementById('activeList');
+  const historyList       = document.getElementById('historyList');
+  const notificationsCard = document.getElementById('notificationsCard');
+  const notificationsList = document.getElementById('notificationsList');
 
   if (!silent) {
     const spinnerHtml = `<div class="loading-wrapper"><div class="spinner"></div><span>Loading...</span></div>`;
@@ -179,7 +181,9 @@ async function loadVolunteerRequests(silent = false) {
     };
 
     // Split by status:
-    // 1. Available Help Requests: Any request with status 'pending' or 'awaiting_approval' (visible to ALL volunteers until caregiver approves!)
+    // 0. Task Assignment Notifications: Requests where this volunteer submitted a quote, but caregiver selected another volunteer
+    const notifiedRequests  = requests.filter(r => (r.status === 'accepted' || r.status === 'completed') && hasMyQuote(r) && !isMyApprovedTask(r));
+    // 1. Available Help Requests: Open requests with status 'pending' or 'awaiting_approval'
     const pendingRequests   = requests.filter(r => r.status === 'pending' || r.status === 'awaiting_approval');
     // 2. Awaiting Family Approval: Requests where this volunteer submitted a quote and status is 'awaiting_approval'
     const awaitingRequests  = requests.filter(r => r.status === 'awaiting_approval' && hasMyQuote(r));
@@ -187,6 +191,34 @@ async function loadVolunteerRequests(silent = false) {
     const activeRequests    = requests.filter(r => r.status === 'accepted' && isMyApprovedTask(r));
     // 4. Completed History: Tasks completed by this volunteer
     const completedRequests = requests.filter(r => r.status === 'completed' && isMyApprovedTask(r));
+
+    // --- Render Task Notifications ---
+    if (notificationsCard && notificationsList) {
+      if (notifiedRequests.length > 0) {
+        notificationsCard.style.display = 'block';
+        notificationsList.innerHTML = notifiedRequests.map(req => {
+          const seniorName = req.senior ? escapeHTML(req.senior.name) : 'Senior Citizen';
+
+          return `
+            <div class="request-card" style="border-left: 5px solid #2e7d32; background: #ffffff; margin-bottom: 1rem;">
+              <div class="request-card-header">
+                <div class="request-title" style="color: #1b5e20;">📋 ${escapeHTML(req.title)}</div>
+                <span class="badge" style="background: #2e7d32; color: #fff;">ℹ️ Task Assigned</span>
+              </div>
+              <div style="margin-top: 10px; padding: 12px 16px; background-color: #e8f5e9; border: 2px solid #2e7d32; border-radius: 10px;">
+                <p style="color: #1b5e20; font-weight: bold; font-size: 1.02rem; margin-bottom: 4px;">
+                  📢 The caregiver has assigned this task to another volunteer.
+                </p>
+                <p style="color: #2e7d32; font-size: 0.93rem; margin: 0;">
+                  Thank you so much for offering your voluntary support to <strong>${seniorName}</strong>! You can browse and quote on other open requests below.
+                </p>
+              </div>
+            </div>`;
+        }).join('');
+      } else {
+        notificationsCard.style.display = 'none';
+      }
+    }
 
     // --- Render Available (Pending) Requests ---
     if (pendingList) {

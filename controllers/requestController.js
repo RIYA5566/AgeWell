@@ -55,7 +55,10 @@ exports.createRequest = async (req, res) => {
       isLowConfidence = true;
     }
 
-    // All senior help requests are published to volunteers immediately ('pending') so all volunteers can see them right away!
+    // All senior help requests require family caregiver allotment before becoming visible to volunteers
+    const initialFamilyApproval = 'none';
+
+    // All senior help requests start as 'pending'
     const initialStatus = 'pending';
 
     // Generate AI Platform Recommendations & Pre-filled Search URLs
@@ -79,15 +82,12 @@ exports.createRequest = async (req, res) => {
       suggestedPlatforms,
       senior: req.user.id,
       status: initialStatus,
-      familyApprovalStatus: 'approved'
+      familyApprovalStatus: initialFamilyApproval
     });
 
     const request = await newRequest.save();
 
-    let message = 'Help request created successfully';
-    if (isLowConfidence && hasFamily) {
-      message = 'Request created! Because voice AI confidence was low, your family caregiver has been notified to review and approve it.';
-    }
+    let message = 'Help request created successfully! Your family caregiver has been notified to fulfill it directly or allot it to community volunteers.';
 
     res.status(201).json({ success: true, message, request, isLowConfidence });
   } catch (error) {
@@ -111,16 +111,20 @@ exports.getRequests = async (req, res) => {
         .sort({ createdAt: -1 });
 
     } else if (req.user.role === 'volunteer') {
-      // Volunteers see: all pending & awaiting approval requests + their own accepted/completed tasks
+      // Volunteers see:
+      // 1. Pending & awaiting_approval requests allotted by family ('approved')
+      // 2. Tasks where this volunteer is the assigned volunteer (accepted / completed)
+      // 3. Tasks where this volunteer submitted a quote, but another volunteer was selected (for notification)
       requests = await HelpRequest.find({
         $or: [
-          { status: 'pending' },
-          { status: 'awaiting_approval' },
-          { volunteer: req.user.id }
+          { status: 'pending', familyApprovalStatus: 'approved' },
+          { status: 'awaiting_approval', familyApprovalStatus: 'approved' },
+          { volunteer: req.user.id },
+          { 'volunteerQuotes.volunteer': req.user.id, status: { $in: ['accepted', 'completed'] } }
         ]
       })
         .populate('senior', 'name phone address emergencyContact')
-        .populate('volunteer', 'name phone email')
+        .populate('volunteer', 'name phone email skills')
         .populate('volunteerQuotes.volunteer', 'name phone email skills')
         .sort({ createdAt: -1 });
 
@@ -271,8 +275,8 @@ exports.acceptRequest = async (req, res) => {
     const hasFamilyCaregiver = await seniorHasFamily(request.senior);
 
     if (hasFamilyCaregiver) {
-      // Keep request open in 'pending' status so it remains visible to ALL volunteers until caregiver selects a volunteer!
-      request.status = 'pending';
+      // Move status to 'awaiting_approval' so caregiver knows volunteer quotes are pending review!
+      request.status = 'awaiting_approval';
       request.familyApprovalStatus = 'approved';
     } else {
       // No family linked — auto-accept for this volunteer immediately!
@@ -304,6 +308,7 @@ exports.acceptRequest = async (req, res) => {
 
 // @desc    Family/Caregiver APPROVES a specific volunteer
 //          → moves request to 'accepted'; volunteer may now proceed
+// @desc    Family/Caregiver approves a volunteer OR allots a senior request to community volunteers
 // @route   PUT /api/requests/:id/family-approve
 // @access  Private (Family only)
 exports.familyApproveRequest = async (req, res) => {
@@ -312,8 +317,8 @@ exports.familyApproveRequest = async (req, res) => {
       .populate('senior', 'name');
 
     if (!request) return res.status(404).json({ success: false, message: 'Help request not found' });
-    if (request.status !== 'awaiting_approval') {
-      return res.status(400).json({ success: false, message: 'This request is not pending family approval' });
+    if (request.status !== 'pending' && request.status !== 'awaiting_approval') {
+      return res.status(400).json({ success: false, message: 'This request is not pending family decision' });
     }
 
     // Verify this family member is linked to the request's senior
@@ -338,7 +343,7 @@ exports.familyApproveRequest = async (req, res) => {
         }
       }
     } else {
-      // Approved low-confidence voice request — publish to volunteers
+      // Caregiver allotting request to community volunteers
       request.status = 'pending';
       request.aiLowConfidence = false;
     }
@@ -354,7 +359,7 @@ exports.familyApproveRequest = async (req, res) => {
 
     const approveMsg = request.volunteer
       ? `Volunteer approved! They can now proceed to assist ${request.senior.name}.`
-      : `Voice request approved! It is now published for volunteers to assist ${request.senior.name}.`;
+      : `Request allotted to community volunteers! Volunteers can now assist ${request.senior.name}.`;
 
     res.status(200).json({
       success: true,
@@ -408,8 +413,7 @@ exports.familyFulfillSelf = async (req, res) => {
   }
 };
 
-// @desc    Family/Caregiver REJECTS the volunteer or low-confidence request
-//          → resets to 'pending' (if volunteer rejected) or marks rejected (if request rejected)
+// @desc    Family/Caregiver REJECTS the volunteer or request
 // @route   PUT /api/requests/:id/family-reject
 // @access  Private (Family only)
 exports.familyRejectRequest = async (req, res) => {
@@ -418,8 +422,8 @@ exports.familyRejectRequest = async (req, res) => {
       .populate('senior', 'name');
 
     if (!request) return res.status(404).json({ success: false, message: 'Help request not found' });
-    if (request.status !== 'awaiting_approval') {
-      return res.status(400).json({ success: false, message: 'This request is not pending family approval' });
+    if (request.status !== 'pending' && request.status !== 'awaiting_approval') {
+      return res.status(400).json({ success: false, message: 'This request is not pending family decision' });
     }
 
     // Verify caregiver link
@@ -437,8 +441,8 @@ exports.familyRejectRequest = async (req, res) => {
       request.volunteer = null;
       request.acceptedAt = undefined;
     } else {
-      // Caregiver rejected low-confidence voice request
-      request.status = 'completed';
+      // Caregiver rejected senior request
+      request.status = 'rejected';
       request.resolutionNotes = rejectionReason || 'Rejected by family caregiver';
     }
 

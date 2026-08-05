@@ -108,8 +108,8 @@ async function loadFamilyDashboard(silent = false) {
   // Update notification badge
   updateApprovalBadge(pendingApprovalCount);
 
-  // Separate new senior requests (no volunteer quotes yet) from volunteer approval candidates (1+ volunteer quotes submitted)
-  const seniorRequests = requests.filter(r => (r.status === 'pending' || r.status === 'awaiting_approval') && (!r.volunteerQuotes || r.volunteerQuotes.length === 0));
+  // Separate new senior requests needing caregiver decision (familyApprovalStatus !== 'approved') from volunteer approvals
+  const seniorRequests = requests.filter(r => (r.status === 'pending' || r.status === 'awaiting_approval') && r.familyApprovalStatus !== 'approved' && (!r.volunteerQuotes || r.volunteerQuotes.length === 0));
   const volunteerApprovals = requests.filter(r => (r.status === 'pending' || r.status === 'awaiting_approval') && r.volunteerQuotes && r.volunteerQuotes.length > 0);
   const completionVerifications = requests.filter(r => r.status === 'completed' && r.completionVerified !== 'verified' && r.completionVerified !== 'rejected');
 
@@ -637,7 +637,7 @@ async function approveVolunteer(requestId, volunteerId = null) {
   let originalText = '';
   if (btn) {
     originalText = btn.textContent;
-    btn.textContent = 'Approving...';
+    btn.textContent = volunteerId ? 'Approving...' : 'Allotting...';
     btn.disabled = true;
   }
 
@@ -645,9 +645,9 @@ async function approveVolunteer(requestId, volunteerId = null) {
   const res = await apiCall(`/requests/${requestId}/family-approve`, 'PUT', payload);
 
   if (res.ok && res.data.success) {
-    showToast('✅ Volunteer approved! They can now assist your senior.', 'success');
-    // Animate card out
-    const card = document.getElementById(`approvalCard-${requestId}`);
+    showToast(res.data.message || '✅ Request allotted to community volunteers!', 'success');
+    // Animate card out from Section 1 or Section 2
+    const card = document.getElementById(`seniorCard-${requestId}`) || document.getElementById(`approvalCard-${requestId}`);
     if (card) {
       card.style.transition = 'opacity 0.5s, transform 0.5s';
       card.style.opacity = '0';
@@ -657,7 +657,7 @@ async function approveVolunteer(requestId, volunteerId = null) {
       loadFamilyDashboard();
     }
   } else {
-    showToast(res.data?.message || 'Error approving volunteer. Please try again.', 'error');
+    showToast(res.data?.message || 'Error processing request. Please try again.', 'error');
     if (btn) {
       btn.textContent = originalText;
       btn.disabled = false;
