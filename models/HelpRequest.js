@@ -144,6 +144,17 @@ const helpRequestSchema = new mongoose.Schema({
     default: ''
   },
 
+  // ─── Payment Details (Authorized by Caregiver upon Proof Verification) ──
+  paymentDetails: {
+    amountPaid: Number,
+    itemsCost: Number,
+    volunteerFee: Number,
+    platformFee: Number,
+    transactionId: String,
+    paymentMethod: String,
+    paidAt: Date
+  },
+
   // ─── Task Completion Verification & Proof ───────────────────────────
   completionProof: {
     type: String,

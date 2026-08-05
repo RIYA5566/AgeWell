@@ -469,7 +469,7 @@ function renderCompletionVerificationQueue(pendingVerifications) {
             onclick="verifyTaskCompletion('${req._id}', true)"
             style="background-color: #2e7d32; flex: 1; padding: 12px; font-size: 1.05rem;"
           >
-            ✅ Verify & Approve Completion
+            💳 Verify Proof & Proceed to Payment
           </button>
           <button
             class="btn btn-reject"
@@ -485,18 +485,21 @@ function renderCompletionVerificationQueue(pendingVerifications) {
 
 // Verification action endpoint for family caregivers
 async function verifyTaskCompletion(requestId, approved) {
-  let reason = '';
-  if (!approved) {
-    reason = prompt("Please enter the reason for rejecting or reporting an issue with this completion:") || 'Rejected by family caregiver';
+  if (approved) {
+    // Caregiver approved delivery proof -> Redirect to payment summary authorization page!
+    window.location.href = `/payment.html?requestId=${requestId}`;
+    return;
   }
 
+  const reason = prompt("Please enter the reason for rejecting or reporting an issue with this completion:") || 'Rejected by family caregiver';
+
   const res = await apiCall(`/requests/${requestId}/verify-completion-family`, 'PUT', {
-    approved,
+    approved: false,
     rejectionReason: reason
   });
 
   if (res.ok && res.data.success) {
-    showToast(approved ? '✅ Task completion verified successfully!' : 'Task completion marked as rejected.', approved ? 'success' : 'error');
+    showToast('Task completion marked as rejected.', 'error');
     loadFamilyDashboard();
   } else {
     showToast(res.data?.message || 'Error updating completion verification.', 'error');

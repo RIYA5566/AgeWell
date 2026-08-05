@@ -533,7 +533,7 @@ exports.verifyCompletionByFamily = async (req, res) => {
     const request = await HelpRequest.findById(req.params.id);
     if (!request) return res.status(404).json({ success: false, message: 'Help request not found' });
 
-    const { approved, rejectionReason } = req.body;
+    const { approved, rejectionReason, paymentDetails } = req.body;
 
     request.verifiedBy = req.user.id;
     request.verifierRole = 'family';
@@ -542,6 +542,18 @@ exports.verifyCompletionByFamily = async (req, res) => {
     if (approved) {
       request.status = 'completed';
       request.completionVerified = 'verified';
+
+      if (paymentDetails) {
+        request.paymentDetails = {
+          amountPaid: Number(paymentDetails.amountPaid || 0),
+          itemsCost: Number(paymentDetails.itemsCost || 0),
+          volunteerFee: Number(paymentDetails.volunteerFee || 0),
+          platformFee: Number(paymentDetails.platformFee || 0),
+          transactionId: String(paymentDetails.transactionId || ''),
+          paymentMethod: String(paymentDetails.paymentMethod || 'UPI'),
+          paidAt: Date.now()
+        };
+      }
     } else {
       // Unmark completed: return task to active status ('accepted') for volunteer to re-upload proof & re-apply!
       request.status = 'accepted';
@@ -551,10 +563,14 @@ exports.verifyCompletionByFamily = async (req, res) => {
 
     await request.save();
 
+    const populatedRequest = await HelpRequest.findById(request._id)
+      .populate('senior', 'name phone address emergencyContact')
+      .populate('volunteer', 'name phone email skills');
+
     res.status(200).json({
       success: true,
       message: approved ? 'Delivery completion verified successfully!' : 'Task completion rejected. Unmarked and returned to volunteer to re-upload proof.',
-      request
+      request: populatedRequest
     });
   } catch (error) {
     console.error('Verify Completion Error:', error);

@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Payment & Delivery Authorization - AgeWell</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .payment-container {
+      max-width: 720px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+    }
+
+    .payment-card {
+      background: var(--color-white);
+      border-radius: 16px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+      border: 2px solid #e0e0e0;
+      padding: 2.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .payment-header {
+      text-align: center;
+      margin-bottom: 2rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 2px dashed #e0e0e0;
+    }
+
+    .payment-header h1 {
+      font-size: 1.8rem;
+      color: var(--color-primary-dark);
+      margin-bottom: 0.5rem;
+    }
+
+    .summary-box {
+      background: #f8fbf8;
+      border: 2px solid var(--color-primary-light);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.8rem 0;
+      font-size: 1.05rem;
+      border-bottom: 1px solid #e0e0e0;
+    }
+
+    .summary-row:last-child {
+      border-bottom: none;
+    }
+
+    .summary-row.total {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: var(--color-primary-dark);
+      padding-top: 1rem;
+      margin-top: 0.5rem;
+      border-top: 2px solid var(--color-primary);
+    }
+
+    .payment-methods {
+      margin: 2rem 0;
+    }
+
+    .method-option {
+      display: flex;
+      align-items: center;
+      padding: 1rem 1.2rem;
+      border: 2px solid #e0e0e0;
+      border-radius: 12px;
+      margin-bottom: 1rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      background: #fff;
+    }
+
+    .method-option:hover {
+      border-color: var(--color-primary);
+      background: #f1f8e9;
+    }
+
+    .method-option input[type="radio"] {
+      width: 22px;
+      height: 22px;
+      accent-color: var(--color-primary);
+      margin-right: 1rem;
+      cursor: pointer;
+    }
+
+    .method-option label {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--color-gray-dark);
+      cursor: pointer;
+      flex: 1;
+    }
+
+    .upi-input-group {
+      margin-top: 1rem;
+      padding: 1.2rem;
+      background: #e8f5e9;
+      border-radius: 12px;
+      border: 2px solid var(--color-primary-light);
+    }
+
+    .upi-input-group label {
+      display: block;
+      font-weight: 600;
+      color: var(--color-primary-dark);
+      margin-bottom: 0.5rem;
+    }
+
+    .upi-input-group input {
+      width: 100%;
+      padding: 12px 16px;
+      font-size: 1.05rem;
+      border: 2px solid var(--color-primary);
+      border-radius: 8px;
+      outline: none;
+    }
+
+    .btn-pay {
+      width: 100%;
+      padding: 1.2rem;
+      font-size: 1.25rem;
+      font-weight: 700;
+      background-color: var(--color-primary);
+      color: var(--color-white);
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: background 0.2s ease, transform 0.1s ease;
+      box-shadow: 0 4px 14px rgba(46, 125, 50, 0.3);
+    }
+
+    .btn-pay:hover {
+      background-color: var(--color-primary-dark);
+      transform: translateY(-2px);
+    }
+
+    /* Success Step Card */
+    .success-card {
+      display: none;
+      text-align: center;
+      background: #ffffff;
+      border-radius: 16px;
+      border: 3px solid #2e7d32;
+      padding: 3rem 2rem;
+      box-shadow: 0 10px 35px rgba(46, 125, 50, 0.15);
+    }
+
+    .success-icon {
+      width: 80px;
+      height: 80px;
+      background: #e8f5e9;
+      color: #2e7d32;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3rem;
+      margin: 0 auto 1.5rem auto;
+      border: 3px solid #2e7d32;
+    }
+
+    .success-details {
+      background: #f1f8e9;
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin: 2rem 0;
+      text-align: left;
+    }
+
+    .success-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.7rem 0;
+      font-size: 1.1rem;
+      border-bottom: 1px solid #c8e6c9;
+    }
+
+    .success-row:last-child {
+      border-bottom: none;
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+
+    .action-buttons button, .action-buttons a {
+      flex: 1;
+      padding: 1rem;
+      font-size: 1.05rem;
+      font-weight: 700;
+      text-decoration: none;
+      border-radius: 10px;
+      text-align: center;
+      cursor: pointer;
+    }
+
+    .btn-receipt {
+      background: #ffffff;
+      color: var(--color-primary-dark);
+      border: 2px solid var(--color-primary-dark);
+    }
+
+    .btn-receipt:hover {
+      background: var(--color-bg-light);
+    }
+
+    .btn-home {
+      background: var(--color-primary);
+      color: #ffffff !important;
+      border: none;
+    }
+
+    .btn-home:hover {
+      background: var(--color-primary-dark);
+    }
+
+    /* Modal for Printable Receipt */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-content {
+      background: #fff;
+      padding: 2.5rem;
+      border-radius: 16px;
+      max-width: 500px;
+      width: 90%;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    }
+
+    @media print {
+      body * { visibility: hidden; }
+      #printableReceipt, #printableReceipt * { visibility: visible; }
+      #printableReceipt { position: absolute; left: 0; top: 0; width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Header Navbar -->
+  <header style="background: var(--color-primary-dark); color: #fff; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center;">
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <a href="family-dashboard.html" style="color: #fff; text-decoration: none; font-size: 1.4rem; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+        <span>🌸 AgeWell</span>
+      </a>
+      <span style="background: rgba(255,255,255,0.2); padding: 4px 10px; border-radius: 20px; font-size: 0.85rem;">Caregiver Delivery Verification & Payment</span>
+    </div>
+    <div>
+      <a href="family-dashboard.html" style="color: #fff; text-decoration: underline; font-weight: 500;">← Back to Dashboard</a>
+    </div>
+  </header>
+
+  <main class="payment-container">
+    <!-- Step 1-3 Payment Authorization Card -->
+    <div id="paymentFormCard" class="payment-card">
+      <div class="payment-header">
+        <h1>💳 Payment & Delivery Authorization</h1>
+        <p style="color: #666; font-size: 1rem;">
+          Proof of completion verified! Review the cost summary and select your payment method to finalize delivery.
+        </p>
+      </div>
+
+      <!-- Target Request & Senior Details Banner -->
+      <div id="requestMetaBanner" style="background: #e3f2fd; border-left: 5px solid #1976d2; padding: 12px 16px; border-radius: 8px; margin-bottom: 1.5rem; display: none;">
+        <div style="font-weight: 700; color: #0d47a1;" id="metaTitle">📋 Loading request...</div>
+        <div style="font-size: 0.92rem; color: #1565c0; margin-top: 4px;" id="metaSenior">Senior Citizen: Loading...</div>
+      </div>
+
+      <!-- Payment Summary -->
+      <h2 style="font-size: 1.25rem; color: var(--color-primary-dark); margin-bottom: 1rem; display: flex; align-items: center; gap: 8px;">
+        📝 Payment Summary
+      </h2>
+
+      <div class="summary-box">
+        <div class="summary-row">
+          <span>Items Purchased</span>
+          <span style="font-weight: 600;" id="summaryItemsCost">₹338</span>
+        </div>
+
+        <div class="summary-row">
+          <span>Volunteer Service Charge</span>
+          <span style="font-weight: 600;" id="summaryVolunteerFee">₹50</span>
+        </div>
+
+        <div class="summary-row">
+          <span>Platform Fee</span>
+          <span style="color: #2e7d32; font-weight: 600;" id="summaryPlatformFee">₹0</span>
+        </div>
+
+        <div class="summary-row total">
+          <span>Total</span>
+          <span id="summaryTotal">₹388</span>
+        </div>
+      </div>
+
+      <!-- Payment Method Selection -->
+      <h2 style="font-size: 1.25rem; color: var(--color-primary-dark); margin-bottom: 1rem; display: flex; align-items: center; gap: 8px;">
+        💳 Select Payment Method
+      </h2>
+
+      <div class="payment-methods">
+        <div class="method-option" onclick="selectPaymentMethod('upi')">
+          <input type="radio" id="methodUpi" name="paymentMethod" value="UPI" checked>
+          <label for="methodUpi">📱 UPI (Google Pay, PhonePe, Paytm)</label>
+        </div>
+
+        <div id="upiGroup" class="upi-input-group">
+          <label for="upiId">UPI ID</label>
+          <input type="text" id="upiId" value="rahul@upi" placeholder="e.g. name@upi or mobile@ybl">
+        </div>
+
+        <div class="method-option" onclick="selectPaymentMethod('debit')">
+          <input type="radio" id="methodDebit" name="paymentMethod" value="Debit Card">
+          <label for="methodDebit">💳 Debit Card</label>
+        </div>
+
+        <div class="method-option" onclick="selectPaymentMethod('credit')">
+          <input type="radio" id="methodCredit" name="paymentMethod" value="Credit Card">
+          <label for="methodCredit">💳 Credit Card</label>
+        </div>
+
+        <div class="method-option" onclick="selectPaymentMethod('netbanking')">
+          <input type="radio" id="methodNetbanking" name="paymentMethod" value="Net Banking">
+          <label for="methodNetbanking">🏦 Net Banking</label>
+        </div>
+      </div>
+
+      <!-- Submit Payment Button -->
+      <button id="btnPay" class="btn-pay" onclick="processPayment()">
+        Pay ₹388
+      </button>
+    </div>
+
+    <!-- Step 4: Payment Success Card -->
+    <div id="paymentSuccessCard" class="success-card">
+      <div class="success-icon">✓</div>
+      <h1 style="color: #1b5e20; font-size: 1.8rem; margin-bottom: 0.5rem;">Step 4: Payment Success</h1>
+      <p style="color: #2e7d32; font-size: 1.15rem; font-weight: 600;">Payment Successful</p>
+      <p style="color: #666; font-size: 0.95rem; margin-top: 4px;">
+        Delivery completion has been officially verified & payment processed!
+      </p>
+
+      <div class="success-details">
+        <div class="success-row">
+          <span style="color: #555;">Amount Paid</span>
+          <span style="font-weight: 700; color: #1b5e20;" id="successAmount">₹388</span>
+        </div>
+
+        <div class="success-row">
+          <span style="color: #555;">Transaction ID</span>
+          <span style="font-family: monospace; font-weight: 700; color: #0d47a1;" id="successTxnId">TXN92837462</span>
+        </div>
+
+        <div class="success-row">
+          <span style="color: #555;">Paid To</span>
+          <span style="font-weight: 700; color: #2e7d32;" id="successPaidTo">Assigned Volunteer</span>
+        </div>
+      </div>
+
+      <div class="action-buttons">
+        <button class="btn-receipt" onclick="openReceiptModal()">📄 View Receipt</button>
+        <a href="family-dashboard.html" class="btn-home">🏠 Go Home</a>
+      </div>
+    </div>
+  </main>
+
+  <!-- Printable Receipt Modal -->
+  <div id="receiptModal" class="modal-overlay">
+    <div class="modal-content" id="printableReceipt">
+      <div style="text-align: center; border-bottom: 2px solid var(--color-primary-light); padding-bottom: 1rem; margin-bottom: 1.5rem;">
+        <h2 style="color: var(--color-primary-dark);">🌸 AgeWell Official Receipt</h2>
+        <p style="color: #666; font-size: 0.9rem;">Senior Citizen Assistance Platform</p>
+      </div>
+
+      <div style="margin-bottom: 1.5rem; font-size: 0.95rem;">
+        <p><strong>Transaction ID:</strong> <span id="receiptTxnId">TXN92837462</span></p>
+        <p><strong>Date & Time:</strong> <span id="receiptDate">5 Aug 2026</span></p>
+        <p><strong>Senior Citizen:</strong> <span id="receiptSenior">Avdhut Giri</span></p>
+        <p><strong>Paid To (Volunteer):</strong> <span id="receiptVolunteer" style="font-weight: 700; color: #2e7d32;">Assigned Volunteer</span></p>
+      </div>
+
+      <table style="width: 100%; border-collapse: collapse; margin-bottom: 1.5rem; font-size: 0.95rem;">
+        <thead>
+          <tr style="background: #e8f5e9; text-align: left;">
+            <th style="padding: 8px; border-bottom: 2px solid #c8e6c9;">Item Description</th>
+            <th style="padding: 8px; border-bottom: 2px solid #c8e6c9; text-align: right;">Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="padding: 8px; border-bottom: 1px solid #e0e0e0;">Items Purchased</td>
+            <td style="padding: 8px; border-bottom: 1px solid #e0e0e0; text-align: right;" id="receiptItemsCost">₹338</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px; border-bottom: 1px solid #e0e0e0;">Volunteer Service Charge</td>
+            <td style="padding: 8px; border-bottom: 1px solid #e0e0e0; text-align: right;" id="receiptVolunteerFee">₹50</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px; border-bottom: 1px solid #e0e0e0;">Platform Fee</td>
+            <td style="padding: 8px; border-bottom: 1px solid #e0e0e0; text-align: right; color: #2e7d32;">₹0</td>
+          </tr>
+          <tr style="font-weight: bold; font-size: 1.05rem;">
+            <td style="padding: 10px 8px; border-top: 2px solid var(--color-primary-dark);">Total Paid</td>
+            <td style="padding: 10px 8px; border-top: 2px solid var(--color-primary-dark); text-align: right; color: var(--color-primary-dark);" id="receiptTotal">₹388</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div style="display: flex; gap: 10px;">
+        <button onclick="window.print()" style="flex: 1; padding: 10px; background: var(--color-primary); color: #fff; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">🖨️ Print Receipt</button>
+        <button onclick="closeReceiptModal()" style="padding: 10px 16px; background: #eee; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/payment.js"></script>
+</body>
+</html>
