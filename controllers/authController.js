@@ -35,7 +35,16 @@ const sendTokenResponse = (user, statusCode, res) => {
         emergencyContact: user.emergencyContact,
         skills: user.skills,
         linkedSenior: user.linkedSenior,
-        relationship: user.relationship
+        relationship: user.relationship,
+        aadhaarNumber: user.aadhaarNumber,
+        govtIdCard: user.govtIdCard,
+        selfiePhoto: user.selfiePhoto,
+        isPhoneVerified: user.isPhoneVerified,
+        isEmailVerified: user.isEmailVerified,
+        isIdVerified: user.isIdVerified,
+        isPoliceVerified: user.isPoliceVerified,
+        verificationStatus: user.verificationStatus,
+        verificationRejectionReason: user.verificationRejectionReason
       }
     });
 };
@@ -45,7 +54,21 @@ const sendTokenResponse = (user, statusCode, res) => {
 // @access  Public
 exports.registerUser = async (req, res) => {
   try {
-    const { name, email, password, role, phone, address, emergencyContact, skills, linkedSeniorEmail, relationship } = req.body;
+    const {
+      name,
+      email,
+      password,
+      role,
+      phone,
+      address,
+      emergencyContact,
+      skills,
+      linkedSeniorEmail,
+      relationship,
+      aadhaarNumber,
+      isPhoneVerified,
+      isEmailVerified
+    } = req.body;
 
     // Check if user already exists
     const userExists = await User.findOne({ email });
@@ -62,7 +85,26 @@ exports.registerUser = async (req, res) => {
       }
       userData.emergencyContact = emergencyContact;
     } else if (role === 'volunteer') {
-      userData.skills = skills || [];
+      userData.skills = Array.isArray(skills) ? skills : (skills ? skills.split(',').map(s => s.trim()) : []);
+      userData.aadhaarNumber = aadhaarNumber || '';
+      userData.isPhoneVerified = isPhoneVerified === 'true' || isPhoneVerified === true;
+      userData.isEmailVerified = isEmailVerified === 'true' || isEmailVerified === true;
+
+      if (req.files) {
+        if (req.files.govtIdCard && req.files.govtIdCard[0]) {
+          userData.govtIdCard = `/uploads/kyc/${req.files.govtIdCard[0].filename}`;
+        }
+        if (req.files.selfiePhoto && req.files.selfiePhoto[0]) {
+          userData.selfiePhoto = `/uploads/kyc/${req.files.selfiePhoto[0].filename}`;
+        }
+      }
+
+      // If documents or aadhaar submitted, set status to pending review
+      if (userData.govtIdCard || userData.selfiePhoto || userData.aadhaarNumber) {
+        userData.verificationStatus = 'pending';
+      } else {
+        userData.verificationStatus = 'unverified';
+      }
     } else if (role === 'family') {
       // Family members must link to an existing Senior Citizen by email
       if (!linkedSeniorEmail) {
@@ -84,6 +126,46 @@ exports.registerUser = async (req, res) => {
   } catch (error) {
     console.error('Registration Error:', error);
     res.status(500).json({ success: false, message: error.message || 'Server error during registration' });
+  }
+};
+
+// @desc    Submit / update KYC verification documents for logged in volunteer
+// @route   POST /api/auth/kyc
+// @access  Private (Volunteer)
+exports.submitKYC = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user || user.role !== 'volunteer') {
+      return res.status(403).json({ success: false, message: 'Only volunteers can submit KYC documents' });
+    }
+
+    const { aadhaarNumber } = req.body;
+    if (aadhaarNumber) user.aadhaarNumber = aadhaarNumber;
+
+    if (req.files) {
+      if (req.files.govtIdCard && req.files.govtIdCard[0]) {
+        user.govtIdCard = `/uploads/kyc/${req.files.govtIdCard[0].filename}`;
+      }
+      if (req.files.selfiePhoto && req.files.selfiePhoto[0]) {
+        user.selfiePhoto = `/uploads/kyc/${req.files.selfiePhoto[0].filename}`;
+      }
+    }
+
+    user.isPhoneVerified = true;
+    user.isEmailVerified = true;
+    user.verificationStatus = 'pending';
+    user.verificationRejectionReason = '';
+
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'KYC documents submitted successfully! Admin & Police verification is now pending review.',
+      user
+    });
+  } catch (error) {
+    console.error('Submit KYC Error:', error);
+    res.status(500).json({ success: false, message: 'Server error submitting KYC documents' });
   }
 };
 
@@ -136,8 +218,35 @@ exports.logoutUser = async (req, res) => {
 // @access  Private
 exports.getMe = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id);
-    res.status(200).json({ success: true, user });
+    const user = await User.findById(req.user.id).select('-password');
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    res.status(200).json({
+      success: true,
+      user: {
+        id: user._id,
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        phone: user.phone,
+        address: user.address,
+        emergencyContact: user.emergencyContact,
+        skills: user.skills,
+        linkedSenior: user.linkedSenior,
+        relationship: user.relationship,
+        aadhaarNumber: user.aadhaarNumber,
+        govtIdCard: user.govtIdCard,
+        selfiePhoto: user.selfiePhoto,
+        isPhoneVerified: user.isPhoneVerified,
+        isEmailVerified: user.isEmailVerified,
+        isIdVerified: user.isIdVerified,
+        isPoliceVerified: user.isPoliceVerified,
+        verificationStatus: user.verificationStatus,
+        verificationRejectionReason: user.verificationRejectionReason
+      }
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Server error fetching profile' });
   }

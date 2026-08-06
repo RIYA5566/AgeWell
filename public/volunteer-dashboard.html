@@ -40,26 +40,58 @@
   <!-- Main Content -->
   <main id="mainContent">
     <!-- Welcome Bar -->
-    <div class="dashboard-welcome">
-      <div class="welcome-icon" aria-hidden="true">🤝</div>
-      <div>
-        <h1 id="welcomeTitle">Welcome, Volunteer!</h1>
-        <p>Thank you for giving your time. Browse requests below and make a difference today.</p>
+    <div class="dashboard-welcome" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+      <div style="display: flex; align-items: center; gap: 15px;">
+        <div class="welcome-icon" aria-hidden="true">🤝</div>
+        <div>
+          <h1 id="welcomeTitle">Welcome, Volunteer!</h1>
+          <p>Thank you for giving your time. Browse requests below and make a difference today.</p>
+        </div>
+      </div>
+      <button id="btnViewTrustStatus" class="btn btn-secondary" style="display: none; padding: 8px 16px; font-size: 0.9rem; border-radius: 20px; background: #ffffff; color: #2e7d32; border: 1.5px solid #a5d6a7; font-weight: bold; cursor: pointer;">
+        🛡️ Verification Status: Verified ✅
+      </button>
+    </div>
+
+    <!-- Volunteer KYC & Verification Status Card -->
+    <div id="kycStatusCard" class="dashboard-card" style="margin-bottom: 2rem; border-color: #2e7d32; background: #f1f8e9;">
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+        <div>
+          <h2 style="color: #1b5e20; margin-bottom: 4px; display: flex; align-items: center; gap: 8px;">
+            🛡️ Multi-Level Trust &amp; Verification Status
+          </h2>
+          <p id="kycStatusSubtitle" style="font-size: 1rem; color: #33691e; margin-bottom: 4px;">
+            Required verification levels before accepting requests to visit senior citizens.
+          </p>
+        </div>
+        <button id="btnOpenKycModal" class="btn btn-primary" style="display: none; background-color: #2e7d32; font-size: 0.95rem; padding: 10px 18px;">
+          📤 Submit KYC Documents
+        </button>
+      </div>
+
+      <!-- Trust Badges -->
+      <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 1rem;" id="kycBadgesContainer">
+        <span id="badgeGovtId" class="skill-tag" style="background: #fff3e0; color: #e65100; border: 1px solid #ffe082; font-weight: bold; font-size: 0.9rem; padding: 6px 14px;">
+          📄 Govt ID: Pending
+        </span>
+        <span id="badgePhone" class="skill-tag" style="background: #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7; font-weight: bold; font-size: 0.9rem; padding: 6px 14px;">
+          📞 Phone: Verified
+        </span>
+        <span id="badgeEmail" class="skill-tag" style="background: #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7; font-weight: bold; font-size: 0.9rem; padding: 6px 14px;">
+          📧 Email: Verified
+        </span>
+        <span id="badgePolice" class="skill-tag" style="background: #fff3e0; color: #e65100; border: 1px solid #ffe082; font-weight: bold; font-size: 0.9rem; padding: 6px 14px;">
+          👮 Police Check: Pending Admin Review
+        </span>
+      </div>
+
+      <!-- Status Banner Alert Message -->
+      <div id="kycAlertBanner" style="margin-top: 1rem; padding: 1rem; border-radius: 8px; background: #ffffff; border-left: 5px solid #2e7d32; font-size: 0.98rem; color: #333;">
+        Loading verification status...
       </div>
     </div>
 
-    <div class="dashboard-grid volunteer-grid">
-      <!-- Section 0: Task Assignment Notifications -->
-      <div id="notificationsCard" class="dashboard-card" style="margin-bottom: 2rem; border-color: #0288d1; display: none; background: #f0f4c3;">
-        <h2 style="color: #2e7d32; display: flex; align-items: center; gap: 8px;">📢 Task Assignment Notifications</h2>
-        <p style="font-size: 0.98rem; color: #33691e; margin-bottom: 1rem;">
-          Updates regarding help requests where you submitted a quote:
-        </p>
-        <div id="notificationsList" class="request-list">
-          <!-- Populated dynamically via JS -->
-        </div>
-      </div>
-
+    <div class="dashboard-grid volunteer-grid" id="volunteerTaskGrid" style="display: none;">
       <!-- Section 1: Awaiting Family Approval -->
       <div class="dashboard-card" style="margin-bottom: 2rem; border-color: #f57f17;">
         <h2 style="color: #e65100;">⏳ Awaiting Family Approval</h2>
@@ -89,7 +121,18 @@
         </div>
       </div>
 
-      <!-- Section 4: History -->
+      <!-- Section 4: Task Assignment Notifications -->
+      <div id="notificationsCard" class="dashboard-card" style="margin-bottom: 2rem; border-color: #0288d1; display: none; background: #f0f4c3;">
+        <h2 style="color: #2e7d32; display: flex; align-items: center; gap: 8px;">📢 Task Assignment Notifications</h2>
+        <p style="font-size: 0.98rem; color: #33691e; margin-bottom: 1rem;">
+          Updates regarding help requests where you submitted a quote:
+        </p>
+        <div id="notificationsList" class="request-list">
+          <!-- Populated dynamically via JS -->
+        </div>
+      </div>
+
+      <!-- Section 5: History -->
       <div class="dashboard-card">
         <h2>📜 My Service History (Completed Tasks)</h2>
         <div id="historyList" class="request-list">
@@ -220,6 +263,37 @@
             Close Preview
           </button>
         </div>
+    <!-- KYC Re-submission Modal -->
+    <div id="kycModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="kycModalTitle" style="display: none;">
+      <div class="modal-content" style="max-width: 550px;">
+        <div class="modal-header">
+          <h3 id="kycModalTitle" style="color: var(--color-primary-dark); font-size: 1.4rem;">📄 Submit Verification Documents</h3>
+          <button id="kycModalClose" class="modal-close" aria-label="Close">&times;</button>
+        </div>
+
+        <form id="kycForm" novalidate>
+          <div class="form-group">
+            <label for="modalAadhaarNumber">🪪 Aadhaar / National ID Number</label>
+            <input type="text" id="modalAadhaarNumber" class="form-input" placeholder="e.g. 1234 5678 9012" required>
+          </div>
+
+          <div class="form-group">
+            <label for="modalGovtIdCard">📄 Government Photo ID (Aadhaar / Voter ID / Passport)</label>
+            <input type="file" id="modalGovtIdCard" class="form-control" accept="image/*,.pdf" required>
+          </div>
+
+          <div class="form-group">
+            <label for="modalSelfiePhoto">📸 Live Selfie / Profile Photo</label>
+            <input type="file" id="modalSelfiePhoto" class="form-control" accept="image/*" required>
+          </div>
+
+          <div class="modal-footer" style="display: flex; gap: 10px; margin-top: 1.2rem;">
+            <button type="button" id="btnCancelKyc" class="btn btn-secondary" style="flex: 1;">Cancel</button>
+            <button type="submit" class="btn btn-primary" style="flex: 2; background-color: var(--color-primary-dark);">
+              💾 Submit for Admin &amp; Police Clearance
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   </main>
@@ -230,7 +304,7 @@
   </footer>
 
   <!-- Scripts -->
-  <script src="/js/api.js"></script>
-  <script src="/js/volunteer.js"></script>
+  <script src="/js/api.js?v=2"></script>
+  <script src="/js/volunteer.js?v=2"></script>
 </body>
 </html>

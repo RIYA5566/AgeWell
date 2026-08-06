@@ -16,7 +16,8 @@ exports.getFamilyDashboard = async (req, res) => {
     // Fetch all requests for the linked senior
     const requests = await HelpRequest.find({ senior: req.user.linkedSenior })
       .populate('senior', 'name phone address emergencyContact')
-      .populate('volunteer', 'name phone email skills')
+      .populate('volunteer', 'name phone email skills verificationStatus isIdVerified isPoliceVerified isPhoneVerified isEmailVerified govtIdCard selfiePhoto aadhaarNumber createdAt')
+      .populate('volunteerQuotes.volunteer', 'name phone email skills verificationStatus isIdVerified isPoliceVerified isPhoneVerified isEmailVerified govtIdCard selfiePhoto aadhaarNumber createdAt')
       .populate('familyReviewedBy', 'name relationship')
       .sort({ createdAt: -1 });
 

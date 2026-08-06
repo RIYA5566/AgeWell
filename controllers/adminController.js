@@ -104,3 +104,43 @@ exports.deleteUser = async (req, res) => {
     res.status(500).json({ success: false, message: 'Server error deleting user' });
   }
 };
+
+// @desc    Verify/Approve or Reject a volunteer's KYC and Police Check status
+// @route   PUT /api/admin/volunteers/:id/verify
+// @access  Private (Admin only)
+exports.verifyVolunteer = async (req, res) => {
+  try {
+    const volunteerId = req.params.id;
+    const { status, isIdVerified, isPoliceVerified, isPhoneVerified, isEmailVerified, rejectionReason } = req.body;
+
+    const user = await User.findById(volunteerId);
+    if (!user || user.role !== 'volunteer') {
+      return res.status(404).json({ success: false, message: 'Volunteer not found' });
+    }
+
+    if (status) user.verificationStatus = status; // 'verified', 'pending', 'rejected', 'unverified'
+    if (typeof isIdVerified !== 'undefined') user.isIdVerified = Boolean(isIdVerified);
+    if (typeof isPoliceVerified !== 'undefined') user.isPoliceVerified = Boolean(isPoliceVerified);
+    if (typeof isPhoneVerified !== 'undefined') user.isPhoneVerified = Boolean(isPhoneVerified);
+    if (typeof isEmailVerified !== 'undefined') user.isEmailVerified = Boolean(isEmailVerified);
+    if (rejectionReason !== undefined) user.verificationRejectionReason = rejectionReason;
+
+    // If marked verified, ensure ID & Police verified default to true if unspecified
+    if (status === 'verified') {
+      if (typeof isIdVerified === 'undefined') user.isIdVerified = true;
+      if (typeof isPoliceVerified === 'undefined') user.isPoliceVerified = true;
+      user.verificationRejectionReason = '';
+    }
+
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: `Volunteer ${user.name} verification status updated to '${user.verificationStatus}'`,
+      user
+    });
+  } catch (error) {
+    console.error('Verify Volunteer Error:', error);
+    res.status(500).json({ success: false, message: 'Server error updating volunteer verification status' });
+  }
+};

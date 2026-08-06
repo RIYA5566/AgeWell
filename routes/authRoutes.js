@@ -1,11 +1,45 @@
 const express = require('express');
 const router = express.Router();
-const { registerUser, loginUser, logoutUser, getMe } = require('../controllers/authController');
+const path = require('path');
+const fs = require('fs');
+const multer = require('multer');
+const { registerUser, loginUser, logoutUser, getMe, submitKYC } = require('../controllers/authController');
 const { protect } = require('../middleware/authMiddleware');
 
-router.post('/register', registerUser);
+// Multer config for KYC Uploads
+const kycDir = path.join(__dirname, '..', 'uploads', 'kyc');
+if (!fs.existsSync(kycDir)) {
+  fs.mkdirSync(kycDir, { recursive: true });
+}
+
+const kycStorage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    if (!fs.existsSync(kycDir)) {
+      fs.mkdirSync(kycDir, { recursive: true });
+    }
+    cb(null, kycDir);
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const ext = path.extname(file.originalname) || '.jpg';
+    cb(null, `kyc-${file.fieldname}-${uniqueSuffix}${ext}`);
+  }
+});
+
+const uploadKyc = multer({
+  storage: kycStorage,
+  limits: { fileSize: 10 * 1024 * 1024 }
+});
+
+const kycFields = uploadKyc.fields([
+  { name: 'govtIdCard', maxCount: 1 },
+  { name: 'selfiePhoto', maxCount: 1 }
+]);
+
+router.post('/register', kycFields, registerUser);
 router.post('/login', loginUser);
 router.post('/logout', logoutUser);
 router.get('/me', protect, getMe);
+router.post('/kyc', protect, kycFields, submitKYC);
 
 module.exports = router;

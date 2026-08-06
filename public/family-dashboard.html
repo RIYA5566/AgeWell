@@ -350,20 +350,16 @@
     </div>
   </main>
 
-  <!-- Rejection Reason Modal -->
+  <!-- Rejection Modal -->
   <div id="rejectModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="rejectModalTitle">
     <div class="modal-content">
       <div class="modal-header">
-        <h3 id="rejectModalTitle">Reject Volunteer</h3>
+        <h3 id="rejectModalTitle">Reject Request</h3>
         <button id="rejectModalClose" class="modal-close" aria-label="Close">&times;</button>
       </div>
-      <p style="margin-bottom: 1rem; color: #555;">
-        Please provide a brief reason for rejecting this volunteer (optional).
-        The request will reset and become available for other volunteers.
+      <p style="margin-bottom: 1.5rem; color: #555; font-size: 1rem; font-weight: 500;">
+        Do you want to reject this request?
       </p>
-      <textarea id="rejectionReasonInput" class="rejection-reason-area"
-        placeholder="e.g. We prefer a female caregiver / We know this person is not available / etc."
-      ></textarea>
       <div class="modal-footer">
         <button type="button" id="btnCancelReject" class="btn btn-secondary">Cancel</button>
         <button type="button" id="btnConfirmReject" class="btn" style="background-color: var(--color-emergency); color: #ffffff !important; font-weight: 700;">
@@ -389,6 +385,28 @@
         </a>
         <button type="button" id="btnCloseLightbox" class="btn btn-primary" style="padding: 10px 24px; font-size: 1rem;">
           Close Preview
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Volunteer Profile & Verification Modal -->
+  <div id="volunteerProfileModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="volunteerProfileTitle" style="display: none; z-index: 10040;">
+    <div class="modal-content" style="max-width: 600px; padding: 1.8rem; border-radius: 16px;">
+      <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--color-primary-light); padding-bottom: 12px; margin-bottom: 15px;">
+        <h3 id="volunteerProfileTitle" style="color: var(--color-primary-dark); margin: 0; font-size: 1.35rem; display: flex; align-items: center; gap: 8px;">
+          👤 Volunteer Profile &amp; Verification Badges
+        </h3>
+        <button id="volunteerProfileClose" class="modal-close" aria-label="Close Modal" style="font-size: 1.8rem; border: none; background: none; cursor: pointer;">&times;</button>
+      </div>
+      
+      <div id="volunteerProfileDetails" style="padding: 5px 0;">
+        <!-- Populated dynamically via JS -->
+      </div>
+
+      <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 1.2rem; border-top: 1px solid #eee; padding-top: 12px;">
+        <button type="button" id="btnCloseVolunteerProfile" class="btn btn-secondary" style="padding: 10px 22px; font-size: 1rem;">
+          Close Profile
         </button>
       </div>
     </div>

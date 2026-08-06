@@ -40,7 +40,15 @@ const usersData = [
     role: "volunteer",
     phone: "555-0188",
     address: "123 Elm Street",
-    skills: ["Grocery Shopping", "Tech Support", "Companionship"]
+    skills: ["Grocery Shopping", "Tech Support", "Companionship"],
+    aadhaarNumber: "9876-5432-1098",
+    govtIdCard: "/uploads/kyc/demo-sarah-id.jpg",
+    selfiePhoto: "/uploads/kyc/demo-sarah-selfie.jpg",
+    isPhoneVerified: true,
+    isEmailVerified: true,
+    isIdVerified: true,
+    isPoliceVerified: true,
+    verificationStatus: "verified"
   },
   {
     name: "David Beckham",
@@ -49,7 +57,15 @@ const usersData = [
     role: "volunteer",
     phone: "555-0144",
     address: "52 Chelsea Road",
-    skills: ["Medical Escort", "Housekeeping"]
+    skills: ["Medical Escort", "Housekeeping"],
+    aadhaarNumber: "1234-5678-9012",
+    govtIdCard: "/uploads/kyc/demo-david-id.jpg",
+    selfiePhoto: "/uploads/kyc/demo-david-selfie.jpg",
+    isPhoneVerified: true,
+    isEmailVerified: true,
+    isIdVerified: false,
+    isPoliceVerified: false,
+    verificationStatus: "pending"
   }
   // Note: Clara Vance (family member) is added after senior Eleanor is created,
   // because we need Eleanor's _id to set the linkedSenior reference.

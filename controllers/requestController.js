@@ -135,15 +135,15 @@ exports.getRequests = async (req, res) => {
       }
       requests = await HelpRequest.find({ senior: req.user.linkedSenior })
         .populate('senior', 'name phone address emergencyContact')
-        .populate('volunteer', 'name phone email skills')
-        .populate('volunteerQuotes.volunteer', 'name phone email skills')
+        .populate('volunteer', 'name phone email skills verificationStatus isIdVerified isPoliceVerified isPhoneVerified isEmailVerified govtIdCard selfiePhoto aadhaarNumber createdAt')
+        .populate('volunteerQuotes.volunteer', 'name phone email skills verificationStatus isIdVerified isPoliceVerified isPhoneVerified isEmailVerified govtIdCard selfiePhoto aadhaarNumber createdAt')
         .populate('familyReviewedBy', 'name relationship')
         .sort({ createdAt: -1 });
 
     } else if (req.user.role === 'admin') {
       requests = await HelpRequest.find()
         .populate('senior', 'name email phone address')
-        .populate('volunteer', 'name email phone')
+        .populate('volunteer', 'name email phone skills verificationStatus isIdVerified isPoliceVerified isPhoneVerified isEmailVerified govtIdCard selfiePhoto aadhaarNumber createdAt')
         .populate('familyReviewedBy', 'name relationship')
         .sort({ createdAt: -1 });
     }
@@ -162,7 +162,8 @@ exports.getRequestById = async (req, res) => {
   try {
     const request = await HelpRequest.findById(req.params.id)
       .populate('senior', 'name phone address email emergencyContact')
-      .populate('volunteer', 'name phone email skills')
+      .populate('volunteer', 'name phone email skills verificationStatus isIdVerified isPoliceVerified isPhoneVerified isEmailVerified govtIdCard selfiePhoto aadhaarNumber createdAt')
+      .populate('volunteerQuotes.volunteer', 'name phone email skills verificationStatus isIdVerified isPoliceVerified isPhoneVerified isEmailVerified govtIdCard selfiePhoto aadhaarNumber createdAt')
       .populate('familyReviewedBy', 'name relationship');
 
     if (!request) {
@@ -244,6 +245,19 @@ exports.deleteRequest = async (req, res) => {
 // @access  Private (Volunteers only)
 exports.acceptRequest = async (req, res) => {
   try {
+    const User = require('../models/User');
+    const volunteerUser = await User.findById(req.user.id);
+    if (!volunteerUser || volunteerUser.role !== 'volunteer') {
+      return res.status(403).json({ success: false, message: 'Only volunteers can accept help requests' });
+    }
+
+    if (volunteerUser.verificationStatus !== 'verified') {
+      return res.status(403).json({
+        success: false,
+        message: 'KYC & Police Clearance Required: You must complete document submission and receive Admin & Police verification approval before accepting requests.'
+      });
+    }
+
     let request = await HelpRequest.findById(req.params.id);
 
     if (!request) return res.status(404).json({ success: false, message: 'Help request not found' });

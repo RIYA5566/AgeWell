@@ -112,6 +112,64 @@
 
         <!-- Role Specific Fields: Volunteer -->
         <div id="volunteerFields" class="form-group" style="display: none;">
+          <fieldset style="border: 3px solid var(--color-primary-light); padding: 1.5rem; border-radius: var(--border-radius); background: #f9fbf9; margin-bottom: 1.5rem;">
+            <legend style="font-weight: 700; color: var(--color-primary-dark); padding: 0 10px; font-size: 1.1rem;">
+              🛡️ Mandatory KYC &amp; Verification Documents
+            </legend>
+            <p style="font-size: 0.95rem; color: #555; margin-bottom: 1.2rem;">
+              To ensure senior citizens are safe, all volunteers must complete identity &amp; background verification before visiting seniors.
+            </p>
+
+            <!-- Aadhaar Number -->
+            <div class="form-group">
+              <label for="aadhaarNumber">🪪 Aadhaar / National ID Number <span style="color: red;">*</span></label>
+              <input 
+                type="text" 
+                id="aadhaarNumber" 
+                name="aadhaarNumber" 
+                class="form-input" 
+                placeholder="e.g. 1234 5678 9012"
+                maxlength="14"
+              >
+            </div>
+
+            <!-- Phone OTP Verification -->
+            <div class="form-group" style="background: #ffffff; padding: 1rem; border: 2px dashed #43a047; border-radius: 8px; margin-bottom: 1rem;">
+              <label style="font-weight: 700; color: #2e7d32;">📞 Phone Number OTP Verification</label>
+              <div style="display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap;">
+                <input type="text" id="phoneOtpInput" class="form-input" placeholder="Enter 6-digit OTP (e.g. 123456)" style="flex: 1; min-width: 180px;">
+                <button type="button" id="btnSendPhoneOtp" class="btn btn-secondary" style="padding: 8px 16px; font-size: 0.95rem;">Send OTP</button>
+                <button type="button" id="btnVerifyPhoneOtp" class="btn btn-primary" style="padding: 8px 16px; font-size: 0.95rem; background-color: #2e7d32;">Verify OTP</button>
+              </div>
+              <div id="phoneOtpStatus" style="font-size: 0.9rem; font-weight: bold; margin-top: 6px; color: #c62828;">❌ Phone Not Verified (Click Send OTP)</div>
+            </div>
+
+            <!-- Email OTP Verification -->
+            <div class="form-group" style="background: #ffffff; padding: 1rem; border: 2px dashed #0288d1; border-radius: 8px; margin-bottom: 1rem;">
+              <label style="font-weight: 700; color: #0288d1;">📧 Email OTP Verification</label>
+              <div style="display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap;">
+                <input type="text" id="emailOtpInput" class="form-input" placeholder="Enter 6-digit OTP (e.g. 654321)" style="flex: 1; min-width: 180px;">
+                <button type="button" id="btnSendEmailOtp" class="btn btn-secondary" style="padding: 8px 16px; font-size: 0.95rem;">Send OTP</button>
+                <button type="button" id="btnVerifyEmailOtp" class="btn btn-primary" style="padding: 8px 16px; font-size: 0.95rem; background-color: #0288d1;">Verify OTP</button>
+              </div>
+              <div id="emailOtpStatus" style="font-size: 0.9rem; font-weight: bold; margin-top: 6px; color: #c62828;">❌ Email Not Verified (Click Send OTP)</div>
+            </div>
+
+            <!-- Govt ID Upload -->
+            <div class="form-group">
+              <label for="govtIdCard">📄 Upload Government Photo ID (Aadhaar / Voter ID / Passport) <span style="color: red;">*</span></label>
+              <input type="file" id="govtIdCard" name="govtIdCard" class="form-control" accept="image/*,.pdf">
+              <small style="color: #666; display: block; margin-top: 4px;">Upload clear image or document of your Govt issued ID.</small>
+            </div>
+
+            <!-- Selfie Upload -->
+            <div class="form-group">
+              <label for="selfiePhoto">📸 Upload Live Selfie / Profile Photo <span style="color: red;">*</span></label>
+              <input type="file" id="selfiePhoto" name="selfiePhoto" class="form-control" accept="image/*">
+              <small style="color: #666; display: block; margin-top: 4px;">Clear front-facing picture of your face for identity matching.</small>
+            </div>
+          </fieldset>
+
           <fieldset style="border: 3px solid var(--color-primary-light); padding: 1.5rem; border-radius: var(--border-radius);">
             <legend style="font-weight: 700; color: var(--color-primary-dark); padding: 0 10px;">
               Select the Skills / Areas you can support:

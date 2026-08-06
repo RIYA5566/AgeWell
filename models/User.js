@@ -43,10 +43,48 @@ const userSchema = new mongoose.Schema({
     required: function () { return this.role === 'senior'; }
   },
 
-  // ─── Volunteer fields ────────────────────────────────────────────────────
+  // ─── Volunteer Verification & Trust fields ─────────────────────────────────
   skills: {
     type: [String],
     default: []
+  },
+  aadhaarNumber: {
+    type: String,
+    trim: true,
+    default: ''
+  },
+  govtIdCard: {
+    type: String,
+    default: ''
+  },
+  selfiePhoto: {
+    type: String,
+    default: ''
+  },
+  isPhoneVerified: {
+    type: Boolean,
+    default: true
+  },
+  isEmailVerified: {
+    type: Boolean,
+    default: true
+  },
+  isIdVerified: {
+    type: Boolean,
+    default: false
+  },
+  isPoliceVerified: {
+    type: Boolean,
+    default: false
+  },
+  verificationStatus: {
+    type: String,
+    enum: ['unverified', 'pending', 'verified', 'rejected'],
+    default: 'unverified'
+  },
+  verificationRejectionReason: {
+    type: String,
+    default: ''
   },
 
   // ─── Family / Caregiver fields ───────────────────────────────────────────

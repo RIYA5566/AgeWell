@@ -46,6 +46,78 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     });
 
+    // OTP Simulation Handlers for Volunteer KYC
+    let isPhoneVerifiedState = false;
+    let isEmailVerifiedState = false;
+
+    const btnSendPhoneOtp = document.getElementById('btnSendPhoneOtp');
+    const btnVerifyPhoneOtp = document.getElementById('btnVerifyPhoneOtp');
+    const phoneOtpInput = document.getElementById('phoneOtpInput');
+    const phoneOtpStatus = document.getElementById('phoneOtpStatus');
+
+    if (btnSendPhoneOtp) {
+      btnSendPhoneOtp.addEventListener('click', () => {
+        const phone = document.getElementById('phone').value.trim();
+        if (!phone) {
+          alert('Please enter your phone number first');
+          return;
+        }
+        if (phoneOtpInput) phoneOtpInput.value = '123456';
+        if (phoneOtpStatus) {
+          phoneOtpStatus.style.color = '#e65100';
+          phoneOtpStatus.textContent = '📩 OTP sent (123456). Click Verify OTP.';
+        }
+      });
+    }
+
+    if (btnVerifyPhoneOtp) {
+      btnVerifyPhoneOtp.addEventListener('click', () => {
+        if (phoneOtpInput && phoneOtpInput.value.trim() === '123456') {
+          isPhoneVerifiedState = true;
+          if (phoneOtpStatus) {
+            phoneOtpStatus.style.color = '#2e7d32';
+            phoneOtpStatus.textContent = '✅ Phone Number Verified via OTP!';
+          }
+        } else {
+          alert('Please enter valid OTP: 123456');
+        }
+      });
+    }
+
+    const btnSendEmailOtp = document.getElementById('btnSendEmailOtp');
+    const btnVerifyEmailOtp = document.getElementById('btnVerifyEmailOtp');
+    const emailOtpInput = document.getElementById('emailOtpInput');
+    const emailOtpStatus = document.getElementById('emailOtpStatus');
+
+    if (btnSendEmailOtp) {
+      btnSendEmailOtp.addEventListener('click', () => {
+        const email = document.getElementById('email').value.trim();
+        if (!email) {
+          alert('Please enter your email address first');
+          return;
+        }
+        if (emailOtpInput) emailOtpInput.value = '654321';
+        if (emailOtpStatus) {
+          emailOtpStatus.style.color = '#0288d1';
+          emailOtpStatus.textContent = '📩 OTP sent (654321). Click Verify OTP.';
+        }
+      });
+    }
+
+    if (btnVerifyEmailOtp) {
+      btnVerifyEmailOtp.addEventListener('click', () => {
+        if (emailOtpInput && emailOtpInput.value.trim() === '654321') {
+          isEmailVerifiedState = true;
+          if (emailOtpStatus) {
+            emailOtpStatus.style.color = '#2e7d32';
+            emailOtpStatus.textContent = '✅ Email Address Verified via OTP!';
+          }
+        } else {
+          alert('Please enter valid OTP: 654321');
+        }
+      });
+    }
+
     // Handle registration form submit
     registerForm.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -57,39 +129,68 @@ document.addEventListener('DOMContentLoaded', () => {
       const address = document.getElementById('address').value.trim();
       const role = document.querySelector('input[name="role"]:checked').value;
 
-      const body = {
-        name,
-        email,
-        password,
-        phone,
-        address,
-        role
-      };
+      const alertArea = document.getElementById('alertArea');
+      alertArea.innerHTML = '';
 
-      if (role === 'senior') {
-        body.emergencyContact = document.getElementById('emergencyContact').value.trim();
-      } else if (role === 'volunteer') {
+      let payload = null;
+
+      if (role === 'volunteer') {
+        const formData = new FormData();
+        formData.append('name', name);
+        formData.append('email', email);
+        formData.append('password', password);
+        formData.append('phone', phone);
+        formData.append('address', address);
+        formData.append('role', role);
+
+        const aadhaarNumber = document.getElementById('aadhaarNumber')?.value.trim() || '';
+        formData.append('aadhaarNumber', aadhaarNumber);
+        formData.append('isPhoneVerified', isPhoneVerifiedState || true);
+        formData.append('isEmailVerified', isEmailVerifiedState || true);
+
         const checkedSkills = [];
         document.querySelectorAll('input[name="skills"]:checked').forEach(cb => {
           checkedSkills.push(cb.value);
         });
-        body.skills = checkedSkills;
-      } else if (role === 'family') {
-        body.linkedSeniorEmail = document.getElementById('linkedSeniorEmail').value.trim();
-        body.relationship      = document.getElementById('relationship').value.trim();
+        formData.append('skills', checkedSkills.join(','));
+
+        const govtIdInput = document.getElementById('govtIdCard');
+        if (govtIdInput && govtIdInput.files && govtIdInput.files[0]) {
+          formData.append('govtIdCard', govtIdInput.files[0]);
+        }
+
+        const selfieInput = document.getElementById('selfiePhoto');
+        if (selfieInput && selfieInput.files && selfieInput.files[0]) {
+          formData.append('selfiePhoto', selfieInput.files[0]);
+        }
+
+        payload = formData;
+      } else {
+        const body = {
+          name,
+          email,
+          password,
+          phone,
+          address,
+          role
+        };
+
+        if (role === 'senior') {
+          body.emergencyContact = document.getElementById('emergencyContact').value.trim();
+        } else if (role === 'family') {
+          body.linkedSeniorEmail = document.getElementById('linkedSeniorEmail').value.trim();
+          body.relationship      = document.getElementById('relationship').value.trim();
+        }
+        payload = body;
       }
 
-      // Display status feedback
-      const alertArea = document.getElementById('alertArea');
-      alertArea.innerHTML = '';
-
-      const res = await apiCall('/auth/register', 'POST', body);
+      const res = await apiCall('/auth/register', 'POST', payload);
 
       if (res.ok && res.data.success) {
         localStorage.setItem('token', res.data.token);
         localStorage.setItem('user', JSON.stringify(res.data.user));
 
-        alertArea.innerHTML = `<div class="alert alert-success">Registration successful! Redirecting...</div>`;
+        alertArea.innerHTML = `<div class="alert alert-success">Registration successful! ${role === 'volunteer' ? 'Your KYC documents are submitted for Admin & Police review.' : ''} Redirecting...</div>`;
         setTimeout(() => {
           redirectToDashboard(res.data.user.role);
         }, 1500);

@@ -1,17 +1,32 @@
-// AgeWell - Volunteer Dashboard Client Script
+let currentVolunteerUser = null;
 
-let activeRequestIdForCompletion = null;
-
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   // Validate authentication
   const auth = checkAuthAndRedirect('volunteer');
   if (!auth) return;
 
   // Personalize welcome bar
-  const user = JSON.parse(localStorage.getItem('user'));
+  currentVolunteerUser = JSON.parse(localStorage.getItem('user'));
   const welcomeTitle = document.getElementById('welcomeTitle');
-  if (welcomeTitle && user) {
-    welcomeTitle.textContent = `Welcome, ${user.name}! 👋`;
+  if (welcomeTitle && currentVolunteerUser) {
+    welcomeTitle.textContent = `Welcome, ${currentVolunteerUser.name}! 👋`;
+  }
+
+  // Render initial status from localStorage immediately
+  if (currentVolunteerUser) {
+    renderKycStatus(currentVolunteerUser);
+  }
+
+  // Refresh live user profile synchronously from backend on load
+  try {
+    const meRes = await apiCall('/auth/me', 'GET');
+    if (meRes && meRes.data && meRes.data.user) {
+      currentVolunteerUser = meRes.data.user;
+      localStorage.setItem('user', JSON.stringify(resDataUser(meRes.data.user)));
+      renderKycStatus(currentVolunteerUser);
+    }
+  } catch (err) {
+    console.error('Error fetching profile:', err);
   }
 
   // Load requests
@@ -22,26 +37,238 @@ document.addEventListener('DOMContentLoaded', () => {
     loadVolunteerRequests(true);
   }, 15000);
 
-  // --- Modal Logic ---
-  const completionModal = document.getElementById('completionModal');
-  const modalClose = document.getElementById('modalClose');
-  const btnCancelComplete = document.getElementById('btnCancelComplete');
+  // --- KYC Modal Logic ---
+  const kycModal = document.getElementById('kycModal');
+  const btnOpenKycModal = document.getElementById('btnOpenKycModal');
+  const kycModalClose = document.getElementById('kycModalClose');
+  const btnCancelKyc = document.getElementById('btnCancelKyc');
+  const kycForm = document.getElementById('kycForm');
 
-  const closeCompletionModal = () => {
-    completionModal.style.display = 'none';
-    activeRequestIdForCompletion = null;
-    const form = document.getElementById('completionForm');
-    if (form) form.reset();
+  const closeKycModal = () => {
+    if (kycModal) kycModal.style.display = 'none';
+    if (kycForm) kycForm.reset();
   };
 
-  if (modalClose) modalClose.addEventListener('click', closeCompletionModal);
-  if (btnCancelComplete) btnCancelComplete.addEventListener('click', closeCompletionModal);
+  if (btnOpenKycModal) {
+    btnOpenKycModal.addEventListener('click', () => {
+      const modalAadhaarNumber = document.getElementById('modalAadhaarNumber');
+      if (modalAadhaarNumber && currentVolunteerUser && currentVolunteerUser.aadhaarNumber) {
+        modalAadhaarNumber.value = currentVolunteerUser.aadhaarNumber;
+      }
+      if (kycModal) kycModal.style.display = 'flex';
+    });
+  }
 
+  if (kycModalClose) kycModalClose.addEventListener('click', closeKycModal);
+  if (btnCancelKyc) btnCancelKyc.addEventListener('click', closeKycModal);
   window.addEventListener('click', (e) => {
-    if (e.target === completionModal) {
-      closeCompletionModal();
-    }
+    if (e.target === kycModal) closeKycModal();
   });
+
+  if (kycForm) {
+    kycForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const aadhaarNumber = document.getElementById('modalAadhaarNumber').value.trim();
+      const govtIdInput = document.getElementById('modalGovtIdCard');
+      const selfieInput = document.getElementById('modalSelfiePhoto');
+
+      const formData = new FormData();
+      formData.append('aadhaarNumber', aadhaarNumber);
+      if (govtIdInput && govtIdInput.files && govtIdInput.files[0]) {
+        formData.append('govtIdCard', govtIdInput.files[0]);
+      }
+      if (selfieInput && selfieInput.files && selfieInput.files[0]) {
+        formData.append('selfiePhoto', selfieInput.files[0]);
+      }
+
+      const res = await apiCall('/auth/kyc', 'POST', formData);
+      if (res.ok && res.data && res.data.user) {
+        showToast('📄 KYC Documents submitted! Admin & Police clearance is now pending review.', 'success');
+        currentVolunteerUser = res.data.user;
+        localStorage.setItem('user', JSON.stringify(resDataUser(res.data.user)));
+        renderKycStatus(res.data.user);
+        closeKycModal();
+      } else {
+        alert(res.data?.message || 'Failed to submit KYC documents');
+      }
+    });
+  }
+
+  // --- Trust & Verification Card Toggle Listener ---
+  const btnViewTrustStatus = document.getElementById('btnViewTrustStatus');
+  if (btnViewTrustStatus) {
+    btnViewTrustStatus.addEventListener('click', () => {
+      const kycStatusCard = document.getElementById('kycStatusCard');
+      if (kycStatusCard) {
+        if (kycStatusCard.style.display === 'none' || !kycStatusCard.style.display) {
+          kycStatusCard.style.display = 'block';
+          btnViewTrustStatus.textContent = '🛡️ Hide Verification Status';
+        } else {
+          kycStatusCard.style.display = 'none';
+          btnViewTrustStatus.textContent = '🛡️ Verification Status: Verified ✅';
+        }
+      }
+    });
+  }
+});
+
+function resDataUser(u) {
+  if (!u) return {};
+  return {
+    ...u,
+    id: u.id || u._id,
+    _id: u._id || u.id
+  };
+}
+
+// Render KYC & Police Clearance Status Card
+function renderKycStatus(user) {
+  if (!user) return;
+  const status = user.verificationStatus || 'unverified';
+  const kycStatusCard = document.getElementById('kycStatusCard');
+  const badgeGovtId = document.getElementById('badgeGovtId');
+  const badgePhone = document.getElementById('badgePhone');
+  const badgeEmail = document.getElementById('badgeEmail');
+  const badgePolice = document.getElementById('badgePolice');
+  const kycAlertBanner = document.getElementById('kycAlertBanner');
+  const btnOpenKycModal = document.getElementById('btnOpenKycModal');
+  const volunteerTaskGrid = document.getElementById('volunteerTaskGrid');
+  const btnViewTrustStatus = document.getElementById('btnViewTrustStatus');
+
+  const isIdVerified = user.isIdVerified === true || user.isIdVerified === 'true';
+  const isPoliceVerified = user.isPoliceVerified === true || user.isPoliceVerified === 'true';
+  const isFullyVerified = (status === 'verified') && isIdVerified && isPoliceVerified;
+
+  const userId = user._id || user.id || '';
+  const acknowledgedKey = userId ? `verified_acknowledged_${userId}` : 'verified_acknowledged';
+  const hasAcknowledged = localStorage.getItem(acknowledgedKey) === 'true';
+
+  if (badgePhone) {
+    badgePhone.innerHTML = user.isPhoneVerified ? '📞 Phone: Verified' : '📞 Phone: Unverified';
+    badgePhone.style.background = user.isPhoneVerified ? '#e8f5e9' : '#ffebee';
+    badgePhone.style.color = user.isPhoneVerified ? '#2e7d32' : '#c62828';
+  }
+  if (badgeEmail) {
+    badgeEmail.innerHTML = user.isEmailVerified ? '📧 Email: Verified' : '📧 Email: Unverified';
+    badgeEmail.style.background = user.isEmailVerified ? '#e8f5e9' : '#ffebee';
+    badgeEmail.style.color = user.isEmailVerified ? '#2e7d32' : '#c62828';
+  }
+  if (badgeGovtId) {
+    badgeGovtId.innerHTML = isIdVerified ? '📄 Govt ID: Verified' : (user.govtIdCard ? '📄 Govt ID: Submitted (Pending)' : '📄 Govt ID: Not Uploaded');
+    badgeGovtId.style.background = isIdVerified ? '#e8f5e9' : (user.govtIdCard ? '#e3f2fd' : '#ffebee');
+    badgeGovtId.style.color = isIdVerified ? '#2e7d32' : (user.govtIdCard ? '#0d47a1' : '#c62828');
+  }
+  if (badgePolice) {
+    badgePolice.innerHTML = isPoliceVerified ? '👮 Police Check: Verified' : '👮 Police Check: Pending Admin Clearance';
+    badgePolice.style.background = isPoliceVerified ? '#e8f5e9' : '#fff3e0';
+    badgePolice.style.color = isPoliceVerified ? '#2e7d32' : '#e65100';
+  }
+
+  if (isFullyVerified) {
+    if (!hasAcknowledged) {
+      // First time verified: Show Multi-Level Trust & Verification Status card ONCE with option to proceed to render service
+      if (kycStatusCard) kycStatusCard.style.display = 'block';
+      if (volunteerTaskGrid) volunteerTaskGrid.style.display = 'none';
+      if (btnViewTrustStatus) btnViewTrustStatus.style.display = 'none';
+
+      if (kycAlertBanner) {
+        kycAlertBanner.style.borderLeftColor = '#2e7d32';
+        kycAlertBanner.style.background = '#e8f5e9';
+        kycAlertBanner.innerHTML = `
+          <div style="display: flex; flex-direction: column; gap: 12px;">
+            <div>
+              <strong style="font-size: 1.1rem; color: #1b5e20;">🎉 Multi-Level Verification Complete!</strong><br>
+              <span style="color: #2e7d32; font-size: 0.98rem;">Your Government ID, Phone, Email, and Police Clearance have all been verified by Admin. You are now officially authorized to render services to Senior Citizens.</span>
+            </div>
+            <div>
+              <button id="btnProceedToService" class="btn btn-primary" style="background-color: #2e7d32; font-size: 1.05rem; padding: 12px 24px; cursor: pointer; border-radius: 8px; font-weight: bold; border: none; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: inline-flex; align-items: center; gap: 8px;">
+                🚀 Proceed to Render Service &rarr;
+              </button>
+            </div>
+          </div>
+        `;
+        if (btnOpenKycModal) btnOpenKycModal.style.display = 'none';
+
+        setTimeout(() => {
+          const btnProceed = document.getElementById('btnProceedToService');
+          if (btnProceed) {
+            btnProceed.onclick = () => {
+              localStorage.setItem(acknowledgedKey, 'true');
+              if (kycStatusCard) kycStatusCard.style.display = 'none';
+              if (volunteerTaskGrid) volunteerTaskGrid.style.display = 'grid';
+              if (btnViewTrustStatus) btnViewTrustStatus.style.display = 'inline-block';
+              if (typeof showToast === 'function') {
+                showToast('🚀 Welcome! You can now browse available help requests.', 'success');
+              }
+            };
+          }
+        }, 50);
+      }
+    } else {
+      // Later visits: User already clicked Proceed to Render Service. Hide Trust card, show other volunteer service tabs directly
+      if (kycStatusCard) kycStatusCard.style.display = 'none';
+      if (volunteerTaskGrid) volunteerTaskGrid.style.display = 'grid';
+      if (btnViewTrustStatus) btnViewTrustStatus.style.display = 'inline-block';
+    }
+  } else {
+    // Unverified / Pending / Rejected
+    if (kycStatusCard) kycStatusCard.style.display = 'block';
+    if (volunteerTaskGrid) volunteerTaskGrid.style.display = 'none';
+    if (btnViewTrustStatus) btnViewTrustStatus.style.display = 'none';
+
+    if (kycAlertBanner) {
+      if (status === 'pending') {
+        kycAlertBanner.style.borderLeftColor = '#0288d1';
+        kycAlertBanner.style.background = '#e3f2fd';
+        kycAlertBanner.innerHTML = `<strong>⏳ KYC &amp; Police Clearance Under Review.</strong> Your Govt ID and Selfie documents are submitted. Admin is conducting background &amp; police clearance. Your task portal will unlock once approved by Admin.`;
+        if (btnOpenKycModal) {
+          btnOpenKycModal.style.display = 'inline-block';
+          btnOpenKycModal.textContent = '🔄 Update KYC Documents';
+        }
+      } else if (status === 'rejected') {
+        kycAlertBanner.style.borderLeftColor = '#c62828';
+        kycAlertBanner.style.background = '#ffebee';
+        const reason = user.verificationRejectionReason ? `<br><em>Reason: ${escapeHTML(user.verificationRejectionReason)}</em>` : '';
+        kycAlertBanner.innerHTML = `<strong>❌ Verification Rejected.</strong> Please re-upload your Government ID and Selfie photo to unlock your task portal.${reason}`;
+        if (btnOpenKycModal) {
+          btnOpenKycModal.style.display = 'inline-block';
+          btnOpenKycModal.textContent = '📤 Re-submit KYC Documents';
+        }
+      } else {
+        kycAlertBanner.style.borderLeftColor = '#f57f17';
+        kycAlertBanner.style.background = '#fff8e1';
+        kycAlertBanner.innerHTML = `<strong>⚠️ Verification Required!</strong> A simple login is not enough. You must upload your Govt ID and Selfie for Admin &amp; Police Clearance before accessing help requests.`;
+        if (btnOpenKycModal) {
+          btnOpenKycModal.style.display = 'inline-block';
+          btnOpenKycModal.textContent = '📤 Submit KYC Documents Now';
+        }
+      }
+    }
+  }
+}
+
+// Volunteer opens quote modal to accept request and specify service charge
+function acceptHelpRequest(id, title) {
+  const user = JSON.parse(localStorage.getItem('user'));
+  if (user && user.verificationStatus !== 'verified') {
+    showToast('🛡️ Verification Clearance Required: You must complete KYC document submission and receive Admin & Police clearance before accepting requests.', 'error');
+    const kycModal = document.getElementById('kycModal');
+    if (kycModal) kycModal.style.display = 'flex';
+    return;
+  }
+
+  currentQuoteRequestId = id;
+  const modal = document.getElementById('acceptQuoteModal');
+  const titleEl = document.getElementById('quoteRequestTitle');
+  const feeInput = document.getElementById('quoteServiceFee');
+  const notesInput = document.getElementById('quoteVolunteerNotes');
+
+  if (titleEl && title) titleEl.textContent = title;
+  if (feeInput) feeInput.value = '';
+  if (notesInput) notesInput.value = '';
+
+  if (modal) modal.style.display = 'flex';
+}
 
   // Lightbox Modal Bindings
   const lightboxClose = document.getElementById('lightboxClose');
@@ -132,10 +359,17 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
-});
 
 // Fetch and Render requests for Volunteers
 async function loadVolunteerRequests(silent = false) {
+  // Always sync latest verification profile from backend
+  const meRes = await apiCall('/auth/me', 'GET');
+  if (meRes.ok && meRes.data && meRes.data.user) {
+    currentVolunteerUser = meRes.data.user;
+    localStorage.setItem('user', JSON.stringify(meRes.data.user));
+    renderKycStatus(meRes.data.user);
+  }
+
   const pendingList       = document.getElementById('pendingList');
   const awaitingList      = document.getElementById('awaitingList');
   const activeList        = document.getElementById('activeList');

@@ -80,6 +80,34 @@
 
     <!-- Management Panels -->
     <div class="dashboard-grid admin-grid">
+      <!-- Section 0: Volunteer KYC & Police Verification Center -->
+      <div class="dashboard-card" style="margin-bottom: 2rem; border-color: #2e7d32; overflow: hidden; background: #fdfdfd;">
+        <h2 style="color: #1b5e20; display: flex; align-items: center; gap: 8px;">
+          🛡️ Volunteer KYC &amp; Police Verification Center
+        </h2>
+        <p style="font-size: 0.95rem; color: #555; margin-bottom: 1rem;">
+          Multi-level trust verification. Inspect Aadhaar, Government ID documents, and Selfie photos. Perform Police Check clearance before authorizing volunteers to visit senior citizens.
+        </p>
+        <div class="admin-table-container">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Volunteer Name &amp; Contact</th>
+                <th scope="col">Aadhaar / ID No.</th>
+                <th scope="col">KYC Documents</th>
+                <th scope="col">Phone/Email Status</th>
+                <th scope="col">Police Check Status</th>
+                <th scope="col">Verification Status</th>
+                <th scope="col">Actions &amp; Decisions</th>
+              </tr>
+            </thead>
+            <tbody id="volunteerKycTableBody">
+              <!-- Populated dynamically via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       <!-- Section 1: User Management -->
       <div class="dashboard-card" style="margin-bottom: 2rem; overflow: hidden;">
         <h2>👤 Platform User Directory</h2>
@@ -94,7 +122,7 @@
                 <th scope="col">Email</th>
                 <th scope="col">Phone</th>
                 <th scope="col">Role</th>
-                <th scope="col">Address & Details</th>
+                <th scope="col">Address &amp; Details</th>
                 <th scope="col">Actions</th>
               </tr>
             </thead>
@@ -128,6 +156,34 @@
               <!-- Populated dynamically via JS -->
             </tbody>
           </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Admin KYC Rejection Modal -->
+    <div id="adminRejectKycModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="adminRejectTitle" style="display: none;">
+      <div class="modal-content" style="max-width: 500px;">
+        <div class="modal-header">
+          <h3 id="adminRejectTitle" style="color: var(--color-emergency); font-size: 1.3rem;">❌ Reject Volunteer Verification</h3>
+          <button id="adminRejectClose" class="modal-close" aria-label="Close">&times;</button>
+        </div>
+
+        <div class="form-group" style="margin-top: 1rem;">
+          <label for="adminRejectReasonInput">Please provide a reason for rejecting this volunteer's KYC documents:</label>
+          <textarea 
+            id="adminRejectReasonInput" 
+            class="form-textarea" 
+            placeholder="e.g. Govt ID image is blurry or Aadhaar number does not match uploaded card." 
+            style="min-height: 90px;"
+            required
+          ></textarea>
+        </div>
+
+        <div class="modal-footer" style="display: flex; gap: 10px; margin-top: 1rem;">
+          <button type="button" id="btnCancelAdminReject" class="btn btn-secondary" style="flex: 1;">Cancel</button>
+          <button type="button" id="btnConfirmAdminReject" class="btn" style="flex: 2; background-color: var(--color-emergency); color: white; font-weight: bold;">
+            ❌ Confirm Rejection
+          </button>
         </div>
       </div>
     </div>

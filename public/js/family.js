@@ -2,6 +2,7 @@
 
 let activeRejectRequestId = null;
 let pollInterval = null;
+let currentVolunteersMap = {};
 
 document.addEventListener('DOMContentLoaded', () => {
   // Validate auth — must be family role
@@ -42,8 +43,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const closeRejectModal = () => {
     rejectModal.style.display = 'none';
     activeRejectRequestId = null;
-    const input = document.getElementById('rejectionReasonInput');
-    if (input) input.value = '';
   };
 
   if (rejectModalClose) rejectModalClose.addEventListener('click', closeRejectModal);
@@ -55,8 +54,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (btnConfirmReject) {
     btnConfirmReject.addEventListener('click', async () => {
       if (!activeRejectRequestId) return;
-      const reason = document.getElementById('rejectionReasonInput').value.trim();
-      await doRejectVolunteer(activeRejectRequestId, reason);
+      await doRejectVolunteer(activeRejectRequestId);
       closeRejectModal();
     });
   }
@@ -70,6 +68,21 @@ document.addEventListener('DOMContentLoaded', () => {
   if (btnCloseLightbox) btnCloseLightbox.addEventListener('click', closeImageLightbox);
   window.addEventListener('click', (e) => {
     if (e.target === lightboxModal) closeImageLightbox();
+  });
+
+  // Volunteer Profile Modal Bindings
+  const volunteerProfileModal = document.getElementById('volunteerProfileModal');
+  const volunteerProfileClose = document.getElementById('volunteerProfileClose');
+  const btnCloseVolunteerProfile = document.getElementById('btnCloseVolunteerProfile');
+
+  const closeVolunteerProfileModal = () => {
+    if (volunteerProfileModal) volunteerProfileModal.style.display = 'none';
+  };
+
+  if (volunteerProfileClose) volunteerProfileClose.addEventListener('click', closeVolunteerProfileModal);
+  if (btnCloseVolunteerProfile) btnCloseVolunteerProfile.addEventListener('click', closeVolunteerProfileModal);
+  window.addEventListener('click', (e) => {
+    if (e.target === volunteerProfileModal) closeVolunteerProfileModal();
   });
 
   // Initial load
@@ -102,19 +115,43 @@ async function loadFamilyDashboard(silent = false) {
 
   const { senior, requests, pendingApprovalCount } = res.data;
 
+  // Build lookup map of volunteers for instant profile viewing
+  currentVolunteersMap = {};
+  if (requests && requests.length > 0) {
+    requests.forEach(r => {
+      if (r.volunteer && typeof r.volunteer === 'object') {
+        const vId = String(r.volunteer._id || r.volunteer.id || '');
+        if (vId) currentVolunteersMap[vId] = r.volunteer;
+      }
+      if (r.volunteerQuotes && r.volunteerQuotes.length > 0) {
+        r.volunteerQuotes.forEach(q => {
+          if (q.volunteer && typeof q.volunteer === 'object') {
+            const vId = String(q.volunteer._id || q.volunteer.id || '');
+            if (vId) currentVolunteersMap[vId] = q.volunteer;
+          }
+        });
+      }
+    });
+  }
+
   // Show senior info banner
   populateSeniorBanner(senior);
-
-  // Update notification badge
-  updateApprovalBadge(pendingApprovalCount);
 
   // Separate new senior requests needing caregiver decision (familyApprovalStatus !== 'approved') from volunteer approvals
   const seniorRequests = requests.filter(r => (r.status === 'pending' || r.status === 'awaiting_approval') && r.familyApprovalStatus !== 'approved' && (!r.volunteerQuotes || r.volunteerQuotes.length === 0));
   const volunteerApprovals = requests.filter(r => (r.status === 'pending' || r.status === 'awaiting_approval') && r.volunteerQuotes && r.volunteerQuotes.length > 0);
   const completionVerifications = requests.filter(r => r.status === 'completed' && r.completionVerified !== 'verified' && r.completionVerified !== 'rejected');
 
-  // Update notification badges
-  updateApprovalBadge(seniorRequests.length + volunteerApprovals.length);
+  // Update notification badge specifically for Volunteer Approvals section
+  updateApprovalBadge(volunteerApprovals.length);
+
+  // Update document title for total pending actions
+  const totalActions = seniorRequests.length + volunteerApprovals.length + completionVerifications.length;
+  if (totalActions > 0) {
+    document.title = `(${totalActions}) Action Needed – Family Portal | AgeWell`;
+  } else {
+    document.title = 'Family Caregiver Portal – AgeWell';
+  }
 
   // Render Senior Help Requests & Fulfillment Decisions (Section 1)
   renderSeniorHelpRequests(seniorRequests);
@@ -127,6 +164,97 @@ async function loadFamilyDashboard(silent = false) {
 
   // Render full request history (Section 4)
   renderAllRequests(requests);
+}
+
+// Global function to open volunteer profile card modal
+function viewVolunteerProfile(volId) {
+  const vol = currentVolunteersMap[volId];
+  const modal = document.getElementById('volunteerProfileModal');
+  const detailsEl = document.getElementById('volunteerProfileDetails');
+  if (!modal || !detailsEl) return;
+
+  if (!vol) {
+    detailsEl.innerHTML = `
+      <div style="padding: 1.5rem; text-align: center; color: #666;">
+        <p style="font-weight: bold; font-size: 1.1rem; color: #c62828;">Volunteer details loading or unavailable.</p>
+        <p style="font-size: 0.9rem;">Please try refreshing the portal page.</p>
+      </div>`;
+    modal.style.display = 'flex';
+    return;
+  }
+
+  const vName = escapeHTML(vol.name || 'Community Volunteer');
+  const vPhone = escapeHTML(vol.phone || 'Not provided');
+  const vEmail = escapeHTML(vol.email || 'Not provided');
+  const isIdVerified = vol.isIdVerified === true || vol.isIdVerified === 'true';
+  const isPoliceVerified = vol.isPoliceVerified === true || vol.isPoliceVerified === 'true';
+  const isPhoneVerified = vol.isPhoneVerified === true || vol.isPhoneVerified === 'true';
+  const isEmailVerified = vol.isEmailVerified === true || vol.isEmailVerified === 'true';
+  const status = vol.verificationStatus || 'unverified';
+  const isFullyVerified = status === 'verified' && isIdVerified && isPoliceVerified;
+
+  const skillsHtml = (vol.skills && vol.skills.length > 0)
+    ? vol.skills.map(s => `<span class="skill-tag" style="background:#e8f5e9; color:#2e7d32; border:1px solid #a5d6a7; font-weight:600; font-size:0.9rem; padding:4px 12px; border-radius:15px;">${escapeHTML(s)}</span>`).join('')
+    : `<span style="color:#888; font-style:italic;">No specific skills listed</span>`;
+
+  const memberSince = vol.createdAt ? new Date(vol.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Registered Community Volunteer';
+
+  detailsEl.innerHTML = `
+    <div style="display: flex; gap: 16px; align-items: center; margin-bottom: 1.2rem; background: linear-gradient(135deg, #e8f5e9, #ffffff); padding: 1.2rem; border-radius: 12px; border: 2px solid #a5d6a7;">
+      <div style="width: 65px; height: 65px; border-radius: 50%; background: linear-gradient(135deg, #1b5e20, #43a047); display: flex; align-items: center; justify-content: center; font-size: 2.2rem; color: #fff; flex-shrink: 0; box-shadow: 0 4px 10px rgba(46,125,50,0.25);">
+        🙋
+      </div>
+      <div>
+        <h3 style="margin: 0; color: #1b5e20; font-size: 1.35rem; font-weight: 700;">${vName}</h3>
+        <p style="margin: 4px 0 0 0; color: #2e7d32; font-weight: 700; font-size: 0.95rem;">
+          ${isFullyVerified ? '🛡️ Multi-Level Verified Volunteer ✅' : '⏳ Background Clearance Pending'}
+        </p>
+        <span style="font-size: 0.85rem; color: #666;">Joined: ${memberSince}</span>
+      </div>
+    </div>
+
+    <!-- Multi-Level Verification Status & Badges -->
+    <div style="margin-bottom: 1.2rem; background: #ffffff; border: 2px solid #e0e0e0; border-radius: 12px; padding: 1rem;">
+      <h4 style="color: #1b5e20; margin-top: 0; margin-bottom: 10px; font-size: 1.05rem; display: flex; align-items: center; gap: 6px;">
+        🛡️ Admin &amp; Police Verification Clearances:
+      </h4>
+      <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+        <span class="skill-tag" style="background: ${isIdVerified ? '#e8f5e9' : '#ffebee'}; color: ${isIdVerified ? '#2e7d32' : '#c62828'}; border: 1px solid ${isIdVerified ? '#a5d6a7' : '#ef9a9a'}; font-weight: bold; font-size: 0.88rem; padding: 6px 12px;">
+          📄 Govt Photo ID: ${isIdVerified ? 'Verified ✅' : 'Pending'}
+        </span>
+        <span class="skill-tag" style="background: ${isPoliceVerified ? '#e8f5e9' : '#fff3e0'}; color: ${isPoliceVerified ? '#2e7d32' : '#e65100'}; border: 1px solid ${isPoliceVerified ? '#a5d6a7' : '#ffe082'}; font-weight: bold; font-size: 0.88rem; padding: 6px 12px;">
+          👮 Police Check: ${isPoliceVerified ? 'Clearance Approved ✅' : 'Pending Admin Clearance'}
+        </span>
+        <span class="skill-tag" style="background: ${isPhoneVerified ? '#e8f5e9' : '#ffebee'}; color: ${isPhoneVerified ? '#2e7d32' : '#c62828'}; border: 1px solid ${isPhoneVerified ? '#a5d6a7' : '#ef9a9a'}; font-weight: bold; font-size: 0.88rem; padding: 6px 12px;">
+          📞 Phone: ${isPhoneVerified ? 'Verified ✅' : 'Unverified'}
+        </span>
+        <span class="skill-tag" style="background: ${isEmailVerified ? '#e8f5e9' : '#ffebee'}; color: ${isEmailVerified ? '#2e7d32' : '#c62828'}; border: 1px solid ${isEmailVerified ? '#a5d6a7' : '#ef9a9a'}; font-weight: bold; font-size: 0.88rem; padding: 6px 12px;">
+          📧 Email: ${isEmailVerified ? 'Verified ✅' : 'Unverified'}
+        </span>
+      </div>
+    </div>
+
+    <!-- Contact Details -->
+    <div style="margin-bottom: 1.2rem; background: #ffffff; border: 2px solid #e0e0e0; border-radius: 12px; padding: 1rem;">
+      <h4 style="color: #1565c0; margin-top: 0; margin-bottom: 10px; font-size: 1.05rem;">📞 Direct Contact Details:</h4>
+      <p style="margin: 6px 0; font-size: 1rem;">
+        <strong>Phone:</strong> <a href="tel:${vPhone}" style="color: #1565c0; font-weight: bold; text-decoration: none;">${vPhone}</a>
+      </p>
+      <p style="margin: 6px 0; font-size: 1rem;">
+        <strong>Email:</strong> <a href="mailto:${vEmail}" style="color: #1565c0; text-decoration: none;">${vEmail}</a>
+      </p>
+    </div>
+
+    <!-- Skills & Expertise -->
+    <div style="background: #ffffff; border: 2px solid #e0e0e0; border-radius: 12px; padding: 1rem;">
+      <h4 style="color: #2e7d32; margin-top: 0; margin-bottom: 10px; font-size: 1.05rem;">🧰 Volunteer Skills &amp; Capabilities:</h4>
+      <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+        ${skillsHtml}
+      </div>
+    </div>
+  `;
+
+  modal.style.display = 'flex';
 }
 
 // ──────────────────────────────────────────────────────────
@@ -157,10 +285,8 @@ function updateApprovalBadge(count) {
   if (count > 0) {
     badge.textContent = count;
     badge.style.display = 'inline-flex';
-    document.title = `(${count}) Action Needed – Family Portal | AgeWell`;
   } else {
     badge.style.display = 'none';
-    document.title = 'Family Caregiver Portal – AgeWell';
   }
 }
 
@@ -329,7 +455,12 @@ function renderApprovalQueue(awaitingRequests) {
                   <div style="display: flex; gap: 16px; align-items: flex-start; flex-wrap: wrap;">
                     <div class="volunteer-avatar" aria-hidden="true" style="font-size: 2rem;">🙋</div>
                     <div class="volunteer-info" style="flex: 1; min-width: 200px;">
-                      <h4 style="margin: 0; font-size: 1.2rem; color: var(--color-primary-dark);">${vName}</h4>
+                      <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 4px;">
+                        <h4 style="margin: 0; font-size: 1.25rem; color: var(--color-primary-dark);">${vName}</h4>
+                        <button type="button" class="btn btn-secondary" onclick="viewVolunteerProfile('${vId}')" style="padding: 4px 12px; font-size: 0.88rem; border-radius: 16px; background: #e3f2fd; color: #1565c0; border: 1.5px solid #90caf9; font-weight: bold; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
+                          👤 View Volunteer Profile
+                        </button>
+                      </div>
                       <p style="margin: 4px 0;">📞 <a href="tel:${vPhone}" style="color: var(--color-primary-dark); font-weight: bold;">${vPhone}</a></p>
                       <p style="margin: 4px 0;">📧 ${vEmail}</p>
                       <div class="volunteer-skills" style="margin-top: 6px;">${vSkills}</div>
@@ -418,8 +549,10 @@ function renderCompletionVerificationQueue(pendingVerifications) {
   }
 
   container.innerHTML = pendingVerifications.map(req => {
-    const volName  = req.volunteer ? req.volunteer.name : 'Assigned Volunteer';
-    const volPhone = req.volunteer ? req.volunteer.phone || 'Phone not available' : '';
+    const vol = req.volunteer;
+    const volName  = vol ? (typeof vol === 'object' ? vol.name : 'Assigned Volunteer') : 'Assigned Volunteer';
+    const volId    = vol ? (typeof vol === 'object' ? (vol._id || vol.id) : vol) : '';
+    const volPhone = vol ? (typeof vol === 'object' ? vol.phone || 'Phone not available' : '') : '';
 
     let proofUrl = req.completionProof ? (req.completionProof.startsWith('/') ? req.completionProof : '/' + req.completionProof) : '';
 
@@ -456,9 +589,12 @@ function renderCompletionVerificationQueue(pendingVerifications) {
 
         <div class="volunteer-profile-card">
           <div class="volunteer-avatar">🤝</div>
-          <div class="volunteer-info">
-            <h4>${escapeHTML(volName)}</h4>
-            <p>📞 Phone: ${escapeHTML(volPhone)}</p>
+          <div class="volunteer-info" style="flex: 1;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+              <h4 style="margin: 0;">${escapeHTML(volName)}</h4>
+              ${volId ? `<button type="button" class="btn btn-secondary" onclick="viewVolunteerProfile('${volId}')" style="padding: 4px 12px; font-size: 0.85rem; border-radius: 16px; background: #e3f2fd; color: #1565c0; border: 1.5px solid #90caf9; font-weight: bold; cursor: pointer;">👤 View Volunteer Profile</button>` : ''}
+            </div>
+            <p style="margin-top: 4px;">📞 Phone: ${escapeHTML(volPhone)}</p>
             <p>Completed on: ${new Date(req.completedAt || Date.now()).toLocaleDateString()}</p>
           </div>
         </div>
@@ -573,15 +709,22 @@ function renderAllRequests(requests) {
 
     let volunteerInfo = '';
     if (req.volunteer && (req.status === 'accepted' || req.status === 'completed' || req.status === 'awaiting_approval')) {
+      const volObj = req.volunteer;
+      const vName = typeof volObj === 'object' ? volObj.name : 'Volunteer';
+      const vId = typeof volObj === 'object' ? (volObj._id || volObj.id) : volObj;
       const feeLabel = (req.serviceFee !== undefined && req.serviceFee > 0) ? `₹${req.serviceFee}` : '₹0 (Voluntary / Free Service)';
+
       volunteerInfo = `
         <div class="request-details" style="margin-top: 1rem; background: #f9f9f9; padding: 12px; border-radius: 8px; border-left: 4px solid var(--color-primary-dark);">
-          <p><strong>Volunteer:</strong> ${escapeHTML(req.volunteer.name)}</p>
-          <p><strong>💰 Quoted Service Charge:</strong> <span style="color: #2e7d32; font-weight: bold;">${feeLabel}</span></p>
-          ${req.status !== 'awaiting_approval' ? `<p><strong>Contact:</strong> ${escapeHTML(req.volunteer.phone || '—')}</p>` : ''}
-          ${req.volunteerNotes ? `<p style="margin-top:4px; font-style: italic;"><strong>Volunteer Message:</strong> "${escapeHTML(req.volunteerNotes)}"</p>` : ''}
-          ${req.status === 'completed' && req.resolutionNotes ? `<p style="margin-top:6px;"><strong>Completion Notes:</strong> ${escapeHTML(req.resolutionNotes)}</p>` : ''}
-          ${req.familyReviewedBy ? `<p style="margin-top:4px; font-size: 0.9rem; color: #666;">Reviewed by caregiver on ${new Date(req.familyReviewedAt).toLocaleDateString()}</p>` : ''}
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+            <p style="margin: 0; font-size: 1.05rem;"><strong>Volunteer:</strong> <span style="color: var(--color-primary-dark); font-weight: bold;">${escapeHTML(vName)}</span></p>
+            ${vId ? `<button type="button" class="btn btn-secondary" onclick="viewVolunteerProfile('${vId}')" style="padding: 4px 12px; font-size: 0.85rem; border-radius: 16px; background: #ffffff; color: #1565c0; border: 1.5px solid #90caf9; font-weight: bold; cursor: pointer;">👤 View Volunteer Profile</button>` : ''}
+          </div>
+          <p style="margin-top: 6px;"><strong>💰 Quoted Service Charge:</strong> <span style="color: #2e7d32; font-weight: bold;">${feeLabel}</span></p>
+          ${req.status !== 'awaiting_approval' && typeof volObj === 'object' ? `<p style="margin-top: 4px;"><strong>Contact:</strong> ${escapeHTML(volObj.phone || '—')}</p>` : ''}
+          ${req.volunteerNotes ? `<p style="margin-top: 4px; font-style: italic;"><strong>Volunteer Message:</strong> "${escapeHTML(req.volunteerNotes)}"</p>` : ''}
+          ${req.status === 'completed' && req.resolutionNotes ? `<p style="margin-top: 6px;"><strong>Completion Notes:</strong> ${escapeHTML(req.resolutionNotes)}</p>` : ''}
+          ${req.familyReviewedBy ? `<p style="margin-top: 4px; font-size: 0.9rem; color: #666;">Reviewed by caregiver on ${new Date(req.familyReviewedAt).toLocaleDateString()}</p>` : ''}
         </div>`;
     }
 
@@ -674,7 +817,6 @@ async function approveVolunteer(requestId, volunteerId = null) {
 function openRejectModal(requestId) {
   activeRejectRequestId = requestId;
   document.getElementById('rejectModal').style.display = 'flex';
-  document.getElementById('rejectionReasonInput').focus();
 }
 
 // ──────────────────────────────────────────────────────────
@@ -686,10 +828,10 @@ async function doRejectVolunteer(requestId, reason) {
   });
 
   if (res.ok && res.data.success) {
-    showToast('Volunteer rejected. The request is now available for other volunteers.', 'info');
+    showToast(res.data?.message || 'Request rejected successfully.', 'info');
     loadFamilyDashboard();
   } else {
-    showToast(res.data?.message || 'Error rejecting volunteer. Please try again.', 'error');
+    showToast(res.data?.message || 'Error rejecting request. Please try again.', 'error');
   }
 }
 
