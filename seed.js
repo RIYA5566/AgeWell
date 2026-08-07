@@ -129,6 +129,8 @@ const seedDB = async () => {
         category: "Grocery Shopping",
         urgency: "low",
         status: "pending",
+        familyApprovalStatus: "approved",
+        shoppingPreference: "Lowest Cost, Nearby Shop",
         senior: eleanor._id
       },
       {
@@ -137,6 +139,7 @@ const seedDB = async () => {
         category: "Tech Support",
         urgency: "medium",
         status: "awaiting_approval",     // Sarah accepted, but Clara must approve
+        shoppingPreference: "Fastest Purchase, Premium Brands",
         senior: eleanor._id,
         volunteer: sarah._id,
         familyApprovalStatus: "none"
@@ -148,6 +151,7 @@ const seedDB = async () => {
         category: "Companionship",
         urgency: "low",
         status: "accepted",              // Robert approved this one
+        shoppingPreference: "Nearby Shop",
         senior: arthur._id,
         volunteer: sarah._id,
         familyApprovalStatus: "approved",
@@ -161,6 +165,7 @@ const seedDB = async () => {
         category: "Medical Escort",
         urgency: "high",
         status: "completed",
+        shoppingPreference: "Fastest Purchase",
         senior: arthur._id,
         volunteer: david._id,
         familyApprovalStatus: "approved",

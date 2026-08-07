@@ -13,7 +13,7 @@ const seniorHasFamily = async (seniorId) => {
 // @access  Private (Senior Citizens only)
 exports.createRequest = async (req, res) => {
   try {
-    const { title, description, category, urgency, transcript, aiConfidenceScore, aiLowConfidence } = req.body;
+    const { title, description, category, urgency, transcript, aiConfidenceScore, aiLowConfidence, shoppingPreference } = req.body;
     const audioFile = req.file ? `/uploads/audio/${req.file.filename}` : '';
 
     // Ensure at least some content was provided
@@ -55,8 +55,9 @@ exports.createRequest = async (req, res) => {
       isLowConfidence = true;
     }
 
-    // All senior help requests require family caregiver allotment before becoming visible to volunteers
-    const initialFamilyApproval = 'none';
+    // If senior has family caregiver, require family allotment first; otherwise approve for volunteers directly
+    const hasFamily = await seniorHasFamily(req.user.id);
+    const initialFamilyApproval = hasFamily ? 'none' : 'approved';
 
     // All senior help requests start as 'pending'
     const initialStatus = 'pending';
@@ -81,6 +82,7 @@ exports.createRequest = async (req, res) => {
       extractedItems,
       suggestedPlatforms,
       senior: req.user.id,
+      shoppingPreference: shoppingPreference ? shoppingPreference.trim() : 'No Preference',
       status: initialStatus,
       familyApprovalStatus: initialFamilyApproval
     });
@@ -340,8 +342,12 @@ exports.familyApproveRequest = async (req, res) => {
       return res.status(403).json({ success: false, message: 'You are not the caregiver for this senior' });
     }
 
-    const { volunteerId } = req.body || {};
+    const { volunteerId, shoppingPreference } = req.body || {};
     let selectedVolId = volunteerId || request.volunteer;
+
+    if (shoppingPreference && typeof shoppingPreference === 'string') {
+      request.shoppingPreference = shoppingPreference.trim();
+    }
 
     if (selectedVolId) {
       request.volunteer = selectedVolId;

@@ -62,6 +62,13 @@ const helpRequestSchema = new mongoose.Schema({
     default: 'low'
   },
 
+  // ─── Caregiver Preferences ───────────────────────────────────────────────
+  shoppingPreference: {
+    type: String,
+    trim: true,
+    default: 'No Preference'
+  },
+
   // ─── Workflow status ───────────────────────────────────────────────────────
   // pending             → request raised, open for volunteers
   // awaiting_approval   → request raised, waiting for family decision (fulfill self vs allot to volunteers)

@@ -1,4 +1,28 @@
 let currentVolunteerUser = null;
+let currentQuoteRequestId = null;
+let activeRequestIdForCompletion = null;
+
+function closeCompletionModal() {
+  const modal = document.getElementById('completionModal');
+  const form = document.getElementById('completionForm');
+  if (modal) modal.style.display = 'none';
+  if (form) form.reset();
+  activeRequestIdForCompletion = null;
+}
+
+function openCompletionModal(id) {
+  activeRequestIdForCompletion = id;
+  const modal = document.getElementById('completionModal');
+  if (modal) modal.style.display = 'flex';
+}
+
+function closeQuoteModal() {
+  const quoteModal = document.getElementById('acceptQuoteModal');
+  const quoteForm = document.getElementById('quoteForm');
+  if (quoteModal) quoteModal.style.display = 'none';
+  currentQuoteRequestId = null;
+  if (quoteForm) quoteForm.reset();
+}
 
 document.addEventListener('DOMContentLoaded', async () => {
   // Validate authentication
@@ -61,9 +85,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   if (kycModalClose) kycModalClose.addEventListener('click', closeKycModal);
   if (btnCancelKyc) btnCancelKyc.addEventListener('click', closeKycModal);
-  window.addEventListener('click', (e) => {
-    if (e.target === kycModal) closeKycModal();
-  });
 
   if (kycForm) {
     kycForm.addEventListener('submit', async (e) => {
@@ -93,6 +114,112 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     });
   }
+
+  // --- Completion Modal Logic ---
+  const completionModal = document.getElementById('completionModal');
+  const modalClose = document.getElementById('modalClose');
+  const btnCancelComplete = document.getElementById('btnCancelComplete');
+  const completionForm = document.getElementById('completionForm');
+
+  if (modalClose) modalClose.addEventListener('click', closeCompletionModal);
+  if (btnCancelComplete) btnCancelComplete.addEventListener('click', closeCompletionModal);
+
+  if (completionForm) {
+    completionForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      if (!activeRequestIdForCompletion) return;
+
+      const resolutionNotes = document.getElementById('resolutionNotes').value.trim();
+      const receiptPhotoInput = document.getElementById('receiptPhoto');
+
+      const formData = new FormData();
+      formData.append('resolutionNotes', resolutionNotes || 'Assistance successfully provided.');
+      
+      if (receiptPhotoInput && receiptPhotoInput.files && receiptPhotoInput.files[0]) {
+        formData.append('receiptPhoto', receiptPhotoInput.files[0]);
+      }
+
+      const res = await apiCall(`/requests/${activeRequestIdForCompletion}/complete`, 'PUT', formData);
+
+      if (res.ok && res.data.success) {
+        closeCompletionModal();
+        if (typeof showToast === 'function') {
+          showToast(res.data.message || '✅ Request completed successfully!', 'success');
+        } else {
+          alert(res.data.message || 'Request completed successfully!');
+        }
+        loadVolunteerRequests();
+      } else {
+        if (typeof showToast === 'function') {
+          showToast(res.data?.message || 'Error completing request', 'error');
+        } else {
+          alert(res.data?.message || 'Error completing request');
+        }
+      }
+    });
+  }
+
+  // --- Quote Modal Bindings ---
+  const quoteModal = document.getElementById('acceptQuoteModal');
+  const quoteModalClose = document.getElementById('quoteModalClose');
+  const btnCancelQuote = document.getElementById('btnCancelQuote');
+  const quoteForm = document.getElementById('quoteForm');
+
+  if (quoteModalClose) quoteModalClose.addEventListener('click', closeQuoteModal);
+  if (btnCancelQuote) btnCancelQuote.addEventListener('click', closeQuoteModal);
+
+  if (quoteForm) {
+    quoteForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const targetId = currentQuoteRequestId;
+
+      if (!targetId) {
+        alert('Request ID missing. Please try clicking Volunteer to Help again.');
+        return;
+      }
+
+      const feeEl = document.getElementById('quoteServiceFee');
+      const notesEl = document.getElementById('quoteVolunteerNotes');
+
+      const rawFee = feeEl ? feeEl.value : '0';
+      const serviceFee = isNaN(parseFloat(rawFee)) ? 0 : Math.max(0, parseFloat(rawFee));
+      const volunteerNotes = notesEl ? notesEl.value.trim() : '';
+
+      const res = await apiCall(`/requests/${targetId}/accept`, 'PUT', {
+        serviceFee,
+        volunteerNotes
+      });
+
+      if (res.ok && res.data && res.data.success) {
+        closeQuoteModal();
+        if (typeof showToast === 'function') {
+          showToast('🤝 Service fee quote submitted! Task is now sent to the family caregiver for approval.', 'success');
+        } else {
+          alert('Service fee quote submitted!');
+        }
+        loadVolunteerRequests();
+      } else {
+        alert(res.data?.message || 'Failed to accept request');
+      }
+    });
+  }
+
+  // --- Lightbox Modal Bindings ---
+  const lightboxClose = document.getElementById('lightboxClose');
+  const btnCloseLightbox = document.getElementById('btnCloseLightbox');
+  const lightboxModal = document.getElementById('imageLightboxModal');
+
+  if (lightboxClose) lightboxClose.addEventListener('click', closeImageLightbox);
+  if (btnCloseLightbox) btnCloseLightbox.addEventListener('click', closeImageLightbox);
+
+  // --- Unified Modal Outside Click Listener ---
+  window.addEventListener('click', (e) => {
+    if (e.target === kycModal) closeKycModal();
+    if (e.target === quoteModal) closeQuoteModal();
+    if (e.target === lightboxModal) closeImageLightbox();
+    if (e.target === completionModal) closeCompletionModal();
+  });
 
   // --- Trust & Verification Card Toggle Listener ---
   const btnViewTrustStatus = document.getElementById('btnViewTrustStatus');
@@ -248,7 +375,7 @@ function renderKycStatus(user) {
 }
 
 // Volunteer opens quote modal to accept request and specify service charge
-function acceptHelpRequest(id, title) {
+function acceptHelpRequest(id, title, pref = '') {
   const user = JSON.parse(localStorage.getItem('user'));
   if (user && user.verificationStatus !== 'verified') {
     showToast('🛡️ Verification Clearance Required: You must complete KYC document submission and receive Admin & Police clearance before accepting requests.', 'error');
@@ -263,102 +390,24 @@ function acceptHelpRequest(id, title) {
   const feeInput = document.getElementById('quoteServiceFee');
   const notesInput = document.getElementById('quoteVolunteerNotes');
 
+  const prefContainer = document.getElementById('quoteModalPrefContainer');
+  const prefText = document.getElementById('quoteModalPrefText');
+
   if (titleEl && title) titleEl.textContent = title;
   if (feeInput) feeInput.value = '';
   if (notesInput) notesInput.value = '';
 
+  if (pref && pref.trim()) {
+    if (prefText) prefText.textContent = pref.trim();
+    if (prefContainer) prefContainer.style.display = 'block';
+  } else {
+    if (prefContainer) prefContainer.style.display = 'none';
+  }
+
   if (modal) modal.style.display = 'flex';
 }
 
-  // Lightbox Modal Bindings
-  const lightboxClose = document.getElementById('lightboxClose');
-  const btnCloseLightbox = document.getElementById('btnCloseLightbox');
-  const lightboxModal = document.getElementById('imageLightboxModal');
 
-  if (lightboxClose) lightboxClose.addEventListener('click', closeImageLightbox);
-  if (btnCloseLightbox) btnCloseLightbox.addEventListener('click', closeImageLightbox);
-  window.addEventListener('click', (e) => {
-    if (e.target === lightboxModal) closeImageLightbox();
-  });
-
-  // --- Completion Form Submit ---
-  const completionForm = document.getElementById('completionForm');
-  if (completionForm) {
-    completionForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-
-      if (!activeRequestIdForCompletion) return;
-
-      const resolutionNotes = document.getElementById('resolutionNotes').value.trim();
-      const receiptPhotoInput = document.getElementById('receiptPhoto');
-
-      const formData = new FormData();
-      formData.append('resolutionNotes', resolutionNotes || 'Assistance successfully provided.');
-      
-      if (receiptPhotoInput && receiptPhotoInput.files && receiptPhotoInput.files[0]) {
-        formData.append('receiptPhoto', receiptPhotoInput.files[0]);
-      }
-
-      const res = await apiCall(`/requests/${activeRequestIdForCompletion}/complete`, 'PUT', formData);
-
-      if (res.ok && res.data.success) {
-        alert(res.data.message || 'Request completed successfully!');
-        closeCompletionModal();
-        loadVolunteerRequests();
-      } else {
-        alert(res.data.message || 'Error completing request');
-      }
-    });
-  }
-  // --- Quote Modal Bindings ---
-  const quoteModal = document.getElementById('acceptQuoteModal');
-  const quoteModalClose = document.getElementById('quoteModalClose');
-  const btnCancelQuote = document.getElementById('btnCancelQuote');
-  const quoteForm = document.getElementById('quoteForm');
-
-  const closeQuoteModal = () => {
-    if (quoteModal) quoteModal.style.display = 'none';
-    currentQuoteRequestId = null;
-    if (quoteForm) quoteForm.reset();
-  };
-
-  if (quoteModalClose) quoteModalClose.addEventListener('click', closeQuoteModal);
-  if (btnCancelQuote) btnCancelQuote.addEventListener('click', closeQuoteModal);
-  window.addEventListener('click', (e) => {
-    if (e.target === quoteModal) closeQuoteModal();
-  });
-
-  if (quoteForm) {
-    quoteForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const targetId = currentQuoteRequestId;
-
-      if (!targetId) {
-        alert('Request ID missing. Please try clicking Volunteer to Help again.');
-        return;
-      }
-
-      const feeEl = document.getElementById('quoteServiceFee');
-      const notesEl = document.getElementById('quoteVolunteerNotes');
-
-      const rawFee = feeEl ? feeEl.value : '0';
-      const serviceFee = isNaN(parseFloat(rawFee)) ? 0 : Math.max(0, parseFloat(rawFee));
-      const volunteerNotes = notesEl ? notesEl.value.trim() : '';
-
-      const res = await apiCall(`/requests/${targetId}/accept`, 'PUT', {
-        serviceFee,
-        volunteerNotes
-      });
-
-      if (res.ok && res.data && res.data.success) {
-        showToast('🤝 Service fee quote submitted! Task is now sent to the family caregiver for approval.', 'success');
-        closeQuoteModal();
-        loadVolunteerRequests();
-      } else {
-        alert(res.data?.message || 'Failed to accept request');
-      }
-    });
-  }
 
 // Fetch and Render requests for Volunteers
 async function loadVolunteerRequests(silent = false) {
@@ -506,12 +555,23 @@ async function loadVolunteerRequests(silent = false) {
                 </div>
               </div>
               ${req.description ? `<div class="request-description">${escapeHTML(req.description)}</div>` : ''}
+              
+              <!-- Caregiver Shopping Preference Banner -->
+              <div class="caregiver-pref-box" style="margin: 12px 0; padding: 12px 16px; background: linear-gradient(135deg, #fff3e0, #ffe0b2); border: 2px solid #f57c00; border-left: 6px solid #e65100; border-radius: 10px; box-shadow: 0 2px 8px rgba(230,81,0,0.12);">
+                <div style="display: flex; align-items: center; gap: 8px; font-size: 1.02rem; font-weight: 800; color: #e65100;">
+                  <span>🛒 Caregiver Shopping Preference:</span>
+                </div>
+                <div style="margin-top: 4px; font-size: 1.08rem; font-weight: 700; color: #bf360c;">
+                  ${escapeHTML((req.shoppingPreference && req.shoppingPreference.trim()) ? req.shoppingPreference.trim() : 'No Preference')}
+                </div>
+              </div>
+
               ${audioHtml}
               ${existingQuoteBadge}
               ${renderPlatformHelperHtml(req)}
               <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; flex-wrap: wrap; gap: 10px;">
                 <span style="font-size: 0.9rem; color: #666;">Posted: ${new Date(req.createdAt).toLocaleDateString()}</span>
-                <button class="btn btn-primary" onclick="acceptHelpRequest('${req._id}', '${escapeHTML(req.title).replace(/'/g, "\\'")}')" style="padding: 10px 20px; font-size: 1rem; min-height: 48px;">
+                <button class="btn btn-primary" onclick="acceptHelpRequest('${req._id}', '${escapeHTML(req.title).replace(/'/g, "\\'")}', '${escapeHTML(req.shoppingPreference || 'No Preference').replace(/'/g, "\\'")}')" style="padding: 10px 20px; font-size: 1rem; min-height: 48px;">
                   ${btnText}
                 </button>
               </div>
@@ -532,6 +592,17 @@ async function loadVolunteerRequests(silent = false) {
                 <span class="badge badge-warning">⏳ Awaiting Family Approval</span>
               </div>
               ${req.description ? `<div class="request-description">${escapeHTML(req.description)}</div>` : ''}
+              
+              <!-- Caregiver Shopping Preference Banner -->
+              <div class="caregiver-pref-box" style="margin: 12px 0; padding: 12px 16px; background: linear-gradient(135deg, #fff3e0, #ffe0b2); border: 2px solid #f57c00; border-left: 6px solid #e65100; border-radius: 10px; box-shadow: 0 2px 8px rgba(230,81,0,0.12);">
+                <div style="display: flex; align-items: center; gap: 8px; font-size: 1.02rem; font-weight: 800; color: #e65100;">
+                  <span>🛒 Caregiver Shopping Preference:</span>
+                </div>
+                <div style="margin-top: 4px; font-size: 1.08rem; font-weight: 700; color: #bf360c;">
+                  ${escapeHTML((req.shoppingPreference && req.shoppingPreference.trim()) ? req.shoppingPreference.trim() : 'No Preference')}
+                </div>
+              </div>
+
               <div class="request-details">
                 <p><strong>Senior:</strong> ${req.senior ? req.senior.name : 'Senior Citizen'}</p>
                 <p><em>You have accepted this task. The senior's family caregiver has been notified to review and approve your commitment.</em></p>
@@ -575,6 +646,18 @@ async function loadVolunteerRequests(silent = false) {
               <div class="request-card-header">
                 <div class="request-title">${escapeHTML(req.title)}</div>
                 <span class="badge ${isRejected ? 'badge-urgency-emergency' : 'badge-active'}">${isRejected ? '⚠️ Action Required: Re-apply' : 'In Progress'}</span>
+              </div>
+
+              ${req.description ? `<div class="request-description" style="margin-top: 10px;">${escapeHTML(req.description)}</div>` : ''}
+
+              <!-- Caregiver Shopping Preference Banner -->
+              <div class="caregiver-pref-box" style="margin: 12px 0; padding: 12px 16px; background: linear-gradient(135deg, #fff3e0, #ffe0b2); border: 2px solid #f57c00; border-left: 6px solid #e65100; border-radius: 10px; box-shadow: 0 2px 8px rgba(230,81,0,0.12);">
+                <div style="display: flex; align-items: center; gap: 8px; font-size: 1.02rem; font-weight: 800; color: #e65100;">
+                  <span>🛒 Caregiver Shopping Preference:</span>
+                </div>
+                <div style="margin-top: 4px; font-size: 1.08rem; font-weight: 700; color: #bf360c;">
+                  ${escapeHTML((req.shoppingPreference && req.shoppingPreference.trim()) ? req.shoppingPreference.trim() : 'No Preference')}
+                </div>
               </div>
               
               <div class="request-details" style="background-color: var(--color-bg-light); border: 2px solid var(--color-primary-light);">
@@ -662,6 +745,10 @@ async function loadVolunteerRequests(silent = false) {
                 </div>
               </div>
               ${req.description ? `<div class="request-description">${escapeHTML(req.description)}</div>` : ''}
+              ${req.shoppingPreference ? `
+                <div style="margin-top: 8px; margin-bottom: 12px; padding: 10px 14px; background: #fff3e0; border-left: 4px solid #e65100; border-radius: 8px; font-size: 0.98rem; color: #e65100; font-weight: 600;">
+                  🛒 <strong>Caregiver Shopping Preference:</strong> ${escapeHTML(req.shoppingPreference)}
+                </div>` : ''}
               ${audioHtml}
               ${proofHtml}
               ${rejectionReasonAlert}
@@ -681,29 +768,7 @@ async function loadVolunteerRequests(silent = false) {
   }
 }
 
-let currentQuoteRequestId = null;
 
-// Volunteer opens quote modal to accept request and specify service charge
-function acceptHelpRequest(id, title) {
-  currentQuoteRequestId = id;
-  const modal = document.getElementById('acceptQuoteModal');
-  const titleEl = document.getElementById('quoteRequestTitle');
-  const feeInput = document.getElementById('quoteServiceFee');
-  const notesInput = document.getElementById('quoteVolunteerNotes');
-
-  if (titleEl && title) titleEl.textContent = title;
-  if (feeInput) feeInput.value = '';
-  if (notesInput) notesInput.value = '';
-
-  if (modal) modal.style.display = 'flex';
-}
-
-// Open Completion Modal
-function openCompletionModal(id) {
-  activeRequestIdForCompletion = id;
-  const modal = document.getElementById('completionModal');
-  if (modal) modal.style.display = 'flex';
-}
 
 // Helper to escape HTML characters to prevent XSS
 function escapeHTML(str) {

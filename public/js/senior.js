@@ -390,6 +390,10 @@ async function loadRequests() {
             </div>
           </div>
           ${req.description ? `<div class="request-description">${escapeHTML(req.description)}</div>` : ''}
+          ${req.shoppingPreference ? `
+            <div style="margin-top: 6px; margin-bottom: 10px; padding: 8px 12px; background: #e3f2fd; border-left: 4px solid #1976d2; border-radius: 8px; font-size: 0.95rem; color: #0d47a1; font-weight: 600;">
+              🛒 <strong>Caregiver Shopping Preference:</strong> ${escapeHTML(req.shoppingPreference)}
+            </div>` : ''}
           ${audioPlayerHtml}
           ${assignmentInfo}
           <div class="request-card-footer" style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem;">

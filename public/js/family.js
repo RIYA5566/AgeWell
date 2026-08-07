@@ -1,6 +1,8 @@
 // AgeWell — Family/Caregiver Dashboard Client Script
 
 let activeRejectRequestId = null;
+let pendingAllotRequestId = null;
+let pendingAllotVolunteerId = null;
 let pollInterval = null;
 let currentVolunteersMap = {};
 
@@ -81,8 +83,49 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (volunteerProfileClose) volunteerProfileClose.addEventListener('click', closeVolunteerProfileModal);
   if (btnCloseVolunteerProfile) btnCloseVolunteerProfile.addEventListener('click', closeVolunteerProfileModal);
+  // Shopping Preference Checkboxes Bindings
+  const shoppingPrefModal = document.getElementById('shoppingPrefModal');
+  const shoppingPrefModalClose = document.getElementById('shoppingPrefModalClose');
+  const btnCancelShoppingPref = document.getElementById('btnCancelShoppingPref');
+  const btnConfirmShoppingPref = document.getElementById('btnConfirmShoppingPref');
+  const shoppingPrefChecks = document.querySelectorAll('input[name="shoppingPrefCheck"]');
+  const otherPrefTextContainer = document.getElementById('otherPrefTextContainer');
+  const inputCustomOtherPref = document.getElementById('inputCustomOtherPref');
+  const checkNoPref = document.getElementById('checkNoPref');
+  const checkOtherPref = document.getElementById('checkOtherPref');
+
+  shoppingPrefChecks.forEach(chk => {
+    chk.addEventListener('change', (e) => {
+      const val = e.target.value;
+      if (val === 'No Preference' && e.target.checked) {
+        // Uncheck all other checkboxes if "No Preference" is checked
+        shoppingPrefChecks.forEach(c => {
+          if (c.value !== 'No Preference') c.checked = false;
+        });
+        if (otherPrefTextContainer) otherPrefTextContainer.style.display = 'none';
+      } else if (e.target.checked && val !== 'No Preference') {
+        // If any specific preference is checked, uncheck "No Preference"
+        if (checkNoPref) checkNoPref.checked = false;
+      }
+
+      // Check if "Other" is checked
+      if (checkOtherPref && checkOtherPref.checked) {
+        if (otherPrefTextContainer) otherPrefTextContainer.style.display = 'block';
+        if (inputCustomOtherPref && document.activeElement !== inputCustomOtherPref) {
+          inputCustomOtherPref.focus();
+        }
+      } else {
+        if (otherPrefTextContainer) otherPrefTextContainer.style.display = 'none';
+      }
+    });
+  });
+
+  if (shoppingPrefModalClose) shoppingPrefModalClose.addEventListener('click', closeShoppingPrefModal);
+  if (btnCancelShoppingPref) btnCancelShoppingPref.addEventListener('click', closeShoppingPrefModal);
+  if (btnConfirmShoppingPref) btnConfirmShoppingPref.addEventListener('click', confirmAndSubmitAllotment);
+
   window.addEventListener('click', (e) => {
-    if (e.target === volunteerProfileModal) closeVolunteerProfileModal();
+    if (e.target === shoppingPrefModal) closeShoppingPrefModal();
   });
 
   // Initial load
@@ -340,6 +383,10 @@ function renderSeniorHelpRequests(seniorRequests) {
 
         ${req.description ? `<p style="margin-bottom: 1.2rem; color: #444; font-size: 1.05rem;">${escapeHTML(req.description)}</p>` : ''}
         ${req.audioFile ? `<div class="request-audio-player"><label>🎙️ Senior's Spoken Voice Message:</label><audio controls src="${req.audioFile}"></audio></div>` : ''}
+        ${req.shoppingPreference ? `
+          <div style="margin-top: 10px; margin-bottom: 12px; padding: 10px 14px; background: #e3f2fd; border-left: 4px solid #1976d2; border-radius: 8px; font-size: 0.98rem; color: #0d47a1; font-weight: 600;">
+            🛒 <strong>Shopping Preference:</strong> ${escapeHTML(req.shoppingPreference)}
+          </div>` : ''}
 
         <!-- Fulfillment Decision Action Buttons -->
         <div class="approval-actions" style="display: flex; gap: 12px; flex-wrap: wrap; margin-top: 1.2rem;">
@@ -426,6 +473,10 @@ function renderApprovalQueue(awaitingRequests) {
 
         ${req.description ? `<p style="margin-bottom: 1.2rem; color: #444;">${escapeHTML(req.description)}</p>` : ''}
         ${req.audioFile ? `<div class="request-audio-player"><label>🎙️ Senior's Voice Message:</label><audio controls src="${req.audioFile}"></audio></div>` : ''}
+        ${req.shoppingPreference ? `
+          <div style="margin-top: 10px; margin-bottom: 12px; padding: 10px 14px; background: #e3f2fd; border-left: 4px solid #1976d2; border-radius: 8px; font-size: 0.98rem; color: #0d47a1; font-weight: 600;">
+            🛒 <strong>Shopping Preference:</strong> ${escapeHTML(req.shoppingPreference)}
+          </div>` : ''}
 
         <div style="margin-top: 1rem;">
           <h4 style="color: #1565c0; margin-bottom: 0.5rem; font-size: 1.1rem;">
@@ -764,6 +815,10 @@ function renderAllRequests(requests) {
           </div>
         </div>
         ${req.description ? `<div class="request-description">${escapeHTML(req.description)}</div>` : ''}
+        ${req.shoppingPreference ? `
+          <div style="margin-top: 6px; margin-bottom: 10px; padding: 8px 12px; background: #e3f2fd; border-left: 4px solid #1976d2; border-radius: 8px; font-size: 0.95rem; color: #0d47a1; font-weight: 600;">
+            🛒 <strong>Caregiver Shopping Preference:</strong> ${escapeHTML(req.shoppingPreference)}
+          </div>` : ''}
         ${audioHtml}
         ${proofHtml}
         ${timeline}
@@ -776,38 +831,119 @@ function renderAllRequests(requests) {
 }
 
 // ──────────────────────────────────────────────────────────
-// APPROVE VOLUNTEER
+// APPROVE VOLUNTEER & ALLOT WITH SHOPPING PREFERENCES
 // ──────────────────────────────────────────────────────────
-async function approveVolunteer(requestId, volunteerId = null) {
-  const btn = (typeof event !== 'undefined' && event && event.target) ? event.target : null;
-  let originalText = '';
-  if (btn) {
-    originalText = btn.textContent;
-    btn.textContent = volunteerId ? 'Approving...' : 'Allotting...';
-    btn.disabled = true;
+function approveVolunteer(requestId, volunteerId = null, volName = '') {
+  openShoppingPrefModal(requestId, volunteerId, volName);
+}
+
+function openShoppingPrefModal(requestId, volunteerId = null, volName = '') {
+  pendingAllotRequestId = requestId;
+  pendingAllotVolunteerId = volunteerId;
+
+  const modal = document.getElementById('shoppingPrefModal');
+  const subtitle = document.getElementById('shoppingPrefModalSubtitle');
+  const btnConfirm = document.getElementById('btnConfirmShoppingPref');
+  const otherContainer = document.getElementById('otherPrefTextContainer');
+  const customInput = document.getElementById('inputCustomOtherPref');
+
+  // Reset checkboxes to default ("No Preference" checked, others unchecked)
+  const checks = document.querySelectorAll('input[name="shoppingPrefCheck"]');
+  checks.forEach(c => {
+    c.checked = (c.value === 'No Preference');
+  });
+
+  if (otherContainer) otherContainer.style.display = 'none';
+  if (customInput) customInput.value = '';
+
+  if (subtitle) {
+    if (volunteerId && volName) {
+      subtitle.textContent = `Specify shopping preferences (select all that apply) before assigning this task to ${volName}:`;
+    } else {
+      subtitle.textContent = `Specify shopping preferences (select all that apply) before allotting this task to community volunteers:`;
+    }
   }
 
-  const payload = volunteerId ? { volunteerId } : {};
-  const res = await apiCall(`/requests/${requestId}/family-approve`, 'PUT', payload);
+  if (btnConfirm) {
+    btnConfirm.textContent = volunteerId ? `✅ Confirm & Assign ${volName || 'Volunteer'}` : '🤝 Confirm & Allot Task';
+  }
+
+  if (modal) modal.style.display = 'flex';
+}
+
+function closeShoppingPrefModal() {
+  const modal = document.getElementById('shoppingPrefModal');
+  if (modal) modal.style.display = 'none';
+  pendingAllotRequestId = null;
+  pendingAllotVolunteerId = null;
+}
+
+async function confirmAndSubmitAllotment() {
+  if (!pendingAllotRequestId) return;
+
+  const checkedBoxes = Array.from(document.querySelectorAll('input[name="shoppingPrefCheck"]:checked'));
+  const selectedValues = checkedBoxes.map(cb => cb.value);
+
+  let preferenceList = [];
+
+  selectedValues.forEach(val => {
+    if (val === 'Other') {
+      const customText = document.getElementById('inputCustomOtherPref') ? document.getElementById('inputCustomOtherPref').value.trim() : '';
+      if (customText) {
+        preferenceList.push(`Other (${customText})`);
+      } else {
+        preferenceList.push('Other');
+      }
+    } else {
+      preferenceList.push(val);
+    }
+  });
+
+  // Filter out "No Preference" if specific preference options are selected alongside it
+  if (preferenceList.length > 1) {
+    preferenceList = preferenceList.filter(p => p !== 'No Preference');
+  }
+
+  let finalPreference = preferenceList.length > 0 ? preferenceList.join(', ') : 'No Preference';
+
+  const btnConfirm = document.getElementById('btnConfirmShoppingPref');
+  let origText = '';
+  if (btnConfirm) {
+    origText = btnConfirm.textContent;
+    btnConfirm.textContent = 'Allotting...';
+    btnConfirm.disabled = true;
+  }
+
+  const payload = {
+    shoppingPreference: finalPreference
+  };
+  if (pendingAllotVolunteerId) {
+    payload.volunteerId = pendingAllotVolunteerId;
+  }
+
+  const res = await apiCall(`/requests/${pendingAllotRequestId}/family-approve`, 'PUT', payload);
+
+  if (btnConfirm) {
+    btnConfirm.textContent = origText;
+    btnConfirm.disabled = false;
+  }
 
   if (res.ok && res.data.success) {
-    showToast(res.data.message || '✅ Request allotted to community volunteers!', 'success');
-    // Animate card out from Section 1 or Section 2
-    const card = document.getElementById(`seniorCard-${requestId}`) || document.getElementById(`approvalCard-${requestId}`);
+    showToast(res.data.message || '✅ Task allotted with shopping preferences!', 'success');
+    const reqId = pendingAllotRequestId;
+    closeShoppingPrefModal();
+
+    const card = document.getElementById(`seniorCard-${reqId}`) || document.getElementById(`approvalCard-${reqId}`);
     if (card) {
       card.style.transition = 'opacity 0.5s, transform 0.5s';
       card.style.opacity = '0';
       card.style.transform = 'scale(0.95)';
-      setTimeout(() => loadFamilyDashboard(), 600);
+      setTimeout(() => loadFamilyDashboard(), 500);
     } else {
       loadFamilyDashboard();
     }
   } else {
-    showToast(res.data?.message || 'Error processing request. Please try again.', 'error');
-    if (btn) {
-      btn.textContent = originalText;
-      btn.disabled = false;
-    }
+    showToast(res.data?.message || 'Error allotting task. Please try again.', 'error');
   }
 }
 

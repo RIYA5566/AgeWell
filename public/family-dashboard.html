@@ -390,6 +390,79 @@
     </div>
   </div>
 
+  <!-- Caregiver Shopping Preference & Allotment Modal -->
+  <div id="shoppingPrefModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="shoppingPrefModalTitle" style="display: none; z-index: 10050;">
+    <div class="modal-content" style="max-width: 540px; padding: 1.8rem; border-radius: 16px; background: #ffffff;">
+      <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--color-primary-light); padding-bottom: 12px; margin-bottom: 1rem;">
+        <h3 id="shoppingPrefModalTitle" style="color: var(--color-primary-dark); margin: 0; font-size: 1.35rem; display: flex; align-items: center; gap: 8px;">
+          🛒 Specify Caregiver Preferences
+        </h3>
+        <button id="shoppingPrefModalClose" class="modal-close" aria-label="Close Modal" style="font-size: 1.8rem; border: none; background: none; cursor: pointer;">&times;</button>
+      </div>
+
+      <p id="shoppingPrefModalSubtitle" style="margin-bottom: 1.2rem; color: #444; font-size: 1.05rem; font-weight: 600;">
+        Shopping Preference (Select all options that apply):
+      </p>
+
+      <form id="shoppingPrefForm" onsubmit="return false;">
+        <div class="pref-options-container" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 1.2rem;">
+          <label class="pref-checkbox-label" style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; border: 2px solid #e0e0e0; border-radius: 10px; cursor: pointer; transition: all 0.2s; font-size: 1.05rem; font-weight: 600; color: #333; background: #fafafa;">
+            <input type="checkbox" name="shoppingPrefCheck" value="Lowest Cost" style="width: 20px; height: 20px; accent-color: var(--color-primary);">
+            <span>🏷️ Lowest Cost</span>
+          </label>
+
+          <label class="pref-checkbox-label" style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; border: 2px solid #e0e0e0; border-radius: 10px; cursor: pointer; transition: all 0.2s; font-size: 1.05rem; font-weight: 600; color: #333; background: #fafafa;">
+            <input type="checkbox" name="shoppingPrefCheck" value="Nearby Shop" style="width: 20px; height: 20px; accent-color: var(--color-primary);">
+            <span>📍 Nearby Shop</span>
+          </label>
+
+          <label class="pref-checkbox-label" style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; border: 2px solid #e0e0e0; border-radius: 10px; cursor: pointer; transition: all 0.2s; font-size: 1.05rem; font-weight: 600; color: #333; background: #fafafa;">
+            <input type="checkbox" name="shoppingPrefCheck" value="Premium Brands" style="width: 20px; height: 20px; accent-color: var(--color-primary);">
+            <span>💎 Premium Brands</span>
+          </label>
+
+          <label class="pref-checkbox-label" style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; border: 2px solid #e0e0e0; border-radius: 10px; cursor: pointer; transition: all 0.2s; font-size: 1.05rem; font-weight: 600; color: #333; background: #fafafa;">
+            <input type="checkbox" name="shoppingPrefCheck" value="Fastest Purchase" style="width: 20px; height: 20px; accent-color: var(--color-primary);">
+            <span>⚡ Fastest Purchase</span>
+          </label>
+
+          <label class="pref-checkbox-label" style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; border: 2px solid #e0e0e0; border-radius: 10px; cursor: pointer; transition: all 0.2s; font-size: 1.05rem; font-weight: 600; color: #333; background: #fafafa;">
+            <input type="checkbox" name="shoppingPrefCheck" value="No Preference" id="checkNoPref" checked style="width: 20px; height: 20px; accent-color: var(--color-primary);">
+            <span>⚖️ No Preference</span>
+          </label>
+
+          <label class="pref-checkbox-label" style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; border: 2px solid #e0e0e0; border-radius: 10px; cursor: pointer; transition: all 0.2s; font-size: 1.05rem; font-weight: 600; color: #333; background: #fafafa;">
+            <input type="checkbox" name="shoppingPrefCheck" value="Other" id="checkOtherPref" style="width: 20px; height: 20px; accent-color: var(--color-primary);">
+            <span>✏️ Other (type it)</span>
+          </label>
+        </div>
+
+        <!-- Custom 'Other' text input field -->
+        <div id="otherPrefTextContainer" style="display: none; margin-bottom: 1.5rem;">
+          <label for="inputCustomOtherPref" style="display: block; font-weight: 700; color: var(--color-primary-dark); margin-bottom: 6px; font-size: 0.95rem;">
+            Type Other Preference:
+          </label>
+          <input
+            type="text"
+            id="inputCustomOtherPref"
+            placeholder="e.g. Organic items only, buy from local dairy, etc."
+            maxlength="100"
+            style="width: 100%; padding: 12px 14px; font-size: 1rem; border: 3px solid var(--color-primary-light); border-radius: 10px; font-family: inherit;"
+          >
+        </div>
+
+        <div class="modal-footer" style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 1.5rem; border-top: 1px solid #eee; padding-top: 1rem;">
+          <button type="button" id="btnCancelShoppingPref" class="btn btn-secondary" style="padding: 10px 20px; font-size: 1rem;">
+            Cancel
+          </button>
+          <button type="button" id="btnConfirmShoppingPref" class="btn btn-primary" style="padding: 12px 24px; font-size: 1.05rem; font-weight: 700;">
+            🤝 Allot Task to Volunteer
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- Volunteer Profile & Verification Modal -->
   <div id="volunteerProfileModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="volunteerProfileTitle" style="display: none; z-index: 10040;">
     <div class="modal-content" style="max-width: 600px; padding: 1.8rem; border-radius: 16px;">
