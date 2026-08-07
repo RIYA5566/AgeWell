@@ -463,6 +463,36 @@
     </div>
   </div>
 
+  <!-- Select Volunteer Confirmation Modal -->
+  <div id="selectVolunteerConfirmModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="selectVolunteerConfirmTitle" style="display: none; z-index: 10050;">
+    <div class="modal-content" style="max-width: 520px; padding: 1.8rem; border-radius: 16px; background: #ffffff;">
+      <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--color-primary-light); padding-bottom: 12px; margin-bottom: 1rem;">
+        <h3 id="selectVolunteerConfirmTitle" style="color: #1565c0; margin: 0; font-size: 1.35rem; display: flex; align-items: center; gap: 8px;">
+          🤝 Confirm Volunteer Selection
+        </h3>
+        <button id="selectVolunteerConfirmClose" class="modal-close" aria-label="Close Modal" style="font-size: 1.8rem; border: none; background: none; cursor: pointer;">&times;</button>
+      </div>
+
+      <div style="padding: 10px 0;">
+        <p id="selectVolunteerConfirmBody" style="font-size: 1.05rem; color: #333; line-height: 1.5; margin-bottom: 1rem;">
+          Are you sure you want to select and approve this volunteer to fulfill the request?
+        </p>
+        <div style="padding: 12px 16px; background: #e3f2fd; border-left: 4px solid #1976d2; border-radius: 8px; font-size: 0.95rem; color: #0d47a1;">
+          🔒 Once approved, the task will be assigned exclusively to this volunteer, and other volunteers will be notified.
+        </div>
+      </div>
+
+      <div class="modal-footer" style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 1.5rem; border-top: 1px solid #eee; padding-top: 1rem;">
+        <button type="button" id="btnCancelSelectVolunteer" class="btn btn-secondary" style="padding: 10px 20px; font-size: 1rem;">
+          Cancel
+        </button>
+        <button type="button" id="btnConfirmSelectVolunteer" class="btn btn-primary" style="padding: 12px 24px; font-size: 1.05rem; font-weight: 700; background-color: #1565c0;">
+          ✅ Confirm &amp; Assign Volunteer
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Volunteer Profile & Verification Modal -->
   <div id="volunteerProfileModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="volunteerProfileTitle" style="display: none; z-index: 10040;">
     <div class="modal-content" style="max-width: 600px; padding: 1.8rem; border-radius: 16px;">

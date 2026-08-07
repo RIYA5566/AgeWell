@@ -3,6 +3,9 @@
 let activeRejectRequestId = null;
 let pendingAllotRequestId = null;
 let pendingAllotVolunteerId = null;
+let pendingSelectVolunteerRequestId = null;
+let pendingSelectVolunteerId = null;
+let pendingSelectVolunteerName = '';
 let pollInterval = null;
 let currentVolunteersMap = {};
 
@@ -124,8 +127,20 @@ document.addEventListener('DOMContentLoaded', () => {
   if (btnCancelShoppingPref) btnCancelShoppingPref.addEventListener('click', closeShoppingPrefModal);
   if (btnConfirmShoppingPref) btnConfirmShoppingPref.addEventListener('click', confirmAndSubmitAllotment);
 
+  // Select Volunteer Confirmation Modal Bindings
+  const selectVolunteerConfirmModal = document.getElementById('selectVolunteerConfirmModal');
+  const selectVolunteerConfirmClose = document.getElementById('selectVolunteerConfirmClose');
+  const btnCancelSelectVolunteer = document.getElementById('btnCancelSelectVolunteer');
+  const btnConfirmSelectVolunteer = document.getElementById('btnConfirmSelectVolunteer');
+
+  if (selectVolunteerConfirmClose) selectVolunteerConfirmClose.addEventListener('click', closeSelectVolunteerConfirmModal);
+  if (btnCancelSelectVolunteer) btnCancelSelectVolunteer.addEventListener('click', closeSelectVolunteerConfirmModal);
+  if (btnConfirmSelectVolunteer) btnConfirmSelectVolunteer.addEventListener('click', confirmSelectVolunteerAssignment);
+
   window.addEventListener('click', (e) => {
+    if (e.target === rejectModal) closeRejectModal();
     if (e.target === shoppingPrefModal) closeShoppingPrefModal();
+    if (e.target === selectVolunteerConfirmModal) closeSelectVolunteerConfirmModal();
   });
 
   // Initial load
@@ -531,7 +546,7 @@ function renderApprovalQueue(awaitingRequests) {
                       <div style="margin-top: 10px;">
                         <button
                           class="btn"
-                          onclick="approveVolunteer('${req._id}', '${vId}')"
+                          onclick="openSelectVolunteerConfirmModal('${req._id}', '${vId}', '${escapeHTML(vName).replace(/'/g, "\\'")}', '${escapeHTML(feeText).replace(/'/g, "\\'")}')"
                           style="background-color: #1565c0; color: #ffffff !important; font-weight: 700; width: 100%; padding: 12px; font-size: 1.05rem;"
                           aria-label="Select and approve this volunteer"
                         >
@@ -831,10 +846,70 @@ function renderAllRequests(requests) {
 }
 
 // ──────────────────────────────────────────────────────────
-// APPROVE VOLUNTEER & ALLOT WITH SHOPPING PREFERENCES
+// SELECT VOLUNTEER CONFIRMATION POPUP MODAL
 // ──────────────────────────────────────────────────────────
-function approveVolunteer(requestId, volunteerId = null, volName = '') {
-  openShoppingPrefModal(requestId, volunteerId, volName);
+function openSelectVolunteerConfirmModal(requestId, volunteerId, volName, feeText) {
+  pendingSelectVolunteerRequestId = requestId;
+  pendingSelectVolunteerId = volunteerId;
+  pendingSelectVolunteerName = volName || 'Volunteer';
+
+  const modal = document.getElementById('selectVolunteerConfirmModal');
+  const bodyEl = document.getElementById('selectVolunteerConfirmBody');
+  const btnConfirm = document.getElementById('btnConfirmSelectVolunteer');
+
+  if (bodyEl) {
+    bodyEl.innerHTML = `Are you sure you want to select and approve <strong>${escapeHTML(volName)}</strong> (${escapeHTML(feeText)}) to fulfill this request for your senior citizen?`;
+  }
+  if (btnConfirm) {
+    btnConfirm.textContent = `✅ Confirm & Assign ${escapeHTML(volName)}`;
+  }
+
+  if (modal) modal.style.display = 'flex';
+}
+
+function closeSelectVolunteerConfirmModal() {
+  const modal = document.getElementById('selectVolunteerConfirmModal');
+  if (modal) modal.style.display = 'none';
+  pendingSelectVolunteerRequestId = null;
+  pendingSelectVolunteerId = null;
+  pendingSelectVolunteerName = '';
+}
+
+async function confirmSelectVolunteerAssignment() {
+  if (!pendingSelectVolunteerRequestId || !pendingSelectVolunteerId) return;
+
+  const btnConfirm = document.getElementById('btnConfirmSelectVolunteer');
+  let origText = '';
+  if (btnConfirm) {
+    origText = btnConfirm.textContent;
+    btnConfirm.textContent = 'Assigning...';
+    btnConfirm.disabled = true;
+  }
+
+  const volName = pendingSelectVolunteerName;
+  const res = await apiCall(`/requests/${pendingSelectVolunteerRequestId}/family-approve`, 'PUT', {
+    volunteerId: pendingSelectVolunteerId
+  });
+
+  if (btnConfirm) {
+    btnConfirm.textContent = origText;
+    btnConfirm.disabled = false;
+  }
+
+  if (res.ok && res.data.success) {
+    showToast(res.data.message || `✅ ${volName} approved and task assigned successfully!`, 'success');
+    closeSelectVolunteerConfirmModal();
+    loadFamilyDashboard();
+  } else {
+    showToast(res.data?.message || 'Error approving volunteer.', 'error');
+  }
+}
+
+// ──────────────────────────────────────────────────────────
+// ALLOT TO VOLUNTEERS WITH SHOPPING PREFERENCES
+// ──────────────────────────────────────────────────────────
+function approveVolunteer(requestId) {
+  openShoppingPrefModal(requestId);
 }
 
 function openShoppingPrefModal(requestId, volunteerId = null, volName = '') {
