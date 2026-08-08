@@ -69,16 +69,91 @@ const helpRequestSchema = new mongoose.Schema({
     default: 'No Preference'
   },
 
-  // ─── Workflow status ───────────────────────────────────────────────────────
-  // pending             → request raised, open for volunteers
-  // awaiting_approval   → request raised, waiting for family decision (fulfill self vs allot to volunteers)
-  // accepted            → volunteer assigned and working
-  // completed           → completed by volunteer
-  // fulfilled_by_family → fulfilled directly by family caregiver
+  // ─── Workflow status (11-Step Escrow Lifecycle) ────────────────────────────
+  // pending                 → Step 1: Senior raises request
+  // quoted                  → Step 2: Volunteer quotes service charge
+  // accepted                → Step 3: Caregiver selects volunteer
+  // purchase_cost_submitted → Step 4-5: Volunteer submits actual purchase cost + cart proof
+  // purchase_funded         → Step 6-7: Caregiver approves payment; money released for purchase
+  // awaiting_verification   → Step 8-9: Volunteer completes task & uploads final store receipt
+  // completed               → Step 10-11: Caregiver verifies receipt & releases volunteer service charge
+  // fulfilled_by_family     → Caregiver fulfilled request directly
+  // rejected                → Rejected / dismissed
   status: {
     type: String,
-    enum: ['pending', 'awaiting_approval', 'accepted', 'completed', 'fulfilled_by_family', 'rejected'],
+    enum: [
+      'pending',
+      'awaiting_approval',
+      'quoted',
+      'accepted',
+      'purchase_cost_submitted',
+      'purchase_funded',
+      'awaiting_verification',
+      'completed',
+      'fulfilled_by_family',
+      'rejected'
+    ],
     default: 'pending'
+  },
+
+  // ─── Escrow & Purchase Cost Workflow Fields ─────────────────────────────────
+  actualPurchaseCost: {
+    type: Number,
+    min: 0,
+    default: 0
+  },
+  purchaseProofDoc: {
+    type: String,
+    default: ''
+  },
+  purchaseProofDocs: [{
+    type: String
+  }],
+  purchaseNotes: {
+    type: String,
+    trim: true,
+    default: ''
+  },
+  purchaseCostSubmittedAt: {
+    type: Date
+  },
+  purchaseRejectionReason: {
+    type: String,
+    trim: true,
+    default: ''
+  },
+  purchaseRejectedAt: {
+    type: Date
+  },
+  purchaseFunded: {
+    type: Boolean,
+    default: false
+  },
+  purchaseFundedAt: {
+    type: Date
+  },
+  purchasePaymentDetails: {
+    amountPaid: Number,
+    transactionId: String,
+    paymentMethod: String,
+    paidAt: Date
+  },
+  finalReceiptDoc: {
+    type: String,
+    default: ''
+  },
+  finalReceiptDocs: [{
+    type: String
+  }],
+  receiptUploadedAt: {
+    type: Date
+  },
+  serviceChargeReleased: {
+    type: Boolean,
+    default: false
+  },
+  serviceChargeReleasedAt: {
+    type: Date
   },
 
   // ─── People involved & Volunteer Quote ─────────────────────────────────────
@@ -160,6 +235,17 @@ const helpRequestSchema = new mongoose.Schema({
     transactionId: String,
     paymentMethod: String,
     paidAt: Date
+  },
+
+  // ─── Volunteer Feedback (Submitted by Caregiver / Senior after payment) ────
+  feedback: {
+    costUtilization: { type: Number, min: 1, max: 5, default: 5 },
+    speedTimeliness: { type: Number, min: 1, max: 5, default: 5 },
+    taskCompletion: { type: String, enum: ['Completely', 'Partially', 'No'], default: 'Completely' },
+    communication: { type: Number, min: 1, max: 5, default: 5 },
+    chooseAgain: { type: String, enum: ['Yes', 'Maybe', 'No'], default: 'Yes' },
+    additionalFeedback: { type: String, trim: true, default: '' },
+    submittedAt: { type: Date }
   },
 
   // ─── Task Completion Verification & Proof ───────────────────────────

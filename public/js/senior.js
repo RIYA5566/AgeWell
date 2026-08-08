@@ -318,8 +318,14 @@ async function loadRequests() {
         statusBadge = `<span class="badge" style="background:#ffe082;color:#e65100;font-weight:bold;">⏳ Caregiver Reviewing Volunteer Quotes</span>`;
       } else if (req.status === 'accepted') {
         statusBadge = `<span class="badge badge-accepted">🤝 Volunteer Assigned</span>`;
+      } else if (req.status === 'purchase_cost_submitted') {
+        statusBadge = `<span class="badge" style="background:#fff3e0;color:#e65100;border:2px solid #f57c00;font-weight:bold;">💳 Cart Proof Submitted by Volunteer</span>`;
+      } else if (req.status === 'purchase_funded') {
+        statusBadge = `<span class="badge" style="background:#e8f5e9;color:#1b5e20;border:2px solid #2e7d32;font-weight:bold;">✅ Purchase Funded (In Progress)</span>`;
+      } else if (req.status === 'awaiting_verification') {
+        statusBadge = `<span class="badge" style="background:#f3e5f5;color:#4a148c;border:2px solid #7b1fa2;font-weight:bold;">🧾 Receipt Uploaded (Awaiting Verification)</span>`;
       } else if (req.status === 'completed') {
-        statusBadge = `<span class="badge badge-completed">✅ Service Completed</span>`;
+        statusBadge = `<span class="badge badge-completed">✅ Service Completed &amp; Delivered</span>`;
       }
 
       let urgencyBadge = '';

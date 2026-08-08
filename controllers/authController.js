@@ -2,7 +2,7 @@ const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 
 // Helper: create JWT, set cookie, and return user payload
-const sendTokenResponse = (user, statusCode, res) => {
+const sendTokenResponse = async (user, statusCode, res) => {
   const token = jwt.sign(
     { id: user._id, role: user.role },
     process.env.JWT_SECRET || 'agewell_secret_key_2026_xyz',
@@ -19,6 +19,11 @@ const sendTokenResponse = (user, statusCode, res) => {
     cookieOptions.secure = true;
   }
 
+  let ratingStats = null;
+  if (user.role === 'volunteer') {
+    ratingStats = await getVolunteerRatingStats(user._id);
+  }
+
   res
     .status(statusCode)
     .cookie('token', token, cookieOptions)
@@ -27,6 +32,7 @@ const sendTokenResponse = (user, statusCode, res) => {
       token,
       user: {
         id: user._id,
+        _id: user._id,
         name: user.name,
         email: user.email,
         role: user.role,
@@ -44,7 +50,8 @@ const sendTokenResponse = (user, statusCode, res) => {
         isIdVerified: user.isIdVerified,
         isPoliceVerified: user.isPoliceVerified,
         verificationStatus: user.verificationStatus,
-        verificationRejectionReason: user.verificationRejectionReason
+        verificationRejectionReason: user.verificationRejectionReason,
+        ratingStats
       }
     });
 };
@@ -122,7 +129,7 @@ exports.registerUser = async (req, res) => {
     const user = await User.create(userData);
 
     // Send JWT and User Info
-    sendTokenResponse(user, 201, res);
+    await sendTokenResponse(user, 201, res);
   } catch (error) {
     console.error('Registration Error:', error);
     res.status(500).json({ success: false, message: error.message || 'Server error during registration' });
@@ -194,7 +201,7 @@ exports.loginUser = async (req, res) => {
     }
 
     // Send JWT and User Info
-    sendTokenResponse(user, 200, res);
+    await sendTokenResponse(user, 200, res);
   } catch (error) {
     console.error('Login Error:', error);
     res.status(500).json({ success: false, message: 'Server error during login' });
@@ -213,6 +220,8 @@ exports.logoutUser = async (req, res) => {
   res.status(200).json({ success: true, message: 'Logged out successfully' });
 };
 
+const { getVolunteerRatingStats } = require('../utils/ratingStats');
+
 // @desc    Get currently logged in user profile
 // @route   GET /api/auth/me
 // @access  Private
@@ -222,6 +231,12 @@ exports.getMe = async (req, res) => {
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
+
+    let ratingStats = null;
+    if (user.role === 'volunteer') {
+      ratingStats = await getVolunteerRatingStats(user._id);
+    }
+
     res.status(200).json({
       success: true,
       user: {
@@ -244,10 +259,30 @@ exports.getMe = async (req, res) => {
         isIdVerified: user.isIdVerified,
         isPoliceVerified: user.isPoliceVerified,
         verificationStatus: user.verificationStatus,
-        verificationRejectionReason: user.verificationRejectionReason
+        verificationRejectionReason: user.verificationRejectionReason,
+        ratingStats
       }
     });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Server error fetching profile' });
+  }
+};
+
+// @desc    Get rating statistics for a volunteer by ID
+// @route   GET /api/auth/volunteer-stats/:id
+// @access  Private
+exports.getVolunteerStats = async (req, res) => {
+  try {
+    const stats = await getVolunteerRatingStats(req.params.id);
+    const volunteerUser = await User.findById(req.params.id).select('name email phone skills verificationStatus isIdVerified isPoliceVerified createdAt');
+
+    res.status(200).json({
+      success: true,
+      stats,
+      volunteer: volunteerUser
+    });
+  } catch (error) {
+    console.error('Get Volunteer Stats Error:', error);
+    res.status(500).json({ success: false, message: 'Server error getting volunteer stats' });
   }
 };

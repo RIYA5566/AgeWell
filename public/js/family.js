@@ -225,7 +225,7 @@ async function loadFamilyDashboard(silent = false) {
 }
 
 // Global function to open volunteer profile card modal
-function viewVolunteerProfile(volId) {
+async function viewVolunteerProfile(volId) {
   const vol = currentVolunteersMap[volId];
   const modal = document.getElementById('volunteerProfileModal');
   const detailsEl = document.getElementById('volunteerProfileDetails');
@@ -251,27 +251,68 @@ function viewVolunteerProfile(volId) {
   const status = vol.verificationStatus || 'unverified';
   const isFullyVerified = status === 'verified' && isIdVerified && isPoliceVerified;
 
+  // Fetch live calculated rating stats for this volunteer
+  let stats = {
+    reviewsCount: 0,
+    tasksCompleted: 0,
+    costUtilization: 0,
+    speedTimeliness: 0,
+    communication: 0,
+    overallRating: 0,
+    recommendationRate: 0
+  };
+
+  try {
+    const statsRes = await apiCall(`/auth/volunteer-stats/${volId}`, 'GET');
+    if (statsRes && statsRes.ok && statsRes.data && statsRes.data.stats) {
+      stats = statsRes.data.stats;
+    }
+  } catch (err) {
+    console.warn('Error fetching volunteer stats:', err);
+  }
+
   const skillsHtml = (vol.skills && vol.skills.length > 0)
     ? vol.skills.map(s => `<span class="skill-tag" style="background:#e8f5e9; color:#2e7d32; border:1px solid #a5d6a7; font-weight:600; font-size:0.9rem; padding:4px 12px; border-radius:15px;">${escapeHTML(s)}</span>`).join('')
     : `<span style="color:#888; font-style:italic;">No specific skills listed</span>`;
 
-  const memberSince = vol.createdAt ? new Date(vol.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Registered Community Volunteer';
+  const memberSince = vol.createdAt ? new Date(vol.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Registered Volunteer';
 
   detailsEl.innerHTML = `
-    <div style="display: flex; gap: 16px; align-items: center; margin-bottom: 1.2rem; background: linear-gradient(135deg, #e8f5e9, #ffffff); padding: 1.2rem; border-radius: 12px; border: 2px solid #a5d6a7;">
-      <div style="width: 65px; height: 65px; border-radius: 50%; background: linear-gradient(135deg, #1b5e20, #43a047); display: flex; align-items: center; justify-content: center; font-size: 2.2rem; color: #fff; flex-shrink: 0; box-shadow: 0 4px 10px rgba(46,125,50,0.25);">
-        🙋
-      </div>
-      <div>
-        <h3 style="margin: 0; color: #1b5e20; font-size: 1.35rem; font-weight: 700;">${vName}</h3>
-        <p style="margin: 4px 0 0 0; color: #2e7d32; font-weight: 700; font-size: 0.95rem;">
-          ${isFullyVerified ? '🛡️ Multi-Level Verified Volunteer ✅' : '⏳ Background Clearance Pending'}
-        </p>
-        <span style="font-size: 0.85rem; color: #666;">Joined: ${memberSince}</span>
+    <!-- Header Banner with Symmetrical Ratings Badges -->
+    <div style="margin-bottom: 1.2rem; background: linear-gradient(135deg, #f1f8e9, #ffffff); padding: 1.2rem; border-radius: 14px; border: 2px solid #a5d6a7; box-shadow: 0 2px 8px rgba(46,125,50,0.08);">
+      <div style="display: flex; gap: 16px; align-items: flex-start;">
+        <div style="width: 58px; height: 58px; border-radius: 50%; background: linear-gradient(135deg, #1b5e20, #43a047); display: flex; align-items: center; justify-content: center; font-size: 2rem; color: #fff; flex-shrink: 0; box-shadow: 0 4px 10px rgba(46,125,50,0.2); margin-top: 2px;">
+          🙋
+        </div>
+        <div style="flex: 1; min-width: 0;">
+          <!-- Name & Overall Rating Badge -->
+          <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 8px;">
+            <h3 style="margin: 0; color: #1b5e20; font-size: 1.3rem; font-weight: 700; line-height: 1.2;">${vName}</h3>
+            <span style="font-weight: 700; color: #b45309; background: #fffdf5; border: 1.5px solid #fde68a; padding: 3px 12px; border-radius: 16px; font-size: 0.88rem; white-space: nowrap; box-shadow: 0 2px 5px rgba(245,158,11,0.12);">
+              ⭐ ${stats.reviewsCount > 0 ? stats.overallRating.toFixed(1) : '0.0'} Overall Rating
+            </span>
+          </div>
+
+          <!-- Symmetrical Badges Grid -->
+          <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center; font-size: 0.88rem; color: #374151; margin-bottom: 8px;">
+            <span style="background: #ffffff; border: 1px solid #c8e6c9; padding: 3px 10px; border-radius: 12px; font-weight: 500;">💰 Cost Utilization <strong style="color: #2e7d32;">${stats.costUtilization > 0 ? stats.costUtilization.toFixed(1) : '0'}/5</strong></span>
+            <span style="background: #ffffff; border: 1px solid #c8e6c9; padding: 3px 10px; border-radius: 12px; font-weight: 500;">⏱️ Speed <strong style="color: #2e7d32;">${stats.speedTimeliness > 0 ? stats.speedTimeliness.toFixed(1) : '0'}/5</strong></span>
+            <span style="background: #ffffff; border: 1px solid #c8e6c9; padding: 3px 10px; border-radius: 12px; font-weight: 500;">📞 Communication <strong style="color: #2e7d32;">${stats.communication > 0 ? stats.communication.toFixed(1) : '0'}/5</strong></span>
+            <span style="background: #ffffff; border: 1px solid #c8e6c9; padding: 3px 10px; border-radius: 12px; font-weight: 500;">👍 <strong style="color: #2e7d32;">${stats.recommendationRate}%</strong> recommend</span>
+            <span style="background: #ffffff; border: 1px solid #c8e6c9; padding: 3px 10px; border-radius: 12px; font-weight: 500;">✓ <strong style="color: #2e7d32;">${stats.tasksCompleted}</strong> tasks</span>
+          </div>
+
+          <!-- Verification Status & Member Date -->
+          <div style="font-size: 0.86rem; color: #2e7d32; font-weight: 600; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <span>${isFullyVerified ? '🛡️ Multi-Level Verified Volunteer ✅' : '⏳ Background Clearance Pending'}</span>
+            <span style="color: #a5d6a7;">•</span>
+            <span style="color: #555; font-weight: 500;">Joined: ${memberSince}</span>
+          </div>
+        </div>
       </div>
     </div>
 
-    <!-- Multi-Level Verification Status & Badges -->
+    <!-- Multi-Level Verification Clearances -->
     <div style="margin-bottom: 1.2rem; background: #ffffff; border: 2px solid #e0e0e0; border-radius: 12px; padding: 1rem;">
       <h4 style="color: #1b5e20; margin-top: 0; margin-bottom: 10px; font-size: 1.05rem; display: flex; align-items: center; gap: 6px;">
         🛡️ Admin &amp; Police Verification Clearances:
@@ -685,11 +726,30 @@ function renderCompletionVerificationQueue(pendingVerifications) {
   }).join('');
 }
 
+let currentFeedbackRequestId = null;
+
 // Verification action endpoint for family caregivers
 async function verifyTaskCompletion(requestId, approved) {
   if (approved) {
-    // Caregiver approved delivery proof -> Redirect to payment summary authorization page!
-    window.location.href = `/payment.html?requestId=${requestId}`;
+    try {
+      const res = await apiCall(`/requests/${requestId}/verify-completion-family`, 'PUT', {
+        approved: true
+      });
+      if (res.ok && res.data.success) {
+        showToast('✅ Store receipt verified & service charge released!', 'success');
+        currentFeedbackRequestId = requestId;
+        let volName = 'Assigned Volunteer';
+        if (res.data.request && res.data.request.volunteer) {
+          volName = typeof res.data.request.volunteer === 'object' ? res.data.request.volunteer.name : 'Assigned Volunteer';
+        }
+        openFeedbackModal(volName);
+      } else {
+        alert(res.data?.message || 'Error verifying completion receipt');
+      }
+    } catch (e) {
+      console.error(e);
+      alert('Network error verifying task receipt');
+    }
     return;
   }
 
@@ -707,6 +767,323 @@ async function verifyTaskCompletion(requestId, approved) {
     showToast(res.data?.message || 'Error updating completion verification.', 'error');
   }
 }
+
+// --- Volunteer Feedback Modal Handlers ---
+
+window.openFeedbackModal = function(volName) {
+  const modal = document.getElementById('feedbackModal');
+  const nameEl = document.getElementById('feedbackVolunteerName');
+  if (nameEl && volName) {
+    nameEl.textContent = volName;
+  }
+  initStarRatings();
+  if (modal) {
+    modal.style.display = 'flex';
+  }
+};
+
+window.skipFeedbackAndGoHome = function() {
+  const modal = document.getElementById('feedbackModal');
+  if (modal) modal.style.display = 'none';
+  loadFamilyDashboard();
+};
+
+window.setStarRating = function(metric, count) {
+  const hiddenInput = document.getElementById(`${metric}Val`);
+  if (hiddenInput) {
+    hiddenInput.value = count;
+  }
+  const ratingEl = document.querySelector(`.star-rating[data-metric="${metric}"]`);
+  if (ratingEl) {
+    const stars = ratingEl.querySelectorAll('.star');
+    updateStars(stars, count);
+  }
+  const scoreBadge = document.getElementById(`${metric}Text`);
+  if (scoreBadge) {
+    scoreBadge.textContent = `${count} / 5 ⭐`;
+    scoreBadge.classList.remove('unrated');
+  }
+};
+
+window.hoverStarRating = function(metric, count) {
+  const ratingEl = document.querySelector(`.star-rating[data-metric="${metric}"]`);
+  if (ratingEl) {
+    const stars = ratingEl.querySelectorAll('.star');
+    updateStars(stars, count);
+  }
+  const scoreBadge = document.getElementById(`${metric}Text`);
+  if (scoreBadge) {
+    scoreBadge.textContent = `${count} / 5 ⭐`;
+    scoreBadge.classList.remove('unrated');
+  }
+};
+
+window.resetStarRating = function(metric) {
+  const hiddenInput = document.getElementById(`${metric}Val`);
+  const currentVal = hiddenInput ? parseInt(hiddenInput.value, 10) : 0;
+  const ratingEl = document.querySelector(`.star-rating[data-metric="${metric}"]`);
+  if (ratingEl) {
+    const stars = ratingEl.querySelectorAll('.star');
+    updateStars(stars, currentVal);
+  }
+  const scoreBadge = document.getElementById(`${metric}Text`);
+  if (scoreBadge) {
+    if (currentVal > 0) {
+      scoreBadge.textContent = `${currentVal} / 5 ⭐`;
+      scoreBadge.classList.remove('unrated');
+    } else {
+      scoreBadge.textContent = 'Select Rating';
+      scoreBadge.classList.add('unrated');
+    }
+  }
+};
+
+function initStarRatings() {
+  ['costUtilization', 'speedTimeliness', 'communication'].forEach(metric => {
+    resetStarRating(metric);
+  });
+}
+
+function updateStars(stars, activeVal) {
+  stars.forEach(s => {
+    const val = parseInt(s.getAttribute('data-val'), 10);
+    if (activeVal > 0 && val <= activeVal) {
+      s.style.color = '#f59e0b';
+    } else {
+      s.style.color = '#d1d5db';
+    }
+  });
+}
+
+window.selectPill = function(labelEl, groupName, value) {
+  const container = labelEl.parentElement;
+  if (!container) return;
+  container.querySelectorAll('.pill-option').forEach(p => {
+    p.classList.remove('active');
+    p.style.background = '#f9fafb';
+    p.style.color = '#4b5563';
+    p.style.borderColor = '#d1d5db';
+  });
+  labelEl.classList.add('active');
+  labelEl.style.background = '#2e7d32';
+  labelEl.style.color = '#ffffff';
+  labelEl.style.borderColor = '#2e7d32';
+  const radio = labelEl.querySelector('input[type="radio"]');
+  if (radio) radio.checked = true;
+};
+
+window.handleFeedbackSubmit = async function(event) {
+  event.preventDefault();
+  const btnSubmit = document.getElementById('btnSubmitFeedback');
+  if (btnSubmit) {
+    btnSubmit.disabled = true;
+    btnSubmit.textContent = 'Submitting Feedback...';
+  }
+
+  const rawCost = parseInt(document.getElementById('costUtilizationVal')?.value, 10);
+  const rawSpeed = parseInt(document.getElementById('speedTimelinessVal')?.value, 10);
+  const rawComm = parseInt(document.getElementById('communicationVal')?.value, 10);
+
+  const costUtilization = rawCost > 0 ? rawCost : 5;
+  const speedTimeliness = rawSpeed > 0 ? rawSpeed : 5;
+  const communication = rawComm > 0 ? rawComm : 5;
+
+  const taskCompletionRadio = document.querySelector('input[name="taskCompletion"]:checked');
+  const taskCompletion = taskCompletionRadio ? taskCompletionRadio.value : 'Completely';
+  const chooseAgainRadio = document.querySelector('input[name="chooseAgain"]:checked');
+  const chooseAgain = chooseAgainRadio ? chooseAgainRadio.value : 'Yes';
+  const additionalFeedback = document.getElementById('additionalFeedback')?.value || '';
+
+  if (currentFeedbackRequestId) {
+    try {
+      await apiCall(`/requests/${currentFeedbackRequestId}/feedback`, 'PUT', {
+        costUtilization: Number(costUtilization),
+        speedTimeliness: Number(speedTimeliness),
+        taskCompletion,
+        communication: Number(communication),
+        chooseAgain,
+        additionalFeedback
+      });
+      showToast('⭐ Thank you! Your rating & review have been submitted.', 'success');
+    } catch (err) {
+      console.error('Error submitting volunteer feedback:', err);
+    }
+  }
+
+  const modal = document.getElementById('feedbackModal');
+  if (modal) modal.style.display = 'none';
+  if (btnSubmit) {
+    btnSubmit.disabled = false;
+    btnSubmit.textContent = '⭐ Submit Rating & Finish ➔';
+  }
+  loadFamilyDashboard();
+};
+
+window.proofSliderData = window.proofSliderData || {};
+window.proofSliderIndex = window.proofSliderIndex || {};
+
+function renderProofSliderHtml(reqId, rawImages) {
+  if (!rawImages || rawImages.length === 0) return '';
+
+  const images = rawImages.map(img => img.startsWith('/') ? img : '/' + img);
+  window.proofSliderData[reqId] = images;
+  window.proofSliderIndex[reqId] = 0;
+
+  const firstImg = images[0];
+  const count = images.length;
+
+  if (count === 1) {
+    return `
+      <div style="position: relative; width: 440px; max-width: 100%; height: 320px; border-radius: 12px; overflow: hidden; border: 2px solid #ffe0b2; background: #ffffff; box-shadow: 0 4px 12px rgba(0,0,0,0.12); flex-shrink: 0;">
+        <img src="${escapeHTML(firstImg)}" alt="Proof Image" onclick="event.stopPropagation(); openImageLightbox('${escapeHTML(firstImg)}'); return false;" style="width: 100%; height: 100%; object-fit: contain; cursor: pointer; display: block;" title="Click to enlarge proof photo">
+      </div>`;
+  }
+
+  return `
+    <div style="position: relative; width: 440px; max-width: 100%; height: 320px; border-radius: 12px; overflow: hidden; border: 2px solid #ffe0b2; background: #ffffff; box-shadow: 0 4px 12px rgba(0,0,0,0.12); flex-shrink: 0; user-select: none;">
+      <img id="sliderImg_${reqId}" src="${escapeHTML(firstImg)}" alt="Proof Image 1" onclick="event.stopPropagation(); openImageLightbox(this.src); return false;" style="width: 100%; height: 100%; object-fit: contain; cursor: pointer; display: block;" title="Click to enlarge proof photo">
+      
+      <div id="sliderCounter_${reqId}" style="position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.75); color: #ffffff; font-weight: 800; font-size: 0.88rem; padding: 4px 12px; border-radius: 16px; pointer-events: none; z-index: 2; box-shadow: 0 2px 6px rgba(0,0,0,0.3);">
+        📷 1 / ${count}
+      </div>
+
+      <button type="button" onclick="event.stopPropagation(); navigateProofSlider('${reqId}', -1)" style="position: absolute; top: 50%; left: 8px; transform: translateY(-50%); background: rgba(0,0,0,0.6); color: #ffffff; border: none; border-radius: 50%; width: 40px; height: 40px; font-size: 1.3rem; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 3; box-shadow: 0 2px 8px rgba(0,0,0,0.3); transition: all 0.15s ease;" onmouseover="this.style.background='rgba(0,0,0,0.9)'; this.style.transform='translateY(-50%) scale(1.1)'" onmouseleave="this.style.background='rgba(0,0,0,0.6)'; this.style.transform='translateY(-50%) scale(1)'">
+        ◀
+      </button>
+
+      <button type="button" onclick="event.stopPropagation(); navigateProofSlider('${reqId}', 1)" style="position: absolute; top: 50%; right: 8px; transform: translateY(-50%); background: rgba(0,0,0,0.6); color: #ffffff; border: none; border-radius: 50%; width: 40px; height: 40px; font-size: 1.3rem; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 3; box-shadow: 0 2px 8px rgba(0,0,0,0.3); transition: all 0.15s ease;" onmouseover="this.style.background='rgba(0,0,0,0.9)'; this.style.transform='translateY(-50%) scale(1.1)'" onmouseleave="this.style.background='rgba(0,0,0,0.6)'; this.style.transform='translateY(-50%) scale(1)'">
+        ▶
+      </button>
+    </div>`;
+}
+
+window.navigateProofSlider = function(reqId, direction) {
+  const images = window.proofSliderData ? window.proofSliderData[reqId] : null;
+  if (!images || images.length <= 1) return;
+
+  let currIdx = window.proofSliderIndex[reqId] || 0;
+  currIdx = (currIdx + direction + images.length) % images.length;
+  window.proofSliderIndex[reqId] = currIdx;
+
+  const imgEl = document.getElementById(`sliderImg_${reqId}`);
+  const counterEl = document.getElementById(`sliderCounter_${reqId}`);
+
+  if (imgEl) {
+    imgEl.src = images[currIdx];
+  }
+  if (counterEl) {
+    counterEl.textContent = `📷 ${currIdx + 1} / ${images.length}`;
+  }
+};
+
+window.directReleaseServiceCharge = async function(requestId, feeAmount) {
+  try {
+    const res = await apiCall(`/requests/${requestId}/verify-completion-family`, 'PUT', {
+      approved: true,
+      paymentDetails: {
+        amountPaid: Number(feeAmount || 0),
+        itemsCost: 0,
+        volunteerFee: Number(feeAmount || 0),
+        platformFee: 0,
+        transactionId: `TXN${Math.floor(10000000 + Math.random() * 90000000)}`,
+        paymentMethod: 'Escrow Release'
+      }
+    });
+
+    if (res.ok && res.data.success) {
+      showToast('✅ Volunteer service charge released!', 'success');
+      currentFeedbackRequestId = requestId;
+      let volName = 'Assigned Volunteer';
+      if (res.data.request && res.data.request.volunteer) {
+        volName = typeof res.data.request.volunteer === 'object' ? res.data.request.volunteer.name : 'Assigned Volunteer';
+      }
+      openFeedbackModal(volName);
+    } else {
+      alert(res.data?.message || 'Error releasing service charge');
+    }
+  } catch (e) {
+    console.error(e);
+    alert('Network error releasing service charge');
+  }
+};
+
+// Step 6-7: Caregiver proceeds to payment page for purchase cost + service charge approval
+function approvePurchaseFunding(requestId, amount, serviceFee) {
+  if (Number(amount || 0) === 0) {
+    directReleaseServiceCharge(requestId, serviceFee);
+    return;
+  }
+  window.location.href = `/payment.html?requestId=${requestId}&type=purchase&itemsCost=${amount || 0}&serviceFee=${serviceFee || 0}`;
+}
+
+// Open Custom Modal Tab for Requesting Purchase Cost Revision & Sending Bargain Note
+window.openRejectRevisionModal = function(requestId, requestTitle, requestCategory) {
+  console.log('openRejectRevisionModal called for requestId:', requestId, requestTitle);
+  const modal = document.getElementById('rejectRevisionModal');
+  const reqIdInput = document.getElementById('rejectRevisionRequestId');
+  const noteInput = document.getElementById('revisionNoteInput');
+  const subtitleEl = document.getElementById('rejectRevisionModalSubtitle');
+
+  if (reqIdInput) reqIdInput.value = requestId;
+  if (noteInput) noteInput.value = '';
+
+  const cleanTitle = (requestTitle || 'this task').trim();
+  const lowerTitle = cleanTitle.toLowerCase();
+  const lowerCat = (requestCategory || '').toLowerCase();
+
+  let dynamicExample = '';
+  if (lowerTitle.includes('tomato') || lowerTitle.includes('vegetable') || lowerTitle.includes('grocery') || lowerCat.includes('grocery')) {
+    dynamicExample = `Please type your feedback or instructions for the volunteer (e.g. <em>"Please bargain for ₹60/kg for ${escapeHTML(cleanTitle)} at local market"</em> or <em>"Please select fresh organic quality items"</em>):`;
+  } else if (lowerTitle.includes('medicine') || lowerTitle.includes('tablet') || lowerTitle.includes('crocin') || lowerCat.includes('medical')) {
+    dynamicExample = `Please type your feedback or instructions for the volunteer (e.g. <em>"Please check if generic brand is available cheaper for ${escapeHTML(cleanTitle)}"</em> or <em>"Please buy from trusted pharmacy"</em>):`;
+  } else {
+    dynamicExample = `Please type your feedback or instructions for the volunteer (e.g. <em>"Please bargain for lower price on ${escapeHTML(cleanTitle)}"</em> or <em>"Please check item quality before purchasing"</em>):`;
+  }
+
+  if (subtitleEl) subtitleEl.innerHTML = dynamicExample;
+
+  if (modal) {
+    modal.style.display = 'flex';
+  } else {
+    console.error('rejectRevisionModal element not found in DOM!');
+  }
+};
+
+window.closeRejectRevisionModal = function() {
+  const modal = document.getElementById('rejectRevisionModal');
+  if (modal) modal.style.display = 'none';
+};
+
+window.submitPurchaseCostRevision = async function() {
+  const reqIdInput = document.getElementById('rejectRevisionRequestId');
+  const noteInput = document.getElementById('revisionNoteInput');
+
+  const requestId = reqIdInput ? reqIdInput.value : '';
+  const reasonStr = noteInput ? noteInput.value.trim() : '';
+
+  if (!requestId) {
+    showToast('Invalid request selection', 'error');
+    return;
+  }
+
+  const noteStr = reasonStr || 'Caregiver requested purchase price or item quality revision.';
+
+  try {
+    const res = await apiCall(`/requests/${requestId}/reject-purchase-cost`, 'PUT', {
+      rejectionReason: noteStr
+    });
+    if (res.ok && res.data.success) {
+      closeRejectRevisionModal();
+      showToast('✉️ Revision note sent to volunteer! Task returned for updated cost/proof.', 'info');
+      loadFamilyDashboard();
+    } else {
+      alert(res.data?.message || 'Error rejecting purchase cost');
+    }
+  } catch (e) {
+    console.error(e);
+    alert('Network error submitting feedback note');
+  }
+};
 
 // Caregiver Fulfills Request Self Action
 async function fulfillRequestSelf(requestId) {
@@ -748,8 +1125,17 @@ function renderAllRequests(requests) {
       statusColor = '#e65100';
     } else if (req.status === 'accepted') {
       statusBadge = `<span class="badge badge-accepted">✅ Volunteer Assigned</span>`;
+    } else if (req.status === 'purchase_cost_submitted') {
+      statusBadge = `<span class="badge" style="background:#fff3e0;color:#e65100;border:1.5px solid #ffe0b2;font-weight:bold;">💳 Purchase Cost (₹${req.actualPurchaseCost || 0}) Submitted</span>`;
+      statusColor = '#e65100';
+    } else if (req.status === 'purchase_funded') {
+      statusBadge = `<span class="badge" style="background:#e8f5e9;color:#1b5e20;border:1.5px solid #a5d6a7;font-weight:bold;">✅ Purchase Funded (₹${req.actualPurchaseCost || 0})</span>`;
+      statusColor = '#2e7d32';
+    } else if (req.status === 'awaiting_verification') {
+      statusBadge = `<span class="badge" style="background:#f3e5f5;color:#4a148c;border:1.5px solid #ce93d8;font-weight:bold;">🧾 Receipt Uploaded - Needs Verification</span>`;
+      statusColor = '#7b1fa2';
     } else if (req.status === 'completed') {
-      statusBadge = `<span class="badge badge-completed">🏆 Completed by Volunteer</span>`;
+      statusBadge = `<span class="badge badge-completed">🏆 Completed &amp; Service Charge Released</span>`;
     }
 
     // Status timeline
@@ -801,23 +1187,87 @@ function renderAllRequests(requests) {
         </div>`;
     }
 
+    let stepActionHtml = '';
+    if (req.status === 'purchase_cost_submitted') {
+      let proofImages = req.purchaseProofDocs && req.purchaseProofDocs.length > 0 
+        ? req.purchaseProofDocs 
+        : (req.purchaseProofDoc ? [req.purchaseProofDoc] : []);
+      
+      let proofImgHtml = renderProofSliderHtml(req._id, proofImages);
+
+      let resolvedFee = (req.serviceFee !== undefined && req.serviceFee !== null) ? Number(req.serviceFee) : 0;
+      if (resolvedFee === 0 && req.volunteerQuotes && req.volunteerQuotes.length > 0) {
+        const targetVolId = req.volunteer ? String(req.volunteer._id || req.volunteer.id || req.volunteer) : null;
+        let matchQ = null;
+        if (targetVolId) {
+          matchQ = req.volunteerQuotes.find(q => q.volunteer && String(q.volunteer._id || q.volunteer.id || q.volunteer) === targetVolId);
+        }
+        if (!matchQ) matchQ = req.volunteerQuotes[0];
+        if (matchQ && matchQ.serviceFee) resolvedFee = Number(matchQ.serviceFee);
+      }
+
+      const currentVolObj = req.volunteer;
+      const currentVolId = typeof currentVolObj === 'object' ? (currentVolObj._id || currentVolObj.id) : currentVolObj;
+
+      const isZeroPurchaseCost = Number(req.actualPurchaseCost || 0) === 0;
+
+      const approveBtnHtml = isZeroPurchaseCost ? `
+        <button type="button" onclick="directReleaseServiceCharge('${req._id}', '${resolvedFee}')" style="background-color: #2e7d32; color: #ffffff !important; padding: 12px 20px; font-size: 1.05rem; font-weight: 700; cursor: pointer; border-radius: 10px; border: none; display: flex; align-items: center; justify-content: center; text-align: center; gap: 8px; box-shadow: 0 4px 10px rgba(46,125,50,0.3); min-height: 52px; width: 340px; max-width: 95%;">
+          ✅ Release Volunteer Service Charge (₹${resolvedFee})
+        </button>` : `
+        <button type="button" onclick="approvePurchaseFunding('${req._id}', '${req.actualPurchaseCost || 0}', '${resolvedFee}')" style="background-color: #2e7d32; color: #ffffff !important; padding: 12px 20px; font-size: 1.05rem; font-weight: 700; cursor: pointer; border-radius: 10px; border: none; display: flex; align-items: center; justify-content: center; text-align: center; gap: 8px; box-shadow: 0 4px 10px rgba(46,125,50,0.3); min-height: 52px; width: 320px; max-width: 90%;">
+          ✅ Approve Payment (₹${req.actualPurchaseCost || 0}) &amp; Release Funds
+        </button>`;
+
+      stepActionHtml = `
+        <div style="margin-top: 12px; padding: 16px 18px; background: #fff8e1; border-left: 5px solid #e65100; border-radius: 12px; font-size: 1rem; color: #bf360c;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; border-bottom: 1px dashed #ffe0b2; padding-bottom: 8px;">
+            <span style="font-weight: 700; color: #e65100; font-size: 1.2rem;">💳 Volunteer Submitted Purchase Cost: <strong style="font-size: 1.3rem; color: #d84315;">₹${req.actualPurchaseCost || 0}</strong></span>
+            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-left: auto;">
+              ${req.purchaseNotes ? `<span style="font-size: 1rem; color: #444; font-style: italic; background: #fff3e0; padding: 4px 10px; border-radius: 6px;">Notes: "${escapeHTML(req.purchaseNotes)}"</span>` : ''}
+              ${currentVolId ? `<button type="button" onclick="viewVolunteerProfile('${currentVolId}')" style="padding: 5px 14px; font-size: 0.88rem; border-radius: 16px; background: #ffffff; color: #1565c0; border: 1.5px solid #90caf9; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 2px 6px rgba(0,0,0,0.08);">👤 View Volunteer Profile</button>` : ''}
+            </div>
+          </div>
+          <div style="display: flex; gap: 16px; align-items: center; flex-wrap: wrap; margin-top: 8px;">
+            ${proofImgHtml}
+            <div style="flex: 1; min-width: 240px; display: flex; flex-direction: column; gap: 28px; justify-content: center; align-items: center; padding: 0 10px;">
+              ${approveBtnHtml}
+              <button type="button" onclick="openRejectRevisionModal('${req._id}', '${escapeHTML(req.title).replace(/'/g, "\\'")}', '${escapeHTML(req.category).replace(/'/g, "\\'")}')" style="background-color: #c62828; color: #ffffff !important; padding: 12px 20px; font-size: 1.05rem; font-weight: 700; cursor: pointer; border-radius: 10px; border: none; display: flex; align-items: center; justify-content: center; text-align: center; gap: 8px; box-shadow: 0 4px 10px rgba(198,40,40,0.3); min-height: 52px; width: 320px; max-width: 90%;">
+                ❌ Reject / Request Revision &amp; Send Note
+              </button>
+            </div>
+          </div>
+        </div>`;
+    } else if (req.status === 'awaiting_verification') {
+      const finalFee = (req.serviceFee !== undefined && req.serviceFee > 0) ? req.serviceFee : (req.volunteerQuotes && req.volunteerQuotes[0]?.serviceFee ? req.volunteerQuotes[0].serviceFee : 150);
+      stepActionHtml = `
+        <div style="margin-top: 12px; padding: 12px 16px; background: #f3e5f5; border-left: 5px solid #7b1fa2; border-radius: 10px;">
+          <div style="font-weight: 700; color: #4a148c; font-size: 1.02rem; margin-bottom: 8px;">🧾 Volunteer Uploaded Official Store Cash Receipt</div>
+          <div>
+            <button type="button" onclick="verifyTaskCompletion('${req._id}', true)" style="background-color: #2e7d32; color: #ffffff !important; padding: 8px 16px; font-size: 0.93rem; font-weight: 700; cursor: pointer; border-radius: 8px; border: none; box-shadow: 0 2px 6px rgba(46,125,50,0.25); display: inline-flex; align-items: center; gap: 6px;">
+              ✅ Verify Receipt &amp; Release Volunteer Service Charge (₹${finalFee})
+            </button>
+          </div>
+        </div>`;
+    }
+
     let audioHtml = req.audioFile ? `<div class="request-audio-player"><label>🎙️ Senior's Voice Message:</label><audio controls src="${req.audioFile}"></audio></div>` : '';
 
     let proofUrl = req.completionProof ? (req.completionProof.startsWith('/') ? req.completionProof : '/' + req.completionProof) : '';
 
-    let proofHtml = proofUrl ? `
+    let finalImages = req.finalReceiptDocs && req.finalReceiptDocs.length > 0 
+      ? req.finalReceiptDocs 
+      : (proofUrl ? [proofUrl] : []);
+
+    let proofHtml = finalImages.length > 0 ? `
       <div style="margin-top: 10px; background: #ffffff; padding: 10px; border-radius: 8px; border: 1px solid var(--color-primary-light);">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-          <label style="font-weight: bold; color: var(--color-primary-dark); font-size: 0.9rem;">📸 Uploaded Receipt / Delivery Photo Proof:</label>
-          <button type="button" onclick="openImageLightbox('${escapeHTML(proofUrl)}')" class="btn btn-secondary" style="padding: 4px 10px; font-size: 0.85rem; min-height: 32px;">🔍 View Photo</button>
+        <div style="font-weight: bold; color: var(--color-primary-dark); font-size: 0.9rem; margin-bottom: 6px;">📸 Uploaded Store Receipt / Delivery Photo Proof (${finalImages.length}):</div>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+          ${finalImages.map((imgUrl, idx) => {
+            const cleanUrl = imgUrl.startsWith('/') ? imgUrl : '/' + imgUrl;
+            return `<img src="${escapeHTML(cleanUrl)}" alt="Receipt Photo ${idx + 1}" onclick="openImageLightbox('${escapeHTML(cleanUrl)}')" style="max-width: 180px; max-height: 160px; border-radius: 6px; cursor: pointer; object-fit: contain; border: 1px solid #ccc;" title="Click to enlarge proof photo ${idx + 1}">`;
+          }).join('')}
         </div>
-        <img 
-          src="${escapeHTML(proofUrl)}" 
-          alt="Delivery Receipt Proof" 
-          onclick="openImageLightbox('${escapeHTML(proofUrl)}')"
-          style="max-width: 100%; max-height: 180px; border-radius: 6px; margin-top: 5px; display: block; object-fit: contain; cursor: pointer;"
-          title="Click to view full image"
-        >
       </div>` : '';
 
     return `
@@ -836,6 +1286,7 @@ function renderAllRequests(requests) {
           </div>` : ''}
         ${audioHtml}
         ${proofHtml}
+        ${stepActionHtml}
         ${timeline}
         ${volunteerInfo}
         <div style="font-size: 0.85rem; color: #999; margin-top: 0.8rem;">

@@ -33,12 +33,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   currentVolunteerUser = JSON.parse(localStorage.getItem('user'));
   const welcomeTitle = document.getElementById('welcomeTitle');
   if (welcomeTitle && currentVolunteerUser) {
-    welcomeTitle.textContent = `Welcome, ${currentVolunteerUser.name}! 👋`;
+    welcomeTitle.textContent = `Welcome, ${currentVolunteerUser.name}!`;
   }
 
   // Render initial status from localStorage immediately
   if (currentVolunteerUser) {
     renderKycStatus(currentVolunteerUser);
+    await renderRatingProfileCard(currentVolunteerUser);
   }
 
   // Refresh live user profile synchronously from backend on load
@@ -48,6 +49,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       currentVolunteerUser = meRes.data.user;
       localStorage.setItem('user', JSON.stringify(resDataUser(meRes.data.user)));
       renderKycStatus(currentVolunteerUser);
+      await renderRatingProfileCard(currentVolunteerUser);
     }
   } catch (err) {
     console.error('Error fetching profile:', err);
@@ -136,8 +138,12 @@ document.addEventListener('DOMContentLoaded', async () => {
       const formData = new FormData();
       formData.append('resolutionNotes', resolutionNotes || 'Assistance successfully provided.');
       
-      if (receiptPhotoInput && receiptPhotoInput.files && receiptPhotoInput.files[0]) {
-        formData.append('receiptPhoto', receiptPhotoInput.files[0]);
+      if (receiptPhotoInput && receiptPhotoInput.files && receiptPhotoInput.files.length > 0) {
+        for (let i = 0; i < receiptPhotoInput.files.length; i++) {
+          formData.append('receiptPhoto', receiptPhotoInput.files[i]);
+          formData.append('proof', receiptPhotoInput.files[i]);
+          formData.append('proofs', receiptPhotoInput.files[i]);
+        }
       }
 
       const res = await apiCall(`/requests/${activeRequestIdForCompletion}/complete`, 'PUT', formData);
@@ -411,12 +417,13 @@ function acceptHelpRequest(id, title, pref = '') {
 
 // Fetch and Render requests for Volunteers
 async function loadVolunteerRequests(silent = false) {
-  // Always sync latest verification profile from backend
+  // Always sync latest verification profile & rating stats from backend
   const meRes = await apiCall('/auth/me', 'GET');
   if (meRes.ok && meRes.data && meRes.data.user) {
     currentVolunteerUser = meRes.data.user;
     localStorage.setItem('user', JSON.stringify(meRes.data.user));
     renderKycStatus(meRes.data.user);
+    await renderRatingProfileCard(meRes.data.user);
   }
 
   const pendingList       = document.getElementById('pendingList');
@@ -470,8 +477,8 @@ async function loadVolunteerRequests(silent = false) {
     const pendingRequests   = requests.filter(r => r.status === 'pending' || r.status === 'awaiting_approval');
     // 2. Awaiting Family Approval: Requests where this volunteer submitted a quote and status is 'awaiting_approval'
     const awaitingRequests  = requests.filter(r => r.status === 'awaiting_approval' && hasMyQuote(r));
-    // 3. Active Commitments: Requests where caregiver APPROVED this volunteer
-    const activeRequests    = requests.filter(r => r.status === 'accepted' && isMyApprovedTask(r));
+    // 3. Active Commitments: Requests assigned to this volunteer in any active escrow stage
+    const activeRequests    = requests.filter(r => (r.status === 'accepted' || r.status === 'purchase_cost_submitted' || r.status === 'purchase_funded' || r.status === 'awaiting_verification' || r.status === 'in_progress') && isMyApprovedTask(r));
     // 4. Completed History: Tasks completed by this volunteer
     const completedRequests = requests.filter(r => r.status === 'completed' && isMyApprovedTask(r));
 
@@ -623,6 +630,18 @@ async function loadVolunteerRequests(silent = false) {
           let seniorAddress = req.senior ? req.senior.address : 'Not provided';
           let emergencyContact = req.senior ? req.senior.emergencyContact : 'Not provided';
 
+          let myQuotedFee = (req.serviceFee !== undefined && req.serviceFee !== null && Number(req.serviceFee) > 0) ? Number(req.serviceFee) : 0;
+          if (myQuotedFee === 0 && req.volunteerQuotes && req.volunteerQuotes.length > 0) {
+            const currentVolUser = JSON.parse(localStorage.getItem('user') || '{}');
+            const myVolId = currentVolUser._id || currentVolUser.id;
+            let match = null;
+            if (myVolId) {
+              match = req.volunteerQuotes.find(q => q.volunteer && String(q.volunteer._id || q.volunteer.id || q.volunteer) === String(myVolId));
+            }
+            if (!match) match = req.volunteerQuotes[0];
+            if (match && match.serviceFee) myQuotedFee = Number(match.serviceFee);
+          }
+
           const isRejected = req.completionVerified === 'rejected';
 
           let rejectionWarningBox = '';
@@ -641,10 +660,85 @@ async function loadVolunteerRequests(silent = false) {
               </div>`;
           }
 
+          if (req.purchaseRejectionReason && req.status === 'accepted') {
+            rejectionWarningBox += `
+              <div style="margin: 1rem 0; padding: 12px 16px; background-color: #fff3e0; border: 2px solid #f57c00; border-radius: 12px;">
+                <p style="color: #e65100; font-weight: bold; font-size: 1.05rem; margin-bottom: 4px;">
+                  ⚠️ Caregiver Requested Revision on Purchase Cost / Quality
+                </p>
+                <p style="color: #bf360c; font-size: 0.95rem; margin: 0;">
+                  <strong>Caregiver Note:</strong> "${escapeHTML(req.purchaseRejectionReason)}"
+                </p>
+                <p style="color: #444; font-size: 0.9rem; margin-top: 6px;">
+                  Please check prices/quality, adjust purchase cost & proof, and re-submit below.
+                </p>
+              </div>`;
+          }
+
+          let stepBoxHtml = '';
+          let actionBtnHtml = '';
+
+          if (req.status === 'accepted') {
+            stepBoxHtml = `
+              <div style="margin: 12px 0; padding: 12px 16px; background: #e3f2fd; border-left: 4px solid #1976d2; border-radius: 8px; font-size: 0.95rem; color: #0d47a1;">
+                💡 <strong>Find Actual Purchase Cost</strong><br/>
+                Please check store item prices online or in-person, then click below to submit the actual purchase cost + cart/price tag proof for caregiver escrow funding.
+              </div>`;
+            actionBtnHtml = `
+              <button class="btn btn-primary" onclick="openPurchaseCostModal('${req._id}')" style="padding: 10px 20px; font-size: 1rem; min-height: 48px; background-color: #1976d2;">
+                💰 Submit Actual Purchase Cost &amp; Proof
+              </button>`;
+          } else if (req.status === 'purchase_cost_submitted') {
+            let proofImages = req.purchaseProofDocs && req.purchaseProofDocs.length > 0 
+              ? req.purchaseProofDocs 
+              : (req.purchaseProofDoc ? [req.purchaseProofDoc] : []);
+            let proofSlider = renderProofSliderHtml(req._id, proofImages);
+
+            stepBoxHtml = `
+              <div style="margin: 12px 0; padding: 12px 16px; background: #fff3e0; border-left: 4px solid #f57c00; border-radius: 8px; font-size: 0.95rem; color: #e65100;">
+                💳 <strong>Purchase Cost (₹${req.actualPurchaseCost || 0}) &amp; Proof Submitted</strong><br/>
+                ⏳ Awaiting Caregiver Payment Approval &amp; Escrow Funding.
+                ${proofSlider}
+              </div>`;
+            actionBtnHtml = `
+              <button class="btn btn-secondary" disabled style="padding: 10px 20px; font-size: 0.95rem; min-height: 48px; opacity: 0.8;">
+                ⏳ Awaiting Caregiver Escrow Payment
+              </button>`;
+          } else if (req.status === 'purchase_funded' || req.status === 'in_progress') {
+            stepBoxHtml = `
+              <div style="margin: 12px 0; padding: 12px 16px; background: #e8f5e9; border-left: 4px solid #2e7d32; border-radius: 8px; font-size: 0.95rem; color: #1b5e20;">
+                ✅ <strong>Money Released for Purchase (₹${req.actualPurchaseCost || 0})</strong><br/>
+                Purchase is funded! Buy the items for the senior citizen and deliver them. Click below to upload the final official store cash receipt.
+              </div>`;
+            actionBtnHtml = `
+              <button class="btn btn-primary" onclick="openCompletionModal('${req._id}')" style="padding: 10px 20px; font-size: 1rem; min-height: 48px; background-color: #2e7d32;">
+                🧾 Complete Task &amp; Upload Cash Receipt
+              </button>`;
+          } else if (req.status === 'awaiting_verification') {
+            stepBoxHtml = `
+              <div style="margin: 12px 0; padding: 12px 16px; background: #f3e5f5; border-left: 4px solid #7b1fa2; border-radius: 8px; font-size: 0.95rem; color: #4a148c;">
+                🧾 <strong>Store Cash Receipt Uploaded</strong><br/>
+                ⏳ Awaiting Caregiver Final Verification &amp; Volunteer Service Charge (₹${myQuotedFee > 0 ? myQuotedFee : 150}) Escrow Release.
+                ${req.finalReceiptDoc || req.completionProof ? `<div style="margin-top: 6px;"><a href="${req.finalReceiptDoc || req.completionProof}" target="_blank" onclick="event.stopPropagation(); openImageLightbox('${req.finalReceiptDoc || req.completionProof}'); return false;" style="color: #7b1fa2; font-weight: bold; text-decoration: underline;">🔍 View Uploaded Receipt Photo</a></div>` : ''}
+              </div>`;
+            actionBtnHtml = `
+              <button class="btn btn-secondary" disabled style="padding: 10px 20px; font-size: 0.95rem; min-height: 48px; opacity: 0.8;">
+                ⏳ Verification &amp; Service Fee Release Pending
+              </button>`;
+          } else {
+            actionBtnHtml = `
+              <button class="btn btn-primary" onclick="openCompletionModal('${req._id}')" style="padding: 10px 20px; font-size: 1rem; min-height: 48px; background-color: ${isRejected ? '#c62828' : 'var(--color-primary-dark)'};">
+                ${isRejected ? '📸 Re-upload Receipt & Re-apply for Verification' : '✅ Complete Request & Upload Receipt'}
+              </button>`;
+          }
+
           return `
             <div class="request-card" style="border-left: 5px solid ${isRejected ? 'var(--color-emergency)' : 'var(--color-primary-dark)'};">
-              <div class="request-card-header">
-                <div class="request-title">${escapeHTML(req.title)}</div>
+              <div class="request-card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                  <div class="request-title">${escapeHTML(req.title)}</div>
+                  <span style="background: #e8f5e9; color: #2e7d32; padding: 4px 12px; border-radius: 16px; font-size: 0.95rem; font-weight: 800; border: 1.5.px solid #a5d6a7; display: inline-flex; align-items: center; gap: 4px;">💰 Quoted Fee: ₹${myQuotedFee > 0 ? myQuotedFee : '0 (Free)'}</span>
+                </div>
                 <span class="badge ${isRejected ? 'badge-urgency-emergency' : 'badge-active'}">${isRejected ? '⚠️ Action Required: Re-apply' : 'In Progress'}</span>
               </div>
 
@@ -666,17 +760,19 @@ async function loadVolunteerRequests(silent = false) {
                 <p><strong>Phone:</strong> <a href="tel:${seniorPhone}" style="color: var(--color-primary-dark); font-weight: bold;">${escapeHTML(seniorPhone)}</a></p>
                 <p><strong>Address:</strong> ${escapeHTML(seniorAddress)}</p>
                 <p><strong>Emergency Contact:</strong> ${escapeHTML(emergencyContact)}</p>
+                <p style="margin-top: 8px; font-size: 1.05rem; color: #1b5e20; border-top: 1px dashed #a5d6a7; padding-top: 6px;">
+                  <strong>💰 Your Agreed Service Charge:</strong> 
+                  <span style="font-weight: 800; color: #2e7d32; font-size: 1.12rem; background: #e8f5e9; padding: 2px 10px; border-radius: 6px; border: 1px solid #c8e6c9;">₹${myQuotedFee > 0 ? myQuotedFee : '0 (Voluntary / Free Service)'}</span>
+                </p>
               </div>
 
               ${rejectionWarningBox}
-
+              ${stepBoxHtml}
               ${renderPlatformHelperHtml(req)}
 
               <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; flex-wrap: wrap; gap: 10px;">
                 <span style="font-size: 0.9rem; color: #666;">Accepted: ${new Date(req.acceptedAt || Date.now()).toLocaleDateString()}</span>
-                <button class="btn btn-primary" onclick="openCompletionModal('${req._id}')" style="padding: 10px 20px; font-size: 1rem; min-height: 48px; background-color: ${isRejected ? '#c62828' : 'var(--color-primary-dark)'};">
-                  ${isRejected ? '📸 Re-upload Receipt & Re-apply for Verification' : '✅ Complete Request & Upload Receipt'}
-                </button>
+                ${actionBtnHtml}
               </div>
             </div>`;
         }).join('');
@@ -757,6 +853,20 @@ async function loadVolunteerRequests(silent = false) {
                 <p><strong>Completion Notes:</strong> ${escapeHTML(req.resolutionNotes)}</p>
                 <p><strong>Completed On:</strong> ${new Date(req.completedAt || Date.now()).toLocaleDateString()}</p>
               </div>
+
+              ${req.feedback ? `
+                <div style="margin-top: 10px; padding: 10px 14px; background: #fffdf5; border: 1.5px solid #fde68a; border-radius: 10px; box-shadow: 0 2px 6px rgba(245,158,11,0.08);">
+                  <div style="font-weight: 700; color: #b45309; font-size: 0.95rem; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+                    ⭐ Caregiver Feedback &amp; Rating Review:
+                  </div>
+                  <div style="font-size: 0.88rem; color: #444; display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 4px;">
+                    <span>💰 Cost Utilization: <strong style="color: #b45309;">${req.feedback.costUtilization}/5</strong></span>
+                    <span>⏱️ Speed: <strong style="color: #b45309;">${req.feedback.speedTimeliness}/5</strong></span>
+                    <span>📞 Communication: <strong style="color: #b45309;">${req.feedback.communication}/5</strong></span>
+                    <span>👍 Choose Again: <strong style="color: #2e7d32;">${escapeHTML(req.feedback.chooseAgain)}</strong></span>
+                  </div>
+                  ${req.feedback.additionalFeedback ? `<p style="margin: 4px 0 0 0; font-size: 0.88rem; color: #333; font-style: italic; background: #ffffff; padding: 6px 10px; border-radius: 6px; border-left: 3px solid #fde68a;">💬 "${escapeHTML(req.feedback.additionalFeedback)}"</p>` : ''}
+                </div>` : ''}
               ${reapplyButtonHtml}
             </div>`;
         }).join('');
@@ -954,3 +1064,243 @@ function closeImageLightbox() {
   const modal = document.getElementById('imageLightboxModal');
   if (modal) modal.style.display = 'none';
 }
+
+async function renderRatingProfileCard(user) {
+  if (!user) return;
+
+  let stats = user.ratingStats;
+  const volId = user._id || user.id;
+
+  if (volId) {
+    try {
+      const statsRes = await apiCall(`/auth/volunteer-stats/${volId}`, 'GET');
+      if (statsRes && statsRes.ok && statsRes.data && statsRes.data.stats) {
+        stats = statsRes.data.stats;
+        user.ratingStats = stats;
+      }
+    } catch (err) {
+      console.warn('Error fetching volunteer rating stats:', err);
+    }
+  }
+
+  if (!stats) return;
+
+  const simpleOverallBadge = document.getElementById('simpleOverallBadge');
+  const simpleCost = document.getElementById('simpleCost');
+  const simpleSpeed = document.getElementById('simpleSpeed');
+  const simpleComm = document.getElementById('simpleComm');
+  const simpleRecommend = document.getElementById('simpleRecommend');
+  const simpleTasks = document.getElementById('simpleTasks');
+  const simpleReviews = document.getElementById('simpleReviews');
+
+  if (simpleOverallBadge) {
+    if (stats.reviewsCount > 0) {
+      simpleOverallBadge.textContent = `⭐ ${stats.overallRating.toFixed(1)} Rating`;
+    } else if (stats.tasksCompleted > 0) {
+      simpleOverallBadge.textContent = `⭐ 0.0 (No reviews yet)`;
+    } else {
+      simpleOverallBadge.textContent = `⭐ 0.0 Rating`;
+    }
+  }
+  if (simpleCost) simpleCost.textContent = `💰 ${stats.costUtilization > 0 ? stats.costUtilization.toFixed(1) : '0'}/5`;
+  if (simpleSpeed) simpleSpeed.textContent = `⏱️ ${stats.speedTimeliness > 0 ? stats.speedTimeliness.toFixed(1) : '0'}/5`;
+  if (simpleComm) simpleComm.textContent = `📞 ${stats.communication > 0 ? stats.communication.toFixed(1) : '0'}/5`;
+  if (simpleRecommend) simpleRecommend.textContent = `👍 ${stats.recommendationRate}% recommend`;
+  if (simpleTasks) simpleTasks.textContent = `✓ ${stats.tasksCompleted} tasks`;
+  if (simpleReviews) simpleReviews.textContent = `💬 ${stats.reviewsCount} review${stats.reviewsCount === 1 ? '' : 's'}`;
+}
+
+// Open Modal Tab for Submitting Purchase Cost & Bill Proof (Step 4 & 5)
+function openPurchaseCostModal(requestId) {
+  const modal = document.getElementById('purchaseCostModal');
+  const reqIdInput = document.getElementById('purchaseCostRequestId');
+  const costInput = document.getElementById('purchaseCostInput');
+  const proofFile = document.getElementById('purchaseProofFile');
+  const notesInput = document.getElementById('purchaseNotesInput');
+  const previewDiv = document.getElementById('purchaseProofPreview');
+
+  if (reqIdInput) reqIdInput.value = requestId || '';
+  if (costInput) costInput.value = '';
+  if (proofFile) proofFile.value = '';
+  if (notesInput) notesInput.value = '';
+  if (previewDiv) previewDiv.style.display = 'none';
+
+  togglePurchaseProofRequired('');
+
+  if (modal) {
+    modal.style.display = 'flex';
+  } else {
+    alert('Purchase cost modal template missing.');
+  }
+}
+
+window.togglePurchaseProofRequired = function(val) {
+  const costNum = Number(val);
+  const fileInput = document.getElementById('purchaseProofFile');
+  const starEl = document.getElementById('purchaseProofRequiredStar');
+  const optionalNote = document.getElementById('purchaseProofOptionalNote');
+
+  if (costNum === 0 && val !== '') {
+    if (fileInput) fileInput.required = false;
+    if (starEl) starEl.style.display = 'none';
+    if (optionalNote) optionalNote.textContent = ' (Optional for ₹0 purchase cost)';
+  } else {
+    if (fileInput) fileInput.required = true;
+    if (starEl) starEl.style.display = 'inline';
+    if (optionalNote) optionalNote.textContent = '';
+  }
+};
+
+function closePurchaseCostModal() {
+  const modal = document.getElementById('purchaseCostModal');
+  if (modal) modal.style.display = 'none';
+}
+
+function previewPurchaseProofImage(input) {
+  const previewDiv = document.getElementById('purchaseProofPreview');
+  if (!previewDiv) return;
+
+  if (input.files && input.files.length > 0) {
+    previewDiv.innerHTML = '';
+    previewDiv.style.display = 'flex';
+    previewDiv.style.flexWrap = 'wrap';
+    previewDiv.style.gap = '8px';
+    previewDiv.style.justifyContent = 'center';
+
+    Array.from(input.files).forEach(file => {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const img = document.createElement('img');
+        img.src = e.target.result;
+        img.alt = 'Proof Preview';
+        img.style.maxWidth = '140px';
+        img.style.maxHeight = '140px';
+        img.style.borderRadius = '8px';
+        img.style.border = '1px solid #ccc';
+        img.style.objectFit = 'contain';
+        previewDiv.appendChild(img);
+      };
+      reader.readAsDataURL(file);
+    });
+  } else {
+    previewDiv.style.display = 'none';
+    previewDiv.innerHTML = '';
+  }
+}
+
+async function handlePurchaseCostSubmit(e) {
+  e.preventDefault();
+
+  const requestId = document.getElementById('purchaseCostRequestId')?.value;
+  const costVal = document.getElementById('purchaseCostInput')?.value;
+  const proofFile = document.getElementById('purchaseProofFile');
+  const notesVal = document.getElementById('purchaseNotesInput')?.value;
+  const btnSubmit = document.getElementById('btnSubmitPurchaseCost');
+
+  if (!requestId) {
+    alert('Request ID missing');
+    return;
+  }
+
+  const costNum = Number(costVal);
+  if (isNaN(costNum) || costNum < 0) {
+    alert('Please enter a valid purchase cost amount in ₹');
+    return;
+  }
+
+  if (costNum > 0 && (!proofFile || !proofFile.files || !proofFile.files[0])) {
+    alert('Please upload a bill photo proof or cart screenshot image for purchase cost > ₹0');
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append('actualPurchaseCost', costNum);
+  formData.append('purchaseNotes', notesVal ? notesVal.trim() : '');
+  if (proofFile && proofFile.files && proofFile.files.length > 0) {
+    for (let i = 0; i < proofFile.files.length; i++) {
+      formData.append('proof', proofFile.files[i]);
+      formData.append('proofs', proofFile.files[i]);
+    }
+  }
+
+  if (btnSubmit) {
+    btnSubmit.disabled = true;
+    btnSubmit.textContent = '⏳ Submitting...';
+  }
+
+  try {
+    const res = await apiCall(`/requests/${requestId}/submit-purchase-cost`, 'PUT', formData);
+    if (res.ok && res.data.success) {
+      showToast('✅ Actual purchase cost & bill proof submitted! Waiting for caregiver escrow payment.', 'success');
+      closePurchaseCostModal();
+      loadVolunteerRequests();
+    } else {
+      alert(res.data?.message || 'Error submitting purchase cost');
+    }
+  } catch (err) {
+    console.error(err);
+    alert('Network error submitting purchase cost');
+  } finally {
+    if (btnSubmit) {
+      btnSubmit.disabled = false;
+      btnSubmit.textContent = '🚀 Submit Purchase Cost & Proof';
+    }
+  }
+}
+
+window.proofSliderData = window.proofSliderData || {};
+window.proofSliderIndex = window.proofSliderIndex || {};
+
+function renderProofSliderHtml(reqId, rawImages) {
+  if (!rawImages || rawImages.length === 0) return '';
+
+  const images = rawImages.map(img => img.startsWith('/') ? img : '/' + img);
+  window.proofSliderData[reqId] = images;
+  window.proofSliderIndex[reqId] = 0;
+
+  const firstImg = images[0];
+  const count = images.length;
+
+  if (count === 1) {
+    return `
+      <div style="position: relative; width: 440px; max-width: 100%; height: 320px; border-radius: 12px; overflow: hidden; border: 2px solid #ffe0b2; background: #ffffff; box-shadow: 0 4px 12px rgba(0,0,0,0.12); flex-shrink: 0; margin-top: 10px;">
+        <img src="${escapeHTML(firstImg)}" alt="Proof Image" onclick="event.stopPropagation(); openImageLightbox('${escapeHTML(firstImg)}'); return false;" style="width: 100%; height: 100%; object-fit: contain; cursor: pointer; display: block;" title="Click to enlarge proof photo">
+      </div>`;
+  }
+
+  return `
+    <div style="position: relative; width: 440px; max-width: 100%; height: 320px; border-radius: 12px; overflow: hidden; border: 2px solid #ffe0b2; background: #ffffff; box-shadow: 0 4px 12px rgba(0,0,0,0.12); flex-shrink: 0; user-select: none; margin-top: 10px;">
+      <img id="sliderImg_${reqId}" src="${escapeHTML(firstImg)}" alt="Proof Image 1" onclick="event.stopPropagation(); openImageLightbox(this.src); return false;" style="width: 100%; height: 100%; object-fit: contain; cursor: pointer; display: block;" title="Click to enlarge proof photo">
+      
+      <div id="sliderCounter_${reqId}" style="position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.75); color: #ffffff; font-weight: 800; font-size: 0.88rem; padding: 4px 12px; border-radius: 16px; pointer-events: none; z-index: 2; box-shadow: 0 2px 6px rgba(0,0,0,0.3);">
+        📷 1 / ${count}
+      </div>
+
+      <button type="button" onclick="event.stopPropagation(); navigateProofSlider('${reqId}', -1)" style="position: absolute; top: 50%; left: 8px; transform: translateY(-50%); background: rgba(0,0,0,0.6); color: #ffffff; border: none; border-radius: 50%; width: 40px; height: 40px; font-size: 1.3rem; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 3; box-shadow: 0 2px 8px rgba(0,0,0,0.3); transition: all 0.15s ease;" onmouseover="this.style.background='rgba(0,0,0,0.9)'; this.style.transform='translateY(-50%) scale(1.1)'" onmouseleave="this.style.background='rgba(0,0,0,0.6)'; this.style.transform='translateY(-50%) scale(1)'">
+        ◀
+      </button>
+
+      <button type="button" onclick="event.stopPropagation(); navigateProofSlider('${reqId}', 1)" style="position: absolute; top: 50%; right: 8px; transform: translateY(-50%); background: rgba(0,0,0,0.6); color: #ffffff; border: none; border-radius: 50%; width: 40px; height: 40px; font-size: 1.3rem; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 3; box-shadow: 0 2px 8px rgba(0,0,0,0.3); transition: all 0.15s ease;" onmouseover="this.style.background='rgba(0,0,0,0.9)'; this.style.transform='translateY(-50%) scale(1.1)'" onmouseleave="this.style.background='rgba(0,0,0,0.6)'; this.style.transform='translateY(-50%) scale(1)'">
+        ▶
+      </button>
+    </div>`;
+}
+
+window.navigateProofSlider = function(reqId, direction) {
+  const images = window.proofSliderData ? window.proofSliderData[reqId] : null;
+  if (!images || images.length <= 1) return;
+
+  let currIdx = window.proofSliderIndex[reqId] || 0;
+  currIdx = (currIdx + direction + images.length) % images.length;
+  window.proofSliderIndex[reqId] = currIdx;
+
+  const imgEl = document.getElementById(`sliderImg_${reqId}`);
+  const counterEl = document.getElementById(`sliderCounter_${reqId}`);
+
+  if (imgEl) {
+    imgEl.src = images[currIdx];
+  }
+  if (counterEl) {
+    counterEl.textContent = `📷 ${currIdx + 1} / ${images.length}`;
+  }
+};

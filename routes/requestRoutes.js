@@ -10,12 +10,16 @@ const {
   updateRequest,
   deleteRequest,
   acceptRequest,
+  submitPurchaseCost,
+  approvePurchaseFunding,
+  rejectPurchaseCost,
   completeRequest,
   familyApproveRequest,
   familyFulfillSelf,
   familyRejectRequest,
   verifyCompletionByFamily,
-  verifyCompletionBySeniorVoice
+  verifyCompletionBySeniorVoice,
+  submitFeedback
 } = require('../controllers/requestController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
@@ -128,17 +132,23 @@ router.route('/:id')
   .put(authorize('senior'), updateRequest)
   .delete(authorize('senior', 'admin'), deleteRequest);
 
-// Volunteer workflow
-router.put('/:id/accept',   authorize('volunteer'), acceptRequest);
-router.put('/:id/complete', authorize('volunteer', 'admin'), handleProofUpload, completeRequest);
+// Volunteer 11-step escrow workflow
+router.put('/:id/accept',               authorize('volunteer'), acceptRequest);
+router.put('/:id/submit-purchase-cost', authorize('volunteer'), handleProofUpload, submitPurchaseCost);
+router.put('/:id/complete',             authorize('volunteer', 'admin'), handleProofUpload, completeRequest);
 
-// Family/Caregiver volunteer approval & fulfillment workflow
-router.put('/:id/family-approve', authorize('family'), familyApproveRequest);
+// Family/Caregiver volunteer approval, purchase funding & fulfillment workflow
+router.put('/:id/family-approve',           authorize('family'), familyApproveRequest);
+router.put('/:id/approve-purchase-funding', authorize('family'), approvePurchaseFunding);
+router.put('/:id/reject-purchase-cost',     authorize('family'), rejectPurchaseCost);
 router.put('/:id/family-fulfill', authorize('family'), familyFulfillSelf);
 router.put('/:id/family-reject',  authorize('family'), familyRejectRequest);
 
 // Task Completion Verification Workflow (Family Caregiver & Senior Voice IVR Call)
 router.put('/:id/verify-completion-family', authorize('family'), verifyCompletionByFamily);
 router.put('/:id/verify-completion-voice',  authorize('senior', 'admin'), verifyCompletionBySeniorVoice);
+
+// Volunteer Feedback Submission Workflow
+router.put('/:id/feedback', authorize('family', 'senior', 'admin'), submitFeedback);
 
 module.exports = router;

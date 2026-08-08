@@ -40,17 +40,33 @@
   <!-- Main Content -->
   <main id="mainContent">
     <!-- Welcome Bar -->
-    <div class="dashboard-welcome" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
-      <div style="display: flex; align-items: center; gap: 15px;">
-        <div class="welcome-icon" aria-hidden="true">🤝</div>
-        <div>
-          <h1 id="welcomeTitle">Welcome, Volunteer!</h1>
-          <p>Thank you for giving your time. Browse requests below and make a difference today.</p>
-        </div>
+    <div class="dashboard-welcome" style="display: block !important; position: relative; padding: 1.6rem 2rem; background: linear-gradient(135deg, #1b5e20, #2e7d32); border-radius: 16px; color: #ffffff; margin-bottom: 2rem;">
+      <!-- Row 1: Top Header Row (Title Left, Verification Badge Right) -->
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 20px; width: 100%;">
+        <h1 id="welcomeTitle" style="margin: 0; font-size: 1.65rem; color: #ffffff; font-weight: 700; white-space: nowrap;">Welcome, Volunteer!</h1>
+        <button id="btnViewTrustStatus" class="btn btn-secondary" style="display: none; margin: 0; padding: 8px 18px; font-size: 0.9rem; border-radius: 20px; background: #ffffff; color: #2e7d32; border: 1.5px solid #a5d6a7; font-weight: bold; cursor: pointer; white-space: nowrap; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
+          🛡️ Verification Status: Verified ✅
+        </button>
       </div>
-      <button id="btnViewTrustStatus" class="btn btn-secondary" style="display: none; padding: 8px 16px; font-size: 0.9rem; border-radius: 20px; background: #ffffff; color: #2e7d32; border: 1.5px solid #a5d6a7; font-weight: bold; cursor: pointer;">
-        🛡️ Verification Status: Verified ✅
-      </button>
+
+      <!-- Row 2: Empty Spacing Gap -->
+      <div style="height: 18px; width: 100%;"></div>
+
+      <!-- Row 3: Ratings Bar -->
+      <div id="volunteerRatingSimpleBar" style="font-size: 0.95rem; color: #ffffff; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; width: 100%;">
+        <span style="font-weight: 700; color: #b45309; background: #fff8e1; border: 1px solid #fde68a; padding: 3px 12px; border-radius: 14px;" id="simpleOverallBadge">⭐ 0.0 Rating</span>
+        <span id="simpleCost" style="color: #ffffff; font-weight: 600;">💰 0/5</span>
+        <span style="color: rgba(255,255,255,0.7);">·</span>
+        <span id="simpleSpeed" style="color: #ffffff; font-weight: 600;">⏱️ 0/5</span>
+        <span style="color: rgba(255,255,255,0.7);">·</span>
+        <span id="simpleComm" style="color: #ffffff; font-weight: 600;">📞 0/5</span>
+        <span style="color: rgba(255,255,255,0.7);">·</span>
+        <span id="simpleRecommend" style="color: #ffffff; font-weight: 600;">👍 0% recommend</span>
+        <span style="color: rgba(255,255,255,0.7);">·</span>
+        <span id="simpleTasks" style="color: #ffffff; font-weight: 600;">✓ 0 tasks</span>
+        <span style="color: rgba(255,255,255,0.7);">·</span>
+        <span id="simpleReviews" style="color: #ffffff; font-weight: 600;">💬 0 reviews</span>
+      </div>
     </div>
 
     <!-- Volunteer KYC & Verification Status Card -->
@@ -168,8 +184,9 @@
               name="receiptPhoto" 
               class="form-control" 
               accept="image/*"
+              multiple
             >
-            <small style="color: #666; display: block; margin-top: 4px;">Upload photo of delivery item or store receipt for family caregiver verification.</small>
+            <small style="color: #666; display: block; margin-top: 4px;">Upload photos of delivery item or store receipt (multiple photos supported).</small>
           </div>
 
           <!-- Footer Actions -->
@@ -271,6 +288,9 @@
             Close Preview
           </button>
         </div>
+      </div>
+    </div>
+
     <!-- KYC Re-submission Modal -->
     <div id="kycModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="kycModalTitle" style="display: none;">
       <div class="modal-content" style="max-width: 550px;">
@@ -304,6 +324,61 @@
         </form>
       </div>
     </div>
+
+    <!-- Modal: Submit Purchase Cost & Bill Photo Proof -->
+    <div id="purchaseCostModal" class="modal" style="display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.6); align-items: center; justify-content: center; z-index: 10000; padding: 1rem;">
+      <div class="modal-content" style="background: #ffffff; border-radius: 16px; width: 100%; max-width: 540px; padding: 1.8rem; box-shadow: 0 10px 30px rgba(0,0,0,0.25); border: 2px solid #a5d6a7; position: relative;">
+        <!-- Modal Header -->
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e8f5e9; padding-bottom: 1rem; margin-bottom: 1.2rem;">
+          <h2 style="margin: 0; color: #1b5e20; font-size: 1.35rem; display: flex; align-items: center; gap: 8px;">
+            💰 Submit Purchase Cost &amp; Bill Proof
+          </h2>
+          <button type="button" onclick="closePurchaseCostModal()" style="background: none; border: none; font-size: 1.6rem; cursor: pointer; color: #666; line-height: 1;">&times;</button>
+        </div>
+
+        <!-- Modal Body Form -->
+        <form id="purchaseCostForm" onsubmit="handlePurchaseCostSubmit(event)">
+          <input type="hidden" id="purchaseCostRequestId" value="">
+
+          <!-- Step 1: Actual Purchase Cost -->
+          <div style="margin-bottom: 1.2rem;">
+            <label for="purchaseCostInput" style="display: block; font-weight: 700; color: #1b5e20; margin-bottom: 6px; font-size: 1rem;">
+              💵 Actual Purchase Cost (in ₹) <span style="color: #c62828;">*</span>
+            </label>
+            <input type="number" id="purchaseCostInput" min="0" step="1" required placeholder="e.g. 450" style="width: 100%; padding: 12px 14px; font-size: 1.1rem; border: 2px solid #a5d6a7; border-radius: 10px; box-sizing: border-box; outline: none;" oninput="togglePurchaseProofRequired(this.value)">
+          </div>
+
+          <!-- Step 2: Bill / Cart Photo Proof Upload -->
+          <div style="margin-bottom: 1.2rem;">
+            <label for="purchaseProofFile" style="display: block; font-weight: 700; color: #1b5e20; margin-bottom: 6px; font-size: 1rem;">
+              📸 Bill Photo Proof / Cart Screenshot <span id="purchaseProofRequiredStar" style="color: #c62828;">*</span><span id="purchaseProofOptionalNote" style="color: #2e7d32; font-weight: 600; font-size: 0.9rem;"></span>
+            </label>
+            <input type="file" id="purchaseProofFile" accept="image/*" multiple required style="width: 100%; padding: 10px; font-size: 0.95rem; border: 2px dashed #81c784; border-radius: 10px; background: #f1f8e9; cursor: pointer;" onchange="previewPurchaseProofImage(this)">
+            <div id="purchaseProofPreview" style="margin-top: 10px; display: none; text-align: center;">
+              <img id="purchaseProofPreviewImg" src="" alt="Bill Proof Preview" style="max-width: 100%; max-height: 180px; border-radius: 8px; border: 1px solid #ccc; object-fit: contain;">
+            </div>
+          </div>
+
+          <!-- Step 3: Optional Notes -->
+          <div style="margin-bottom: 1.5rem;">
+            <label for="purchaseNotesInput" style="display: block; font-weight: 700; color: #1b5e20; margin-bottom: 6px; font-size: 1rem;">
+              📝 Additional Notes / Items Breakdown (Optional)
+            </label>
+            <textarea id="purchaseNotesInput" rows="3" placeholder="e.g. Crocin 5 tablets (₹450), Dettol soap (₹50)" style="width: 100%; padding: 10px 14px; font-size: 1rem; border: 2px solid #a5d6a7; border-radius: 10px; box-sizing: border-box; resize: vertical;"></textarea>
+          </div>
+
+          <!-- Actions -->
+          <div style="display: flex; gap: 12px; justify-content: flex-end;">
+            <button type="button" class="btn btn-secondary" onclick="closePurchaseCostModal()" style="padding: 10px 20px; font-size: 1rem; border-radius: 10px;">
+              Cancel
+            </button>
+            <button type="submit" id="btnSubmitPurchaseCost" class="btn btn-primary" style="padding: 10px 22px; font-size: 1rem; border-radius: 10px; background-color: #2e7d32; font-weight: 700;">
+              🚀 Submit Purchase Cost &amp; Proof
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   </main>
 
   <!-- Footer -->
@@ -312,7 +387,7 @@
   </footer>
 
   <!-- Scripts -->
-  <script src="/js/api.js?v=2"></script>
-  <script src="/js/volunteer.js?v=2"></script>
+  <script src="/js/api.js?v=7"></script>
+  <script src="/js/volunteer.js?v=7"></script>
 </body>
 </html>

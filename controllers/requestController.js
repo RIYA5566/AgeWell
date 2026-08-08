@@ -487,7 +487,121 @@ exports.familyRejectRequest = async (req, res) => {
   }
 };
 
-// @desc    Volunteer / Admin completes a request with receipt or delivery photo proof
+// @desc    Step 4-5: Volunteer submits actual purchase cost + cart/price proof image
+// @route   PUT /api/requests/:id/submit-purchase-cost
+// @access  Private (Volunteer)
+exports.submitPurchaseCost = async (req, res) => {
+  try {
+    const request = await HelpRequest.findById(req.params.id);
+    if (!request) return res.status(404).json({ success: false, message: 'Help request not found' });
+
+    if (req.user.role !== 'admin' && (!request.volunteer || request.volunteer.toString() !== req.user.id)) {
+      return res.status(403).json({ success: false, message: 'Not authorized to submit purchase cost for this request' });
+    }
+
+    const { actualPurchaseCost, purchaseNotes } = req.body;
+    const costNum = Number(actualPurchaseCost);
+    if (isNaN(costNum) || costNum < 0) {
+      return res.status(400).json({ success: false, message: 'Please enter a valid purchase cost amount' });
+    }
+
+    request.actualPurchaseCost = costNum;
+    request.purchaseNotes = purchaseNotes ? purchaseNotes.trim() : '';
+    if (req.files && req.files.length > 0) {
+      request.purchaseProofDoc = `/uploads/proofs/${req.files[0].filename}`;
+      request.purchaseProofDocs = req.files.map(f => `/uploads/proofs/${f.filename}`);
+    } else if (req.file) {
+      request.purchaseProofDoc = `/uploads/proofs/${req.file.filename}`;
+      request.purchaseProofDocs = [`/uploads/proofs/${req.file.filename}`];
+    }
+    request.purchaseCostSubmittedAt = Date.now();
+    request.status = 'purchase_cost_submitted';
+
+    await request.save();
+
+    const updated = await HelpRequest.findById(request._id)
+      .populate('senior', 'name phone address emergencyContact')
+      .populate('volunteer', 'name phone email skills');
+
+    res.status(200).json({
+      success: true,
+      message: 'Actual purchase cost & cart proof submitted! Waiting for caregiver payment approval.',
+      request: updated
+    });
+  } catch (error) {
+    console.error('Submit Purchase Cost Error:', error);
+    res.status(500).json({ success: false, message: 'Server error submitting purchase cost' });
+  }
+};
+
+// @desc    Step 6-7: Caregiver approves payment for actual purchase cost -> funds released for purchase
+// @route   PUT /api/requests/:id/approve-purchase-funding
+// @access  Private (Family Caregiver)
+exports.approvePurchaseFunding = async (req, res) => {
+  try {
+    const request = await HelpRequest.findById(req.params.id);
+    if (!request) return res.status(404).json({ success: false, message: 'Help request not found' });
+
+    const { paymentMethod, transactionId } = req.body || {};
+
+    request.purchaseFunded = true;
+    request.purchaseFundedAt = Date.now();
+    request.status = 'purchase_funded';
+    request.purchasePaymentDetails = {
+      amountPaid: request.actualPurchaseCost || 0,
+      transactionId: transactionId || `TXN_${Date.now()}`,
+      paymentMethod: paymentMethod || 'Escrow UPI',
+      paidAt: Date.now()
+    };
+
+    await request.save();
+
+    const updated = await HelpRequest.findById(request._id)
+      .populate('senior', 'name phone address emergencyContact')
+      .populate('volunteer', 'name phone email skills');
+
+    res.status(200).json({
+      success: true,
+      message: `Purchase funds of ₹${request.actualPurchaseCost} approved & released to volunteer! Volunteer can now buy the items and complete the task.`,
+      request: updated
+    });
+  } catch (error) {
+    console.error('Approve Purchase Funding Error:', error);
+    res.status(500).json({ success: false, message: 'Server error approving purchase payment' });
+  }
+};
+
+// @desc    Caregiver rejects submitted purchase cost with note/feedback (e.g. bargain or better quality)
+// @route   PUT /api/requests/:id/reject-purchase-cost
+// @access  Private (Family Caregiver)
+exports.rejectPurchaseCost = async (req, res) => {
+  try {
+    const request = await HelpRequest.findById(req.params.id);
+    if (!request) return res.status(404).json({ success: false, message: 'Help request not found' });
+
+    const { rejectionReason } = req.body;
+    request.status = 'accepted';
+    request.purchaseRejectionReason = rejectionReason ? rejectionReason.trim() : 'Caregiver requested purchase cost revision / quality change.';
+    request.purchaseRejectedAt = Date.now();
+
+    await request.save();
+
+    const updated = await HelpRequest.findById(request._id)
+      .populate('senior', 'name phone address emergencyContact')
+      .populate('volunteer', 'name phone email skills');
+
+    res.status(200).json({
+      success: true,
+      message: 'Purchase cost revision note sent to volunteer!',
+      request: updated
+    });
+  } catch (error) {
+    console.error('Reject Purchase Cost Error:', error);
+    res.status(500).json({ success: false, message: 'Server error rejecting purchase cost' });
+  }
+};
+
+// @desc    Step 8-9: Volunteer completes task & uploads final store cash receipt photo
 // @route   PUT /api/requests/:id/complete
 // @access  Private (Volunteer or Admin)
 exports.completeRequest = async (req, res) => {
@@ -495,24 +609,27 @@ exports.completeRequest = async (req, res) => {
     let request = await HelpRequest.findById(req.params.id).populate('senior');
 
     if (!request) return res.status(404).json({ success: false, message: 'Help request not found' });
-    if (request.status !== 'accepted' && request.status !== 'completed') {
-      return res.status(400).json({ success: false, message: 'Request must be in accepted or completed status to mark complete or re-apply for verification' });
-    }
-    if (req.user.role !== 'admin' && request.volunteer.toString() !== req.user.id) {
+    if (req.user.role !== 'admin' && (!request.volunteer || request.volunteer.toString() !== req.user.id)) {
       return res.status(403).json({ success: false, message: 'Not authorized to complete this request' });
     }
 
     const { resolutionNotes } = req.body;
-    request.status = 'completed';
+    request.status = 'awaiting_verification';
     request.completedAt = Date.now();
-    request.resolutionNotes = resolutionNotes || 'Assistance successfully provided.';
+    request.receiptUploadedAt = Date.now();
+    request.resolutionNotes = resolutionNotes || 'Task completed & store receipt uploaded.';
 
-    // Save receipt/photo proof if uploaded
-    if (req.file) {
+    // Save final receipt / delivery photo proof if uploaded
+    if (req.files && req.files.length > 0) {
+      request.finalReceiptDoc = `/uploads/proofs/${req.files[0].filename}`;
+      request.completionProof = `/uploads/proofs/${req.files[0].filename}`;
+      request.finalReceiptDocs = req.files.map(f => `/uploads/proofs/${f.filename}`);
+    } else if (req.file) {
+      request.finalReceiptDoc = `/uploads/proofs/${req.file.filename}`;
       request.completionProof = `/uploads/proofs/${req.file.filename}`;
+      request.finalReceiptDocs = [`/uploads/proofs/${req.file.filename}`];
     }
 
-    // Check if senior citizen has a linked family caregiver
     const seniorId = request.senior._id || request.senior;
     const hasFamily = await seniorHasFamily(seniorId);
 
@@ -524,17 +641,16 @@ exports.completeRequest = async (req, res) => {
       await request.save();
       return res.status(200).json({
         success: true,
-        message: 'Task marked completed! Receipt/delivery photo proof submitted to the senior\'s family caregiver for verification.',
+        message: 'Task marked completed & final receipt uploaded! Submitted to family caregiver for verification and service charge release.',
         request,
         verificationChannel: 'family'
       });
     } else {
-      // No family linked -> Dispatch automated IVR voice confirmation call to senior
       request.requiresSeniorVoiceCall = true;
       await request.save();
       return res.status(200).json({
         success: true,
-        message: 'Task marked completed! Receipt photo saved. Automated IVR voice confirmation call dispatched to senior citizen.',
+        message: 'Task marked completed & final receipt uploaded! Automated IVR voice confirmation call dispatched to senior citizen.',
         request,
         verificationChannel: 'senior_voice_ivr'
       });
@@ -545,7 +661,7 @@ exports.completeRequest = async (req, res) => {
   }
 };
 
-// @desc    Family caregiver verifies delivery completion & receipt proof
+// @desc    Step 10-11: Caregiver verifies final receipt & releases volunteer service charge
 // @route   PUT /api/requests/:id/verify-completion-family
 // @access  Private (Family)
 exports.verifyCompletionByFamily = async (req, res) => {
@@ -562,12 +678,14 @@ exports.verifyCompletionByFamily = async (req, res) => {
     if (approved) {
       request.status = 'completed';
       request.completionVerified = 'verified';
+      request.serviceChargeReleased = true;
+      request.serviceChargeReleasedAt = Date.now();
 
       if (paymentDetails) {
         request.paymentDetails = {
           amountPaid: Number(paymentDetails.amountPaid || 0),
-          itemsCost: Number(paymentDetails.itemsCost || 0),
-          volunteerFee: Number(paymentDetails.volunteerFee || 0),
+          itemsCost: Number(paymentDetails.itemsCost || request.actualPurchaseCost || 0),
+          volunteerFee: Number(paymentDetails.volunteerFee || request.serviceFee || 0),
           platformFee: Number(paymentDetails.platformFee || 0),
           transactionId: String(paymentDetails.transactionId || ''),
           paymentMethod: String(paymentDetails.paymentMethod || 'UPI'),
@@ -575,8 +693,8 @@ exports.verifyCompletionByFamily = async (req, res) => {
         };
       }
     } else {
-      // Unmark completed: return task to active status ('accepted') for volunteer to re-upload proof & re-apply!
-      request.status = 'accepted';
+      // Unmark completed: return task to active status ('purchase_funded') for volunteer to re-upload receipt
+      request.status = 'purchase_funded';
       request.completionVerified = 'rejected';
       request.verificationRejectionReason = rejectionReason || 'Rejected by family caregiver';
     }
@@ -589,7 +707,7 @@ exports.verifyCompletionByFamily = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: approved ? 'Delivery completion verified successfully!' : 'Task completion rejected. Unmarked and returned to volunteer to re-upload proof.',
+      message: approved ? 'Final receipt verified & volunteer service charge released!' : 'Receipt verification rejected. Returned to volunteer to re-upload valid receipt.',
       request: populatedRequest
     });
   } catch (error) {
@@ -631,5 +749,39 @@ exports.verifyCompletionBySeniorVoice = async (req, res) => {
   } catch (error) {
     console.error('Senior Voice Verification Error:', error);
     res.status(500).json({ success: false, message: 'Server error recording voice verification' });
+  }
+};
+
+// @desc    Submit volunteer feedback for completed request after payment
+// @route   PUT /api/requests/:id/feedback
+// @access  Private (family, senior, admin)
+exports.submitFeedback = async (req, res) => {
+  try {
+    const { costUtilization, speedTimeliness, taskCompletion, communication, chooseAgain, additionalFeedback } = req.body;
+    const request = await HelpRequest.findById(req.params.id);
+    if (!request) {
+      return res.status(404).json({ success: false, message: 'Help request not found' });
+    }
+
+    request.feedback = {
+      costUtilization: Number(costUtilization) || 5,
+      speedTimeliness: Number(speedTimeliness) || 5,
+      taskCompletion: taskCompletion || 'Completely',
+      communication: Number(communication) || 5,
+      chooseAgain: chooseAgain || 'Yes',
+      additionalFeedback: additionalFeedback ? String(additionalFeedback).trim() : '',
+      submittedAt: Date.now()
+    };
+
+    await request.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Volunteer feedback recorded successfully!',
+      request
+    });
+  } catch (error) {
+    console.error('Submit Feedback Error:', error);
+    res.status(500).json({ success: false, message: 'Server error submitting feedback' });
   }
 };
