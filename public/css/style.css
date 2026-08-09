@@ -356,11 +356,13 @@ main {
   height: 100vh;
   background-color: rgba(211, 47, 47, 0.95);
   color: var(--color-white);
-  z-index: 1000;
+  z-index: 99999;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start;
   text-align: center;
-  padding: 2rem;
+  padding: 2rem 1rem;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   animation: flash-sos-screen 1s infinite alternate;
 }
 
@@ -370,11 +372,14 @@ main {
 }
 
 .sos-overlay-content {
-  max-width: 600px;
+  max-width: 650px;
+  width: 100%;
+  margin: auto;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2rem;
+  gap: 1.5rem;
+  padding: 1.5rem 0;
 }
 
 .sos-overlay-content h2 {

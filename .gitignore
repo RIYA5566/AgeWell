@@ -21,3 +21,7 @@ uploads/*
 !uploads/.gitkeep
 !uploads/audio/.gitkeep
 
+# Scratch directory
+scratch/
+
+

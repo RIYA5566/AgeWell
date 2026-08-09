@@ -140,8 +140,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       
       if (receiptPhotoInput && receiptPhotoInput.files && receiptPhotoInput.files.length > 0) {
         for (let i = 0; i < receiptPhotoInput.files.length; i++) {
-          formData.append('receiptPhoto', receiptPhotoInput.files[i]);
-          formData.append('proof', receiptPhotoInput.files[i]);
           formData.append('proofs', receiptPhotoInput.files[i]);
         }
       }
@@ -701,9 +699,9 @@ async function loadVolunteerRequests(silent = false) {
                 ${proofSlider}
               </div>`;
             actionBtnHtml = `
-              <button class="btn btn-secondary" disabled style="padding: 10px 20px; font-size: 0.95rem; min-height: 48px; opacity: 0.8;">
+              <div style="display: inline-flex; align-items: center; justify-content: center; padding: 10px 20px; font-size: 0.95rem; min-height: 48px; background: #e8f5e9; color: #2e7d32; border: 1.5px solid #a5d6a7; border-radius: 10px; font-weight: 700; cursor: default; user-select: none;">
                 ⏳ Awaiting Caregiver Escrow Payment
-              </button>`;
+              </div>`;
           } else if (req.status === 'purchase_funded' || req.status === 'in_progress') {
             stepBoxHtml = `
               <div style="margin: 12px 0; padding: 12px 16px; background: #e8f5e9; border-left: 4px solid #2e7d32; border-radius: 8px; font-size: 0.95rem; color: #1b5e20;">
@@ -722,9 +720,9 @@ async function loadVolunteerRequests(silent = false) {
                 ${req.finalReceiptDoc || req.completionProof ? `<div style="margin-top: 6px;"><a href="${req.finalReceiptDoc || req.completionProof}" target="_blank" onclick="event.stopPropagation(); openImageLightbox('${req.finalReceiptDoc || req.completionProof}'); return false;" style="color: #7b1fa2; font-weight: bold; text-decoration: underline;">🔍 View Uploaded Receipt Photo</a></div>` : ''}
               </div>`;
             actionBtnHtml = `
-              <button class="btn btn-secondary" disabled style="padding: 10px 20px; font-size: 0.95rem; min-height: 48px; opacity: 0.8;">
+              <div style="display: inline-flex; align-items: center; justify-content: center; padding: 10px 20px; font-size: 0.95rem; min-height: 48px; background: #e8f5e9; color: #2e7d32; border: 1.5px solid #a5d6a7; border-radius: 10px; font-weight: 700; cursor: default; user-select: none;">
                 ⏳ Verification &amp; Service Fee Release Pending
-              </button>`;
+              </div>`;
           } else {
             actionBtnHtml = `
               <button class="btn btn-primary" onclick="openCompletionModal('${req._id}')" style="padding: 10px 20px; font-size: 1rem; min-height: 48px; background-color: ${isRejected ? '#c62828' : 'var(--color-primary-dark)'};">
@@ -786,6 +784,37 @@ async function loadVolunteerRequests(silent = false) {
       } else {
         historyList.innerHTML = completedRequests.map(req => {
           let audioHtml = req.audioFile ? `<div class="request-audio-player"><label>🎙️ Senior's Voice Message:</label><audio controls src="${req.audioFile}"></audio></div>` : '';
+          
+          const serviceFeeEarned = Number((req.serviceFee !== undefined && req.serviceFee !== null)
+            ? req.serviceFee
+            : ((req.volunteerQuotes && req.volunteerQuotes[0] && req.volunteerQuotes[0].serviceFee !== undefined)
+              ? req.volunteerQuotes[0].serviceFee
+              : (req.paymentDetails ? req.paymentDetails.volunteerFee : 0))) || 0;
+
+          const itemCostVal = Number((req.actualPurchaseCost !== undefined && req.actualPurchaseCost !== null)
+            ? req.actualPurchaseCost
+            : (req.purchasePaymentDetails ? req.purchasePaymentDetails.amountPaid : (req.paymentDetails ? req.paymentDetails.itemsCost : 0))) || 0;
+
+          const tipEarned = Number(req.tipAmount || (req.paymentDetails ? req.tipAmount : 0) || (req.tipPaymentDetails ? req.tipPaymentDetails.amountPaid : 0)) || 0;
+
+          const totalEarned = serviceFeeEarned + tipEarned;
+
+          let earningsHtml = `
+            <div style="margin-top: 12px; padding: 12px 16px; background: #e8f5e9; border: 2px solid #a5d6a7; border-left: 6px solid #2e7d32; border-radius: 10px; box-shadow: 0 2px 8px rgba(46,125,50,0.08);">
+              <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                <span style="font-size: 1.05rem; font-weight: 800; color: #1b5e20;">
+                  💰 Total Amount Earned: <strong style="font-size: 1.2rem; color: #2e7d32;">₹${totalEarned}</strong>
+                </span>
+                ${tipEarned > 0 ? `
+                  <button type="button" onclick="showTipEarnedModal('${escapeHTML(req.title)}', ${tipEarned}, ${serviceFeeEarned})" style="background: #fff8e1; color: #b45309; border: 1.5px solid #fde68a; padding: 5px 14px; border-radius: 16px; font-weight: 800; font-size: 0.88rem; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(245,158,11,0.18);">
+                    🎁 Special Tip Received: ₹${tipEarned} ✨
+                  </button>
+                ` : ''}
+              </div>
+              <div style="margin-top: 4px; font-size: 0.88rem; color: #388e3c; font-weight: 500;">
+                Breakdown: Service Fee ₹${serviceFeeEarned} ${tipEarned > 0 ? `+ Caregiver Tip ₹${tipEarned}` : ''}
+              </div>
+            </div>`;
           
           let proofHtml = req.completionProof ? `
             <div style="margin-top: 10px; background: #fff; padding: 10px; border-radius: 8px; border: 1px solid #ddd;">
@@ -854,6 +883,8 @@ async function loadVolunteerRequests(silent = false) {
                 <p><strong>Completed On:</strong> ${new Date(req.completedAt || Date.now()).toLocaleDateString()}</p>
               </div>
 
+              ${earningsHtml}
+
               ${req.feedback ? `
                 <div style="margin-top: 10px; padding: 10px 14px; background: #fffdf5; border: 1.5px solid #fde68a; border-radius: 10px; box-shadow: 0 2px 6px rgba(245,158,11,0.08);">
                   <div style="font-weight: 700; color: #b45309; font-size: 0.95rem; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
@@ -898,6 +929,12 @@ function escapeHTML(str) {
 // AI DYNAMIC PLATFORM RECOMMENDATION & PRE-FILLED LINK HELPER
 // ──────────────────────────────────────────────────────────
 function renderPlatformHelperHtml(req) {
+  // Do not show AI Suggested Platforms after payment/purchase cost is submitted or completed
+  const hideStatuses = ['purchase_cost_submitted', 'purchase_funded', 'awaiting_verification', 'completed', 'fulfilled_by_family', 'delivery_completed'];
+  if (hideStatuses.includes(req.status)) {
+    return '';
+  }
+
   let platforms = req.suggestedPlatforms;
   
   // Client-side fallback if request doesn't have stored platforms
@@ -1047,17 +1084,78 @@ function getDynamicPlatformSearchUrl(platformName, query) {
 // ──────────────────────────────────────────────────────────
 // IMAGE LIGHTBOX MODAL FUNCTIONS
 // ──────────────────────────────────────────────────────────
-function openImageLightbox(imageUrl) {
-  if (!imageUrl) return;
-  const cleanUrl = imageUrl.startsWith('/') ? imageUrl : '/' + imageUrl;
+let currentLightboxImages = [];
+let currentLightboxIndex = 0;
+
+function openImageLightbox(imageUrl, reqIdOrImages = null) {
+  if (!imageUrl && !reqIdOrImages) return;
 
   const modal = document.getElementById('imageLightboxModal');
+
+  let images = [];
+  if (Array.isArray(reqIdOrImages)) {
+    images = reqIdOrImages;
+  } else if (typeof reqIdOrImages === 'string' && window.proofSliderData && window.proofSliderData[reqIdOrImages]) {
+    images = window.proofSliderData[reqIdOrImages];
+  } else if (typeof imageUrl === 'string') {
+    images = [imageUrl];
+  }
+
+  images = images.map(img => img.startsWith('/') ? img : '/' + img);
+  currentLightboxImages = images;
+
+  const cleanUrl = typeof imageUrl === 'string' ? (imageUrl.startsWith('/') ? imageUrl : '/' + imageUrl) : images[0];
+  let idx = images.indexOf(cleanUrl);
+  if (idx === -1) idx = 0;
+  currentLightboxIndex = idx;
+
+  updateLightboxView();
+
+  if (modal) modal.style.display = 'flex';
+}
+
+function updateLightboxView() {
+  if (!currentLightboxImages || currentLightboxImages.length === 0) return;
+
   const imgEl = document.getElementById('lightboxImage');
   const linkEl = document.getElementById('lightboxDirectLink');
+  const counterEl = document.getElementById('lightboxCounter');
+  const prevBtn = document.getElementById('btnLightboxPrev');
+  const nextBtn = document.getElementById('btnLightboxNext');
 
-  if (imgEl) imgEl.src = cleanUrl;
-  if (linkEl) linkEl.href = cleanUrl;
-  if (modal) modal.style.display = 'flex';
+  const count = currentLightboxImages.length;
+  const currentImg = currentLightboxImages[currentLightboxIndex];
+
+  if (imgEl) imgEl.src = currentImg;
+  if (linkEl) linkEl.href = currentImg;
+
+  if (count > 1) {
+    if (counterEl) {
+      counterEl.style.display = 'block';
+      counterEl.textContent = `${currentLightboxIndex + 1} / ${count}`;
+    }
+    if (prevBtn) {
+      prevBtn.style.display = 'block';
+      prevBtn.onclick = (e) => {
+        e.stopPropagation();
+        currentLightboxIndex = (currentLightboxIndex - 1 + count) % count;
+        updateLightboxView();
+      };
+    }
+    if (nextBtn) {
+      nextBtn.style.display = 'block';
+      nextBtn.onclick = (e) => {
+        e.stopPropagation();
+        currentLightboxIndex = (currentLightboxIndex + 1) % count;
+        updateLightboxView();
+      };
+    }
+  } else {
+    // If ONLY 1 photo: hide counter and navigation arrows!
+    if (counterEl) counterEl.style.display = 'none';
+    if (prevBtn) prevBtn.style.display = 'none';
+    if (nextBtn) nextBtn.style.display = 'none';
+  }
 }
 
 function closeImageLightbox() {
@@ -1218,7 +1316,6 @@ async function handlePurchaseCostSubmit(e) {
   formData.append('purchaseNotes', notesVal ? notesVal.trim() : '');
   if (proofFile && proofFile.files && proofFile.files.length > 0) {
     for (let i = 0; i < proofFile.files.length; i++) {
-      formData.append('proof', proofFile.files[i]);
       formData.append('proofs', proofFile.files[i]);
     }
   }
@@ -1273,7 +1370,7 @@ function renderProofSliderHtml(reqId, rawImages) {
       <img id="sliderImg_${reqId}" src="${escapeHTML(firstImg)}" alt="Proof Image 1" onclick="event.stopPropagation(); openImageLightbox(this.src); return false;" style="width: 100%; height: 100%; object-fit: contain; cursor: pointer; display: block;" title="Click to enlarge proof photo">
       
       <div id="sliderCounter_${reqId}" style="position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.75); color: #ffffff; font-weight: 800; font-size: 0.88rem; padding: 4px 12px; border-radius: 16px; pointer-events: none; z-index: 2; box-shadow: 0 2px 6px rgba(0,0,0,0.3);">
-        📷 1 / ${count}
+        1 / ${count}
       </div>
 
       <button type="button" onclick="event.stopPropagation(); navigateProofSlider('${reqId}', -1)" style="position: absolute; top: 50%; left: 8px; transform: translateY(-50%); background: rgba(0,0,0,0.6); color: #ffffff; border: none; border-radius: 50%; width: 40px; height: 40px; font-size: 1.3rem; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 3; box-shadow: 0 2px 8px rgba(0,0,0,0.3); transition: all 0.15s ease;" onmouseover="this.style.background='rgba(0,0,0,0.9)'; this.style.transform='translateY(-50%) scale(1.1)'" onmouseleave="this.style.background='rgba(0,0,0,0.6)'; this.style.transform='translateY(-50%) scale(1)'">
@@ -1301,6 +1398,27 @@ window.navigateProofSlider = function(reqId, direction) {
     imgEl.src = images[currIdx];
   }
   if (counterEl) {
-    counterEl.textContent = `📷 ${currIdx + 1} / ${images.length}`;
+    counterEl.textContent = `${currIdx + 1} / ${images.length}`;
   }
 };
+
+// Modal Helper Functions for Tip Earned
+function showTipEarnedModal(taskTitle, tipAmount, serviceFee) {
+  const modal = document.getElementById('tipEarnedModal');
+  const taskTitleEl = document.getElementById('tipTaskTitle');
+  const amountEl = document.getElementById('tipModalAmount');
+  const breakdownEl = document.getElementById('tipModalBreakdown');
+
+  if (taskTitleEl) taskTitleEl.textContent = `"${taskTitle}"`;
+  if (amountEl) amountEl.textContent = `+ ₹${tipAmount}`;
+  if (breakdownEl) breakdownEl.textContent = `Base Service Fee: ₹${serviceFee} | Total Earned: ₹${Number(serviceFee) + Number(tipAmount)}`;
+
+  if (modal) {
+    modal.style.display = 'flex';
+  }
+}
+
+function closeTipEarnedModal() {
+  const modal = document.getElementById('tipEarnedModal');
+  if (modal) modal.style.display = 'none';
+}

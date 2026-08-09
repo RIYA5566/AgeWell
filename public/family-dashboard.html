@@ -371,13 +371,28 @@
 
   <!-- Image Lightbox Modal for Receipt / Delivery Proofs -->
   <div id="imageLightboxModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="lightboxTitle" style="display: none; z-index: 10050; background: rgba(0, 0, 0, 0.85);">
-    <div class="modal-content" style="max-width: 800px; text-align: center; background: #ffffff; padding: 1.5rem; border-radius: 16px;">
+    <div class="modal-content" style="max-width: 850px; text-align: center; background: #ffffff; padding: 1.5rem; border-radius: 16px; position: relative;">
       <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 15px;">
         <h3 id="lightboxTitle" style="color: var(--color-primary-dark); margin: 0;">📸 Receipt / Delivery Photo Proof</h3>
         <button id="lightboxClose" class="modal-close" style="font-size: 2rem; border: none; background: none; cursor: pointer;">&times;</button>
       </div>
-      <div style="max-height: 70vh; overflow: auto; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px; padding: 5px; background: #fafafa;">
-        <img id="lightboxImage" src="" alt="Full Resolution Receipt Proof" style="max-width: 100%; height: auto; display: block; margin: 0 auto; border-radius: 6px;">
+      <div style="position: relative; max-height: 70vh; overflow: hidden; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px; padding: 5px; background: #222; display: flex; align-items: center; justify-content: center; min-height: 250px;">
+        <img id="lightboxImage" src="" alt="Full Resolution Receipt Proof" style="max-width: 100%; max-height: 68vh; height: auto; display: block; margin: 0 auto; border-radius: 6px; object-fit: contain;">
+        
+        <!-- Lightbox Counter Badge (Shown ONLY if > 1 photo) -->
+        <div id="lightboxCounter" style="display: none; position: absolute; top: 12px; right: 12px; background: rgba(0,0,0,0.8); color: #fff; font-weight: 800; font-size: 0.9rem; padding: 4px 14px; border-radius: 16px;">
+          1 / 1
+        </div>
+
+        <!-- Lightbox Prev Arrow (Shown ONLY if > 1 photo) -->
+        <button type="button" id="btnLightboxPrev" style="display: none; position: absolute; top: 50%; left: 12px; transform: translateY(-50%); background: rgba(0,0,0,0.65); color: #ffffff; border: none; border-radius: 50%; width: 44px; height: 44px; font-size: 1.4rem; font-weight: bold; cursor: pointer; z-index: 5;">
+          ◀
+        </button>
+
+        <!-- Lightbox Next Arrow (Shown ONLY if > 1 photo) -->
+        <button type="button" id="btnLightboxNext" style="display: none; position: absolute; top: 50%; right: 12px; transform: translateY(-50%); background: rgba(0,0,0,0.65); color: #ffffff; border: none; border-radius: 50%; width: 44px; height: 44px; font-size: 1.4rem; font-weight: bold; cursor: pointer; z-index: 5;">
+          ▶
+        </button>
       </div>
       <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
         <a id="lightboxDirectLink" href="" target="_blank" class="btn btn-secondary" style="padding: 10px 18px; font-size: 0.95rem;">
@@ -547,6 +562,39 @@
         </button>
         <button type="button" onclick="submitPurchaseCostRevision()" class="btn btn-reject" style="background-color: #c62828; color: #ffffff !important; padding: 10px 20px; font-size: 0.98rem; font-weight: 700; cursor: pointer; border-radius: 8px; border: none;">
           ✉️ Send Revision Request &amp; Note
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Transfer Additional Tip to Volunteer -->
+  <div id="askTipModal" class="modal-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.65); z-index: 9999; align-items: center; justify-content: center;">
+    <div class="modal-content" style="background: #ffffff; border-radius: 18px; width: 95%; max-width: 520px; padding: 1.8rem; box-shadow: 0 12px 40px rgba(0,0,0,0.3); border: 2px solid #a5d6a7; text-align: center; position: relative;">
+      <div style="font-size: 3rem; margin-bottom: 6px;">🎁</div>
+      <h3 style="color: #1b5e20; margin: 0 0 8px 0; font-size: 1.4rem; font-weight: 800;">Add an Additional Tip for Volunteer?</h3>
+      <p style="color: #555; font-size: 0.98rem; margin-bottom: 1.2rem; line-height: 1.4;">
+        Would you like to transfer an additional tip to thank <strong id="tipVolunteerName" style="color: #1b5e20;">the volunteer</strong> for their dedicated service?
+      </p>
+
+      <!-- Preset Tip Buttons -->
+      <div style="display: flex; gap: 10px; justify-content: center; margin-bottom: 1rem; flex-wrap: wrap;">
+        <button type="button" class="btn-tip-preset" onclick="selectTipPreset(20, this)" style="padding: 8px 18px; font-size: 1rem; font-weight: 700; border: 2px solid #a5d6a7; border-radius: 20px; background: #e8f5e9; color: #2e7d32; cursor: pointer;">₹20</button>
+        <button type="button" class="btn-tip-preset active" onclick="selectTipPreset(50, this)" style="padding: 8px 18px; font-size: 1rem; font-weight: 700; border: 2px solid #2e7d32; border-radius: 20px; background: #2e7d32; color: #ffffff; cursor: pointer;">₹50</button>
+        <button type="button" class="btn-tip-preset" onclick="selectTipPreset(100, this)" style="padding: 8px 18px; font-size: 1rem; font-weight: 700; border: 2px solid #a5d6a7; border-radius: 20px; background: #e8f5e9; color: #2e7d32; cursor: pointer;">₹100</button>
+      </div>
+
+      <!-- Custom Tip Amount -->
+      <div style="margin-bottom: 1.4rem;">
+        <label for="customTipInput" style="display: block; font-size: 0.88rem; color: #666; margin-bottom: 4px;">Or enter custom tip amount (₹):</label>
+        <input type="number" id="customTipInput" value="50" min="5" step="5" style="width: 140px; padding: 8px 12px; font-size: 1.15rem; text-align: center; border: 2px solid #a5d6a7; border-radius: 10px; font-weight: 800; color: #1b5e20; outline: none;" oninput="onCustomTipInput(this.value)">
+      </div>
+
+      <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+        <button type="button" onclick="confirmTipAndRedirect()" style="background-color: #2e7d32; color: #ffffff !important; padding: 12px 20px; font-size: 1rem; font-weight: 700; border: none; border-radius: 10px; cursor: pointer; flex: 1; min-width: 180px; box-shadow: 0 4px 12px rgba(46,125,50,0.25);">
+          💳 Yes, Pay Tip &amp; Continue
+        </button>
+        <button type="button" onclick="skipTipAndAskRatings()" style="background-color: #616161; color: #ffffff !important; padding: 12px 20px; font-size: 1rem; font-weight: 700; border: none; border-radius: 10px; cursor: pointer; flex: 1; min-width: 180px;">
+          ⏩ Skip Tip
         </button>
       </div>
     </div>
@@ -730,7 +778,7 @@
   </footer>
 
   <!-- Scripts -->
-  <script src="/js/api.js?v=30"></script>
-  <script src="/js/family.js?v=30"></script>
+  <script src="/js/api.js?v=270"></script>
+  <script src="/js/family.js?v=270"></script>
 </body>
 </html>

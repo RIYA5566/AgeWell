@@ -325,8 +325,41 @@
     <p>&copy; 2026 AgeWell Platform. Designed with care for Senior Citizens, Volunteers, and Admins.</p>
   </footer>
 
+  <!-- Tab Pop-Up Modal (In-Tab Popup Dialog) -->
+  <div id="tabPopupModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="tabPopupTitle" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; align-items: center; justify-content: center; z-index: 99999; background: rgba(0, 0, 0, 0.75);">
+    <div class="modal-content" style="max-width: 500px; text-align: center; border: 4px solid #2e7d32; border-radius: 24px; padding: 2.2rem; box-shadow: 0 12px 40px rgba(0,0,0,0.4); background: #ffffff; animation: modalFadeIn 0.3s ease-out;">
+      <div id="tabPopupIcon" style="font-size: 3.8rem; margin-bottom: 0.5rem; line-height: 1;">🎉</div>
+      <h3 id="tabPopupTitle" style="color: #2e7d32; font-size: 1.7rem; margin-bottom: 0.8rem; font-weight: 800;">Request Submitted!</h3>
+      <p id="tabPopupMessage" style="font-size: 1.18rem; color: #333; line-height: 1.5; margin-bottom: 1.8rem; font-weight: 500;">
+        Your voice request was sent successfully.
+      </p>
+      <button type="button" id="btnTabPopupClose" class="btn" style="width: 100%; font-size: 1.25rem; padding: 16px; background: linear-gradient(135deg, #2e7d32, #1b5e20); color: white; border: none; border-radius: var(--border-radius); font-weight: 700; cursor: pointer; box-shadow: 0 4px 12px rgba(46,125,50,0.3); transition: transform 0.2s;">
+        👍 OK, Got It!
+      </button>
+    </div>
+  </div>
+
+  <!-- Tab Confirm Action Modal (In-Tab Confirmation Dialog) -->
+  <div id="tabConfirmModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="tabConfirmTitle" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; align-items: center; justify-content: center; z-index: 99999; background: rgba(0, 0, 0, 0.75);">
+    <div class="modal-content" style="max-width: 500px; text-align: center; border: 4px solid #c62828; border-radius: 24px; padding: 2.2rem; box-shadow: 0 12px 40px rgba(0,0,0,0.4); background: #ffffff; animation: modalFadeIn 0.3s ease-out;">
+      <div id="tabConfirmIcon" style="font-size: 3.8rem; margin-bottom: 0.5rem; line-height: 1;">❓</div>
+      <h3 id="tabConfirmTitle" style="color: #c62828; font-size: 1.7rem; margin-bottom: 0.8rem; font-weight: 800;">Cancel Request?</h3>
+      <p id="tabConfirmMessage" style="font-size: 1.18rem; color: #333; line-height: 1.5; margin-bottom: 1.8rem; font-weight: 500;">
+        Are you sure you want to cancel this help request?
+      </p>
+      <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+        <button type="button" id="btnTabConfirmYes" class="btn" style="flex: 1; min-width: 140px; font-size: 1.15rem; padding: 14px; background: #c62828; color: white; border: none; border-radius: var(--border-radius); font-weight: 700; cursor: pointer; box-shadow: 0 4px 12px rgba(198,40,40,0.3);">
+          ❌ Yes, Cancel
+        </button>
+        <button type="button" id="btnTabConfirmNo" class="btn" style="flex: 1; min-width: 140px; font-size: 1.15rem; padding: 14px; background: #757575; color: white; border: none; border-radius: var(--border-radius); font-weight: 700; cursor: pointer;">
+          ↩️ No, Keep Request
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Scripts -->
-  <script src="/js/api.js?v=4"></script>
-  <script src="/js/senior.js?v=4"></script>
+  <script src="/js/api.js?v=240"></script>
+  <script src="/js/senior.js?v=240"></script>
 </body>
 </html>

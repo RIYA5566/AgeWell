@@ -227,8 +227,9 @@ exports.deleteRequest = async (req, res) => {
     if (req.user.role !== 'admin' && request.senior.toString() !== req.user.id) {
       return res.status(403).json({ success: false, message: 'Not authorized to delete this request' });
     }
-    if (req.user.role !== 'admin' && request.status !== 'pending') {
-      return res.status(400).json({ success: false, message: 'Cannot delete a request that has already been accepted' });
+    const nonCancellable = ['purchase_cost_submitted', 'purchase_funded', 'awaiting_verification', 'delivery_completed', 'completed', 'fulfilled_by_family'];
+    if (req.user.role !== 'admin' && nonCancellable.includes(request.status)) {
+      return res.status(400).json({ success: false, message: 'Cannot cancel a request after payment or purchase cost has been processed' });
     }
 
     await HelpRequest.findByIdAndDelete(req.params.id);
@@ -508,8 +509,17 @@ exports.submitPurchaseCost = async (req, res) => {
     request.actualPurchaseCost = costNum;
     request.purchaseNotes = purchaseNotes ? purchaseNotes.trim() : '';
     if (req.files && req.files.length > 0) {
-      request.purchaseProofDoc = `/uploads/proofs/${req.files[0].filename}`;
-      request.purchaseProofDocs = req.files.map(f => `/uploads/proofs/${f.filename}`);
+      const uniqueFiles = [];
+      const seenFileKeys = new Set();
+      for (const f of req.files) {
+        const key = `${f.originalname}_${f.size}`;
+        if (!seenFileKeys.has(key)) {
+          seenFileKeys.add(key);
+          uniqueFiles.push(f);
+        }
+      }
+      request.purchaseProofDoc = `/uploads/proofs/${uniqueFiles[0].filename}`;
+      request.purchaseProofDocs = uniqueFiles.map(f => `/uploads/proofs/${f.filename}`);
     } else if (req.file) {
       request.purchaseProofDoc = `/uploads/proofs/${req.file.filename}`;
       request.purchaseProofDocs = [`/uploads/proofs/${req.file.filename}`];
@@ -621,9 +631,18 @@ exports.completeRequest = async (req, res) => {
 
     // Save final receipt / delivery photo proof if uploaded
     if (req.files && req.files.length > 0) {
-      request.finalReceiptDoc = `/uploads/proofs/${req.files[0].filename}`;
-      request.completionProof = `/uploads/proofs/${req.files[0].filename}`;
-      request.finalReceiptDocs = req.files.map(f => `/uploads/proofs/${f.filename}`);
+      const uniqueFiles = [];
+      const seenFileKeys = new Set();
+      for (const f of req.files) {
+        const key = `${f.originalname}_${f.size}`;
+        if (!seenFileKeys.has(key)) {
+          seenFileKeys.add(key);
+          uniqueFiles.push(f);
+        }
+      }
+      request.finalReceiptDoc = `/uploads/proofs/${uniqueFiles[0].filename}`;
+      request.completionProof = `/uploads/proofs/${uniqueFiles[0].filename}`;
+      request.finalReceiptDocs = uniqueFiles.map(f => `/uploads/proofs/${f.filename}`);
     } else if (req.file) {
       request.finalReceiptDoc = `/uploads/proofs/${req.file.filename}`;
       request.completionProof = `/uploads/proofs/${req.file.filename}`;
@@ -678,8 +697,14 @@ exports.verifyCompletionByFamily = async (req, res) => {
     if (approved) {
       request.status = 'completed';
       request.completionVerified = 'verified';
+      request.completedAt = new Date();
       request.serviceChargeReleased = true;
       request.serviceChargeReleasedAt = Date.now();
+
+      const extractedTip = Number(req.body.tipAmount || (paymentDetails ? paymentDetails.tipAmount : 0) || request.tipAmount || 0);
+      if (extractedTip > 0) {
+        request.tipAmount = extractedTip;
+      }
 
       if (paymentDetails) {
         request.paymentDetails = {
@@ -687,6 +712,7 @@ exports.verifyCompletionByFamily = async (req, res) => {
           itemsCost: Number(paymentDetails.itemsCost || request.actualPurchaseCost || 0),
           volunteerFee: Number(paymentDetails.volunteerFee || request.serviceFee || 0),
           platformFee: Number(paymentDetails.platformFee || 0),
+          tipAmount: Number(paymentDetails.tipAmount || request.tipAmount || extractedTip || 0),
           transactionId: String(paymentDetails.transactionId || ''),
           paymentMethod: String(paymentDetails.paymentMethod || 'UPI'),
           paidAt: Date.now()

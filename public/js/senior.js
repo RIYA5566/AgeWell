@@ -39,6 +39,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // Show overlay and start audio alert immediately for responsiveness
       sosOverlay.style.display = 'flex';
+      document.body.style.overflow = 'hidden';
       startEmergencyAlarm();
 
       const res = await apiCall('/requests', 'POST', sosData);
@@ -54,7 +55,9 @@ document.addEventListener('DOMContentLoaded', () => {
   if (btnCancelSos) {
     btnCancelSos.addEventListener('click', () => {
       sosOverlay.style.display = 'none';
+      document.body.style.overflow = '';
       stopEmergencyAlarm();
+      showTabPopup('SOS Alarm Cancelled', 'Emergency SOS alarm has been cancelled.', '🔕', '#c62828');
     });
   }
 
@@ -77,7 +80,12 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   if (modalClose) modalClose.addEventListener('click', closeModal);
-  if (btnCancelRequest) btnCancelRequest.addEventListener('click', closeModal);
+  if (btnCancelRequest) {
+    btnCancelRequest.addEventListener('click', () => {
+      closeModal();
+      showTabPopup('Request Form Cancelled', 'Your help request form was cancelled.', '❌', '#c62828');
+    });
+  }
 
   // Close modal when clicking outside
   window.addEventListener('click', (e) => {
@@ -157,7 +165,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
       } catch (err) {
         console.error('Error accessing microphone:', err);
-        alert('Microphone access was denied or is not supported in this browser. Please check browser permissions.');
+        showTabPopup(
+          'Microphone Access Required',
+          'Microphone access was denied or is not supported in this browser. Please check browser permissions.',
+          '🎙️',
+          '#e65100'
+        );
       }
     });
   }
@@ -304,7 +317,29 @@ async function loadRequests() {
       return;
     }
 
-    requestList.innerHTML = requests.map(req => {
+    const completedStatuses = ['completed', 'fulfilled_by_family'];
+    const getFulfillmentTimestamp = (r) => {
+      if (r.completedAt) return new Date(r.completedAt).getTime();
+      if (r.verifiedAt) return new Date(r.verifiedAt).getTime();
+      if (r.serviceChargeReleasedAt) return new Date(r.serviceChargeReleasedAt).getTime();
+      if (r.familyReviewedAt) return new Date(r.familyReviewedAt).getTime();
+      if (r.updatedAt) return new Date(r.updatedAt).getTime();
+      if (r.createdAt) return new Date(r.createdAt).getTime();
+      if (r._id) return parseInt(String(r._id).substring(0, 8), 16) * 1000;
+      return 0;
+    };
+
+    const sortedRequests = [...requests].sort((a, b) => {
+      const aCompleted = completedStatuses.includes(a.status) || a.fulfilledByFamily;
+      const bCompleted = completedStatuses.includes(b.status) || b.fulfilledByFamily;
+
+      if (aCompleted && !bCompleted) return -1;
+      if (!aCompleted && bCompleted) return 1;
+
+      return getFulfillmentTimestamp(b) - getFulfillmentTimestamp(a);
+    });
+
+    requestList.innerHTML = sortedRequests.map(req => {
       let statusBadge = '';
       if (req.status === 'fulfilled_by_family' || req.familyApprovalStatus === 'fulfilled_by_family' || req.fulfilledByFamily) {
         statusBadge = `<span class="badge" style="background:#e8f5e9;color:#1b5e20;border:2px solid #2e7d32;font-weight:bold;">🏡 Fulfilled by Family Caregiver</span>`;
@@ -370,15 +405,34 @@ async function loadRequests() {
             <p><strong>Volunteer Contact:</strong> <a href="tel:${req.volunteer.phone}" style="color: var(--color-primary-dark); font-weight: bold;">${escapeHTML(req.volunteer.phone)}</a></p>
             <p><strong>Volunteer Email:</strong> ${escapeHTML(req.volunteer.email)}</p>
           </div>`;
-      } else if (req.status === 'completed') {
+        const serviceFeeVal = Number((req.serviceFee !== undefined && req.serviceFee !== null)
+          ? req.serviceFee
+          : ((req.volunteerQuotes && req.volunteerQuotes[0] && req.volunteerQuotes[0].serviceFee !== undefined)
+            ? req.volunteerQuotes[0].serviceFee
+            : (req.paymentDetails ? req.paymentDetails.volunteerFee : 0))) || 0;
+
+        const itemCostVal = Number((req.actualPurchaseCost !== undefined && req.actualPurchaseCost !== null)
+          ? req.actualPurchaseCost
+          : (req.purchasePaymentDetails ? req.purchasePaymentDetails.amountPaid : (req.paymentDetails ? req.paymentDetails.itemsCost : 0))) || 0;
+
+        const tipVal = Number(req.tipAmount || (req.paymentDetails ? req.paymentDetails.tipAmount : 0) || (req.tipPaymentDetails ? req.tipPaymentDetails.amountPaid : 0)) || 0;
+        const totalSpent = itemCostVal + serviceFeeVal + tipVal;
+
+        const totalSpentBadge = `
+          <div style="margin-top: 10px; padding: 8px 14px; background: #e8f5e9; border-left: 4px solid #2e7d32; border-radius: 8px; font-size: 0.95rem; color: #1b5e20; font-weight: bold;">
+            💵 Total Amount Spent: ₹${totalSpent} ${totalSpent === 0 ? '<span style="font-weight: normal; color: #2e7d32;">(Voluntary Free Service)</span>' : ''}
+          </div>`;
+
         assignmentInfo = `
           <div class="request-details">
-            <p><strong>Assisted By:</strong> ${req.volunteer ? req.volunteer.name : 'Platform Volunteer'}</p>
-            <p><strong>Completion Notes:</strong> ${req.resolutionNotes || 'No notes provided'}</p>
+            <p><strong>Assisted By:</strong> ${req.volunteer ? (typeof req.volunteer === 'object' ? escapeHTML(req.volunteer.name) : 'Platform Volunteer') : 'Platform Volunteer'}</p>
+            <p><strong>Completion Notes:</strong> ${escapeHTML(req.resolutionNotes || 'No notes provided')}</p>
+            ${totalSpentBadge}
           </div>`;
       }
 
-      const canDelete = req.status === 'pending';
+      const nonCancellable = ['purchase_cost_submitted', 'purchase_funded', 'awaiting_verification', 'delivery_completed', 'completed', 'rejected', 'fulfilled_by_family'];
+      const canDelete = !nonCancellable.includes(req.status);
       const deleteButton = canDelete 
         ? `<button class="btn btn-outline-danger" onclick="cancelHelpRequest('${req._id}')" style="padding: 10px 18px; font-size: 1rem; min-height: 44px;">❌ Cancel Request</button>` 
         : '';
@@ -413,16 +467,32 @@ async function loadRequests() {
   }
 }
 
-// Cancel a pending request
-async function cancelHelpRequest(id) {
-  if (confirm("Are you sure you want to cancel this request?")) {
-    const res = await apiCall(`/requests/${id}`, 'DELETE');
-    if (res.ok) {
-      loadRequests();
-    } else {
-      alert(res.data.message || "Failed to cancel request");
-    }
-  }
+// Cancel a pending/active request (Exposed globally to window)
+window.cancelHelpRequest = async function cancelHelpRequest(id) {
+  showTabConfirm(
+    'Cancel Help Request?',
+    'Are you sure you want to cancel this help request? This action cannot be undone.',
+    async () => {
+      const res = await apiCall(`/requests/${id}`, 'DELETE');
+      if (res.ok) {
+        showTabPopup(
+          'Request Cancelled',
+          'Your help request has been successfully cancelled.',
+          '🗑️',
+          '#c62828'
+        );
+        loadRequests();
+      } else {
+        showTabPopup(
+          'Failed to Cancel',
+          res.data?.message || 'Failed to cancel request.',
+          '❌',
+          '#c62828'
+        );
+      }
+    },
+    '⚠️'
+  );
 }
 
 // Helper to escape HTML characters to prevent XSS
@@ -504,6 +574,7 @@ let voiceAudioChunks = [];
 let voiceAudioBlob = null;
 let currentTranscript = '';
 let currentConfidence = 85;
+let isVoiceModalOpen = false;
 
 function initVoiceConfirmationAssistant() {
   const btnVoiceConfirmation = document.getElementById('btnVoiceConfirmation');
@@ -521,6 +592,12 @@ function initVoiceConfirmationAssistant() {
   if (voiceModalClose) {
     voiceModalClose.addEventListener('click', () => {
       closeVoiceModal();
+      showTabPopup(
+        'Request Cancelled',
+        'Voice request assistant cancelled.',
+        '❌',
+        '#c62828'
+      );
     });
   }
 
@@ -547,11 +624,26 @@ async function openVoiceModal() {
   const voiceModal = document.getElementById('voiceModal');
   if (voiceModal) voiceModal.style.display = 'flex';
 
+  isVoiceModalOpen = true;
   resetVoiceModalState();
-  startRecordingAndSpeechRecognition();
+  
+  if ('speechSynthesis' in window) {
+    window.speechSynthesis.cancel();
+    const msg = new SpeechSynthesisUtterance("Please speak out your request, we are listening.");
+    window.speechSynthesis.speak(msg);
+    msg.onend = () => {
+      if (isVoiceModalOpen) startRecordingAndSpeechRecognition();
+    };
+    msg.onerror = () => {
+      if (isVoiceModalOpen) startRecordingAndSpeechRecognition();
+    };
+  } else {
+    startRecordingAndSpeechRecognition();
+  }
 }
 
 function closeVoiceModal() {
+  isVoiceModalOpen = false;
   const voiceModal = document.getElementById('voiceModal');
   if (voiceModal) voiceModal.style.display = 'none';
 
@@ -648,7 +740,12 @@ async function startRecordingAndSpeechRecognition() {
 
   } catch (err) {
     console.error('Mic access error:', err);
-    alert('Microphone access is required for voice request confirmation.');
+    showTabPopup(
+      'Microphone Access Required',
+      'Microphone access is required for voice request confirmation. Please check browser permissions.',
+      '🎙️',
+      '#e65100'
+    );
     closeVoiceModal();
   }
 }
@@ -783,6 +880,12 @@ async function confirmVoiceRequest(shouldSend) {
       window.speechSynthesis.speak(cancelUtterance);
     }
     closeVoiceModal();
+    showTabPopup(
+      'Request Rejected / Discarded',
+      'Your voice request has been cancelled and discarded.',
+      '❌',
+      '#c62828'
+    );
     return;
   }
 
@@ -835,13 +938,84 @@ async function confirmVoiceRequest(shouldSend) {
 
   if (res.ok && res.data.success) {
     if (res.data.isLowConfidence) {
-      alert('✅ Voice request created! Because AI speech confidence was low, your family caregiver has been notified to verify it.');
+      showTabPopup(
+        'Voice Request Created!',
+        'Because AI speech confidence was low, your family caregiver has been notified to verify your request.',
+        '⚠️',
+        '#f57f17'
+      );
     } else {
-      alert('✅ Help request created successfully!');
+      showTabPopup(
+        'Help Request Confirmed!',
+        'Your voice request has been confirmed and submitted successfully! Volunteers nearby will be notified.',
+        '✅',
+        '#2e7d32'
+      );
     }
     loadRequests();
   } else {
-    alert(`❌ Failed to submit request: ${res.data?.message || 'Server error'}`);
+    showTabPopup(
+      'Submission Failed',
+      `Failed to submit request: ${res.data?.message || 'Server error'}`,
+      '❌',
+      '#c62828'
+    );
+  }
+}
+
+function showTabPopup(title, message, icon = '🎉', borderColor = '#2e7d32') {
+  const modal = document.getElementById('tabPopupModal');
+  const titleEl = document.getElementById('tabPopupTitle');
+  const msgEl = document.getElementById('tabPopupMessage');
+  const iconEl = document.getElementById('tabPopupIcon');
+  const closeBtn = document.getElementById('btnTabPopupClose');
+  const modalContent = modal ? modal.querySelector('.modal-content') : null;
+
+  if (titleEl) titleEl.textContent = title;
+  if (msgEl) msgEl.textContent = message;
+  if (iconEl) iconEl.textContent = icon;
+  if (titleEl) titleEl.style.color = borderColor;
+  if (modalContent) modalContent.style.borderColor = borderColor;
+
+  if (modal) {
+    modal.style.display = 'flex';
+  }
+
+  if (closeBtn) {
+    closeBtn.onclick = () => {
+      if (modal) modal.style.display = 'none';
+    };
+  }
+}
+
+function showTabConfirm(title, message, onConfirm, icon = '❓') {
+  const modal = document.getElementById('tabConfirmModal');
+  const titleEl = document.getElementById('tabConfirmTitle');
+  const msgEl = document.getElementById('tabConfirmMessage');
+  const iconEl = document.getElementById('tabConfirmIcon');
+  const yesBtn = document.getElementById('btnTabConfirmYes');
+  const noBtn = document.getElementById('btnTabConfirmNo');
+
+  if (titleEl) titleEl.textContent = title;
+  if (msgEl) msgEl.textContent = message;
+  if (iconEl) iconEl.textContent = icon;
+
+  if (modal) {
+    modal.style.display = 'flex';
+  }
+
+  if (yesBtn) {
+    yesBtn.onclick = () => {
+      if (modal) modal.style.display = 'none';
+      if (onConfirm) onConfirm();
+    };
+  }
+
+  if (noBtn) {
+    noBtn.onclick = () => {
+      if (modal) modal.style.display = 'none';
+      showTabPopup('Action Aborted', 'Cancellation was aborted. Your request was kept safe.', 'ℹ️', '#1565c0');
+    };
   }
 }
 
@@ -939,9 +1113,19 @@ async function submitSeniorVoiceIVRResponse(requestId, selection) {
   const res = await apiCall(`/requests/${requestId}/verify-completion-voice`, 'PUT', { selection });
 
   if (res.ok && res.data.success) {
-    alert(isYes ? '✅ Delivery confirmed! Thank you.' : '⚠️ Issue reported: Item not received.');
+    showTabPopup(
+      isYes ? 'Delivery Confirmed!' : 'Issue Reported',
+      isYes ? '✅ Delivery confirmed! Thank you.' : '⚠️ Issue reported: Item not received.',
+      isYes ? '✅' : '⚠️',
+      isYes ? '#2e7d32' : '#f57f17'
+    );
     loadRequests();
   } else {
-    alert(res.data?.message || 'Error submitting response');
+    showTabPopup(
+      'Error',
+      res.data?.message || 'Error submitting response',
+      '❌',
+      '#c62828'
+    );
   }
 }

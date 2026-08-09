@@ -4,6 +4,7 @@ let currentRequestId = '';
 let itemsCost = 0;
 let volunteerFee = 0;
 let platformFee = 0;
+let tipAmount = 0;
 let totalAmount = 0;
 let volunteerName = 'Assigned Volunteer';
 let seniorName = 'Senior Citizen';
@@ -19,13 +20,18 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const qItems = params.get('itemsCost');
   const qFee = params.get('serviceFee');
+  const qTip = params.get('tipAmount');
+
   if (qItems !== null && qItems !== undefined && !isNaN(Number(qItems))) {
     itemsCost = Number(qItems);
   }
   if (qFee !== null && qFee !== undefined && !isNaN(Number(qFee))) {
     volunteerFee = Number(qFee);
   }
-  totalAmount = itemsCost + volunteerFee + platformFee;
+  if (qTip !== null && qTip !== undefined && !isNaN(Number(qTip))) {
+    tipAmount = Number(qTip);
+  }
+  totalAmount = itemsCost + volunteerFee + platformFee + tipAmount;
   updateSummaryUI();
 
   // Load User & Check Auth
@@ -195,7 +201,7 @@ async function loadRequestDetails(reqId) {
     volunteerFee = Number(qFee);
   }
 
-  totalAmount = itemsCost + volunteerFee + platformFee;
+  totalAmount = itemsCost + volunteerFee + platformFee + tipAmount;
   updateSummaryUI();
 }
 
@@ -203,6 +209,8 @@ function updateSummaryUI() {
   const elItemsCost    = document.getElementById('summaryItemsCost');
   const elVolunteerFee = document.getElementById('summaryVolunteerFee');
   const elPlatformFee  = document.getElementById('summaryPlatformFee');
+  const elTipRow       = document.getElementById('summaryTipRow');
+  const elTipAmount    = document.getElementById('summaryTipAmount');
   const elTotal        = document.getElementById('summaryTotal');
   const btnPay         = document.getElementById('btnPay');
   const successPaidTo  = document.getElementById('successPaidTo');
@@ -211,6 +219,16 @@ function updateSummaryUI() {
   if (elItemsCost)    elItemsCost.textContent    = `₹${itemsCost}`;
   if (elVolunteerFee) elVolunteerFee.textContent = `₹${volunteerFee}`;
   if (elPlatformFee)  elPlatformFee.textContent  = `₹${platformFee}`;
+
+  if (tipAmount > 0) {
+    if (elTipRow) elTipRow.style.display = 'flex';
+    if (elTipAmount) elTipAmount.textContent = `₹${tipAmount}`;
+  } else {
+    if (elTipRow) elTipRow.style.display = 'none';
+  }
+
+  totalAmount = itemsCost + volunteerFee + platformFee + tipAmount;
+
   if (elTotal)        elTotal.textContent        = `₹${totalAmount}`;
   if (btnPay)         btnPay.textContent         = `Pay ₹${totalAmount}`;
   if (successPaidTo && volunteerName) successPaidTo.textContent = volunteerName;
@@ -272,11 +290,13 @@ async function processPayment() {
     } else {
       const payload = {
         approved: true,
+        tipAmount: tipAmount,
         paymentDetails: {
           amountPaid: totalAmount,
           itemsCost: itemsCost,
           volunteerFee: volunteerFee,
           platformFee: platformFee,
+          tipAmount: tipAmount,
           transactionId: transactionId,
           paymentMethod: paymentMethod
         }
@@ -307,6 +327,11 @@ async function processPayment() {
     if (successAmount) successAmount.textContent = `₹${totalAmount}`;
     if (successTxnId)  successTxnId.textContent  = transactionId;
     if (successPaidTo) successPaidTo.textContent = volunteerName;
+
+    // Ask for ratings automatically right after payment finishes!
+    setTimeout(() => {
+      openFeedbackModal();
+    }, 600);
   }, 1200);
 }
 
@@ -423,6 +448,10 @@ function openFeedbackModal() {
   if (modal) {
     modal.style.display = 'flex';
   }
+}
+
+function goHome() {
+  window.location.href = 'family-dashboard.html';
 }
 
 function skipFeedbackAndGoHome() {

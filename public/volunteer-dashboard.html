@@ -272,13 +272,28 @@
 
     <!-- Image Lightbox Modal for Receipt / Delivery Proofs -->
     <div id="imageLightboxModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="lightboxTitle" style="display: none; z-index: 10050; background: rgba(0, 0, 0, 0.85);">
-      <div class="modal-content" style="max-width: 800px; text-align: center; background: #ffffff; padding: 1.5rem; border-radius: 16px;">
+      <div class="modal-content" style="max-width: 850px; text-align: center; background: #ffffff; padding: 1.5rem; border-radius: 16px; position: relative;">
         <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 15px;">
           <h3 id="lightboxTitle" style="color: var(--color-primary-dark); margin: 0;">📸 Receipt / Delivery Photo Proof</h3>
           <button id="lightboxClose" class="modal-close" style="font-size: 2rem; border: none; background: none; cursor: pointer;">&times;</button>
         </div>
-        <div style="max-height: 70vh; overflow: auto; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px; padding: 5px; background: #fafafa;">
-          <img id="lightboxImage" src="" alt="Full Resolution Receipt Proof" style="max-width: 100%; height: auto; display: block; margin: 0 auto; border-radius: 6px;">
+        <div style="position: relative; max-height: 70vh; overflow: hidden; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px; padding: 5px; background: #222; display: flex; align-items: center; justify-content: center; min-height: 250px;">
+          <img id="lightboxImage" src="" alt="Full Resolution Receipt Proof" style="max-width: 100%; max-height: 68vh; height: auto; display: block; margin: 0 auto; border-radius: 6px; object-fit: contain;">
+          
+          <!-- Lightbox Counter Badge (Shown ONLY if > 1 photo) -->
+          <div id="lightboxCounter" style="display: none; position: absolute; top: 12px; right: 12px; background: rgba(0,0,0,0.8); color: #fff; font-weight: 800; font-size: 0.9rem; padding: 4px 14px; border-radius: 16px;">
+            1 / 1
+          </div>
+
+          <!-- Lightbox Prev Arrow (Shown ONLY if > 1 photo) -->
+          <button type="button" id="btnLightboxPrev" style="display: none; position: absolute; top: 50%; left: 12px; transform: translateY(-50%); background: rgba(0,0,0,0.65); color: #ffffff; border: none; border-radius: 50%; width: 44px; height: 44px; font-size: 1.4rem; font-weight: bold; cursor: pointer; z-index: 5;">
+            ◀
+          </button>
+
+          <!-- Lightbox Next Arrow (Shown ONLY if > 1 photo) -->
+          <button type="button" id="btnLightboxNext" style="display: none; position: absolute; top: 50%; right: 12px; transform: translateY(-50%); background: rgba(0,0,0,0.65); color: #ffffff; border: none; border-radius: 50%; width: 44px; height: 44px; font-size: 1.4rem; font-weight: bold; cursor: pointer; z-index: 5;">
+            ▶
+          </button>
         </div>
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
           <a id="lightboxDirectLink" href="" target="_blank" class="btn btn-secondary" style="padding: 10px 18px; font-size: 0.95rem;">
@@ -379,6 +394,30 @@
         </form>
       </div>
     </div>
+
+    <!-- Special Tip Earned Modal -->
+    <div id="tipEarnedModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="tipModalTitle" style="display: none;">
+      <div class="modal-content" style="max-width: 480px; text-align: center; background: linear-gradient(135deg, #ffffff 0%, #fffde7 100%); border: 3px solid #fbc02d; border-radius: 20px; padding: 2rem; box-shadow: 0 10px 30px rgba(251,192,45,0.3); position: relative; margin: auto;">
+        <button type="button" onclick="closeTipEarnedModal()" class="modal-close" aria-label="Close" style="position: absolute; top: 12px; right: 16px; font-size: 1.5rem; border: none; background: none; cursor: pointer; color: #888;">&times;</button>
+        
+        <div style="font-size: 3.5rem; margin-bottom: 0.5rem; animation: bounce 1s infinite alternate;">🎉 🎁 ✨</div>
+        <h2 id="tipModalTitle" style="color: #b45309; margin-bottom: 0.5rem; font-size: 1.6rem; font-weight: 800;">Special Tip Received!</h2>
+        <p style="color: #444; font-size: 1.05rem; margin-bottom: 1.2rem; line-height: 1.4;">
+          The Caregiver awarded you an extra bonus tip for your exceptional service on task <strong id="tipTaskTitle" style="color: #1b5e20;">"Task"</strong>!
+        </p>
+        <div style="background: #ffffff; border: 2px dashed #fbc02d; padding: 16px; border-radius: 14px; margin-bottom: 1.5rem;">
+          <div style="font-size: 0.95rem; color: #666; font-weight: 600;">Bonus Tip Amount</div>
+          <div id="tipModalAmount" style="font-size: 2.2rem; font-weight: 900; color: #2e7d32; margin: 4px 0;">+ ₹0</div>
+          <div id="tipModalBreakdown" style="font-size: 0.88rem; color: #888;">Base Service Fee: ₹0 | Total Earned: ₹0</div>
+        </div>
+        <p style="color: #2e7d32; font-weight: 700; font-size: 0.95rem; margin-bottom: 1.5rem;">
+          💖 Thank you for making senior care compassionate &amp; reliable!
+        </p>
+        <button type="button" class="btn btn-primary" onclick="closeTipEarnedModal()" style="width: 100%; padding: 14px; font-size: 1.1rem; border-radius: 12px; background: linear-gradient(135deg, #2e7d32 0%, #1b5e20 100%); font-weight: 700; border: none; cursor: pointer; color: #ffffff !important;">
+          Awesome! Close
+        </button>
+      </div>
+    </div>
   </main>
 
   <!-- Footer -->
@@ -387,7 +426,7 @@
   </footer>
 
   <!-- Scripts -->
-  <script src="/js/api.js?v=7"></script>
-  <script src="/js/volunteer.js?v=7"></script>
+  <script src="/js/api.js?v=240"></script>
+  <script src="/js/volunteer.js?v=240"></script>
 </body>
 </html>

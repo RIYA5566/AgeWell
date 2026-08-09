@@ -556,6 +556,11 @@
           <span style="font-weight: 600;" id="summaryVolunteerFee">₹150</span>
         </div>
 
+        <div class="summary-row" id="summaryTipRow" style="display: none;">
+          <span>🎁 Volunteer Tip</span>
+          <span style="font-weight: 600; color: #2e7d32;" id="summaryTipAmount">₹0</span>
+        </div>
+
         <div class="summary-row">
           <span>Platform Fee</span>
           <span style="color: #2e7d32; font-weight: 600;" id="summaryPlatformFee">₹0</span>
@@ -633,7 +638,7 @@
 
       <div class="action-buttons">
         <button class="btn-receipt" onclick="openReceiptModal()">📄 View Receipt</button>
-        <button type="button" class="btn-home" onclick="openFeedbackModal()">🏠 Go Home</button>
+        <button type="button" class="btn-home" onclick="goHome()">🏠 Go Home</button>
       </div>
     </div>
   </main>
@@ -859,7 +864,7 @@
     </div>
   </div>
 
-  <script src="js/api.js?v=9"></script>
-  <script src="js/payment.js?v=9"></script>
+  <script src="js/api.js?v=200"></script>
+  <script src="js/payment.js?v=200"></script>
 </body>
 </html>
