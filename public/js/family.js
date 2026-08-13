@@ -195,8 +195,12 @@ async function loadFamilyDashboard(silent = false) {
   // Show senior info banner
   populateSeniorBanner(senior);
 
-  // Separate new senior requests needing caregiver decision (familyApprovalStatus !== 'approved') from volunteer approvals
-  const seniorRequests = requests.filter(r => (r.status === 'pending' || r.status === 'awaiting_approval') && r.familyApprovalStatus !== 'approved' && (!r.volunteerQuotes || r.volunteerQuotes.length === 0));
+  // Separate active senior requests (pending decision, allotted, accepted, in-progress) from volunteer quote approvals & receipt verifications
+  const seniorRequests = requests.filter(r => 
+    ( (r.status === 'pending' || r.status === 'awaiting_approval') && (!r.volunteerQuotes || r.volunteerQuotes.length === 0) ) ||
+    r.status === 'accepted' ||
+    r.status === 'purchase_funded'
+  );
   const volunteerApprovals = requests.filter(r => (r.status === 'pending' || r.status === 'awaiting_approval') && r.volunteerQuotes && r.volunteerQuotes.length > 0);
   const completionVerifications = requests.filter(r => (r.status === 'purchase_cost_submitted' || r.status === 'awaiting_verification' || (r.status === 'completed' && r.completionVerified !== 'verified' && r.completionVerified !== 'rejected')));
 
@@ -422,29 +426,85 @@ function renderSeniorHelpRequests(seniorRequests) {
         ? `<span class="badge badge-urgency-high">⚠️ High Priority</span>`
         : `<span class="badge badge-urgency">${req.urgency.charAt(0).toUpperCase() + req.urgency.slice(1)} Priority</span>`;
 
-    return `
-      <div class="approval-card" id="seniorCard-${req._id}" style="border-left: 5px solid #e65100;">
-        <div class="approval-card-header">
-          <div>
-            <div style="font-size: 1.3rem; font-weight: 700; color: #e65100;">📋 ${escapeHTML(req.title)}</div>
-            <div style="font-size: 0.95rem; color: #777; margin-top: 4px;">
-              Category: <strong>${escapeHTML(req.category)}</strong> · Raised: ${new Date(req.createdAt).toLocaleDateString()}
+    let statusBadge = '';
+    let borderAccent = '#e65100';
+    let actionAreaHtml = '';
+    let footerHelpText = '🛡️ Choose whether you want to fulfill this request directly for your loved one, publish it to community volunteers, or reject it.';
+
+    if (req.status === 'accepted') {
+      statusBadge = `<span class="badge badge-accepted">🤝 Volunteer Assigned (In Progress)</span>`;
+      borderAccent = '#2e7d32';
+      footerHelpText = '🤝 A community volunteer has been approved and is actively carrying out this task.';
+
+      const vol = req.volunteer;
+      const volName = vol ? escapeHTML(vol.name || 'Volunteer') : 'Volunteer';
+      const volPhone = vol ? escapeHTML(vol.phone || '') : '';
+      const volEmail = vol ? escapeHTML(vol.email || '') : '';
+      const volId = vol ? (typeof vol === 'object' ? (vol._id || vol.id) : vol) : '';
+
+      actionAreaHtml = `
+        <div class="request-details" style="background:#f1f8e9; border: 2px solid #a5d6a7; border-left: 5px solid #2e7d32; border-radius: 10px; padding: 1rem; margin-top: 1rem; width: 100%;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <div>
+              <p style="margin: 0; font-size: 1.1rem; color: #1b5e20;"><strong>Approved Volunteer:</strong> <strong>${volName}</strong></p>
+              ${volPhone ? `<p style="margin: 4px 0 0 0; font-size: 0.95rem;">📞 Contact: <a href="tel:${volPhone}" style="color: #1b5e20; font-weight: bold;">${volPhone}</a></p>` : ''}
+              ${volEmail ? `<p style="margin: 2px 0 0 0; font-size: 0.95rem;">📧 Email: ${volEmail}</p>` : ''}
             </div>
+            ${volId ? `<button type="button" class="btn btn-secondary" onclick="viewVolunteerProfile('${volId}')" style="padding: 6px 14px; font-size: 0.9rem; border-radius: 18px; background: #ffffff; color: #1b5e20; border: 1.5px solid #a5d6a7; font-weight: bold; cursor: pointer;">👤 View Volunteer Profile</button>` : ''}
           </div>
-          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-            ${urgencyBadge}
-            <span class="badge" style="background:#ffe082;color:#e65100;font-weight:bold;">⏳ Awaiting Fulfillment Decision</span>
-          </div>
-        </div>
+        </div>`;
 
-        ${req.description ? `<p style="margin-bottom: 1.2rem; color: #444; font-size: 1.05rem;">${escapeHTML(req.description)}</p>` : ''}
-        ${req.audioFile ? `<div class="request-audio-player"><label>🎙️ Senior's Spoken Voice Message:</label><audio controls src="${req.audioFile}"></audio></div>` : ''}
-        ${req.shoppingPreference ? `
-          <div style="margin-top: 10px; margin-bottom: 12px; padding: 10px 14px; background: #e3f2fd; border-left: 4px solid #1976d2; border-radius: 8px; font-size: 0.98rem; color: #0d47a1; font-weight: 600;">
-            🛒 <strong>Shopping Preference:</strong> ${escapeHTML(req.shoppingPreference)}
-          </div>` : ''}
+    } else if (req.status === 'purchase_funded') {
+      statusBadge = `<span class="badge" style="background:#e8f5e9;color:#1b5e20;border:2px solid #2e7d32;font-weight:bold;">✅ Purchase Funded (In Progress)</span>`;
+      borderAccent = '#2e7d32';
+      footerHelpText = '💳 Purchase cost has been approved & funded. The volunteer is currently buying the items.';
 
-        <!-- Fulfillment Decision Action Buttons -->
+      const vol = req.volunteer;
+      const volName = vol ? escapeHTML(vol.name || 'Volunteer') : 'Volunteer';
+      const volPhone = vol ? escapeHTML(vol.phone || '') : '';
+
+      actionAreaHtml = `
+        <div class="request-details" style="background:#e8f5e9; border: 2px solid #a5d6a7; border-left: 5px solid #2e7d32; border-radius: 10px; padding: 1rem; margin-top: 1rem; width: 100%;">
+          <p style="margin: 0; font-size: 1.05rem; color: #1b5e20;"><strong>Funded Purchase Cost:</strong> <strong style="font-size: 1.2rem; color: #2e7d32;">₹${req.actualPurchaseCost || 0}</strong></p>
+          <p style="margin: 4px 0 0 0; font-size: 0.95rem;">Assisted by: <strong>${volName}</strong> ${volPhone ? `(📞 <a href="tel:${volPhone}" style="color: #1b5e20; font-weight: bold;">${volPhone}</a>)` : ''}</p>
+        </div>`;
+
+    } else if (req.status === 'pending' && req.familyApprovalStatus === 'approved') {
+      statusBadge = `<span class="badge badge-pending">🔍 Allotted to Volunteers (Seeking Help)</span>`;
+      borderAccent = '#1565c0';
+      footerHelpText = '🔍 Request published to community volunteers. You will be notified as soon as a volunteer accepts & quotes.';
+      actionAreaHtml = `
+        <div class="approval-actions" style="display: flex; gap: 12px; flex-wrap: wrap; margin-top: 1.2rem;">
+          <button
+            class="btn"
+            onclick="fulfillRequestSelf('${req._id}')"
+            style="background-color: #2e7d32; color: #ffffff !important; font-weight: 700; flex: 1; min-width: 180px; padding: 14px; font-size: 1.05rem;"
+            aria-label="Fulfill request yourself"
+          >
+            🙋 I will fulfill this myself instead
+          </button>
+          <button
+            class="btn"
+            onclick="approveVolunteer('${req._id}')"
+            style="background-color: #1565c0; color: #ffffff !important; font-weight: 700; flex: 1; min-width: 180px; padding: 14px; font-size: 1.05rem;"
+            aria-label="Update shopping preference"
+          >
+            🛒 Preference
+          </button>
+          <button
+            class="btn btn-reject"
+            onclick="openRejectModal('${req._id}')"
+            style="background-color: #c62828; color: #ffffff !important; font-weight: 700; flex: 1; min-width: 140px; padding: 14px; font-size: 1.05rem;"
+            aria-label="Reject request"
+          >
+            ❌ Reject Request
+          </button>
+        </div>`;
+
+    } else {
+      statusBadge = `<span class="badge" style="background:#ffe082;color:#e65100;font-weight:bold;">⏳ Awaiting Fulfillment Decision</span>`;
+      borderAccent = '#e65100';
+      actionAreaHtml = `
         <div class="approval-actions" style="display: flex; gap: 12px; flex-wrap: wrap; margin-top: 1.2rem;">
           <button
             class="btn"
@@ -472,10 +532,35 @@ function renderSeniorHelpRequests(seniorRequests) {
           >
             ❌ Reject Request
           </button>
+        </div>`;
+    }
+
+    return `
+      <div class="approval-card" id="seniorCard-${req._id}" style="border-left: 5px solid ${borderAccent};">
+        <div class="approval-card-header">
+          <div>
+            <div style="font-size: 1.3rem; font-weight: 700; color: ${borderAccent};">📋 ${escapeHTML(req.title)}</div>
+            <div style="font-size: 0.95rem; color: #777; margin-top: 4px;">
+              Category: <strong>${escapeHTML(req.category)}</strong> · Raised: ${new Date(req.createdAt).toLocaleDateString()}
+            </div>
+          </div>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            ${urgencyBadge}
+            ${statusBadge}
+          </div>
         </div>
 
+        ${req.description ? `<p style="margin-bottom: 1.2rem; color: #444; font-size: 1.05rem;">${escapeHTML(req.description)}</p>` : ''}
+        ${req.audioFile ? `<div class="request-audio-player"><label>🎙️ Senior's Spoken Voice Message:</label><audio controls src="${req.audioFile}"></audio></div>` : ''}
+        ${req.shoppingPreference ? `
+          <div style="margin-top: 10px; margin-bottom: 12px; padding: 10px 14px; background: #e3f2fd; border-left: 4px solid #1976d2; border-radius: 8px; font-size: 0.98rem; color: #0d47a1; font-weight: 600;">
+            🛒 <strong>Shopping Preference:</strong> ${escapeHTML(req.shoppingPreference)}
+          </div>` : ''}
+
+        ${actionAreaHtml}
+
         <p style="font-size: 0.9rem; color: #777; margin-top: 1rem; margin-bottom: 0;">
-          🛡️ Choose whether you want to fulfill this request directly for your loved one, publish it to community volunteers, or reject it.
+          ${footerHelpText}
         </p>
       </div>`;
   }).join('');
@@ -1280,27 +1365,21 @@ function renderAllRequests(requests) {
     return;
   }
 
-  // Sort requests: Completed tasks FIRST (most recently fulfilled/verified at position #1), followed by remaining requests
-  const completedStatuses = ['completed', 'fulfilled_by_family'];
-  const getFulfillmentTimestamp = (r) => {
-    if (r.completedAt) return new Date(r.completedAt).getTime();
-    if (r.verifiedAt) return new Date(r.verifiedAt).getTime();
-    if (r.serviceChargeReleasedAt) return new Date(r.serviceChargeReleasedAt).getTime();
-    if (r.familyReviewedAt) return new Date(r.familyReviewedAt).getTime();
-    if (r.updatedAt) return new Date(r.updatedAt).getTime();
-    if (r.createdAt) return new Date(r.createdAt).getTime();
-    if (r._id) return parseInt(String(r._id).substring(0, 8), 16) * 1000;
-    return 0;
-  };
+  // Sort requests: Active tasks FIRST (most recently created active request at position #1), followed by completed/historical requests
+  const completedStatuses = ['completed', 'fulfilled_by_family', 'rejected'];
 
   const sortedRequests = [...requests].sort((a, b) => {
-    const aCompleted = completedStatuses.includes(a.status) || a.fulfilledByFamily;
-    const bCompleted = completedStatuses.includes(b.status) || b.fulfilledByFamily;
+    const aDone = completedStatuses.includes(a.status) || a.fulfilledByFamily || a.familyApprovalStatus === 'rejected';
+    const bDone = completedStatuses.includes(b.status) || b.fulfilledByFamily || b.familyApprovalStatus === 'rejected';
 
-    if (aCompleted && !bCompleted) return -1;
-    if (!aCompleted && bCompleted) return 1;
+    // Active requests FIRST
+    if (!aDone && bDone) return -1;
+    if (aDone && !bDone) return 1;
 
-    return getFulfillmentTimestamp(b) - getFulfillmentTimestamp(a);
+    // Newer requests first
+    const aTime = new Date(a.createdAt || 0).getTime();
+    const bTime = new Date(b.createdAt || 0).getTime();
+    return bTime - aTime;
   });
 
   allRequestsList.innerHTML = sortedRequests.map(req => {
