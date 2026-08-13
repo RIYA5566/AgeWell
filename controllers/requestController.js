@@ -109,6 +109,7 @@ exports.getRequests = async (req, res) => {
       // Seniors see only their own requests
       requests = await HelpRequest.find({ senior: req.user.id })
         .populate('volunteer', 'name phone email skills')
+        .populate('volunteerQuotes.volunteer', 'name phone email skills')
         .populate('familyReviewedBy', 'name relationship')
         .sort({ createdAt: -1 });
 

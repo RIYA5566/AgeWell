@@ -317,26 +317,20 @@ async function loadRequests() {
       return;
     }
 
-    const completedStatuses = ['completed', 'fulfilled_by_family'];
-    const getFulfillmentTimestamp = (r) => {
-      if (r.completedAt) return new Date(r.completedAt).getTime();
-      if (r.verifiedAt) return new Date(r.verifiedAt).getTime();
-      if (r.serviceChargeReleasedAt) return new Date(r.serviceChargeReleasedAt).getTime();
-      if (r.familyReviewedAt) return new Date(r.familyReviewedAt).getTime();
-      if (r.updatedAt) return new Date(r.updatedAt).getTime();
-      if (r.createdAt) return new Date(r.createdAt).getTime();
-      if (r._id) return parseInt(String(r._id).substring(0, 8), 16) * 1000;
-      return 0;
-    };
+    const completedStatuses = ['completed', 'fulfilled_by_family', 'rejected'];
 
     const sortedRequests = [...requests].sort((a, b) => {
-      const aCompleted = completedStatuses.includes(a.status) || a.fulfilledByFamily;
-      const bCompleted = completedStatuses.includes(b.status) || b.fulfilledByFamily;
+      const aDone = completedStatuses.includes(a.status) || a.fulfilledByFamily || a.familyApprovalStatus === 'rejected';
+      const bDone = completedStatuses.includes(b.status) || b.fulfilledByFamily || b.familyApprovalStatus === 'rejected';
 
-      if (aCompleted && !bCompleted) return -1;
-      if (!aCompleted && bCompleted) return 1;
+      // Active/Pending requests MUST appear FIRST
+      if (!aDone && bDone) return -1;
+      if (aDone && !bDone) return 1;
 
-      return getFulfillmentTimestamp(b) - getFulfillmentTimestamp(a);
+      // Newer requests first
+      const aTime = new Date(a.createdAt || 0).getTime();
+      const bTime = new Date(b.createdAt || 0).getTime();
+      return bTime - aTime;
     });
 
     requestList.innerHTML = sortedRequests.map(req => {
@@ -345,12 +339,12 @@ async function loadRequests() {
         statusBadge = `<span class="badge" style="background:#e8f5e9;color:#1b5e20;border:2px solid #2e7d32;font-weight:bold;">🏡 Fulfilled by Family Caregiver</span>`;
       } else if (req.status === 'rejected' || req.familyApprovalStatus === 'rejected') {
         statusBadge = `<span class="badge" style="background:#ffebee;color:#c62828;border:2px solid #b71c1c;font-weight:bold;">❌ Request Rejected by Caregiver</span>`;
-      } else if (req.status === 'pending' && req.familyApprovalStatus === 'none') {
+      } else if (req.status === 'pending' && (req.familyApprovalStatus === 'none' || !req.familyApprovalStatus)) {
         statusBadge = `<span class="badge" style="background:#fff8e1;color:#e65100;border:2px solid #ffa000;font-weight:bold;">⏳ Awaiting Caregiver Allotment</span>`;
       } else if (req.status === 'pending' && req.familyApprovalStatus === 'approved') {
         statusBadge = `<span class="badge badge-pending">🔍 Allotted to Volunteers (Seeking Help)</span>`;
-      } else if (req.status === 'awaiting_approval') {
-        statusBadge = `<span class="badge" style="background:#ffe082;color:#e65100;font-weight:bold;">⏳ Caregiver Reviewing Volunteer Quotes</span>`;
+      } else if (req.status === 'awaiting_approval' || req.status === 'quoted') {
+        statusBadge = `<span class="badge" style="background:#ffe082;color:#e65100;border:2px solid #f57f17;font-weight:bold;">⏳ Caregiver Reviewing Volunteer Quotes</span>`;
       } else if (req.status === 'accepted') {
         statusBadge = `<span class="badge badge-accepted">🤝 Volunteer Assigned</span>`;
       } else if (req.status === 'purchase_cost_submitted') {
@@ -392,19 +386,29 @@ async function loadRequests() {
             <p style="color:#1b5e20; font-weight:bold;">🏡 Completed Directly by Family Caregiver</p>
             <p style="margin-top:4px; color:#2e7d32;">Your family caregiver took care of this request for you!</p>
           </div>`;
-      } else if (req.status === 'awaiting_approval' && req.volunteer) {
+      } else if ((req.status === 'awaiting_approval' || req.status === 'quoted') && (req.volunteer || (req.volunteerQuotes && req.volunteerQuotes.length > 0))) {
+        const volName = req.volunteer ? req.volunteer.name : (req.volunteerQuotes && req.volunteerQuotes[0] && req.volunteerQuotes[0].volunteer ? req.volunteerQuotes[0].volunteer.name : 'A Volunteer');
         assignmentInfo = `
           <div class="request-details" style="background:#fff8e1; border-color:#f57f17;">
-            <p><strong>Volunteer Candidate:</strong> ${escapeHTML(req.volunteer.name)}</p>
-            <p style="margin-top:6px; color:#e65100;">🔐 Your family caregiver is reviewing volunteer quotes. Contact details will appear once they approve.</p>
+            <p><strong>Volunteer Candidate:</strong> ${escapeHTML(volName)}</p>
+            <p style="margin-top:6px; color:#e65100;">🔐 Your family caregiver is reviewing volunteer quotes. Contact details will appear once approved.</p>
           </div>`;
-      } else if (req.status === 'accepted' && req.volunteer) {
+      } else if (['accepted', 'purchase_cost_submitted', 'purchase_funded', 'awaiting_verification'].includes(req.status) && req.volunteer) {
+        const volObj = typeof req.volunteer === 'object' ? req.volunteer : null;
+        const volName = volObj ? volObj.name : 'Assigned Volunteer';
+        const volPhone = volObj ? volObj.phone : '';
+        const volEmail = volObj ? volObj.email : '';
+
         assignmentInfo = `
-          <div class="request-details">
-            <p><strong>Approved Volunteer:</strong> ${escapeHTML(req.volunteer.name)}</p>
-            <p><strong>Volunteer Contact:</strong> <a href="tel:${req.volunteer.phone}" style="color: var(--color-primary-dark); font-weight: bold;">${escapeHTML(req.volunteer.phone)}</a></p>
-            <p><strong>Volunteer Email:</strong> ${escapeHTML(req.volunteer.email)}</p>
+          <div class="request-details" style="background:#f1f8e9; border-color:#558b2f;">
+            <p><strong>Approved Volunteer:</strong> ${escapeHTML(volName)}</p>
+            ${volPhone ? `<p><strong>Volunteer Contact:</strong> <a href="tel:${escapeHTML(volPhone)}" style="color: var(--color-primary-dark); font-weight: bold;">${escapeHTML(volPhone)}</a></p>` : ''}
+            ${volEmail ? `<p><strong>Volunteer Email:</strong> ${escapeHTML(volEmail)}</p>` : ''}
           </div>`;
+      } else if (req.status === 'completed') {
+        const volObj = typeof req.volunteer === 'object' ? req.volunteer : null;
+        const volName = volObj ? volObj.name : 'Platform Volunteer';
+
         const serviceFeeVal = Number((req.serviceFee !== undefined && req.serviceFee !== null)
           ? req.serviceFee
           : ((req.volunteerQuotes && req.volunteerQuotes[0] && req.volunteerQuotes[0].serviceFee !== undefined)
@@ -425,7 +429,7 @@ async function loadRequests() {
 
         assignmentInfo = `
           <div class="request-details">
-            <p><strong>Assisted By:</strong> ${req.volunteer ? (typeof req.volunteer === 'object' ? escapeHTML(req.volunteer.name) : 'Platform Volunteer') : 'Platform Volunteer'}</p>
+            <p><strong>Assisted By:</strong> ${escapeHTML(volName)}</p>
             <p><strong>Completion Notes:</strong> ${escapeHTML(req.resolutionNotes || 'No notes provided')}</p>
             ${totalSpentBadge}
           </div>`;

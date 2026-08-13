@@ -538,13 +538,11 @@ async function loadVolunteerRequests(silent = false) {
                 ✅ <strong>You submitted a quote: ${feeStr}</strong> (Awaiting Caregiver Selection). You can update your quote below!
               </div>`;
           } else if (otherQuote) {
-            const volObj = otherQuote.volunteer;
-            const otherVolName = (typeof volObj === 'object' && volObj.name) ? escapeHTML(volObj.name) : 'Another volunteer';
             const feeStr = (otherQuote.serviceFee !== undefined && otherQuote.serviceFee > 0) ? `₹${otherQuote.serviceFee}` : '₹0 (Free)';
             const countStr = req.volunteerQuotes.length > 1 ? ` (${req.volunteerQuotes.length} quotes submitted)` : '';
             existingQuoteBadge = `
               <div style="margin-top: 10px; padding: 10px 14px; background: #e3f2fd; border-left: 4px solid #1976d2; border-radius: 8px; font-size: 0.92rem; color: #0d47a1;">
-                ℹ️ <strong>${otherVolName}</strong> quoted <strong>${feeStr}</strong>${countStr} (Awaiting Caregiver Selection). You can also submit your quote!
+                ℹ️ A volunteer quoted <strong>${feeStr}</strong>${countStr} (Awaiting Caregiver Selection). You can also submit your quote!
               </div>`;
           }
 
