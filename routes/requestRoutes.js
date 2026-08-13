@@ -19,7 +19,8 @@ const {
   familyRejectRequest,
   verifyCompletionByFamily,
   verifyCompletionBySeniorVoice,
-  submitFeedback
+  submitFeedback,
+  payVolunteerTip
 } = require('../controllers/requestController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
@@ -147,6 +148,7 @@ router.put('/:id/family-reject',  authorize('family'), familyRejectRequest);
 // Task Completion Verification Workflow (Family Caregiver & Senior Voice IVR Call)
 router.put('/:id/verify-completion-family', authorize('family'), verifyCompletionByFamily);
 router.put('/:id/verify-completion-voice',  authorize('senior', 'admin'), verifyCompletionBySeniorVoice);
+router.put('/:id/pay-tip',                  authorize('family'), payVolunteerTip);
 
 // Volunteer Feedback Submission Workflow
 router.put('/:id/feedback', authorize('family', 'senior', 'admin'), submitFeedback);

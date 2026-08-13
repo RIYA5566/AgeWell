@@ -31,6 +31,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (qTip !== null && qTip !== undefined && !isNaN(Number(qTip))) {
     tipAmount = Number(qTip);
   }
+  if (paymentType === 'tip') {
+    itemsCost = 0;
+    volunteerFee = 0;
+  }
   totalAmount = itemsCost + volunteerFee + platformFee + tipAmount;
   updateSummaryUI();
 
@@ -194,11 +198,16 @@ async function loadRequestDetails(reqId) {
   const qItems = urlParams.get('itemsCost');
   const qFee = urlParams.get('serviceFee');
 
-  if ((itemsCost === 0 || isNaN(itemsCost)) && qItems !== null && qItems !== undefined && !isNaN(Number(qItems))) {
-    itemsCost = Number(qItems);
-  }
-  if ((volunteerFee === 0 || isNaN(volunteerFee)) && qFee !== null && qFee !== undefined && !isNaN(Number(qFee))) {
-    volunteerFee = Number(qFee);
+  if (paymentType === 'tip') {
+    itemsCost = 0;
+    volunteerFee = 0;
+  } else {
+    if ((itemsCost === 0 || isNaN(itemsCost)) && qItems !== null && qItems !== undefined && !isNaN(Number(qItems))) {
+      itemsCost = Number(qItems);
+    }
+    if ((volunteerFee === 0 || isNaN(volunteerFee)) && qFee !== null && qFee !== undefined && !isNaN(Number(qFee))) {
+      volunteerFee = Number(qFee);
+    }
   }
 
   totalAmount = itemsCost + volunteerFee + platformFee + tipAmount;
@@ -286,6 +295,20 @@ async function processPayment() {
         }
       } else {
         console.warn('Purchase payment notice:', res.data?.message);
+      }
+    } else if (paymentType === 'tip') {
+      const payload = {
+        tipAmount: tipAmount,
+        paymentMethod: paymentMethod,
+        transactionId: transactionId
+      };
+      const res = await apiCall(`/requests/${currentRequestId}/pay-tip`, 'PUT', payload);
+      if (res.ok && res.data.success) {
+        if (res.data.request && res.data.request.volunteer && typeof res.data.request.volunteer === 'object' && res.data.request.volunteer.name) {
+          volunteerName = res.data.request.volunteer.name;
+        }
+      } else {
+        console.warn('Tip payment notice:', res.data?.message);
       }
     } else {
       const payload = {

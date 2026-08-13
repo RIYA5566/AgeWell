@@ -236,6 +236,16 @@ const helpRequestSchema = new mongoose.Schema({
     paymentMethod: String,
     paidAt: Date
   },
+  tipAmount: {
+    type: Number,
+    default: 0
+  },
+  tipPaymentDetails: {
+    amountPaid: Number,
+    transactionId: String,
+    paymentMethod: String,
+    paidAt: Date
+  },
 
   // ─── Volunteer Feedback (Submitted by Caregiver / Senior after payment) ────
   feedback: {

@@ -812,3 +812,42 @@ exports.submitFeedback = async (req, res) => {
     res.status(500).json({ success: false, message: 'Server error submitting feedback' });
   }
 };
+
+// @desc    Step 11: Caregiver pays volunteer tip
+// @route   PUT /api/requests/:id/pay-tip
+// @access  Private (Family)
+exports.payVolunteerTip = async (req, res) => {
+  try {
+    const request = await HelpRequest.findById(req.params.id);
+    if (!request) return res.status(404).json({ success: false, message: 'Help request not found' });
+
+    const { tipAmount, paymentMethod, transactionId } = req.body;
+
+    request.tipAmount = Number(tipAmount || 0);
+    request.tipPaymentDetails = {
+      amountPaid: Number(tipAmount || 0),
+      transactionId: String(transactionId || ''),
+      paymentMethod: String(paymentMethod || 'UPI'),
+      paidAt: Date.now()
+    };
+
+    if (request.paymentDetails) {
+      request.paymentDetails.tipAmount = Number(tipAmount || 0);
+    }
+
+    await request.save();
+
+    const populatedRequest = await HelpRequest.findById(request._id)
+      .populate('senior', 'name phone address emergencyContact')
+      .populate('volunteer', 'name phone email skills');
+
+    res.status(200).json({
+      success: true,
+      message: 'Tip payment successful!',
+      request: populatedRequest
+    });
+  } catch (error) {
+    console.error('Pay Tip Error:', error);
+    res.status(500).json({ success: false, message: 'Server error processing tip payment' });
+  }
+};

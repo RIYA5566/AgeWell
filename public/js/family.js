@@ -1006,21 +1006,22 @@ window.confirmTipAndRedirect = function() {
   const inputEl = document.getElementById('customTipInput');
   const tipAmount = Math.max(1, Number(inputEl ? inputEl.value : 50) || 50);
 
-  // Store the tip amount in context so feedback modal can redirect to payment after rating
-  pendingTipContext.tipAmount = tipAmount;
+  const { requestId, itemsCost, serviceFee } = pendingTipContext;
+  pendingTipContext = null;
 
-  // Show feedback/rating modal AFTER tip is chosen (once at the end)
-  openFeedbackModal(pendingTipContext.volName);
+  // Proceed to payment page immediately for tip
+  window.location.href = `/payment.html?requestId=${requestId}&type=tip&tipAmount=${tipAmount}&itemsCost=${itemsCost || 0}&serviceFee=${serviceFee || 0}`;
 };
 
 window.skipTipAndAskRatings = function() {
   const modal = document.getElementById('askTipModal');
   if (modal) modal.style.display = 'none';
 
-  // No tip chosen — clear tipAmount, then show feedback/rating modal (once at the end)
+  // No tip chosen — show feedback/rating modal (once at the end)
   if (pendingTipContext) {
-    pendingTipContext.tipAmount = 0;
-    openFeedbackModal(pendingTipContext.volName);
+    const volName = pendingTipContext.volName;
+    pendingTipContext = null;
+    openFeedbackModal(volName);
   } else {
     loadFamilyDashboard();
   }
@@ -1029,14 +1030,6 @@ window.skipTipAndAskRatings = function() {
 window.skipFeedbackAndGoHome = function() {
   const modal = document.getElementById('feedbackModal');
   if (modal) modal.style.display = 'none';
-
-  // After feedback, if caregiver chose a tip → redirect to payment page now
-  if (pendingTipContext && pendingTipContext.tipAmount > 0) {
-    const { requestId, tipAmount, itemsCost, serviceFee } = pendingTipContext;
-    pendingTipContext = null;
-    window.location.href = `/payment.html?requestId=${requestId}&type=tip&tipAmount=${tipAmount}&itemsCost=${itemsCost || 0}&serviceFee=${serviceFee || 0}`;
-    return;
-  }
 
   pendingTipContext = null;
   loadFamilyDashboard();
@@ -1549,11 +1542,7 @@ function renderAllRequests(requests) {
       const paidTotal = Number(req.paymentDetails ? req.paymentDetails.amountPaid : 0);
 
       let tipVal = Number(req.tipAmount || (req.paymentDetails ? req.paymentDetails.tipAmount : 0) || (req.tipPaymentDetails ? req.tipPaymentDetails.amountPaid : 0)) || 0;
-      if (tipVal === 0 && paidTotal > (itemCostVal + serviceFeeVal)) {
-        tipVal = paidTotal - (itemCostVal + serviceFeeVal);
-      }
-
-      const totalSpent = paidTotal > 0 ? paidTotal : (itemCostVal + serviceFeeVal + tipVal);
+      const totalSpent = itemCostVal + serviceFeeVal + tipVal;
 
       const breakdownText = `Items Purchased ₹${itemCostVal} + Volunteer Charge ₹${serviceFeeVal}${tipVal > 0 ? ` + Tip ₹${tipVal}` : ''}`;
 
