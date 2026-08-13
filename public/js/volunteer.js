@@ -676,13 +676,14 @@ async function loadVolunteerRequests(silent = false) {
 
           if (req.status === 'accepted') {
             stepBoxHtml = `
-              <div style="margin: 12px 0; padding: 12px 16px; background: #e3f2fd; border-left: 4px solid #1976d2; border-radius: 8px; font-size: 0.95rem; color: #0d47a1;">
-                💡 <strong>Find Actual Purchase Cost</strong><br/>
-                Please check store item prices online or in-person, then click below to submit the actual purchase cost + cart/price tag proof for caregiver escrow funding.
+              <div style="margin: 12px 0; padding: 16px 18px; background: #e3f2fd; border-left: 5px solid #1976d2; border-radius: 10px; font-size: 0.95rem; color: #0d47a1;">
+                💡 <strong>Step 1 of 2: Submit Purchase Cost &amp; Proof</strong><br/><br/>
+                Check the store price for the items needed. Then click below to submit the <strong>actual purchase cost</strong> along with a cart screenshot or price tag photo.<br/><br/>
+                <span style="font-size: 0.88rem; color: #1565c0; display: block; margin-top: 4px;">📌 The caregiver will pay the purchase amount + your service charge. After receiving the funds, buy the items and upload the final store cash receipt.</span>
               </div>`;
             actionBtnHtml = `
-              <button class="btn btn-primary" onclick="openPurchaseCostModal('${req._id}')" style="padding: 10px 20px; font-size: 1rem; min-height: 48px; background-color: #1976d2;">
-                💰 Submit Actual Purchase Cost &amp; Proof
+              <button class="btn btn-primary" onclick="openPurchaseCostModal('${req._id}')" style="padding: 12px 24px; font-size: 1rem; min-height: 50px; background-color: #1565c0; border-color: #0d47a1; font-weight: 700;">
+                💰 Submit Purchase Cost &amp; Price Proof
               </button>`;
           } else if (req.status === 'purchase_cost_submitted') {
             let proofImages = req.purchaseProofDocs && req.purchaseProofDocs.length > 0 
@@ -702,13 +703,14 @@ async function loadVolunteerRequests(silent = false) {
               </div>`;
           } else if (req.status === 'purchase_funded' || req.status === 'in_progress') {
             stepBoxHtml = `
-              <div style="margin: 12px 0; padding: 12px 16px; background: #e8f5e9; border-left: 4px solid #2e7d32; border-radius: 8px; font-size: 0.95rem; color: #1b5e20;">
-                ✅ <strong>Money Released for Purchase (₹${req.actualPurchaseCost || 0})</strong><br/>
-                Purchase is funded! Buy the items for the senior citizen and deliver them. Click below to upload the final official store cash receipt.
+              <div style="margin: 12px 0; padding: 16px 18px; background: #e8f5e9; border-left: 5px solid #2e7d32; border-radius: 10px; font-size: 0.95rem; color: #1b5e20;">
+                ✅ <strong>Step 2 of 2: Purchase Funded — Buy Items &amp; Upload Receipt</strong><br/><br/>
+                <strong>₹${req.actualPurchaseCost || 0}</strong> has been released by the caregiver. Go buy the items and deliver them to the senior citizen.<br/><br/>
+                <span style="font-size: 0.88rem; color: #388e3c; display: block; margin-top: 4px;">📌 After delivery, click below to upload the final store cash receipt / delivery proof. The caregiver will verify it and release your service charge of <strong>₹${myQuotedFee > 0 ? myQuotedFee : 0}</strong>.</span>
               </div>`;
             actionBtnHtml = `
-              <button class="btn btn-primary" onclick="openCompletionModal('${req._id}')" style="padding: 10px 20px; font-size: 1rem; min-height: 48px; background-color: #2e7d32;">
-                🧾 Complete Task &amp; Upload Cash Receipt
+              <button class="btn btn-primary" onclick="openCompletionModal('${req._id}')" style="padding: 12px 24px; font-size: 1rem; min-height: 50px; background-color: #2e7d32; border-color: #1b5e20; font-weight: 700;">
+                🧾 Upload Final Store Cash Receipt / Delivery Proof
               </button>`;
           } else if (req.status === 'awaiting_verification') {
             stepBoxHtml = `
@@ -793,7 +795,7 @@ async function loadVolunteerRequests(silent = false) {
             ? req.actualPurchaseCost
             : (req.purchasePaymentDetails ? req.purchasePaymentDetails.amountPaid : (req.paymentDetails ? req.paymentDetails.itemsCost : 0))) || 0;
 
-          const tipEarned = Number(req.tipAmount || (req.paymentDetails ? req.tipAmount : 0) || (req.tipPaymentDetails ? req.tipPaymentDetails.amountPaid : 0)) || 0;
+          const tipEarned = Number(req.tipAmount || (req.paymentDetails ? req.paymentDetails.tipAmount : 0) || (req.tipPaymentDetails ? req.tipPaymentDetails.amountPaid : 0)) || 0;
 
           const totalEarned = serviceFeeEarned + tipEarned;
 

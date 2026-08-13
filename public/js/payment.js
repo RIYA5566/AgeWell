@@ -328,10 +328,13 @@ async function processPayment() {
     if (successTxnId)  successTxnId.textContent  = transactionId;
     if (successPaidTo) successPaidTo.textContent = volunteerName;
 
-    // Ask for ratings automatically right after payment finishes!
-    setTimeout(() => {
-      openFeedbackModal();
-    }, 600);
+    // Only ask for feedback after the FINAL payment (tip or service charge release),
+    // NOT after purchase funding — feedback comes once at the end only.
+    if (paymentType !== 'purchase') {
+      setTimeout(() => {
+        openFeedbackModal();
+      }, 600);
+    }
   }, 1200);
 }
 

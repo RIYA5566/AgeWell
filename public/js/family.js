@@ -204,11 +204,27 @@ async function loadFamilyDashboard(silent = false) {
   const volunteerApprovals = requests.filter(r => (r.status === 'pending' || r.status === 'awaiting_approval') && r.volunteerQuotes && r.volunteerQuotes.length > 0);
   const completionVerifications = requests.filter(r => (r.status === 'purchase_cost_submitted' || r.status === 'awaiting_verification' || (r.status === 'completed' && r.completionVerified !== 'verified' && r.completionVerified !== 'rejected')));
 
+  // Caregiver action-required counts (badge only shown for these):
+  // - New requests needing decision (pending/awaiting_approval with no quotes) = need to allot/fulfill/reject
+  // - Volunteer quotes to approve (awaiting_approval with quotes)
+  // - Purchase cost submitted (need to pay purchase amount + service fee)
+  // - Receipt uploaded (need to verify & release service charge)
+  const caregiverActionNeeded = requests.filter(r =>
+    // New request: needs allot/fulfill/reject decision
+    ( (r.status === 'pending' || r.status === 'awaiting_approval') && r.familyApprovalStatus !== 'approved' && (!r.volunteerQuotes || r.volunteerQuotes.length === 0) ) ||
+    // Volunteer quoted: needs approval
+    ( (r.status === 'pending' || r.status === 'awaiting_approval') && r.volunteerQuotes && r.volunteerQuotes.length > 0 ) ||
+    // Volunteer submitted purchase cost: needs caregiver to pay
+    r.status === 'purchase_cost_submitted' ||
+    // Volunteer uploaded final receipt: needs caregiver to verify & release service charge
+    r.status === 'awaiting_verification'
+  );
+
   // Update notification badge specifically for Volunteer Approvals section
   updateApprovalBadge(volunteerApprovals.length);
 
-  // Update document title for total pending actions
-  const totalActions = seniorRequests.length + volunteerApprovals.length + completionVerifications.length;
+  // Update document title for total pending CAREGIVER ACTIONS only
+  const totalActions = caregiverActionNeeded.length;
   if (totalActions > 0) {
     document.title = `(${totalActions}) Action Needed – Family Portal | AgeWell`;
   } else {
@@ -401,9 +417,17 @@ function renderSeniorHelpRequests(seniorRequests) {
   const badge = document.getElementById('seniorReqBadge');
   if (!container) return;
 
+  // Badge only counts requests where the caregiver MUST take action:
+  // new undecided requests (not yet allotted/fulfilled/rejected)
+  const actionRequiredCount = seniorRequests.filter(r =>
+    (r.status === 'pending' || r.status === 'awaiting_approval') &&
+    r.familyApprovalStatus !== 'approved' &&
+    r.familyApprovalStatus !== 'rejected'
+  ).length;
+
   if (badge) {
-    if (seniorRequests.length > 0) {
-      badge.textContent = seniorRequests.length;
+    if (actionRequiredCount > 0) {
+      badge.textContent = actionRequiredCount;
       badge.style.display = 'inline-flex';
     } else {
       badge.style.display = 'none';
@@ -722,9 +746,16 @@ function renderCompletionVerificationQueue(pendingVerifications) {
   const badge = document.getElementById('completionBadge');
   if (!container) return;
 
+  // Badge only flashes for statuses where CAREGIVER must act:
+  // - purchase_cost_submitted: caregiver needs to pay purchase amount + service fee
+  // - awaiting_verification: caregiver needs to verify receipt & release service charge
+  const actionNeededCount = pendingVerifications.filter(r =>
+    r.status === 'purchase_cost_submitted' || r.status === 'awaiting_verification'
+  ).length;
+
   if (badge) {
-    if (pendingVerifications.length > 0) {
-      badge.textContent = pendingVerifications.length;
+    if (actionNeededCount > 0) {
+      badge.textContent = actionNeededCount;
       badge.style.display = 'inline-flex';
     } else {
       badge.style.display = 'none';
@@ -804,21 +835,27 @@ function renderCompletionVerificationQueue(pendingVerifications) {
 
       cardContent = `
         <div style="font-size: 1rem; color: #444; margin-bottom: 10px;">
-          <strong>Volunteer Completion Notes:</strong> "${escapeHTML(req.resolutionNotes || 'Assistance successfully provided.')}"
+          <strong>Volunteer Completion Notes:</strong> "${escapeHTML(req.resolutionNotes || 'Task completed & store receipt uploaded.')}"
         </div>
         ${proofHtml}
-        <div class="approval-actions" style="display: flex; gap: 12px; margin-top: 1rem;">
+        <div style="margin-top: 14px; padding: 14px 16px; background: #f1f8e9; border: 2px solid #a5d6a7; border-left: 5px solid #2e7d32; border-radius: 10px; margin-bottom: 12px;">
+          <div style="font-size: 1rem; font-weight: 700; color: #1b5e20; margin-bottom: 4px;">
+            💰 Service Charge to Release: <strong style="font-size: 1.2rem;">₹${resolvedFee > 0 ? resolvedFee : 0}</strong>
+          </div>
+          <div style="font-size: 0.88rem; color: #388e3c;">After verifying the receipt, you will release the volunteer's agreed service charge. You can optionally give a tip after rating.</div>
+        </div>
+        <div class="approval-actions" style="display: flex; gap: 12px; margin-top: 1rem; flex-wrap: wrap;">
           <button
             class="btn btn-approve"
             onclick="verifyTaskCompletion('${req._id}', true)"
-            style="background-color: #2e7d32; flex: 1; padding: 12px; font-size: 1.05rem;"
+            style="background-color: #2e7d32; flex: 1; padding: 14px; font-size: 1.05rem; font-weight: 700; min-width: 220px;"
           >
-            💳 Verify Proof &amp; Proceed to Payment
+            ✅ Verify Receipt &amp; Release Service Charge (₹${resolvedFee > 0 ? resolvedFee : 0})
           </button>
           <button
             class="btn btn-reject"
             onclick="verifyTaskCompletion('${req._id}', false)"
-            style="background-color: #c62828; color: #ffffff !important; flex: 1; padding: 12px; font-size: 1.05rem; font-weight: 700;"
+            style="background-color: #c62828; color: #ffffff !important; flex: 1; padding: 14px; font-size: 1.05rem; font-weight: 700; min-width: 160px;"
           >
             ❌ Reject / Report Issue
           </button>
@@ -853,7 +890,7 @@ function renderCompletionVerificationQueue(pendingVerifications) {
 
 let currentFeedbackRequestId = null;
 
-// Verification action endpoint for family caregivers
+// Step 5: Caregiver verifies final receipt & releases volunteer service charge
 async function verifyTaskCompletion(requestId, approved) {
   if (approved) {
     try {
@@ -861,13 +898,18 @@ async function verifyTaskCompletion(requestId, approved) {
         approved: true
       });
       if (res.ok && res.data.success) {
-        showToast('✅ Store receipt verified & service charge released!', 'success');
+        showToast('✅ Receipt verified & service charge released!', 'success');
         currentFeedbackRequestId = requestId;
         let volName = 'Assigned Volunteer';
-        if (res.data.request && res.data.request.volunteer) {
-          volName = typeof res.data.request.volunteer === 'object' ? res.data.request.volunteer.name : 'Assigned Volunteer';
+        let serviceFee = 0;
+        if (res.data.request) {
+          if (res.data.request.volunteer) {
+            volName = typeof res.data.request.volunteer === 'object' ? res.data.request.volunteer.name : 'Assigned Volunteer';
+          }
+          serviceFee = Number(res.data.request.serviceFee || 0);
         }
-        promptForVolunteerTip(requestId, volName, { actionType: 'direct' });
+        // Step 5a: Open TIP modal first. After tip decision → feedback modal.
+        promptForVolunteerTip(requestId, volName, { serviceFee, itemsCost: 0, actionType: 'direct' });
       } else {
         alert(res.data?.message || 'Error verifying completion receipt');
       }
@@ -878,7 +920,7 @@ async function verifyTaskCompletion(requestId, approved) {
     return;
   }
 
-  const reason = prompt("Please enter the reason for rejecting or reporting an issue with this completion:") || 'Rejected by family caregiver';
+  const reason = prompt('Please enter the reason for rejecting or reporting an issue with this completion:') || 'Rejected by family caregiver';
 
   const res = await apiCall(`/requests/${requestId}/verify-completion-family`, 'PUT', {
     approved: false,
@@ -886,7 +928,7 @@ async function verifyTaskCompletion(requestId, approved) {
   });
 
   if (res.ok && res.data.success) {
-    showToast('Task completion marked as rejected.', 'error');
+    showToast('Receipt rejected. Volunteer notified to re-upload.', 'error');
     loadFamilyDashboard();
   } else {
     showToast(res.data?.message || 'Error updating completion verification.', 'error');
@@ -964,27 +1006,39 @@ window.confirmTipAndRedirect = function() {
   const inputEl = document.getElementById('customTipInput');
   const tipAmount = Math.max(1, Number(inputEl ? inputEl.value : 50) || 50);
 
-  const { requestId, itemsCost, serviceFee } = pendingTipContext;
-  window.location.href = `/payment.html?requestId=${requestId}&type=tip&tipAmount=${tipAmount}&itemsCost=${itemsCost || 0}&serviceFee=${serviceFee || 0}`;
+  // Store the tip amount in context so feedback modal can redirect to payment after rating
+  pendingTipContext.tipAmount = tipAmount;
+
+  // Show feedback/rating modal AFTER tip is chosen (once at the end)
+  openFeedbackModal(pendingTipContext.volName);
 };
 
 window.skipTipAndAskRatings = function() {
   const modal = document.getElementById('askTipModal');
   if (modal) modal.style.display = 'none';
 
-  if (!pendingTipContext) return;
-
-  if (pendingTipContext.actionType === 'purchase') {
-    const { requestId, itemsCost, serviceFee } = pendingTipContext;
-    window.location.href = `/payment.html?requestId=${requestId}&type=purchase&itemsCost=${itemsCost || 0}&serviceFee=${serviceFee || 0}`;
-  } else {
+  // No tip chosen — clear tipAmount, then show feedback/rating modal (once at the end)
+  if (pendingTipContext) {
+    pendingTipContext.tipAmount = 0;
     openFeedbackModal(pendingTipContext.volName);
+  } else {
+    loadFamilyDashboard();
   }
 };
 
 window.skipFeedbackAndGoHome = function() {
   const modal = document.getElementById('feedbackModal');
   if (modal) modal.style.display = 'none';
+
+  // After feedback, if caregiver chose a tip → redirect to payment page now
+  if (pendingTipContext && pendingTipContext.tipAmount > 0) {
+    const { requestId, tipAmount, itemsCost, serviceFee } = pendingTipContext;
+    pendingTipContext = null;
+    window.location.href = `/payment.html?requestId=${requestId}&type=tip&tipAmount=${tipAmount}&itemsCost=${itemsCost || 0}&serviceFee=${serviceFee || 0}`;
+    return;
+  }
+
+  pendingTipContext = null;
   loadFamilyDashboard();
 };
 
@@ -1205,7 +1259,8 @@ window.directReleaseServiceCharge = async function(requestId, feeAmount, volName
       if (res.data.request && res.data.request.volunteer) {
         resolvedVolName = typeof res.data.request.volunteer === 'object' ? res.data.request.volunteer.name : resolvedVolName;
       }
-      promptForVolunteerTip(requestId, resolvedVolName, { serviceFee: feeAmount, actionType: 'direct' });
+      // Open TIP modal first. After tip decision → feedback modal (once at end).
+      promptForVolunteerTip(requestId, resolvedVolName, { serviceFee: feeAmount, itemsCost: 0, actionType: 'direct' });
     } else {
       alert(res.data?.message || 'Error releasing service charge');
     }
@@ -1215,17 +1270,35 @@ window.directReleaseServiceCharge = async function(requestId, feeAmount, volName
   }
 };
 
-// Step 6-7: Caregiver proceeds to payment page for purchase cost + service charge approval
+// Zero-cost purchase task: just call approve-purchase-funding API to mark as funded
+window.directApprovePurchaseFunding = async function(requestId, serviceFee, volName) {
+  try {
+    const res = await apiCall(`/requests/${requestId}/approve-purchase-funding`, 'PUT', {
+      paymentMethod: 'Escrow Release',
+      transactionId: `TXN${Math.floor(10000000 + Math.random() * 90000000)}`
+    });
+    if (res.ok && res.data.success) {
+      showToast('✅ Purchase approved! Volunteer can now complete the task.', 'success');
+      loadFamilyDashboard();
+    } else {
+      alert(res.data?.message || 'Error approving purchase funding');
+    }
+  } catch (e) {
+    console.error(e);
+    alert('Network error approving purchase funding');
+  }
+};
+
+// Step 2: Caregiver approves payment for actual purchase cost → sends to payment page
+// Payment page charges: purchase amount + service fee only. No tip at this stage.
 function approvePurchaseFunding(requestId, amount, serviceFee, volName) {
   if (Number(amount || 0) === 0) {
-    directReleaseServiceCharge(requestId, serviceFee, volName);
+    // If purchase cost is zero, just approve-purchase-funding on backend and move forward
+    directApprovePurchaseFunding(requestId, serviceFee, volName);
     return;
   }
-  promptForVolunteerTip(requestId, volName || 'Assigned Volunteer', {
-    itemsCost: amount,
-    serviceFee: serviceFee,
-    actionType: 'purchase'
-  });
+  // Redirect to payment page with purchase amount + service fee. Tip NOT included here.
+  window.location.href = `/payment.html?requestId=${requestId}&type=purchase&itemsCost=${amount}&serviceFee=${serviceFee || 0}`;
 }
 
 // Open Custom Modal Tab for Requesting Purchase Cost Revision & Sending Bargain Note
