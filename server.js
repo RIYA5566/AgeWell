@@ -29,10 +29,11 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // API Routes
-app.use('/api/auth',    require('./routes/authRoutes'));
-app.use('/api/requests', require('./routes/requestRoutes'));
-app.use('/api/admin',   require('./routes/adminRoutes'));
-app.use('/api/family',  require('./routes/familyRoutes'));
+app.use('/api/auth',      require('./routes/authRoutes'));
+app.use('/api/requests',  require('./routes/requestRoutes'));
+app.use('/api/admin',     require('./routes/adminRoutes'));
+app.use('/api/family',    require('./routes/familyRoutes'));
+app.use('/api/volunteer', require('./routes/volunteerRoutes'));
 
 // Fallback: Send static frontend HTML for any non-API routes (SPA routing style if users manually type links)
 app.get('*', (req, res, next) => {

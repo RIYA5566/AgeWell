@@ -101,11 +101,19 @@ const userSchema = new mongoose.Schema({
     default: ''
   },
 
+  // ─── Language Preference ──────────────────────────────────────────────────
+  language: {
+    type: String,
+    enum: ['en', 'hi', 'mr'],
+    default: 'en'
+  },
+
   createdAt: {
     type: Date,
     default: Date.now
   }
 });
+
 
 // ─── Hash password before saving ──────────────────────────────────────────
 userSchema.pre('save', async function (next) {

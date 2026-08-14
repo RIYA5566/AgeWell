@@ -21,13 +21,14 @@ document.addEventListener('DOMContentLoaded', () => {
     if (navUserName) navUserName.textContent = `Hello, ${user.name} (${user.relationship || 'Caregiver'})`;
 
     const welcomeTitle = document.getElementById('welcomeTitle');
-    if (welcomeTitle) welcomeTitle.textContent = `Welcome, ${user.name}!`;
+    if (welcomeTitle) welcomeTitle.textContent = t('fd_welcome', { name: user.name });
 
     const welcomeSubtitle = document.getElementById('welcomeSubtitle');
     if (welcomeSubtitle && user.relationship) {
       welcomeSubtitle.textContent = `You are managing care as the ${user.relationship}. Review and approve volunteers below.`;
     }
   }
+
 
   // Logout
   const btnLogout = document.getElementById('btnLogout');

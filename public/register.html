@@ -5,6 +5,29 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Register - AgeWell Senior Assistance Platform</title>
   <link rel="stylesheet" href="/css/style.css">
+  <script src="/js/i18n.js"></script>
+  <style>
+    .lang-choice {
+      flex: 1;
+      min-width: 110px;
+      border: 3px solid var(--color-primary-light);
+      border-radius: var(--border-radius);
+      padding: 12px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: var(--color-white);
+      font-weight: bold;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+    .lang-choice.selected {
+      border-color: var(--color-primary-dark);
+      background-color: var(--color-bg-light);
+    }
+  </style>
 </head>
 <body>
   <!-- Accessibility Skip-Link -->
@@ -33,8 +56,8 @@
   <main id="mainContent">
     <div class="auth-container" style="max-width: 700px;">
       <div class="auth-header">
-        <h1>Create your AgeWell Account</h1>
-        <p>Register as a Senior Citizen to request assistance, or join as a Volunteer to offer support.</p>
+        <h1 data-i18n="reg_title">Create your AgeWell Account</h1>
+        <p data-i18n="reg_subtitle">Register as a Senior Citizen to request assistance, or join as a Volunteer to offer support.</p>
       </div>
 
       <!-- User Alert Area -->
@@ -44,70 +67,96 @@
       <form id="registerForm" novalidate>
         <!-- Step 1: Select User Role -->
         <fieldset style="border: none; margin-bottom: 2rem;">
-          <legend style="font-weight: 700; color: var(--color-primary-dark); margin-bottom: 0.8rem; font-size: 1.2rem;">
+          <legend style="font-weight: 700; color: var(--color-primary-dark); margin-bottom: 0.8rem; font-size: 1.2rem;" data-i18n="label_role">
             Choose your Role:
           </legend>
           <div class="role-options">
             <label class="role-card selected">
               <input type="radio" name="role" value="senior" checked aria-label="Register as Senior Citizen">
               <div style="font-size: 2.2rem; margin-bottom: 8px;">👵👴</div>
-              <strong>Senior Citizen</strong>
-              <p style="font-size: 0.9rem; margin-top: 4px; color: #555;">I need help with daily tasks.</p>
+              <strong data-i18n="role_senior">Senior Citizen</strong>
+              <p style="font-size: 0.9rem; margin-top: 4px; color: #555;" data-i18n="role_senior_desc">I need help with daily tasks.</p>
             </label>
             
             <label class="role-card">
               <input type="radio" name="role" value="volunteer" aria-label="Register as Volunteer">
               <div style="font-size: 2.2rem; margin-bottom: 8px;">🤝</div>
-              <strong>Volunteer</strong>
-              <p style="font-size: 0.9rem; margin-top: 4px; color: #555;">I want to help seniors in my area.</p>
+              <strong data-i18n="role_volunteer">Volunteer</strong>
+              <p style="font-size: 0.9rem; margin-top: 4px; color: #555;" data-i18n="role_volunteer_desc">I want to help seniors in my area.</p>
             </label>
 
             <label class="role-card">
               <input type="radio" name="role" value="family" aria-label="Register as Family/Caregiver">
               <div style="font-size: 2.2rem; margin-bottom: 8px;">❤️</div>
-              <strong>Family / Caregiver</strong>
-              <p style="font-size: 0.9rem; margin-top: 4px; color: #555;">I look after a senior and approve their helpers.</p>
+              <strong data-i18n="role_family">Family / Caregiver</strong>
+              <p style="font-size: 0.9rem; margin-top: 4px; color: #555;" data-i18n="role_family_desc">I look after a senior and approve their helpers.</p>
             </label>
           </div>
         </fieldset>
 
+
+        <!-- Step 1.5: Preferred Language Selector -->
+        <div class="form-group" style="margin-bottom: 2rem;">
+          <label style="font-weight: 700; color: var(--color-primary-dark); margin-bottom: 0.8rem; display: block;" data-i18n="label_language">🌐 Preferred Language / भाषा / भाषा निवडा</label>
+          <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+            <label class="lang-choice selected">
+              <input type="radio" name="language" value="en" checked style="display: none;">
+              <span>English</span>
+            </label>
+            <label class="lang-choice">
+              <input type="radio" name="language" value="hi" style="display: none;">
+              <span>हिंदी</span>
+            </label>
+            <label class="lang-choice">
+              <input type="radio" name="language" value="mr" style="display: none;">
+              <span>मराठी</span>
+            </label>
+
+          </div>
+        </div>
+
         <!-- Step 2: Shared Details -->
         <div class="form-group">
-          <label for="name">Full Name</label>
-          <input type="text" id="name" name="name" class="form-input" placeholder="Enter your full name" required>
+          <label for="name" data-i18n="label_name">Full Name</label>
+
+          <input type="text" id="name" name="name" class="form-input" placeholder="Enter your full name" data-i18n="placeholder_name" required>
+
         </div>
 
         <div class="form-group">
-          <label for="email">Email Address</label>
-          <input type="email" id="email" name="email" class="form-input" placeholder="example@email.com" required autocomplete="email">
+          <label for="email" data-i18n="label_email">Email Address</label>
+          <input type="email" id="email" name="email" class="form-input" placeholder="example@email.com" required autocomplete="email" data-i18n="label_email">
         </div>
 
         <div class="form-group">
-          <label for="password">Password (Minimum 6 characters)</label>
-          <input type="password" id="password" name="password" class="form-input" placeholder="Choose a secure password" required minlength="6">
+          <label for="password" data-i18n="label_password">Password (Minimum 6 characters)</label>
+          <input type="password" id="password" name="password" class="form-input" placeholder="Choose a secure password" required minlength="6" data-i18n="label_password">
         </div>
 
         <div class="form-group">
-          <label for="phone">Phone Number</label>
-          <input type="tel" id="phone" name="phone" class="form-input" placeholder="Enter your phone number" required autocomplete="tel">
+          <label for="phone" data-i18n="label_phone">Phone Number</label>
+          <input type="tel" id="phone" name="phone" class="form-input" placeholder="Enter your phone number" required autocomplete="tel" data-i18n="label_phone">
         </div>
 
         <div class="form-group">
-          <label for="address">Home Address</label>
-          <input type="text" id="address" name="address" class="form-input" placeholder="Enter your full address" required>
+          <label for="address" data-i18n="label_address">Home Address</label>
+          <input type="text" id="address" name="address" class="form-input" placeholder="Enter your full address" required data-i18n="label_address">
         </div>
+
 
         <!-- Role Specific Fields: Senior Citizen -->
         <div id="seniorFields" class="form-group">
-          <label for="emergencyContact">Emergency Contact Details (Name & Phone Number)</label>
+          <label for="emergencyContact" data-i18n="label_emergency_contact">Emergency Contact Details (Name & Phone Number)</label>
           <input 
             type="text" 
             id="emergencyContact" 
             name="emergencyContact" 
             class="form-input" 
             placeholder="e.g. Son: John Doe - 555-0199" 
+            data-i18n="placeholder_emergency_contact"
             required
           >
+
         </div>
 
         <!-- Role Specific Fields: Volunteer -->
@@ -236,17 +285,18 @@
           </fieldset>
         </div>
 
-        <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1.5rem;">
+        <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1.5rem;" data-i18n="btn_register">
           ✍️ Complete Registration
         </button>
       </form>
-
+ 
       <div style="text-align: center; margin-top: 2rem; border-top: 2px solid var(--color-primary-light); padding-top: 1.5rem;">
-        <p style="font-weight: 500; margin-bottom: 0.8rem;">Already have an account?</p>
-        <a href="/" class="btn btn-secondary" style="width: 100%;">
+        <p style="font-weight: 500; margin-bottom: 0.8rem;" data-i18n="already_have_account">Already have an account?</p>
+        <a href="/" class="btn btn-secondary" style="width: 100%;" data-i18n="btn_go_login">
           🔑 Go to Login Page
         </a>
       </div>
+
     </div>
   </main>
 

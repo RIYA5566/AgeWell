@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Volunteer Dashboard - AgeWell</title>
   <link rel="stylesheet" href="/css/style.css">
+  <script src="/js/i18n.js"></script>
 </head>
 <body>
   <!-- Accessibility Skip-Link -->
@@ -69,22 +70,107 @@
       </div>
     </div>
 
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!-- EARNINGS WALLET CARD                                               -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <div id="earningsWalletCard" class="dashboard-card" style="
+      margin-bottom: 2rem;
+      background: linear-gradient(135deg, #1b5e20 0%, #2e7d32 50%, #388e3c 100%);
+      border: none;
+      border-radius: 20px;
+      padding: 0;
+      overflow: hidden;
+      box-shadow: 0 8px 32px rgba(27,94,32,0.35);
+      display: none;
+    ">
+      <!-- Top accent bar -->
+      <div style="height: 4px; background: linear-gradient(90deg, #fbc02d, #f9a825, #ffd54f, #ffe082);"></div>
+
+      <div style="padding: 1.6rem 2rem;">
+        <!-- Header row -->
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.2rem; flex-wrap: wrap; gap: 10px;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 1.6rem;">💰</span>
+            <h2 style="margin: 0; color: #ffffff; font-size: 1.3rem; font-weight: 800; letter-spacing: 0.3px;" data-i18n="vd_wallet_title">My Earnings Wallet</h2>
+          </div>
+          <span id="walletLastUpdated" style="font-size: 0.8rem; color: rgba(255,255,255,0.6); font-style: italic;">Updating...</span>
+        </div>
+
+        <!-- Three big stat boxes -->
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 1.4rem;">
+          <!-- Total Earned -->
+          <div style="background: rgba(255,255,255,0.12); border-radius: 14px; padding: 1rem 0.8rem; text-align: center; border: 1px solid rgba(255,255,255,0.15); backdrop-filter: blur(4px);">
+            <div id="walletTotalEarned" style="font-size: 1.8rem; font-weight: 900; color: #ffd54f; letter-spacing: -0.5px; line-height: 1;">₹0</div>
+            <div style="font-size: 0.75rem; color: rgba(255,255,255,0.75); margin-top: 4px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;" data-i18n="vd_wallet_total">Total Earned</div>
+          </div>
+          <!-- Available -->
+          <div style="background: rgba(255,255,255,0.18); border-radius: 14px; padding: 1rem 0.8rem; text-align: center; border: 1px solid rgba(255,255,255,0.25); backdrop-filter: blur(4px);">
+            <div id="walletAvailable" style="font-size: 1.8rem; font-weight: 900; color: #ffffff; letter-spacing: -0.5px; line-height: 1;">₹0</div>
+            <div style="font-size: 0.75rem; color: rgba(255,255,255,0.75); margin-top: 4px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;" data-i18n="vd_wallet_available">Available</div>
+          </div>
+          <!-- Pending -->
+          <div style="background: rgba(255,255,255,0.09); border-radius: 14px; padding: 1rem 0.8rem; text-align: center; border: 1px solid rgba(255,255,255,0.12); backdrop-filter: blur(4px);">
+            <div id="walletPending" style="font-size: 1.8rem; font-weight: 900; color: #ffe082; letter-spacing: -0.5px; line-height: 1;">₹0</div>
+            <div style="font-size: 0.75rem; color: rgba(255,255,255,0.75); margin-top: 4px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;" data-i18n="vd_wallet_pending">Pending</div>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+          <button id="btnViewEarnings" onclick="openEarningsModal()" style="
+            flex: 1; min-width: 130px;
+            padding: 12px 16px;
+            background: rgba(255,255,255,0.2);
+            border: 1.5px solid rgba(255,255,255,0.4);
+            color: #ffffff;
+            font-size: 0.95rem;
+            font-weight: 700;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex; align-items: center; justify-content: center; gap: 6px;
+          "
+          onmouseover="this.style.background='rgba(255,255,255,0.28)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
+            <span data-i18n="vd_view_earnings">📊 View Earnings</span>
+          </button>
+          <button id="btnWithdrawEarnings" onclick="openWithdrawPanel()" style="
+            flex: 1; min-width: 130px;
+            padding: 12px 16px;
+            background: linear-gradient(135deg, #fbc02d 0%, #f9a825 100%);
+            border: none;
+            color: #1b5e20;
+            font-size: 0.95rem;
+            font-weight: 800;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex; align-items: center; justify-content: center; gap: 6px;
+            box-shadow: 0 3px 12px rgba(251,192,45,0.4);
+          "
+          onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
+            <span data-i18n="vd_withdraw">🏦 Withdraw</span>
+          </button>
+        </div>
+
+      </div>
+    </div>
+
     <!-- Volunteer KYC & Verification Status Card -->
     <div id="kycStatusCard" class="dashboard-card" style="margin-bottom: 2rem; border-color: #2e7d32; background: #f1f8e9;">
       <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
         <div>
-          <h2 style="color: #1b5e20; margin-bottom: 4px; display: flex; align-items: center; gap: 8px;">
+          <h2 style="color: #1b5e20; margin-bottom: 4px; display: flex; align-items: center; gap: 8px;" data-i18n="vd_kyc_card_title">
             🛡️ Multi-Level Trust &amp; Verification Status
           </h2>
-          <p id="kycStatusSubtitle" style="font-size: 1rem; color: #33691e; margin-bottom: 4px;">
+          <p id="kycStatusSubtitle" style="font-size: 1rem; color: #33691e; margin-bottom: 4px;" data-i18n="vd_kyc_card_subtitle">
             Required verification levels before accepting requests to visit senior citizens.
           </p>
         </div>
         <button id="btnOpenKycModal" class="btn btn-primary" style="display: none; background-color: #2e7d32; font-size: 0.95rem; padding: 10px 18px;">
-          📤 Submit KYC Documents
+          <span data-i18n="vd_btn_kyc_submit">📤 Submit KYC Documents</span>
         </button>
       </div>
-
+ 
       <!-- Trust Badges -->
       <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 1rem;" id="kycBadgesContainer">
         <span id="badgeGovtId" class="skill-tag" style="background: #fff3e0; color: #e65100; border: 1px solid #ffe082; font-weight: bold; font-size: 0.9rem; padding: 6px 14px;">
@@ -100,46 +186,46 @@
           👮 Police Check: Pending Admin Review
         </span>
       </div>
-
+ 
       <!-- Status Banner Alert Message -->
       <div id="kycAlertBanner" style="margin-top: 1rem; padding: 1rem; border-radius: 8px; background: #ffffff; border-left: 5px solid #2e7d32; font-size: 0.98rem; color: #333;">
         Loading verification status...
       </div>
     </div>
-
+ 
     <div class="dashboard-grid volunteer-grid" id="volunteerTaskGrid" style="display: none;">
       <!-- Section 1: Awaiting Family Approval -->
       <div class="dashboard-card" style="margin-bottom: 2rem; border-color: #f57f17;">
-        <h2 style="color: #e65100;">⏳ Awaiting Family Approval</h2>
-        <p style="font-size: 1rem; color: #666; margin-bottom: 1rem;">
+        <h2 style="color: #e65100;" data-i18n="vd_status_awaiting_approval">⏳ Awaiting Family Approval</h2>
+        <p style="font-size: 1rem; color: #666; margin-bottom: 1rem;" data-i18n="vd_status_awaiting_approval_desc">
           You have accepted these requests. The senior's family/caregiver is reviewing your profile before you can proceed.
         </p>
         <div id="awaitingList" class="request-list">
           <!-- Populated dynamically via JS -->
         </div>
       </div>
-
+ 
       <!-- Section 2: Active Commitments -->
       <div class="dashboard-card" style="margin-bottom: 2rem; border-color: var(--color-primary);">
-        <h2 style="color: var(--color-primary-dark);">
+        <h2 style="color: var(--color-primary-dark);" data-i18n="vd_status_active">
           🤝 My Active Commitments (Tasks in Progress)
         </h2>
         <div id="activeList" class="request-list">
           <!-- Populated dynamically via JS -->
         </div>
       </div>
-
+ 
       <!-- Section 3: Available Help Requests -->
       <div class="dashboard-card" style="margin-bottom: 2rem;">
-        <h2>🔍 Help Requests Seeking Volunteers</h2>
+        <h2 data-i18n="vd_status_seeking">🔍 Help Requests Seeking Volunteers</h2>
         <div id="pendingList" class="request-list">
           <!-- Populated dynamically via JS -->
         </div>
       </div>
-
+ 
       <!-- Section 4: Task Assignment Notifications -->
       <div id="notificationsCard" class="dashboard-card" style="margin-bottom: 2rem; border-color: #0288d1; display: none; background: #f0f4c3;">
-        <h2 style="color: #2e7d32; display: flex; align-items: center; gap: 8px;">📢 Task Assignment Notifications</h2>
+        <h2 style="color: #2e7d32; display: flex; align-items: center; gap: 8px;" data-i18n="vd_status_notifications">📢 Task Assignment Notifications</h2>
         <p style="font-size: 0.98rem; color: #33691e; margin-bottom: 1rem;">
           Updates regarding help requests where you submitted a quote:
         </p>
@@ -147,18 +233,147 @@
           <!-- Populated dynamically via JS -->
         </div>
       </div>
-
+ 
       <!-- Section 5: History -->
       <div class="dashboard-card">
-        <h2>📜 My Service History (Completed Tasks)</h2>
+        <h2 data-i18n="vd_status_history">📜 My Service History (Completed Tasks)</h2>
         <div id="historyList" class="request-list">
           <!-- Populated dynamically via JS -->
         </div>
       </div>
     </div>
 
+
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!-- EARNINGS HISTORY MODAL                                             -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <div id="earningsModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="earningsModalTitle" style="display: none;">
+      <!--
+        Fix: modal-content keeps its CSS overflow-y:auto (max-height:90vh).
+        We do NOT set overflow:hidden on it — that was clipping inner tab pane scrollbars.
+        The rounded top corners are handled by border-radius on the header div itself.
+      -->
+      <div class="modal-content" style="max-width: 680px; padding: 0; border-radius: 20px; overflow-y: auto;">
+
+        <!-- Sticky top block: header + summary strip + tabs (never scrolls) -->
+        <div style="position: sticky; top: 0; z-index: 10; background: #fff; border-radius: 20px 20px 0 0; overflow: hidden;">
+
+          <!-- Modal Header -->
+          <div style="background: linear-gradient(135deg, #1b5e20, #2e7d32); padding: 1.4rem 1.8rem; display: flex; align-items: center; justify-content: space-between;">
+            <h3 id="earningsModalTitle" style="margin: 0; color: #ffffff; font-size: 1.3rem; font-weight: 800; display: flex; align-items: center; gap: 8px;">💰 Earnings History</h3>
+            <button onclick="closeEarningsModal()" class="modal-close" style="color: #ffffff; font-size: 1.8rem; border: none; background: none; cursor: pointer; line-height: 1;" aria-label="Close">&times;</button>
+          </div>
+
+          <!-- Wallet Summary Strip -->
+          <div id="earningsModalSummaryStrip" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; background: #e8f5e9; border-bottom: 2px solid #a5d6a7;">
+            <div style="padding: 1rem; text-align: center; border-right: 1px solid #c8e6c9;">
+              <div id="modalTotalEarned" style="font-size: 1.5rem; font-weight: 900; color: #1b5e20;">₹0</div>
+              <div style="font-size: 0.75rem; color: #33691e; font-weight: 600; text-transform: uppercase; margin-top: 2px;">Total Earned</div>
+            </div>
+            <div style="padding: 1rem; text-align: center; border-right: 1px solid #c8e6c9;">
+              <div id="modalAvailable" style="font-size: 1.5rem; font-weight: 900; color: #2e7d32;">₹0</div>
+              <div style="font-size: 0.75rem; color: #33691e; font-weight: 600; text-transform: uppercase; margin-top: 2px;">Available</div>
+            </div>
+            <div style="padding: 1rem; text-align: center;">
+              <div id="modalPending" style="font-size: 1.5rem; font-weight: 900; color: #f57f17;">₹0</div>
+              <div style="font-size: 0.75rem; color: #33691e; font-weight: 600; text-transform: uppercase; margin-top: 2px;">Pending</div>
+            </div>
+          </div>
+
+          <!-- Tab Navigation -->
+          <div style="display: flex; border-bottom: 2px solid #e8f5e9; background: #ffffff;">
+            <button id="tabTransactions" onclick="switchEarningsTab('transactions')" style="flex: 1; padding: 12px; font-size: 0.95rem; font-weight: 700; border: none; background: none; color: #2e7d32; border-bottom: 3px solid #2e7d32; cursor: pointer;">📋 Transactions</button>
+            <button id="tabMonthly" onclick="switchEarningsTab('monthly')" style="flex: 1; padding: 12px; font-size: 0.95rem; font-weight: 700; border: none; background: none; color: #888; border-bottom: 3px solid transparent; cursor: pointer;">📅 This Month</button>
+            <button id="tabWithdraw" onclick="switchEarningsTab('withdraw')" style="flex: 1; padding: 12px; font-size: 0.95rem; font-weight: 700; border: none; background: none; color: #888; border-bottom: 3px solid transparent; cursor: pointer;">🏦 Withdraw</button>
+          </div>
+
+        </div><!-- end sticky top block -->
+
+        <!-- Tab: Transactions -->
+        <div id="tabPaneTransactions" style="overflow-y: auto; padding: 1rem 1.4rem; min-height: 180px;">
+          <div id="transactionsList" style="display: flex; flex-direction: column; gap: 10px;">
+            <!-- Populated by JS -->
+          </div>
+          <div id="noTransactionsMsg" style="display: none; text-align: center; padding: 2.5rem; color: #888;">
+            <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">📭</div>
+            <p style="font-weight: 600;">No earnings yet. Complete tasks to start earning!</p>
+          </div>
+        </div>
+
+        <!-- Tab: This Month -->
+        <div id="tabPaneMonthly" style="display: none; padding: 1.4rem; min-height: 180px; overflow-y: auto;">
+          <div id="monthlyStatsContainer" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 1.2rem;">
+            <div style="background: #f1f8e9; border: 2px solid #a5d6a7; border-radius: 14px; padding: 1.2rem; text-align: center;">
+              <div id="monthlyTasksCompleted" style="font-size: 2rem; font-weight: 900; color: #1b5e20;">0</div>
+              <div style="font-size: 0.78rem; color: #33691e; font-weight: 600; margin-top: 4px;">Tasks Completed</div>
+            </div>
+            <div style="background: #f1f8e9; border: 2px solid #a5d6a7; border-radius: 14px; padding: 1.2rem; text-align: center;">
+              <div id="monthlyTotalEarned" style="font-size: 2rem; font-weight: 900; color: #1b5e20;">₹0</div>
+              <div style="font-size: 0.78rem; color: #33691e; font-weight: 600; margin-top: 4px;">Total Earned</div>
+            </div>
+            <div style="background: #f1f8e9; border: 2px solid #a5d6a7; border-radius: 14px; padding: 1.2rem; text-align: center;">
+              <div id="monthlyAvgPerTask" style="font-size: 2rem; font-weight: 900; color: #1b5e20;">₹0</div>
+              <div style="font-size: 0.78rem; color: #33691e; font-weight: 600; margin-top: 4px;">Avg / Task</div>
+            </div>
+          </div>
+          <p id="monthlyPeriodLabel" style="text-align: center; color: #555; font-size: 0.9rem; font-weight: 600; margin: 0;">August 2026</p>
+        </div>
+
+        <!-- Tab: Withdraw -->
+        <div id="tabPaneWithdraw" style="display: none; padding: 1.6rem; min-height: 180px; overflow-y: auto;">
+
+          <!-- Normal withdraw state -->
+          <div id="withdrawNormalState">
+            <div style="background: #f1f8e9; border: 2px solid #a5d6a7; border-radius: 14px; padding: 1.4rem; text-align: center; margin-bottom: 1.2rem;">
+              <div style="font-size: 0.9rem; color: #555; font-weight: 600; margin-bottom: 4px;">Available Balance</div>
+              <div id="withdrawAvailableAmount" style="font-size: 2.4rem; font-weight: 900; color: #1b5e20;">₹0</div>
+            </div>
+            <div style="background: #fff8e1; border: 1.5px solid #ffe082; border-radius: 10px; padding: 1rem 1.2rem; margin-bottom: 1.2rem; display: flex; align-items: center; gap: 12px;">
+              <span style="font-size: 1.4rem;">🏦</span>
+              <div>
+                <div style="font-size: 0.8rem; color: #888; font-weight: 600;">Bank Account (Simulated)</div>
+                <div style="font-size: 1.1rem; font-weight: 800; color: #333; letter-spacing: 2px;">XXXX XXXX 4821</div>
+              </div>
+            </div>
+            <p style="font-size: 0.85rem; color: #888; text-align: center; margin-bottom: 1rem;">⚡ Estimated arrival: 2–3 business days</p>
+            <button id="btnConfirmWithdraw" onclick="confirmWithdrawal()" style="
+              width: 100%; padding: 14px; font-size: 1.05rem; font-weight: 800;
+              background: linear-gradient(135deg, #1b5e20, #2e7d32);
+              color: #ffffff; border: none; border-radius: 14px; cursor: pointer;
+              transition: opacity 0.2s; box-shadow: 0 4px 14px rgba(27,94,32,0.35);
+            "
+            onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
+              🏦 Withdraw ₹0
+            </button>
+          </div>
+
+          <!-- Withdrawal success state -->
+          <div id="withdrawSuccessState" style="display: none; text-align: center;">
+            <div style="font-size: 4rem; margin-bottom: 0.6rem; animation: bounce 0.6s ease;">🎉</div>
+            <h3 style="color: #1b5e20; font-size: 1.4rem; font-weight: 800; margin-bottom: 0.4rem;">Withdrawal Successful!</h3>
+            <div style="background: #f1f8e9; border: 2px dashed #a5d6a7; border-radius: 14px; padding: 1.4rem; margin: 1rem 0;">
+              <div style="font-size: 0.85rem; color: #555; font-weight: 600; margin-bottom: 4px;">Amount Withdrawn</div>
+              <div id="withdrawSuccessAmount" style="font-size: 2.2rem; font-weight: 900; color: #2e7d32;">₹0</div>
+              <div style="margin-top: 0.8rem; padding-top: 0.8rem; border-top: 1px solid #c8e6c9;">
+                <div style="font-size: 0.8rem; color: #888;">Transaction ID</div>
+                <div id="withdrawSuccessTxId" style="font-size: 1.05rem; font-weight: 800; color: #1b5e20; letter-spacing: 1px; margin-top: 2px;">AW-WD-000000</div>
+              </div>
+            </div>
+            <p style="color: #666; font-size: 0.9rem; margin-bottom: 1.2rem;">Your earnings will reach your bank account in 2–3 business days.</p>
+            <button onclick="closeEarningsModal()" style="
+              padding: 12px 28px; background: #2e7d32; color: #fff;
+              border: none; border-radius: 12px; font-size: 1rem;
+              font-weight: 700; cursor: pointer;
+            ">Done ✓</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
     <!-- Completion Modal -->
     <div id="completionModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+
       <div class="modal-content">
         <div class="modal-header">
           <h3 id="modalTitle">Mark Request as Completed</h3>

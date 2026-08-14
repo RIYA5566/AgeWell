@@ -6,6 +6,7 @@
   <meta name="description" content="AgeWell Family/Caregiver Portal — Review and approve volunteers for your loved one.">
   <title>Family Caregiver Portal - AgeWell</title>
   <link rel="stylesheet" href="/css/style.css">
+  <script src="/js/i18n.js"></script>
   <style>
     /* Family portal specific styles */
     .notification-badge {
@@ -267,8 +268,8 @@
     <div class="dashboard-welcome" style="background: linear-gradient(90deg, #880e4f, #c2185b);">
       <div class="welcome-icon" aria-hidden="true">❤️</div>
       <div>
-        <h1 id="welcomeTitle">Family Caregiver Portal</h1>
-        <p id="welcomeSubtitle">Review and approve volunteers before they assist your loved one.</p>
+        <h1 id="welcomeTitle" data-i18n="fd_portal_title">Family Caregiver Portal</h1>
+        <p id="welcomeSubtitle" data-i18n="fd_welcome_subtitle">Review and approve volunteers before they assist your loved one.</p>
       </div>
     </div>
 
@@ -285,7 +286,7 @@
     <!-- SECTION 1: Senior Help Requests & Fulfillment Decisions -->
     <div class="dashboard-card" style="margin-bottom: 2rem; border-color: #e65100;" id="seniorRequestsSection">
       <h2 style="color: #e65100;">
-        📋 Senior Help Requests &amp; Fulfillment Decisions
+        <span data-i18n="fd_requests_section_title">📋 Senior Help Requests &amp; Fulfillment Decisions</span>
         <span class="notification-badge" id="seniorReqBadge" style="display: none; background-color: #e65100;">0</span>
       </h2>
       <p style="margin-bottom: 1.5rem; color: #555;">
@@ -302,7 +303,7 @@
     <!-- SECTION 2: Volunteer Approvals & Quoted Fees -->
     <div class="dashboard-card" style="margin-bottom: 2rem; border-color: #1565c0;" id="approvalSection">
       <h2 style="color: #1565c0;">
-        ⏳ Volunteer Approvals &amp; Quoted Fees
+        <span data-i18n="fd_volunteer_approvals_title">⏳ Volunteer Approvals &amp; Quoted Fees</span>
         <span class="notification-badge" id="approvalBadge" style="display: none; background-color: #1565c0;">0</span>
       </h2>
       <p style="margin-bottom: 1.5rem; color: #555;">
@@ -325,7 +326,7 @@
     <!-- SECTION 1.5: Completion Verification Queue (Receipt & Delivery Proof) -->
     <div class="dashboard-card" style="margin-bottom: 2rem; border-color: var(--color-primary-dark);" id="completionVerificationSection">
       <h2 style="color: var(--color-primary-dark);">
-        📸 Delivery & Receipt Proof Verifications
+        <span data-i18n="fd_proof_verifications_title">📸 Delivery & Receipt Proof Verifications</span>
         <span class="notification-badge" id="completionBadge" style="display: none; background-color: var(--color-primary-dark);">0</span>
       </h2>
       <p style="margin-bottom: 1.5rem; color: #555;">
@@ -339,7 +340,7 @@
 
     <!-- SECTION 2: All Requests History -->
     <div class="dashboard-card">
-      <h2>📋 All of <span id="seniorNameInline">Your Senior's</span> Help Requests</h2>
+      <h2><span data-i18n="fd_completed_history">📜 Complete Service History</span></h2>
       <p style="margin-bottom: 1.5rem; color: #555;">Full history of requests raised, their current status, and outcomes.</p>
       <div id="allRequestsList" class="request-list">
         <div class="loading-wrapper">
@@ -348,6 +349,7 @@
         </div>
       </div>
     </div>
+
   </main>
 
   <!-- Rejection Modal -->

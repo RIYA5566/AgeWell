@@ -51,10 +51,12 @@ const sendTokenResponse = async (user, statusCode, res) => {
         isPoliceVerified: user.isPoliceVerified,
         verificationStatus: user.verificationStatus,
         verificationRejectionReason: user.verificationRejectionReason,
+        language: user.language || 'en',
         ratingStats
       }
     });
 };
+
 
 // @desc    Register a new user
 // @route   POST /api/auth/register
@@ -74,7 +76,8 @@ exports.registerUser = async (req, res) => {
       relationship,
       aadhaarNumber,
       isPhoneVerified,
-      isEmailVerified
+      isEmailVerified,
+      language
     } = req.body;
 
     // Check if user already exists
@@ -84,7 +87,7 @@ exports.registerUser = async (req, res) => {
     }
 
     // Build user object shared across all roles
-    const userData = { name, email, password, role, phone, address };
+    const userData = { name, email, password, role, phone, address, language: language || 'en' };
 
     if (role === 'senior') {
       if (!emergencyContact) {
@@ -260,6 +263,7 @@ exports.getMe = async (req, res) => {
         isPoliceVerified: user.isPoliceVerified,
         verificationStatus: user.verificationStatus,
         verificationRejectionReason: user.verificationRejectionReason,
+        language: user.language || 'en',
         ratingStats
       }
     });
@@ -284,5 +288,24 @@ exports.getVolunteerStats = async (req, res) => {
   } catch (error) {
     console.error('Get Volunteer Stats Error:', error);
     res.status(500).json({ success: false, message: 'Server error getting volunteer stats' });
+  }
+};
+// @desc    Update language preference
+// @route   PATCH /api/auth/language
+// @access  Private
+exports.updateLanguage = async (req, res) => {
+  try {
+    const { language } = req.body;
+    if (!['en', 'hi', 'mr'].includes(language)) {
+      return res.status(400).json({ success: false, message: 'Invalid language. Use en, hi, or mr.' });
+    }
+    const user = await User.findByIdAndUpdate(
+      req.user.id,
+      { language },
+      { new: true }
+    );
+    res.status(200).json({ success: true, language: user.language });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server error updating language' });
   }
 };

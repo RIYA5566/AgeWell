@@ -33,8 +33,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   currentVolunteerUser = JSON.parse(localStorage.getItem('user'));
   const welcomeTitle = document.getElementById('welcomeTitle');
   if (welcomeTitle && currentVolunteerUser) {
-    welcomeTitle.textContent = `Welcome, ${currentVolunteerUser.name}!`;
+    welcomeTitle.textContent = t('vd_welcome', { name: currentVolunteerUser.name });
   }
+
 
   // Render initial status from localStorage immediately
   if (currentVolunteerUser) {
@@ -58,10 +59,18 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Load requests
   loadVolunteerRequests();
 
+  // Load earnings wallet
+  loadVolunteerEarnings();
+
   // Auto-refresh requests every 15 seconds so new requests pop up live
   setInterval(() => {
     loadVolunteerRequests(true);
   }, 15000);
+
+  // Auto-refresh earnings every 60 seconds
+  setInterval(() => {
+    loadVolunteerEarnings(true);
+  }, 60000);
 
   // --- KYC Modal Logic ---
   const kycModal = document.getElementById('kycModal');
@@ -1421,4 +1430,266 @@ function showTipEarnedModal(taskTitle, tipAmount, serviceFee) {
 function closeTipEarnedModal() {
   const modal = document.getElementById('tipEarnedModal');
   if (modal) modal.style.display = 'none';
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// VOLUNTEER EARNINGS WALLET
+// ───────────────────────────────────────────────────────────────────────────
+
+// Cached earnings data
+let _earningsData = null;
+
+// Animate a number counting up from 0 to target
+function animateCounter(el, target, prefix = '₹', duration = 700) {
+  if (!el) return;
+  const start = 0;
+  const startTime = performance.now();
+  function step(now) {
+    const elapsed = now - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    // Ease-out cubic
+    const eased = 1 - Math.pow(1 - progress, 3);
+    const current = Math.round(start + (target - start) * eased);
+    el.textContent = `${prefix}${current.toLocaleString('en-IN')}`;
+    if (progress < 1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
+// Load earnings from API and render wallet card
+async function loadVolunteerEarnings(silent = false) {
+  try {
+    const res = await apiCall('/volunteer/earnings', 'GET');
+    if (!res.ok || !res.data.success) {
+      console.warn('Could not load earnings:', res.data?.message);
+      return;
+    }
+
+    _earningsData = res.data;
+    const { wallet, monthly, transactions } = res.data;
+
+    // Show the wallet card
+    const card = document.getElementById('earningsWalletCard');
+    if (card) card.style.display = 'block';
+
+    // Update wallet numbers with animation (silent = no animation on background refresh)
+    const totalEl = document.getElementById('walletTotalEarned');
+    const availEl = document.getElementById('walletAvailable');
+    const pendEl  = document.getElementById('walletPending');
+
+    if (silent) {
+      // Silent refresh: just update text without animation
+      if (totalEl) totalEl.textContent = `₹${wallet.totalEarned.toLocaleString('en-IN')}`;
+      if (availEl) availEl.textContent = `₹${wallet.available.toLocaleString('en-IN')}`;
+      if (pendEl)  pendEl.textContent  = `₹${wallet.pending.toLocaleString('en-IN')}`;
+    } else {
+      animateCounter(totalEl, wallet.totalEarned);
+      animateCounter(availEl, wallet.available);
+      animateCounter(pendEl,  wallet.pending);
+    }
+
+    // Update withdraw button label
+    const withdrawBtn = document.getElementById('btnConfirmWithdraw');
+    if (withdrawBtn) withdrawBtn.textContent = `🏦 Withdraw ₹${wallet.available.toLocaleString('en-IN')}`;
+
+    const withdrawAvailEl = document.getElementById('withdrawAvailableAmount');
+    if (withdrawAvailEl) withdrawAvailEl.textContent = `₹${wallet.available.toLocaleString('en-IN')}`;
+
+    // Update timestamp
+    const lastUpdated = document.getElementById('walletLastUpdated');
+    if (lastUpdated) {
+      const now = new Date();
+      lastUpdated.textContent = `Updated ${now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}`;
+    }
+
+  } catch (err) {
+    console.error('loadVolunteerEarnings error:', err);
+  }
+}
+
+// Open earnings history modal
+function openEarningsModal() {
+  const modal = document.getElementById('earningsModal');
+  if (!modal) return;
+  modal.style.display = 'flex';
+  populateEarningsModal();
+  switchEarningsTab('transactions'); // default tab
+}
+
+// Close earnings modal
+function closeEarningsModal() {
+  const modal = document.getElementById('earningsModal');
+  if (modal) modal.style.display = 'none';
+  // Reset withdrawal success state for next open
+  const normalState = document.getElementById('withdrawNormalState');
+  const successState = document.getElementById('withdrawSuccessState');
+  if (normalState) normalState.style.display = 'block';
+  if (successState) successState.style.display = 'none';
+}
+
+// Open the modal directly on the Withdraw tab
+function openWithdrawPanel() {
+  openEarningsModal();
+  // Slight delay to let modal render first
+  setTimeout(() => switchEarningsTab('withdraw'), 50);
+}
+
+// Switch between Transactions / Monthly / Withdraw tabs
+function switchEarningsTab(tab) {
+  const tabs = ['transactions', 'monthly', 'withdraw'];
+  const tabLabels = { transactions: 'tabTransactions', monthly: 'tabMonthly', withdraw: 'tabWithdraw' };
+  const paneIds  = { transactions: 'tabPaneTransactions', monthly: 'tabPaneMonthly', withdraw: 'tabPaneWithdraw' };
+
+  tabs.forEach(t => {
+    const btn  = document.getElementById(tabLabels[t]);
+    const pane = document.getElementById(paneIds[t]);
+    const isActive = (t === tab);
+    if (btn) {
+      btn.style.color = isActive ? '#2e7d32' : '#888';
+      btn.style.borderBottom = isActive ? '3px solid #2e7d32' : '3px solid transparent';
+    }
+    if (pane) pane.style.display = isActive ? 'block' : 'none';
+  });
+}
+
+// Populate modal summary strip + transaction list + monthly stats
+function populateEarningsModal() {
+  if (!_earningsData) return;
+  const { wallet, monthly, transactions } = _earningsData;
+
+  // ─ Summary strip ─
+  const modalTotal = document.getElementById('modalTotalEarned');
+  const modalAvail = document.getElementById('modalAvailable');
+  const modalPend  = document.getElementById('modalPending');
+  if (modalTotal) modalTotal.textContent = `₹${wallet.totalEarned.toLocaleString('en-IN')}`;
+  if (modalAvail) modalAvail.textContent = `₹${wallet.available.toLocaleString('en-IN')}`;
+  if (modalPend)  modalPend.textContent  = `₹${wallet.pending.toLocaleString('en-IN')}`;
+
+  // ─ Withdraw tab amounts ─
+  const wdAvail = document.getElementById('withdrawAvailableAmount');
+  const wdBtn   = document.getElementById('btnConfirmWithdraw');
+  if (wdAvail) wdAvail.textContent = `₹${wallet.available.toLocaleString('en-IN')}`;
+  if (wdBtn)   wdBtn.textContent   = `🏦 Withdraw ₹${wallet.available.toLocaleString('en-IN')}`;
+
+  // ─ Monthly stats ─
+  const mTasks = document.getElementById('monthlyTasksCompleted');
+  const mTotal = document.getElementById('monthlyTotalEarned');
+  const mAvg   = document.getElementById('monthlyAvgPerTask');
+  const mLabel = document.getElementById('monthlyPeriodLabel');
+  if (mTasks) mTasks.textContent = monthly.tasksCompleted;
+  if (mTotal) mTotal.textContent = `₹${monthly.totalEarned.toLocaleString('en-IN')}`;
+  if (mAvg)   mAvg.textContent   = `₹${monthly.avgPerTask.toLocaleString('en-IN')}`;
+  if (mLabel) mLabel.textContent = monthly.month;
+
+  // ─ Transaction list ─
+  const list   = document.getElementById('transactionsList');
+  const noMsg  = document.getElementById('noTransactionsMsg');
+  if (!list) return;
+
+  list.innerHTML = '';
+
+  const visibleTx = transactions.filter(t => t.amount > 0 || t.type === 'SERVICE_CHARGE');
+
+  if (visibleTx.length === 0) {
+    if (noMsg) noMsg.style.display = 'block';
+    return;
+  }
+  if (noMsg) noMsg.style.display = 'none';
+
+  visibleTx.forEach(tx => {
+    const dateStr = tx.date
+      ? new Date(tx.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+      : '—';
+
+    // Status badge
+    const statusStyles = {
+      RELEASED:  { bg: '#e8f5e9', color: '#1b5e20', label: 'Released' },
+      PENDING:   { bg: '#fff8e1', color: '#f57f17', label: 'Pending'  },
+      WITHDRAWN: { bg: '#f3e5f5', color: '#6a1b9a', label: 'Withdrawn' }
+    };
+    const s = statusStyles[tx.status] || statusStyles.PENDING;
+
+    // Type badge
+    const typeLabel = tx.type === 'TIP' ? '🎁 Tip' : '💼 Service';
+    const typeColor = tx.type === 'TIP' ? '#e65100' : '#1b5e20';
+
+    const item = document.createElement('div');
+    item.style.cssText = `
+      display: flex; align-items: center; gap: 12px;
+      background: #ffffff; border: 1.5px solid #e8f5e9;
+      border-radius: 12px; padding: 12px 14px;
+      transition: box-shadow 0.2s;
+    `;
+    item.onmouseover = () => { item.style.boxShadow = '0 4px 14px rgba(46,125,50,0.12)'; };
+    item.onmouseout  = () => { item.style.boxShadow = 'none'; };
+
+    item.innerHTML = `
+      <div style="width: 42px; height: 42px; background: #e8f5e9; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0;">
+        ${tx.categoryIcon || '⭐'}
+      </div>
+      <div style="flex: 1; min-width: 0;">
+        <div style="font-weight: 700; color: #222; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${tx.taskTitle || 'Help Request'}</div>
+        <div style="font-size: 0.8rem; color: #888; margin-top: 2px;">${dateStr} &nbsp;&bull;&nbsp; <span style="color: ${typeColor}; font-weight: 600;">${typeLabel}</span></div>
+      </div>
+      <div style="text-align: right; flex-shrink: 0;">
+        <div style="font-size: 1.1rem; font-weight: 900; color: #1b5e20;">+ ₹${tx.amount.toLocaleString('en-IN')}</div>
+        <span style="font-size: 0.72rem; font-weight: 700; background: ${s.bg}; color: ${s.color}; padding: 2px 8px; border-radius: 8px; display: inline-block; margin-top: 3px;">
+          ${s.label}
+        </span>
+      </div>
+    `;
+    list.appendChild(item);
+  });
+}
+
+// Confirm and process withdrawal
+async function confirmWithdrawal() {
+  const available = _earningsData?.wallet?.available || 0;
+  if (available <= 0) {
+    showToast('₹0 available to withdraw. Complete more tasks first!', 'info');
+    return;
+  }
+
+  const btn = document.getElementById('btnConfirmWithdraw');
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Processing...';
+  }
+
+  try {
+    const res = await apiCall('/volunteer/withdraw', 'POST');
+    if (res.ok && res.data.success) {
+      const { withdrawal } = res.data;
+
+      // Show success state
+      const normalState   = document.getElementById('withdrawNormalState');
+      const successState  = document.getElementById('withdrawSuccessState');
+      const successAmount = document.getElementById('withdrawSuccessAmount');
+      const successTxId   = document.getElementById('withdrawSuccessTxId');
+
+      if (successAmount) successAmount.textContent = `₹${withdrawal.amount.toLocaleString('en-IN')}`;
+      if (successTxId)   successTxId.textContent   = withdrawal.transactionId;
+      if (normalState)   normalState.style.display  = 'none';
+      if (successState)  successState.style.display = 'block';
+
+      // Refresh wallet card with new (zeroed) available balance
+      await loadVolunteerEarnings(true);
+      populateEarningsModal();
+
+      showToast(`✅ Withdrawal of ₹${withdrawal.amount} initiated! TX: ${withdrawal.transactionId}`, 'success');
+    } else {
+      showToast(res.data?.message || 'Withdrawal failed. Please try again.', 'error');
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = `🏦 Withdraw ₹${available.toLocaleString('en-IN')}`;
+      }
+    }
+  } catch (err) {
+    console.error('Withdrawal error:', err);
+    showToast('Network error during withdrawal.', 'error');
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = `🏦 Withdraw ₹${available.toLocaleString('en-IN')}`;
+    }
+  }
 }

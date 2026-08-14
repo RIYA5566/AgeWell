@@ -13,7 +13,15 @@ document.addEventListener('DOMContentLoaded', () => {
   const user = JSON.parse(localStorage.getItem('user'));
   const welcomeTitle = document.getElementById('welcomeTitle');
   if (welcomeTitle && user) {
-    welcomeTitle.textContent = `Welcome back, ${user.name}! 👋`;
+    welcomeTitle.textContent = t('sd_welcome', { name: user.name });
+  }
+
+  // Set default voice request language from user profile preference
+  const voiceLangSelect = document.getElementById('voiceLangSelect');
+  if (voiceLangSelect && user) {
+    if (user.language === 'hi') voiceLangSelect.value = 'hi-IN';
+    else if (user.language === 'mr') voiceLangSelect.value = 'mr-IN';
+    else voiceLangSelect.value = 'en-IN';
   }
 
   // Load requests
@@ -21,6 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Initialize Voice Confirmation Assistant workflow
   initVoiceConfirmationAssistant();
+
 
   // --- SOS Alert Logic ---
   const btnSos = document.getElementById('btnSos');
@@ -57,7 +66,7 @@ document.addEventListener('DOMContentLoaded', () => {
       sosOverlay.style.display = 'none';
       document.body.style.overflow = '';
       stopEmergencyAlarm();
-      showTabPopup('SOS Alarm Cancelled', 'Emergency SOS alarm has been cancelled.', '🔕', '#c62828');
+      showTabPopup(t('popup_sos_cancelled_title'), t('popup_sos_cancelled_msg'), '🔕', '#c62828');
     });
   }
 
@@ -83,7 +92,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (btnCancelRequest) {
     btnCancelRequest.addEventListener('click', () => {
       closeModal();
-      showTabPopup('Request Form Cancelled', 'Your help request form was cancelled.', '❌', '#c62828');
+      showTabPopup(t('popup_form_cancelled_title'), t('popup_form_cancelled_msg'), '❌', '#c62828');
     });
   }
 
@@ -166,8 +175,8 @@ document.addEventListener('DOMContentLoaded', () => {
       } catch (err) {
         console.error('Error accessing microphone:', err);
         showTabPopup(
-          'Microphone Access Required',
-          'Microphone access was denied or is not supported in this browser. Please check browser permissions.',
+          t('popup_mic_required_title'),
+          t('popup_mic_required_msg'),
           '🎙️',
           '#e65100'
         );
@@ -233,12 +242,22 @@ document.addEventListener('DOMContentLoaded', () => {
       if (title) formData.append('title', title);
       if (description) formData.append('description', description);
       formData.append('urgency', urgency);
+      formData.append('voiceLanguage', document.getElementById('voiceLangSelect')?.value || 'en-IN');
 
       if (recordedAudioBlob) {
         formData.append('audio', recordedAudioBlob, 'voice-recording.webm');
       }
 
+
+      if (recordedAudioBlob) {
+        isFormRequestSubmission = true;
+        formRequestDataToSubmit = formData;
+        openVoiceModalForFormRequest();
+        return;
+      }
+
       const res = await apiCall('/requests', 'POST', formData);
+
 
       if (res.ok && res.data.success) {
         alertArea.innerHTML = `<div class="alert alert-success">Request raised successfully!</div>`;
@@ -336,39 +355,39 @@ async function loadRequests() {
     requestList.innerHTML = sortedRequests.map(req => {
       let statusBadge = '';
       if (req.status === 'fulfilled_by_family' || req.familyApprovalStatus === 'fulfilled_by_family' || req.fulfilledByFamily) {
-        statusBadge = `<span class="badge" style="background:#e8f5e9;color:#1b5e20;border:2px solid #2e7d32;font-weight:bold;">🏡 Fulfilled by Family Caregiver</span>`;
+        statusBadge = `<span class="badge" style="background:#e8f5e9;color:#1b5e20;border:2px solid #2e7d32;font-weight:bold;">${t('status_fulfilled_by_family')}</span>`;
       } else if (req.status === 'rejected' || req.familyApprovalStatus === 'rejected') {
-        statusBadge = `<span class="badge" style="background:#ffebee;color:#c62828;border:2px solid #b71c1c;font-weight:bold;">❌ Request Rejected by Caregiver</span>`;
+        statusBadge = `<span class="badge" style="background:#ffebee;color:#c62828;border:2px solid #b71c1c;font-weight:bold;">${t('status_rejected_by_caregiver')}</span>`;
       } else if (req.status === 'pending' && (req.familyApprovalStatus === 'none' || !req.familyApprovalStatus)) {
-        statusBadge = `<span class="badge" style="background:#fff8e1;color:#e65100;border:2px solid #ffa000;font-weight:bold;">⏳ Awaiting Caregiver Allotment</span>`;
+        statusBadge = `<span class="badge" style="background:#fff8e1;color:#e65100;border:2px solid #ffa000;font-weight:bold;">${t('status_awaiting_allotment')}</span>`;
       } else if (req.status === 'pending' && req.familyApprovalStatus === 'approved') {
-        statusBadge = `<span class="badge badge-pending">🔍 Allotted to Volunteers (Seeking Help)</span>`;
+        statusBadge = `<span class="badge badge-pending">${t('status_allotted_volunteers')}</span>`;
       } else if (req.status === 'awaiting_approval' || req.status === 'quoted') {
-        statusBadge = `<span class="badge" style="background:#ffe082;color:#e65100;border:2px solid #f57f17;font-weight:bold;">⏳ Caregiver Reviewing Volunteer Quotes</span>`;
+        statusBadge = `<span class="badge" style="background:#ffe082;color:#e65100;border:2px solid #f57f17;font-weight:bold;">${t('status_caregiver_reviewing')}</span>`;
       } else if (req.status === 'accepted') {
-        statusBadge = `<span class="badge badge-accepted">🤝 Volunteer Assigned</span>`;
+        statusBadge = `<span class="badge badge-accepted">${t('status_volunteer_assigned')}</span>`;
       } else if (req.status === 'purchase_cost_submitted') {
-        statusBadge = `<span class="badge" style="background:#fff3e0;color:#e65100;border:2px solid #f57c00;font-weight:bold;">💳 Cart Proof Submitted by Volunteer</span>`;
+        statusBadge = `<span class="badge" style="background:#fff3e0;color:#e65100;border:2px solid #f57c00;font-weight:bold;">${t('status_cart_proof_submitted')}</span>`;
       } else if (req.status === 'purchase_funded') {
-        statusBadge = `<span class="badge" style="background:#e8f5e9;color:#1b5e20;border:2px solid #2e7d32;font-weight:bold;">✅ Purchase Funded (In Progress)</span>`;
+        statusBadge = `<span class="badge" style="background:#e8f5e9;color:#1b5e20;border:2px solid #2e7d32;font-weight:bold;">${t('status_purchase_funded')}</span>`;
       } else if (req.status === 'awaiting_verification') {
-        statusBadge = `<span class="badge" style="background:#f3e5f5;color:#4a148c;border:2px solid #7b1fa2;font-weight:bold;">🧾 Receipt Uploaded (Awaiting Verification)</span>`;
+        statusBadge = `<span class="badge" style="background:#f3e5f5;color:#4a148c;border:2px solid #7b1fa2;font-weight:bold;">${t('status_awaiting_verification')}</span>`;
       } else if (req.status === 'completed') {
-        statusBadge = `<span class="badge badge-completed">✅ Service Completed &amp; Delivered</span>`;
+        statusBadge = `<span class="badge badge-completed">${t('status_service_completed')}</span>`;
       }
 
       let urgencyBadge = '';
       if (req.urgency === 'high') {
-        urgencyBadge = `<span class="badge badge-urgency-high">High Priority</span>`;
+        urgencyBadge = `<span class="badge badge-urgency-high">${t('badge_high_priority')}</span>`;
       } else if (req.urgency === 'emergency') {
-        urgencyBadge = `<span class="badge badge-urgency-emergency">SOS EMERGENCY</span>`;
+        urgencyBadge = `<span class="badge badge-urgency-emergency">${t('badge_sos_emergency')}</span>`;
       }
 
       let audioPlayerHtml = '';
       if (req.audioFile) {
         audioPlayerHtml = `
           <div class="request-audio-player">
-            <label>🎙️ Voice Recording:</label>
+            <label>${t('sd_voice_recording_label')}</label>
             <audio controls src="${req.audioFile}"></audio>
           </div>`;
       }
@@ -377,21 +396,21 @@ async function loadRequests() {
       if (req.status === 'rejected' || req.familyApprovalStatus === 'rejected') {
         assignmentInfo = `
           <div class="request-details" style="background:#ffebee; border-color:#c62828;">
-            <p style="color:#c62828; font-weight:bold;">❌ Request Rejected by Family Caregiver</p>
-            <p style="margin-top:4px; color:#b71c1c;"><strong>Reason:</strong> "${escapeHTML(req.familyRejectionReason || 'Caregiver marked this request as invalid.')}"</p>
+            <p style="color:#c62828; font-weight:bold;">${t('status_rejected_by_caregiver')}</p>
+            <p style="margin-top:4px; color:#b71c1c;"><strong>${t('sd_reason_label')}</strong> "${escapeHTML(req.familyRejectionReason || 'Caregiver marked this request as invalid.')}"</p>
           </div>`;
       } else if (req.status === 'fulfilled_by_family' || req.fulfilledByFamily) {
         assignmentInfo = `
           <div class="request-details" style="background:#e8f5e9; border-color:#2e7d32;">
-            <p style="color:#1b5e20; font-weight:bold;">🏡 Completed Directly by Family Caregiver</p>
-            <p style="margin-top:4px; color:#2e7d32;">Your family caregiver took care of this request for you!</p>
+            <p style="color:#1b5e20; font-weight:bold;">${t('sd_completed_directly_caregiver')}</p>
+            <p style="margin-top:4px; color:#2e7d32;">${t('sd_completed_directly_caregiver_desc')}</p>
           </div>`;
       } else if ((req.status === 'awaiting_approval' || req.status === 'quoted') && (req.volunteer || (req.volunteerQuotes && req.volunteerQuotes.length > 0))) {
         const volName = req.volunteer ? req.volunteer.name : (req.volunteerQuotes && req.volunteerQuotes[0] && req.volunteerQuotes[0].volunteer ? req.volunteerQuotes[0].volunteer.name : 'A Volunteer');
         assignmentInfo = `
           <div class="request-details" style="background:#fff8e1; border-color:#f57f17;">
-            <p><strong>Volunteer Candidate:</strong> ${escapeHTML(volName)}</p>
-            <p style="margin-top:6px; color:#e65100;">🔐 Your family caregiver is reviewing volunteer quotes. Contact details will appear once approved.</p>
+            <p><strong>${t('sd_volunteer_candidate')}</strong> ${escapeHTML(volName)}</p>
+            <p style="margin-top:6px; color:#e65100;">${t('sd_caregiver_reviewing_quotes')}</p>
           </div>`;
       } else if (['accepted', 'purchase_cost_submitted', 'purchase_funded', 'awaiting_verification'].includes(req.status) && req.volunteer) {
         const volObj = typeof req.volunteer === 'object' ? req.volunteer : null;
@@ -401,9 +420,9 @@ async function loadRequests() {
 
         assignmentInfo = `
           <div class="request-details" style="background:#f1f8e9; border-color:#558b2f;">
-            <p><strong>Approved Volunteer:</strong> ${escapeHTML(volName)}</p>
-            ${volPhone ? `<p><strong>Volunteer Contact:</strong> <a href="tel:${escapeHTML(volPhone)}" style="color: var(--color-primary-dark); font-weight: bold;">${escapeHTML(volPhone)}</a></p>` : ''}
-            ${volEmail ? `<p><strong>Volunteer Email:</strong> ${escapeHTML(volEmail)}</p>` : ''}
+            <p><strong>${t('sd_approved_volunteer')}</strong> ${escapeHTML(volName)}</p>
+            ${volPhone ? `<p><strong>${t('sd_volunteer_contact')}</strong> <a href="tel:${escapeHTML(volPhone)}" style="color: var(--color-primary-dark); font-weight: bold;">${escapeHTML(volPhone)}</a></p>` : ''}
+            ${volEmail ? `<p><strong>${t('sd_volunteer_email')}</strong> ${escapeHTML(volEmail)}</p>` : ''}
           </div>`;
       } else if (req.status === 'completed') {
         const volObj = typeof req.volunteer === 'object' ? req.volunteer : null;
@@ -424,13 +443,13 @@ async function loadRequests() {
 
         const totalSpentBadge = `
           <div style="margin-top: 10px; padding: 8px 14px; background: #e8f5e9; border-left: 4px solid #2e7d32; border-radius: 8px; font-size: 0.95rem; color: #1b5e20; font-weight: bold;">
-            💵 Total Amount Spent: ₹${totalSpent} ${totalSpent === 0 ? '<span style="font-weight: normal; color: #2e7d32;">(Voluntary Free Service)</span>' : ''}
+            ${t('sd_total_spent')} ₹${totalSpent} ${totalSpent === 0 ? `<span style="font-weight: normal; color: #2e7d32;">${t('sd_free_service')}</span>` : ''}
           </div>`;
 
         assignmentInfo = `
           <div class="request-details">
-            <p><strong>Assisted By:</strong> ${escapeHTML(volName)}</p>
-            <p><strong>Completion Notes:</strong> ${escapeHTML(req.resolutionNotes || 'No notes provided')}</p>
+            <p><strong>${t('sd_assisted_by')}</strong> ${escapeHTML(volName)}</p>
+            <p><strong>${t('sd_completion_notes')}</strong> ${escapeHTML(req.resolutionNotes || t('sd_no_notes_provided'))}</p>
             ${totalSpentBadge}
           </div>`;
       }
@@ -438,10 +457,25 @@ async function loadRequests() {
       const nonCancellable = ['purchase_cost_submitted', 'purchase_funded', 'awaiting_verification', 'delivery_completed', 'completed', 'rejected', 'fulfilled_by_family'];
       const canDelete = !nonCancellable.includes(req.status);
       const deleteButton = canDelete 
-        ? `<button class="btn btn-outline-danger" onclick="cancelHelpRequest('${req._id}')" style="padding: 10px 18px; font-size: 1rem; min-height: 44px;">❌ Cancel Request</button>` 
+        ? `<button class="btn btn-outline-danger" onclick="cancelHelpRequest('${req._id}')" style="padding: 10px 18px; font-size: 1rem; min-height: 44px;">${t('btn_cancel_request')}</button>` 
         : '';
 
       const cardUrgencyClass = req.urgency === 'high' ? 'urgency-high' : req.urgency === 'emergency' ? 'urgency-emergency' : '';
+
+      const categoryMap = {
+        'Grocery Shopping': 'skill_grocery',
+        'Medical Escort': 'skill_medical',
+        'Tech Support': 'skill_tech',
+        'Housekeeping': 'skill_housekeeping',
+        'Companionship': 'skill_companionship',
+        'Other': 'skill_other'
+      };
+      const categoryKey = categoryMap[req.category] || 'skill_other';
+      const categoryTranslated = t(categoryKey);
+
+      let prefVal = req.shoppingPreference || '';
+      if (prefVal === 'No Preference') prefVal = t('sd_pref_no_preference');
+      else if (prefVal === 'Store Brand Only') prefVal = t('sd_pref_store_brand');
 
       return `
         <div class="request-card ${cardUrgencyClass}">
@@ -450,18 +484,18 @@ async function loadRequests() {
             <div style="display: flex; gap: 8px; flex-wrap: wrap;">
               ${statusBadge}
               ${urgencyBadge}
-              <span class="badge badge-urgency">${escapeHTML(req.category)}</span>
+              <span class="badge badge-urgency">${escapeHTML(categoryTranslated)}</span>
             </div>
           </div>
           ${req.description ? `<div class="request-description">${escapeHTML(req.description)}</div>` : ''}
           ${req.shoppingPreference ? `
             <div style="margin-top: 6px; margin-bottom: 10px; padding: 8px 12px; background: #e3f2fd; border-left: 4px solid #1976d2; border-radius: 8px; font-size: 0.95rem; color: #0d47a1; font-weight: 600;">
-              🛒 <strong>Caregiver Shopping Preference:</strong> ${escapeHTML(req.shoppingPreference)}
+              ${t('sd_pref_label')}${escapeHTML(prefVal)}
             </div>` : ''}
           ${audioPlayerHtml}
           ${assignmentInfo}
           <div class="request-card-footer" style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem;">
-            <span style="font-size: 0.9rem; color: #666;">Requested on: ${new Date(req.createdAt).toLocaleDateString()}</span>
+            <span style="font-size: 0.9rem; color: #666;">${t('sd_requested_on_label')}${new Date(req.createdAt).toLocaleDateString()}</span>
             ${deleteButton}
           </div>
         </div>`;
@@ -474,22 +508,22 @@ async function loadRequests() {
 // Cancel a pending/active request (Exposed globally to window)
 window.cancelHelpRequest = async function cancelHelpRequest(id) {
   showTabConfirm(
-    'Cancel Help Request?',
-    'Are you sure you want to cancel this help request? This action cannot be undone.',
+    t('confirm_cancel_request_title'),
+    t('confirm_cancel_request_msg'),
     async () => {
       const res = await apiCall(`/requests/${id}`, 'DELETE');
       if (res.ok) {
         showTabPopup(
-          'Request Cancelled',
-          'Your help request has been successfully cancelled.',
+          t('popup_cancelled_title'),
+          t('popup_cancelled_msg'),
           '🗑️',
           '#c62828'
         );
         loadRequests();
       } else {
         showTabPopup(
-          'Failed to Cancel',
-          res.data?.message || 'Failed to cancel request.',
+          t('popup_failed_cancel_title'),
+          res.data?.message || t('popup_failed_cancel_msg'),
           '❌',
           '#c62828'
         );
@@ -579,6 +613,9 @@ let voiceAudioBlob = null;
 let currentTranscript = '';
 let currentConfidence = 85;
 let isVoiceModalOpen = false;
+let isFormRequestSubmission = false;
+let formRequestDataToSubmit = null;
+
 
 function initVoiceConfirmationAssistant() {
   const btnVoiceConfirmation = document.getElementById('btnVoiceConfirmation');
@@ -597,8 +634,8 @@ function initVoiceConfirmationAssistant() {
     voiceModalClose.addEventListener('click', () => {
       closeVoiceModal();
       showTabPopup(
-        'Request Cancelled',
-        'Voice request assistant cancelled.',
+        t('popup_cancelled_title'),
+        t('popup_voice_assistant_cancelled_msg'),
         '❌',
         '#c62828'
       );
@@ -624,6 +661,51 @@ function initVoiceConfirmationAssistant() {
   });
 }
 
+function speakUtteranceWithLocale(text, locale, onEndCallback = null) {
+  if (!window.speechSynthesis) {
+    if (onEndCallback) onEndCallback();
+    return;
+  }
+  window.speechSynthesis.cancel();
+  const utterance = new SpeechSynthesisUtterance(text);
+  
+  const langPrefix = locale.split('-')[0];
+  utterance.lang = langPrefix === 'en' ? 'en-US' : locale;
+  utterance.rate = 0.92;
+  utterance.volume = 1.0; // Force maximum volume
+
+  const voices = window.speechSynthesis.getVoices();
+
+  if (langPrefix === 'mr') {
+    // Try to find a native Marathi voice
+    let marVoice = voices.find(v => v.lang.toLowerCase().startsWith('mr'));
+    if (marVoice) {
+      utterance.voice = marVoice;
+      utterance.lang = marVoice.lang;
+    } else {
+      // Fallback to Hindi voice because both share the Devanagari script!
+      let hiVoice = voices.find(v => v.lang.toLowerCase().startsWith('hi'));
+      if (hiVoice) {
+        utterance.voice = hiVoice;
+        utterance.lang = hiVoice.lang;
+      }
+    }
+  } else if (langPrefix === 'hi') {
+    let hiVoice = voices.find(v => v.lang.toLowerCase().startsWith('hi'));
+    if (hiVoice) {
+      utterance.voice = hiVoice;
+      utterance.lang = hiVoice.lang;
+    }
+  }
+
+  if (onEndCallback) {
+    utterance.onend = onEndCallback;
+    utterance.onerror = onEndCallback;
+  }
+
+  window.speechSynthesis.speak(utterance);
+}
+
 async function openVoiceModal() {
   const voiceModal = document.getElementById('voiceModal');
   if (voiceModal) voiceModal.style.display = 'flex';
@@ -631,29 +713,90 @@ async function openVoiceModal() {
   isVoiceModalOpen = true;
   resetVoiceModalState();
   
-  if ('speechSynthesis' in window) {
-    window.speechSynthesis.cancel();
-    const msg = new SpeechSynthesisUtterance("Please speak out your request, we are listening.");
-    window.speechSynthesis.speak(msg);
-    msg.onend = () => {
-      if (isVoiceModalOpen) startRecordingAndSpeechRecognition();
-    };
-    msg.onerror = () => {
-      if (isVoiceModalOpen) startRecordingAndSpeechRecognition();
-    };
-  } else {
-    startRecordingAndSpeechRecognition();
+  // Sync voiceLangSelect with currently selected app language
+  const appLang = getLang();
+  const voiceLangSelect = document.getElementById('voiceLangSelect');
+  if (voiceLangSelect) {
+    if (appLang === 'hi') {
+      voiceLangSelect.value = 'hi-IN';
+    } else if (appLang === 'mr') {
+      voiceLangSelect.value = 'mr-IN';
+    } else {
+      voiceLangSelect.value = 'en-IN';
+    }
   }
+
+  const selectedLang = voiceLangSelect?.value || 'en-IN';
+
+  const promptText = 
+    selectedLang === 'hi-IN' ? "कृपया अपना अनुरोध बोलें, हम सुन रहे हैं।" : 
+    selectedLang === 'mr-IN' ? "कृपया आपली विनंती बोला, आम्ही ऐकत आहोत।" : 
+    "Please speak out your request, we are listening.";
+  
+  speakUtteranceWithLocale(promptText, selectedLang, () => {
+    if (isVoiceModalOpen) startRecordingAndSpeechRecognition();
+  });
 }
 
-function closeVoiceModal() {
+
+function closeVoiceModal(shouldCancelSpeech = true) {
   isVoiceModalOpen = false;
+  isFormRequestSubmission = false;
+  formRequestDataToSubmit = null;
   const voiceModal = document.getElementById('voiceModal');
   if (voiceModal) voiceModal.style.display = 'none';
 
   stopSpeechAndAudioRecording();
-  if (window.speechSynthesis) window.speechSynthesis.cancel();
+  if (shouldCancelSpeech && window.speechSynthesis) {
+    window.speechSynthesis.cancel();
+  }
 }
+
+async function openVoiceModalForFormRequest() {
+  const voiceModal = document.getElementById('voiceModal');
+  if (voiceModal) voiceModal.style.display = 'flex';
+
+  isVoiceModalOpen = true;
+  isFormRequestSubmission = true;
+  
+  // Clear any voice assistant state
+  currentTranscript = '';
+  const selectedLang = document.getElementById('voiceLangSelect')?.value || 'en-IN';
+  
+  const transcriptBox = document.getElementById('voiceTranscriptBox');
+  if (transcriptBox) {
+    transcriptBox.innerHTML = selectedLang === 'hi-IN' ? '<em style="color: #666;">आवाज संदेश रिकॉर्ड किया गया है</em>' :
+                               selectedLang === 'mr-IN' ? '<em style="color: #666;">आवाज संदेश रेकॉर्ड केला आहे</em>' :
+                               '<em style="color: #666;">Voice message has been recorded</em>';
+  }
+
+  // Go directly to confirmation
+  const readbackPhrase = 
+    selectedLang === 'hi-IN' ? `मैंने आपका अनुरोध रिकॉर्ड किया। क्या मुझे यह अनुरोध भेजना चाहिए?` :
+    selectedLang === 'mr-IN' ? `मी तुमची विनंती रेकॉर्ड केली. मी ही विनंती पाठवू का?` :
+    `I recorded your request. Should I send this request?`;
+
+  const readoutText = document.getElementById('voiceReadoutText');
+  if (readoutText) {
+    readoutText.textContent = 
+      selectedLang === 'hi-IN' ? `🔊 "क्या मुझे यह अनुरोध भेजना चाहिए?"` :
+      selectedLang === 'mr-IN' ? `🔊 "मी ही विनंती पाठवू का?"` :
+      `🔊 "Should I send this request?"`;
+  }
+
+  const confirmArea = document.getElementById('voiceConfirmationArea');
+  if (confirmArea) confirmArea.style.display = 'block';
+
+  const stepStatus = document.getElementById('voiceStepStatus');
+  const subStatus = document.getElementById('voiceSubStatus');
+  if (stepStatus) stepStatus.textContent = selectedLang === 'hi-IN' ? '🔊 आपका अनुरोध पुष्टि के लिए पूछा जा रहा है...' : selectedLang === 'mr-IN' ? '🔊 तुमची विनंती पुष्टीकरणासाठी विचारत आहे...' : '🔊 Asking confirmation...';
+  if (subStatus) subStatus.textContent = selectedLang === 'hi-IN' ? 'कृपया पुष्टि करने के लिए ध्यान से सुनें।' : selectedLang === 'mr-IN' ? 'कृपया पुष्टी करण्यासाठी काळजीपूर्वक ऐका.' : 'Please listen carefully to confirm.';
+
+  speakUtteranceWithLocale(readbackPhrase, selectedLang, () => {
+    listenForVoiceConfirmation();
+  });
+}
+
 
 function resetVoiceModalState() {
   currentTranscript = '';
@@ -668,9 +811,11 @@ function resetVoiceModalState() {
   const confidenceBadge = document.getElementById('voiceAiConfidenceBadge');
   const pulse = document.getElementById('voiceMicPulse');
 
-  if (stepStatus) stepStatus.textContent = 'Speak your request now...';
-  if (subStatus) subStatus.textContent = 'Listening to what you need help with.';
-  if (transcriptBox) transcriptBox.innerHTML = '<em style="color: #999;">Listening to your voice...</em>';
+  if (stepStatus) stepStatus.textContent = t('sd_voice_status_listening');
+  if (subStatus) subStatus.textContent = t('sd_voice_sub_listening');
+  
+  const listenMsg = getLang() === 'hi' ? 'आपकी आवाज़ सुनी जा रही है...' : getLang() === 'mr' ? 'तुमचा आवाज ऐकला जात आहे...' : 'Listening to your voice...';
+  if (transcriptBox) transcriptBox.innerHTML = `<em style="color: #999;">${listenMsg}</em>`;
   if (confirmArea) confirmArea.style.display = 'none';
   if (confidenceBadge) confidenceBadge.style.display = 'none';
   if (pulse) {
@@ -681,6 +826,7 @@ function resetVoiceModalState() {
 
 async function startRecordingAndSpeechRecognition() {
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const selectedLang = document.getElementById('voiceLangSelect')?.value || 'en-IN';
 
   try {
     voiceAudioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -702,7 +848,7 @@ async function startRecordingAndSpeechRecognition() {
       voiceRecognition = new SpeechRecognition();
       voiceRecognition.continuous = false;
       voiceRecognition.interimResults = true;
-      voiceRecognition.lang = 'en-US';
+      voiceRecognition.lang = selectedLang;
 
       voiceRecognition.onresult = (event) => {
         let interimTranscript = '';
@@ -745,14 +891,15 @@ async function startRecordingAndSpeechRecognition() {
   } catch (err) {
     console.error('Mic access error:', err);
     showTabPopup(
-      'Microphone Access Required',
-      'Microphone access is required for voice request confirmation. Please check browser permissions.',
+      t('popup_mic_required_title'),
+      t('popup_mic_required_msg2'),
       '🎙️',
       '#e65100'
     );
     closeVoiceModal();
   }
 }
+
 
 function stopSpeechAndAudioRecording() {
   if (voiceRecognition) {
@@ -774,9 +921,10 @@ function stopSpeechAndAudioRecording() {
 
 function finishRecordingAndReadback() {
   stopSpeechAndAudioRecording();
+  const selectedLang = document.getElementById('voiceLangSelect')?.value || 'en-IN';
 
   if (!currentTranscript || currentTranscript.trim().length === 0) {
-    currentTranscript = 'Help request recorded via voice';
+    currentTranscript = selectedLang === 'hi-IN' ? 'आवाज द्वारा दर्ज सहायता अनुरोध' : selectedLang === 'mr-IN' ? 'आवाज द्वारे नोंदवलेली मदत विनंती' : 'Help request recorded via voice';
   }
 
   const cleanTranscript = currentTranscript.trim();
@@ -795,45 +943,37 @@ function finishRecordingAndReadback() {
   const stepStatus = document.getElementById('voiceStepStatus');
   const subStatus = document.getElementById('voiceSubStatus');
   const pulse = document.getElementById('voiceMicPulse');
-  if (stepStatus) stepStatus.textContent = '🔊 Reading your request back...';
-  if (subStatus) subStatus.textContent = 'Please listen carefully to confirm.';
+  
+  if (stepStatus) stepStatus.textContent = selectedLang === 'hi-IN' ? '🔊 आपका अनुरोध पढ़कर सुनाया जा रहा है...' : selectedLang === 'mr-IN' ? '🔊 तुमची विनंती वाचून दाखवत आहे...' : '🔊 Reading your request back...';
+  if (subStatus) subStatus.textContent = selectedLang === 'hi-IN' ? 'कृपया पुष्टि करने के लिए ध्यान से सुनें।' : selectedLang === 'mr-IN' ? 'कृपया पुष्टी करण्यासाठी काळजीपूर्वक ऐका.' : 'Please listen carefully to confirm.';
   if (pulse) {
     pulse.style.background = 'linear-gradient(135deg, #43a047, #2e7d32)';
     pulse.textContent = '🔊';
   }
 
   // TTS Readback
-  const readbackPhrase = `I recorded your request: ${cleanTranscript}. Should I send this request?`;
+  const readbackPhrase = 
+    selectedLang === 'hi-IN' ? `मैंने आपका अनुरोध रिकॉर्ड किया: ${cleanTranscript}। क्या मुझे यह अनुरोध भेजना चाहिए?` :
+    selectedLang === 'mr-IN' ? `मी तुमची विनंती रेकॉर्ड केली: ${cleanTranscript}। मी ही विनंती पाठवू का?` :
+    `I recorded your request: ${cleanTranscript}. Should I send this request?`;
 
   const confirmArea = document.getElementById('voiceConfirmationArea');
   if (confirmArea) confirmArea.style.display = 'block';
 
-  if (window.speechSynthesis) {
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(readbackPhrase);
-    utterance.rate = 0.95;
-
-    utterance.onend = () => {
-      listenForVoiceConfirmation();
-    };
-
-    utterance.onerror = () => {
-      listenForVoiceConfirmation();
-    };
-
-    window.speechSynthesis.speak(utterance);
-  } else {
+  speakUtteranceWithLocale(readbackPhrase, selectedLang, () => {
     listenForVoiceConfirmation();
-  }
+  });
 }
+
 
 function listenForVoiceConfirmation() {
   const stepStatus = document.getElementById('voiceStepStatus');
   const subStatus = document.getElementById('voiceSubStatus');
   const pulse = document.getElementById('voiceMicPulse');
+  const selectedLang = document.getElementById('voiceLangSelect')?.value || 'en-IN';
 
-  if (stepStatus) stepStatus.textContent = '🎙️ Listening for "Yes" or "No"...';
-  if (subStatus) subStatus.textContent = 'Say "Yes" to send or "No" to discard.';
+  if (stepStatus) stepStatus.textContent = selectedLang === 'hi-IN' ? '🎙️ "हाँ" या "नहीं" बोलें...' : selectedLang === 'mr-IN' ? '🎙️ "हो" किंवा "नाही" बोला...' : '🎙️ Listening for "Yes" or "No"...';
+  if (subStatus) subStatus.textContent = selectedLang === 'hi-IN' ? 'भेजने के लिए "हाँ" या रद्द करने के लिए "नहीं" कहें।' : selectedLang === 'mr-IN' ? 'पाठवण्यासाठी "हो" किंवा रद्द करण्यासाठी "नाही" म्हणा.' : 'Say "Yes" to send or "No" to discard.';
   if (pulse) {
     pulse.style.background = 'linear-gradient(135deg, #e65100, #f57f17)';
     pulse.textContent = '👂';
@@ -844,7 +984,7 @@ function listenForVoiceConfirmation() {
     confirmRecognition = new SpeechRecognition();
     confirmRecognition.continuous = true;
     confirmRecognition.interimResults = false;
-    confirmRecognition.lang = 'en-US';
+    confirmRecognition.lang = selectedLang;
 
     confirmRecognition.onresult = (event) => {
       for (let i = event.resultIndex; i < event.results.length; ++i) {
@@ -852,16 +992,27 @@ function listenForVoiceConfirmation() {
           const word = event.results[i][0].transcript.trim().toLowerCase();
           console.log('Voice confirmation input:', word);
 
-          if (word.includes('yes') || word.includes('yeah') || word.includes('sure') || word.includes('send') || word.includes('correct') || word.includes('yep') || word.includes('do it') || word.includes('ok')) {
+          // Support multi-language confirmation phrases
+          const matchesYes = word.includes('yes') || word.includes('yeah') || word.includes('sure') || 
+                             word.includes('हाँ') || word.includes('हां') || word.includes('भेज') || 
+                             word.includes('हो') || word.includes('पाठव') || word.includes('मंजूर');
+                             
+          const matchesNo = word.includes('no') || word.includes('cancel') || word.includes('stop') || 
+                            word.includes('don\'t') || word.includes('discard') || 
+                            word.includes('नहीं') || word.includes('नही') || word.includes('रद्द') || 
+                            word.includes('नाही') || word.includes('नको');
+
+          if (matchesYes) {
             confirmVoiceRequest(true);
             return;
           }
-          if (word.includes('no') || word.includes('cancel') || word.includes('delete') || word.includes('stop') || word.includes('don\'t') || word.includes('nah') || word.includes('discard') || word.includes('nope')) {
+          if (matchesNo) {
             confirmVoiceRequest(false);
             return;
           }
         }
       }
+
     };
 
     confirmRecognition.onerror = (err) => {
@@ -877,16 +1028,17 @@ function listenForVoiceConfirmation() {
 async function confirmVoiceRequest(shouldSend) {
   if (window.speechSynthesis) window.speechSynthesis.cancel();
   stopSpeechAndAudioRecording();
+  const selectedLang = document.getElementById('voiceLangSelect')?.value || 'en-IN';
 
   if (!shouldSend) {
-    if (window.speechSynthesis) {
-      const cancelUtterance = new SpeechSynthesisUtterance('Request cancelled and discarded.');
-      window.speechSynthesis.speak(cancelUtterance);
-    }
-    closeVoiceModal();
+    const cancelMsg = selectedLang === 'hi-IN' ? 'आपका आवाज अनुरोध रद्द कर दिया गया है।' : selectedLang === 'mr-IN' ? 'तुमची आवाज विनंती रद्द करण्यात आली आहे.' : 'Your voice request has been cancelled and discarded.';
+    speakUtteranceWithLocale(cancelMsg, selectedLang);
+
+    closeVoiceModal(false);
+    const rejectTitle = selectedLang === 'hi-IN' ? 'अनुरोध अस्वीकृत / रद्द' : selectedLang === 'mr-IN' ? 'विनंती नाकारली / रद्द' : 'Request Rejected / Discarded';
     showTabPopup(
-      'Request Rejected / Discarded',
-      'Your voice request has been cancelled and discarded.',
+      rejectTitle,
+      cancelMsg,
       '❌',
       '#c62828'
     );
@@ -895,15 +1047,46 @@ async function confirmVoiceRequest(shouldSend) {
 
   const stepStatus = document.getElementById('voiceStepStatus');
   const subStatus = document.getElementById('voiceSubStatus');
-  if (stepStatus) stepStatus.textContent = '⏳ Submitting request...';
-  if (subStatus) subStatus.textContent = 'Please wait a moment.';
+  if (stepStatus) stepStatus.textContent = selectedLang === 'hi-IN' ? '⏳ अनुरोध भेजा जा रहा है...' : selectedLang === 'mr-IN' ? '⏳ विनंती पाठवली जात आहे...' : '⏳ Submitting request...';
+  if (subStatus) subStatus.textContent = selectedLang === 'hi-IN' ? 'कृपया एक क्षण प्रतीक्षा करें।' : selectedLang === 'mr-IN' ? 'कृपया क्षणभर थांबा.' : 'Please wait a moment.';
 
-  if (window.speechSynthesis) {
-    const confirmUtterance = new SpeechSynthesisUtterance('Sending your request now.');
-    window.speechSynthesis.speak(confirmUtterance);
+  const sendMsg = selectedLang === 'hi-IN' ? 'आपका अनुरोध भेजा जा रहा है।' : selectedLang === 'mr-IN' ? 'तुमची विनंती आता पाठवत आहे.' : 'Sending your request now.';
+  speakUtteranceWithLocale(sendMsg, selectedLang);
+
+
+  if (isFormRequestSubmission) {
+    const res = await apiCall('/requests', 'POST', formRequestDataToSubmit);
+    isFormRequestSubmission = false;
+    formRequestDataToSubmit = null;
+    closeVoiceModal(false);
+    if (typeof closeModal === 'function') {
+      closeModal(); // Close standard form modal
+    }
+    if (res.ok && res.data.success) {
+      showTabPopup(
+        t('popup_confirmed_title'),
+        t('popup_confirmed_msg'),
+        '✅',
+        '#2e7d32'
+      );
+      const successVoice = selectedLang === 'hi-IN' ? 'आपका अनुरोध सफलतापूर्वक जमा कर दिया गया है।' : selectedLang === 'mr-IN' ? 'तुमची विनंती यशस्वीरित्या सबमिट केली आहे.' : 'Your request has been submitted successfully.';
+      speakUtteranceWithLocale(successVoice, selectedLang);
+      loadRequests();
+    } else {
+      showTabPopup(
+        t('popup_failed_title'),
+        res.data?.message || t('popup_failed_msg'),
+        '❌',
+        '#c62828'
+      );
+      const failVoice = selectedLang === 'hi-IN' ? 'आपका अनुरोध सबमिट करने में विफल रहा।' : selectedLang === 'mr-IN' ? 'तुमची विनंती सबमिट करण्यात अयशस्वी झाली.' : 'Your request submission failed.';
+      speakUtteranceWithLocale(failVoice, selectedLang);
+    }
+    return;
   }
 
   const cleanTranscript = currentTranscript.trim();
+
   let isLowConfidence = false;
   if (cleanTranscript.length < 15 || currentConfidence < 70) {
     isLowConfidence = true;
@@ -911,15 +1094,37 @@ async function confirmVoiceRequest(shouldSend) {
 
   let category = 'Other';
   const lower = cleanTranscript.toLowerCase();
-  if (lower.includes('grocery') || lower.includes('buy') || lower.includes('food') || lower.includes('store') || lower.includes('milk') || lower.includes('bread')) {
+  
+  // Hindi & Marathi keywords for automatic category tagging
+  const isGrocery = lower.includes('grocery') || lower.includes('buy') || lower.includes('food') || lower.includes('store') || lower.includes('milk') || lower.includes('bread') ||
+                    lower.includes('किराना') || lower.includes('सामान') || lower.includes('खरीद') || lower.includes('दूध') ||
+                    lower.includes('किराणा') || lower.includes('भाजी') || lower.includes('दूध') || lower.includes('खरेदी');
+                    
+  const isMedical = lower.includes('doctor') || lower.includes('hospital') || lower.includes('clinic') || lower.includes('medicine') || lower.includes('pharmacy') ||
+                    lower.includes('डॉक्टर') || lower.includes('अस्पताल') || lower.includes('दवा') || lower.includes('इलाज') ||
+                    lower.includes('दवाखाना') || lower.includes('औषध') || lower.includes('रुग्णालय');
+                    
+  const isTech = lower.includes('phone') || lower.includes('computer') || lower.includes('tech') || lower.includes('tv') || lower.includes('wifi') ||
+                 lower.includes('फ़ोन') || lower.includes('कंप्यूटर') || lower.includes('मोबाईल') ||
+                 lower.includes('संगणक') || lower.includes('टीव्ही') || lower.includes('वायफाय');
+                 
+  const isHouse = lower.includes('clean') || lower.includes('house') || lower.includes('laundry') || lower.includes('sweep') || lower.includes('trash') ||
+                  lower.includes('सफाई') || lower.includes('कचरा') || lower.includes('कपड़े') ||
+                  lower.includes('झाडू') || lower.includes('घरकाम');
+                  
+  const isCompanion = lower.includes('talk') || lower.includes('chat') || lower.includes('walk') || lower.includes('companion') || lower.includes('lonely') ||
+                      lower.includes('बात') || lower.includes('गपशप') || lower.includes('साथ') ||
+                      lower.includes('गप्पा') || lower.includes('सोबत') || lower.includes('एकटे');
+
+  if (isGrocery) {
     category = 'Grocery Shopping';
-  } else if (lower.includes('doctor') || lower.includes('hospital') || lower.includes('clinic') || lower.includes('medicine') || lower.includes('pharmacy')) {
+  } else if (isMedical) {
     category = 'Medical Escort';
-  } else if (lower.includes('phone') || lower.includes('computer') || lower.includes('tech') || lower.includes('tv') || lower.includes('wifi')) {
+  } else if (isTech) {
     category = 'Tech Support';
-  } else if (lower.includes('clean') || lower.includes('house') || lower.includes('laundry') || lower.includes('sweep') || lower.includes('trash')) {
+  } else if (isHouse) {
     category = 'Housekeeping';
-  } else if (lower.includes('talk') || lower.includes('chat') || lower.includes('walk') || lower.includes('companion') || lower.includes('lonely')) {
+  } else if (isCompanion) {
     category = 'Companionship';
   }
 
@@ -928,9 +1133,14 @@ async function confirmVoiceRequest(shouldSend) {
   formData.append('description', cleanTranscript);
   formData.append('transcript', cleanTranscript);
   formData.append('category', category);
-  formData.append('urgency', lower.includes('urgent') || lower.includes('emergency') || lower.includes('today') ? 'high' : 'low');
+  
+  const isUrgent = lower.includes('urgent') || lower.includes('emergency') || lower.includes('today') ||
+                   lower.includes('आपातकालीन') || lower.includes('आज') || lower.includes('त्वरित') ||
+                   lower.includes('तात्काळ') || lower.includes('लगेच');
+  formData.append('urgency', isUrgent ? 'high' : 'low');
   formData.append('aiConfidenceScore', currentConfidence);
   formData.append('aiLowConfidence', isLowConfidence);
+  formData.append('voiceLanguage', selectedLang);
 
   if (voiceAudioBlob) {
     formData.append('audio', voiceAudioBlob, 'voice-request.webm');
@@ -938,32 +1148,39 @@ async function confirmVoiceRequest(shouldSend) {
 
   const res = await apiCall('/requests', 'POST', formData);
 
-  closeVoiceModal();
+  closeVoiceModal(false);
+
 
   if (res.ok && res.data.success) {
     if (res.data.isLowConfidence) {
       showTabPopup(
-        'Voice Request Created!',
-        'Because AI speech confidence was low, your family caregiver has been notified to verify your request.',
+        t('popup_low_conf_title'),
+        t('popup_low_conf_msg'),
         '⚠️',
         '#f57f17'
       );
+      const lowConfVoice = selectedLang === 'hi-IN' ? 'कम आत्मविश्वास के कारण, आपके देखभालकर्ता को सत्यापित करने के लिए सूचित किया गया है।' : selectedLang === 'mr-IN' ? 'कमी विश्वासार्हतेमुळे, तुमच्या काळजीवाहूला पडताळणीसाठी सूचित केले आहे.' : 'Because AI confidence was low, your caregiver has been notified to verify your request.';
+      speakUtteranceWithLocale(lowConfVoice, selectedLang);
     } else {
       showTabPopup(
-        'Help Request Confirmed!',
-        'Your voice request has been confirmed and submitted successfully! Volunteers nearby will be notified.',
+        t('popup_voice_confirmed_title'),
+        t('popup_voice_confirmed_msg'),
         '✅',
         '#2e7d32'
       );
+      const successVoice = selectedLang === 'hi-IN' ? 'आपका अनुरोध सफलतापूर्वक जमा कर दिया गया है।' : selectedLang === 'mr-IN' ? 'तुमची विनंती यशस्वीरित्या सबमिट केली आहे.' : 'Your request has been submitted successfully.';
+      speakUtteranceWithLocale(successVoice, selectedLang);
     }
     loadRequests();
   } else {
     showTabPopup(
-      'Submission Failed',
-      `Failed to submit request: ${res.data?.message || 'Server error'}`,
+      t('popup_failed_title'),
+      res.data?.message || t('popup_failed_msg'),
       '❌',
       '#c62828'
     );
+    const failVoice = selectedLang === 'hi-IN' ? 'आपका अनुरोध सबमिट करने में विफल रहा।' : selectedLang === 'mr-IN' ? 'तुमची विनंती सबमिट करण्यात अयशस्वी झाली.' : 'Your request submission failed.';
+    speakUtteranceWithLocale(failVoice, selectedLang);
   }
 }
 
@@ -1018,7 +1235,7 @@ function showTabConfirm(title, message, onConfirm, icon = '❓') {
   if (noBtn) {
     noBtn.onclick = () => {
       if (modal) modal.style.display = 'none';
-      showTabPopup('Action Aborted', 'Cancellation was aborted. Your request was kept safe.', 'ℹ️', '#1565c0');
+      showTabPopup(t('popup_aborted_title'), t('popup_aborted_msg'), 'ℹ️', '#1565c0');
     };
   }
 }
@@ -1040,15 +1257,29 @@ function triggerSeniorVoiceConfirmationCall(req) {
 
   modal.style.display = 'flex';
 
+  const selectedLang = getLang();
+
   // Read aloud automated voice call message via SpeechSynthesis
-  const callText = `Hello! Your volunteer has completed your request for ${itemLabel}. Please confirm if you received your items. Press 1 or say Yes if you received the items. Press 2 or say No if you did not.`;
-  
-  if (window.speechSynthesis) {
-    window.speechSynthesis.cancel();
-    const callUtterance = new SpeechSynthesisUtterance(callText);
-    callUtterance.rate = 0.95;
-    window.speechSynthesis.speak(callUtterance);
+  let callText = `Hello! Your volunteer has completed your request for ${itemLabel}. Please confirm if you received your items. Press 1 or say Yes if you received the items. Press 2 or say No if you did not.`;
+  if (selectedLang === 'hi') {
+    callText = `नमस्ते! आपके स्वयंसेवक ने ${itemLabel} के लिए आपका अनुरोध पूरा कर लिया है। कृपया पुष्टि करें कि क्या आपको अपनी वस्तुएं प्राप्त हो गई हैं। यदि आपको वस्तुएं प्राप्त हो गई हैं तो १ दबाएं या हाँ कहें। यदि नहीं मिली हैं, तो २ दबाएं या नहीं कहें।`;
+  } else if (selectedLang === 'mr') {
+    callText = `नमस्कार! आपल्या स्वयंसेवकाने ${itemLabel} साठी आपली विनंती पूर्ण केली आहे. कृपया आपल्याला वस्तू मिळाल्या आहेत का याची पुष्टी करा. वस्तू मिळाल्या असल्यास १ दाबा किंवा हो म्हणा. नसल्यास, २ दाबा किंवा नाही म्हणा.`;
   }
+  
+  speakUtteranceWithLocale(callText, selectedLang === 'hi' ? 'hi-IN' : selectedLang === 'mr' ? 'mr-IN' : 'en-IN');
+
+  const ivrReadoutText = document.getElementById('ivrReadoutText');
+  if (ivrReadoutText) {
+    if (selectedLang === 'hi') {
+      ivrReadoutText.innerHTML = `🔊 "यदि आपको वस्तुएं प्राप्त हो गई हैं तो १ दबाएं या हाँ कहें।<br>यदि नहीं मिली हैं, तो २ दबाएं या नहीं कहें।"`;
+    } else if (selectedLang === 'mr') {
+      ivrReadoutText.innerHTML = `🔊 "वस्तू मिळाल्या असल्यास १ दाबा किंवा हो म्हणा।<br>नसल्यास, २ दाबा किंवा नाही म्हणा।"`;
+    } else {
+      ivrReadoutText.innerHTML = `🔊 "Press 1 or say 'YES' if you received the items.<br>Press 2 or say 'NO' if you did not."`;
+    }
+  }
+
 
   // Bind Dialpad Button Handlers
   const btn1 = document.getElementById('btnIvrPress1');
@@ -1069,6 +1300,8 @@ function startIvrVoiceListener(requestId) {
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SpeechRecognition) return;
 
+  const selectedLang = getLang();
+
   try {
     if (ivrSpeechRecognition) {
       try { ivrSpeechRecognition.stop(); } catch (e) {}
@@ -1077,15 +1310,23 @@ function startIvrVoiceListener(requestId) {
     ivrSpeechRecognition = new SpeechRecognition();
     ivrSpeechRecognition.continuous = false;
     ivrSpeechRecognition.interimResults = false;
-    ivrSpeechRecognition.lang = 'en-US';
+    ivrSpeechRecognition.lang = selectedLang === 'hi' ? 'hi-IN' : selectedLang === 'mr' ? 'mr-IN' : 'en-IN';
 
     ivrSpeechRecognition.onresult = (event) => {
       const transcript = event.results[0][0].transcript.toLowerCase().trim();
       console.log('IVR Spoken Response Detected:', transcript);
 
-      if (transcript.includes('yes') || transcript.includes('one') || transcript === '1' || transcript.includes('receive')) {
+      const matchesYes = transcript.includes('yes') || transcript.includes('one') || transcript === '1' || transcript.includes('receive') ||
+                         transcript.includes('हाँ') || transcript.includes('हां') || transcript.includes('एक') ||
+                         transcript.includes('हो') || transcript.includes('मिळा');
+                         
+      const matchesNo = transcript.includes('no') || transcript.includes('two') || transcript === '2' || transcript.includes('not') ||
+                        transcript.includes('नहीं') || transcript.includes('नही') || transcript.includes('दो') ||
+                        transcript.includes('नाही') || transcript.includes('ना');
+
+      if (matchesYes) {
         submitSeniorVoiceIVRResponse(requestId, 1);
-      } else if (transcript.includes('no') || transcript.includes('two') || transcript === '2' || transcript.includes('not')) {
+      } else if (matchesNo) {
         submitSeniorVoiceIVRResponse(requestId, 2);
       }
     };
@@ -1105,11 +1346,17 @@ async function submitSeniorVoiceIVRResponse(requestId, selection) {
   }
 
   const isYes = (selection == 1 || selection === '1');
-  const feedbackMsg = isYes ? "Thank you! Your delivery confirmation has been verified." : "We have recorded your report. Support will follow up with your volunteer.";
-
-  if (window.speechSynthesis) {
-    window.speechSynthesis.speak(new SpeechSynthesisUtterance(feedbackMsg));
+  const selectedLang = getLang();
+  
+  let feedbackMsg = isYes ? "Thank you! Your delivery confirmation has been verified." : "We have recorded your report. Support will follow up with your volunteer.";
+  if (selectedLang === 'hi') {
+    feedbackMsg = isYes ? "धन्यवाद! आपका वितरण सत्यापन सफलतापूर्वक पूर्ण हो गया है।" : "हमने आपकी रिपोर्ट दर्ज कर ली है। सहायता टीम जल्द ही आपके स्वयंसेवक से संपर्क करेगी।";
+  } else if (selectedLang === 'mr') {
+    feedbackMsg = isYes ? "धन्यवाद! आपली वितरण खात्री यशस्वीरित्या पूर्ण झाली आहे." : "आम्ही आपला अहवाल नोंदवला आहे. मदत टीम लवकरच आपल्या स्वयंसेवकाशी संपर्क साधेल.";
   }
+
+  speakUtteranceWithLocale(feedbackMsg, selectedLang === 'hi' ? 'hi-IN' : selectedLang === 'mr' ? 'mr-IN' : 'en-IN');
+
 
   const modal = document.getElementById('ivrCallModal');
   if (modal) modal.style.display = 'none';
@@ -1118,16 +1365,16 @@ async function submitSeniorVoiceIVRResponse(requestId, selection) {
 
   if (res.ok && res.data.success) {
     showTabPopup(
-      isYes ? 'Delivery Confirmed!' : 'Issue Reported',
-      isYes ? '✅ Delivery confirmed! Thank you.' : '⚠️ Issue reported: Item not received.',
+      isYes ? t('popup_delivery_confirmed_title') : t('popup_issue_reported_title'),
+      isYes ? t('popup_delivery_confirmed_msg') : t('popup_issue_reported_msg'),
       isYes ? '✅' : '⚠️',
       isYes ? '#2e7d32' : '#f57f17'
     );
     loadRequests();
   } else {
     showTabPopup(
-      'Error',
-      res.data?.message || 'Error submitting response',
+      t('popup_error_title'),
+      res.data?.message || t('popup_error_submit_msg'),
       '❌',
       '#c62828'
     );

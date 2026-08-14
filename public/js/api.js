@@ -134,6 +134,47 @@ document.addEventListener('DOMContentLoaded', () => {
   // Apply saved font size immediately
   applyFontSize(currentFontSize);
 
+  // Auto-inject language switcher next to accessibility size indicators
+  const accPanel = document.querySelector('.accessibility-panel');
+  if (accPanel) {
+    // Create language switcher wrapper
+    const langWrapper = document.createElement('div');
+    langWrapper.className = 'lang-switcher';
+    langWrapper.style.cssText = 'display: inline-flex; gap: 8px; margin-left: 20px; align-items: center; border-left: 2px solid #ccc; padding-left: 15px;';
+    
+    // Hindi/Marathi translation labels for the label itself
+    const labelSpan = document.createElement('span');
+    labelSpan.setAttribute('data-i18n', 'nav_language_label');
+    labelSpan.style.cssText = 'font-size: 0.95rem; font-weight: bold; margin-right: 4px;';
+    labelSpan.textContent = 'Lang:';
+    
+    const btnEn = document.createElement('button');
+    btnEn.id = 'langBtnEn';
+    btnEn.textContent = 'EN';
+    btnEn.onclick = () => setLang('en');
+    
+    const btnHi = document.createElement('button');
+    btnHi.id = 'langBtnHi';
+    btnHi.textContent = 'हि';
+    btnHi.onclick = () => setLang('hi');
+    
+    const btnMr = document.createElement('button');
+    btnMr.id = 'langBtnMr';
+    btnMr.textContent = 'म';
+    btnMr.onclick = () => setLang('mr');
+
+    langWrapper.appendChild(labelSpan);
+    langWrapper.appendChild(btnEn);
+    langWrapper.appendChild(btnHi);
+    langWrapper.appendChild(btnMr);
+    accPanel.appendChild(langWrapper);
+
+    // Apply switcher button active styles based on current language
+    if (typeof updateLangSwitcherUI === 'function') {
+      updateLangSwitcherUI(getLang());
+    }
+  }
+
   // Bind accessibility click handlers
   const btnInc = document.getElementById('btnTextIncrease');
   const btnDec = document.getElementById('btnTextDecrease');
@@ -143,13 +184,21 @@ document.addEventListener('DOMContentLoaded', () => {
   if (btnDec) btnDec.addEventListener('click', decreaseFontSize);
   if (btnReset) btnReset.addEventListener('click', resetFontSize);
 
-  // Add username to navigation if logged in
+  // Sync language selection from user object
   const userStr = localStorage.getItem('user');
   if (userStr) {
-    const user = JSON.parse(userStr);
-    const navUser = document.getElementById('navUserName');
-    if (navUser) {
-      navUser.textContent = `Hello, ${user.name} (${user.role === 'senior' ? 'Senior' : user.role === 'volunteer' ? 'Volunteer' : 'Admin'})`;
+    try {
+      const user = JSON.parse(userStr);
+      if (user.language && !localStorage.getItem('appLang')) {
+        localStorage.setItem('appLang', user.language);
+      }
+      
+      const navUser = document.getElementById('navUserName');
+      if (navUser) {
+        navUser.textContent = `Hello, ${user.name} (${user.role === 'senior' ? 'Senior' : user.role === 'volunteer' ? 'Volunteer' : 'Admin'})`;
+      }
+    } catch (e) {
+      console.error(e);
     }
   }
 
@@ -162,6 +211,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 });
+
 
 // Global Toast Notification Helper
 function showToast(message, type = 'info') {

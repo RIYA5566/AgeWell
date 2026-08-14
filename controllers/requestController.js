@@ -1,5 +1,6 @@
 const HelpRequest = require('../models/HelpRequest');
 const User = require('../models/User');
+const Earning = require('../models/Earning');
 const { recommendPlatforms } = require('../utils/platformRecommender');
 
 // ─── Helper: check if a senior has any linked family members ──────────────
@@ -374,6 +375,28 @@ exports.familyApproveRequest = async (req, res) => {
     request.familyReviewedAt = Date.now();
     await request.save();
 
+    // ── Create PENDING Earning record when a volunteer is approved ────────────
+    // Only create if a specific volunteer was selected (not a community allotment)
+    // and the service fee is > 0 (voluntary/free tasks still get a ₹0 record for history)
+    if (selectedVolId) {
+      try {
+        // Avoid duplicate: remove any pre-existing PENDING earning for same request+volunteer
+        await Earning.deleteOne({ request: request._id, volunteer: selectedVolId, status: 'PENDING', type: 'SERVICE_CHARGE' });
+        await Earning.create({
+          volunteer: selectedVolId,
+          request: request._id,
+          amount: request.serviceFee || 0,
+          type: 'SERVICE_CHARGE',
+          status: 'PENDING',
+          taskTitle: request.title || 'Help Request',
+          taskCategory: request.category || 'Other'
+        });
+      } catch (earnErr) {
+        console.error('Earning creation error (familyApproveRequest):', earnErr);
+        // Non-fatal — don't fail the whole request
+      }
+    }
+
     request = await HelpRequest.findById(request._id)
       .populate('senior', 'name phone address emergencyContact')
       .populate('volunteer', 'name phone email skills')
@@ -727,6 +750,53 @@ exports.verifyCompletionByFamily = async (req, res) => {
     }
 
     await request.save();
+
+    // ── Update Earning records on completion approval ─────────────────────────
+    if (approved && request.volunteer) {
+      try {
+        const releasedAt = new Date();
+
+        // 1. Flip the PENDING service-charge earning to RELEASED
+        const updated = await Earning.findOneAndUpdate(
+          { request: request._id, volunteer: request.volunteer, type: 'SERVICE_CHARGE', status: 'PENDING' },
+          { $set: { status: 'RELEASED', releasedAt } }
+        );
+
+        // If no Earning record existed (legacy task), create one now
+        if (!updated) {
+          await Earning.create({
+            volunteer: request.volunteer,
+            request: request._id,
+            amount: request.serviceFee || 0,
+            type: 'SERVICE_CHARGE',
+            status: 'RELEASED',
+            taskTitle: request.title || 'Completed Task',
+            taskCategory: request.category || 'Other',
+            releasedAt
+          });
+        }
+
+        // 2. If a tip was given, create a separate TIP earning (RELEASED immediately)
+        const tipAmt = Number(request.tipAmount || 0);
+        if (tipAmt > 0) {
+          // Remove any existing tip earning for this request to avoid duplication
+          await Earning.deleteOne({ request: request._id, volunteer: request.volunteer, type: 'TIP' });
+          await Earning.create({
+            volunteer: request.volunteer,
+            request: request._id,
+            amount: tipAmt,
+            type: 'TIP',
+            status: 'RELEASED',
+            taskTitle: request.title || 'Completed Task',
+            taskCategory: request.category || 'Other',
+            releasedAt
+          });
+        }
+      } catch (earnErr) {
+        console.error('Earning update error (verifyCompletionByFamily):', earnErr);
+        // Non-fatal — task completion should still succeed
+      }
+    }
 
     const populatedRequest = await HelpRequest.findById(request._id)
       .populate('senior', 'name phone address emergencyContact')

@@ -143,7 +143,11 @@ document.addEventListener('DOMContentLoaded', () => {
         formData.append('address', address);
         formData.append('role', role);
 
+        const language = document.querySelector('input[name="language"]:checked')?.value || 'en';
+        formData.append('language', language);
+
         const aadhaarNumber = document.getElementById('aadhaarNumber')?.value.trim() || '';
+
         formData.append('aadhaarNumber', aadhaarNumber);
         formData.append('isPhoneVerified', isPhoneVerifiedState || true);
         formData.append('isEmailVerified', isEmailVerifiedState || true);
@@ -172,8 +176,10 @@ document.addEventListener('DOMContentLoaded', () => {
           password,
           phone,
           address,
-          role
+          role,
+          language: document.querySelector('input[name="language"]:checked')?.value || 'en'
         };
+
 
         if (role === 'senior') {
           body.emergencyContact = document.getElementById('emergencyContact').value.trim();
@@ -197,6 +203,21 @@ document.addEventListener('DOMContentLoaded', () => {
       } else {
         alertArea.innerHTML = `<div class="alert alert-danger">${res.data.message || 'Registration failed'}</div>`;
       }
+    });
+
+    // Sync registration page UI on live language preference select
+    const langChoices = document.querySelectorAll('input[name="language"]');
+    langChoices.forEach(radio => {
+      radio.addEventListener('change', (e) => {
+        // Remove class from all labels first
+        document.querySelectorAll('.lang-choice').forEach(lbl => lbl.classList.remove('selected'));
+        // Add class to parent label
+        radio.closest('.lang-choice').classList.add('selected');
+        // Live translation preview
+        if (typeof setLang === 'function') {
+          setLang(e.target.value);
+        }
+      });
     });
   }
 
@@ -235,3 +256,5 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 });
+
+
