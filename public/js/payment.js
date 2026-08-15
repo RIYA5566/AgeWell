@@ -238,30 +238,24 @@ function updateSummaryUI() {
 
   totalAmount = itemsCost + volunteerFee + platformFee + tipAmount;
 
-  if (elTotal)        elTotal.textContent        = `₹${totalAmount}`;
-  if (btnPay)         btnPay.textContent         = `Pay ₹${totalAmount}`;
+  if (elTotal)   elTotal.textContent   = `₹${totalAmount}`;
+  if (btnPay)    btnPay.textContent    = `🔐 Pay ₹${totalAmount} via Razorpay`;
   if (successPaidTo && volunteerName) successPaidTo.textContent = volunteerName;
-  if (receiptVol && volunteerName)    receiptVol.textContent    = volunteerName;
+  if (receiptVol    && volunteerName) receiptVol.textContent    = volunteerName;
 }
 
-function selectPaymentMethod(methodKey) {
-  const radioUpi = document.getElementById('methodUpi');
-  const radioDebit = document.getElementById('methodDebit');
-  const radioCredit = document.getElementById('methodCredit');
-  const radioNetbanking = document.getElementById('methodNetbanking');
-  const upiGroup = document.getElementById('upiGroup');
+// ─── Razorpay Payment Flow ───────────────────────────────────────────────────
+//
+// Step 1: POST /api/payments/create-order  → get orderId + key from server
+// Step 2: Open Razorpay checkout with orderId
+// Step 3: On success, POST /api/payments/verify with payment IDs + signature
+// Step 4: Show success card on verified response
+//
+// Graceful fallback: if server returns simulated:true (no Razorpay keys)
+// the checkout is skipped and payment is logged directly.
+// ─────────────────────────────────────────────────────────────────────────────
 
-  if (radioUpi) radioUpi.checked = (methodKey === 'upi');
-  if (radioDebit) radioDebit.checked = (methodKey === 'debit');
-  if (radioCredit) radioCredit.checked = (methodKey === 'credit');
-  if (radioNetbanking) radioNetbanking.checked = (methodKey === 'netbanking');
-
-  if (upiGroup) {
-    upiGroup.style.display = (methodKey === 'upi') ? 'block' : 'none';
-  }
-}
-
-// Generate random Transaction ID matching TXN format (e.g. TXN92837462)
+// Generate fallback Transaction ID for receipt display (e.g. TXN92837462)
 function generateTxnId() {
   const randDigits = Math.floor(10000000 + Math.random() * 90000000);
   return `TXN${randDigits}`;
@@ -271,94 +265,159 @@ async function processPayment() {
   const btnPay = document.getElementById('btnPay');
   if (btnPay) {
     btnPay.disabled = true;
-    btnPay.textContent = 'Processing Payment...';
+    btnPay.textContent = 'Initialising Payment...';
   }
 
-  // Generate Transaction ID
-  transactionId = generateTxnId();
+  // ── Step 1: Create Razorpay Order (server-side) ────────────────────────────
+  let orderData;
+  try {
+    const orderRes = await apiCall('/payments/create-order', 'POST', {
+      requestId: currentRequestId,
+      paymentType,
+      tipAmount
+    });
 
-  // Get selected payment method
-  const selectedRadio = document.querySelector('input[name="paymentMethod"]:checked');
-  const paymentMethod = selectedRadio ? selectedRadio.value : 'UPI';
-
-  // If requestId is available, commit payment to backend
-  if (currentRequestId) {
-    if (paymentType === 'purchase') {
-      const payload = {
-        paymentMethod: paymentMethod,
-        transactionId: transactionId
-      };
-      const res = await apiCall(`/requests/${currentRequestId}/approve-purchase-funding`, 'PUT', payload);
-      if (res.ok && res.data.success) {
-        if (res.data.request && res.data.request.volunteer && typeof res.data.request.volunteer === 'object' && res.data.request.volunteer.name) {
-          volunteerName = res.data.request.volunteer.name;
-        }
-      } else {
-        console.warn('Purchase payment notice:', res.data?.message);
+    if (!orderRes.ok || !orderRes.data.success) {
+      const msg = orderRes.data?.message || 'Could not create payment order. Please try again.';
+      alert(msg);
+      if (btnPay) {
+        btnPay.disabled = false;
+        btnPay.textContent = `🔐 Pay ₹${totalAmount} via Razorpay`;
       }
-    } else if (paymentType === 'tip') {
-      const payload = {
-        tipAmount: tipAmount,
-        paymentMethod: paymentMethod,
-        transactionId: transactionId
-      };
-      const res = await apiCall(`/requests/${currentRequestId}/pay-tip`, 'PUT', payload);
-      if (res.ok && res.data.success) {
-        if (res.data.request && res.data.request.volunteer && typeof res.data.request.volunteer === 'object' && res.data.request.volunteer.name) {
-          volunteerName = res.data.request.volunteer.name;
-        }
-      } else {
-        console.warn('Tip payment notice:', res.data?.message);
-      }
-    } else {
-      const payload = {
-        approved: true,
-        tipAmount: tipAmount,
-        paymentDetails: {
-          amountPaid: totalAmount,
-          itemsCost: itemsCost,
-          volunteerFee: volunteerFee,
-          platformFee: platformFee,
-          tipAmount: tipAmount,
-          transactionId: transactionId,
-          paymentMethod: paymentMethod
-        }
-      };
-
-      const res = await apiCall(`/requests/${currentRequestId}/verify-completion-family`, 'PUT', payload);
-      if (res.ok && res.data.success) {
-        if (res.data.request && res.data.request.volunteer && typeof res.data.request.volunteer === 'object' && res.data.request.volunteer.name) {
-          volunteerName = res.data.request.volunteer.name;
-        }
-      } else {
-        console.warn('Backend verification payment notice:', res.data?.message);
-      }
+      return;
     }
+    orderData = orderRes.data;
+  } catch (err) {
+    console.error('create-order error:', err);
+    alert('Network error creating order. Please check your connection.');
+    if (btnPay) { btnPay.disabled = false; btnPay.textContent = `🔐 Pay ₹${totalAmount} via Razorpay`; }
+    return;
   }
 
-  // Simulate payment processing delay & show Step 4 Success Screen
-  setTimeout(() => {
-    const formCard = document.getElementById('paymentFormCard');
-    const successCard = document.getElementById('paymentSuccessCard');
-    const successAmount = document.getElementById('successAmount');
-    const successTxnId = document.getElementById('successTxnId');
-    const successPaidTo = document.getElementById('successPaidTo');
+  // ── Simulated fallback (Razorpay keys not set) ─────────────────────────────
+  if (orderData.simulated) {
+    // Hide test-mode badge in simulated mode since we're not even using Razorpay
+    const badge = document.getElementById('rzpTestModeBadge');
+    if (badge) badge.textContent = '🧪 Simulated Mode — No gateway (keys not configured)';
 
-    if (formCard) formCard.style.display = 'none';
-    if (successCard) successCard.style.display = 'block';
+    // Post to verify endpoint with simulated flag
+    const verifyRes = await apiCall('/payments/verify', 'POST', {
+      razorpay_order_id: orderData.orderId,
+      razorpay_payment_id: `sim_pay_${Date.now()}`,
+      razorpay_signature: '',
+      simulated: true,
+      requestId: currentRequestId,
+      paymentType,
+      tipAmount
+    });
 
-    if (successAmount) successAmount.textContent = `₹${totalAmount}`;
-    if (successTxnId)  successTxnId.textContent  = transactionId;
-    if (successPaidTo) successPaidTo.textContent = volunteerName;
+    transactionId = verifyRes.data?.transactionId || generateTxnId();
+    if (verifyRes.data?.success && orderData.volunteerName) volunteerName = orderData.volunteerName;
+    showSuccessCard();
+    return;
+  }
 
-    // Only ask for feedback after the FINAL payment (tip or service charge release),
-    // NOT after purchase funding — feedback comes once at the end only.
-    if (paymentType !== 'purchase') {
-      setTimeout(() => {
-        openFeedbackModal();
-      }, 600);
+  // ── Step 2: Open Razorpay Standard Checkout ────────────────────────────────
+  if (typeof Razorpay === 'undefined') {
+    console.warn('Razorpay SDK not loaded. Falling back to simulated payment.');
+    transactionId = generateTxnId();
+    showSuccessCard();
+    return;
+  }
+
+  const rzpOptions = {
+    key: orderData.key,
+    amount: orderData.amount * 100,   // paise
+    currency: 'INR',
+    name: 'AgeWell',
+    description: paymentType === 'purchase'
+      ? 'Shopping Fund Release'
+      : paymentType === 'tip'
+      ? 'Volunteer Tip'
+      : 'Service Charge Release',
+    order_id: orderData.orderId,
+    image: '',   // optional logo
+    theme: { color: '#2e7d32' },
+    prefill: {
+      name: '',
+      email: '',
+      contact: ''
+    },
+    notes: {
+      requestId: currentRequestId,
+      paymentType
+    },
+    // ── Step 3: Payment Success Handler ─────────────────────────────────────
+    handler: async function (response) {
+      const { razorpay_payment_id, razorpay_order_id, razorpay_signature } = response;
+
+      try {
+        const verifyRes = await apiCall('/payments/verify', 'POST', {
+          razorpay_payment_id,
+          razorpay_order_id,
+          razorpay_signature,
+          requestId: currentRequestId,
+          paymentType,
+          tipAmount
+        });
+
+        if (verifyRes.data?.success) {
+          transactionId = razorpay_payment_id;
+          if (orderData.volunteerName) volunteerName = orderData.volunteerName;
+          showSuccessCard();
+        } else {
+          alert('Payment verification failed: ' + (verifyRes.data?.message || 'Unknown error'));
+          if (btnPay) { btnPay.disabled = false; btnPay.textContent = `🔐 Pay ₹${totalAmount} via Razorpay`; }
+        }
+      } catch (verifyErr) {
+        console.error('Verify error:', verifyErr);
+        alert('Payment recorded but verification call failed. Please contact support.');
+      }
+    },
+    // ── Payment Cancelled / Dismissed ────────────────────────────────────────
+    modal: {
+      ondismiss: function () {
+        console.log('Razorpay checkout dismissed by user.');
+        if (btnPay) {
+          btnPay.disabled = false;
+          btnPay.textContent = `🔐 Pay ₹${totalAmount} via Razorpay`;
+        }
+      }
     }
-  }, 1200);
+  };
+
+  const rzp = new Razorpay(rzpOptions);
+  rzp.on('payment.failed', function (response) {
+    console.error('Razorpay payment failed:', response.error);
+    alert(`Payment failed: ${response.error.description || 'Please try again.'}`);
+    if (btnPay) {
+      btnPay.disabled = false;
+      btnPay.textContent = `🔐 Pay ₹${totalAmount} via Razorpay`;
+    }
+  });
+
+  rzp.open();
+}
+
+// Show the payment success card (shared by real and simulated paths)
+function showSuccessCard() {
+  const formCard = document.getElementById('paymentFormCard');
+  const successCard = document.getElementById('paymentSuccessCard');
+  const successAmount = document.getElementById('successAmount');
+  const successTxnId = document.getElementById('successTxnId');
+  const successPaidTo = document.getElementById('successPaidTo');
+
+  if (formCard) formCard.style.display = 'none';
+  if (successCard) successCard.style.display = 'block';
+
+  if (successAmount) successAmount.textContent = `₹${totalAmount}`;
+  if (successTxnId)  successTxnId.textContent  = transactionId;
+  if (successPaidTo) successPaidTo.textContent = volunteerName;
+
+  // Only show feedback modal after final payment (not purchase funding)
+  if (paymentType !== 'purchase') {
+    setTimeout(() => { openFeedbackModal(); }, 600);
+  }
 }
 
 function openReceiptModal() {

@@ -1032,9 +1032,7 @@ async function confirmVoiceRequest(shouldSend) {
 
   if (!shouldSend) {
     const cancelMsg = selectedLang === 'hi-IN' ? 'आपका आवाज अनुरोध रद्द कर दिया गया है।' : selectedLang === 'mr-IN' ? 'तुमची आवाज विनंती रद्द करण्यात आली आहे.' : 'Your voice request has been cancelled and discarded.';
-    speakUtteranceWithLocale(cancelMsg, selectedLang);
-
-    closeVoiceModal(false);
+    closeVoiceModal(true);
     const rejectTitle = selectedLang === 'hi-IN' ? 'अनुरोध अस्वीकृत / रद्द' : selectedLang === 'mr-IN' ? 'विनंती नाकारली / रद्द' : 'Request Rejected / Discarded';
     showTabPopup(
       rejectTitle,

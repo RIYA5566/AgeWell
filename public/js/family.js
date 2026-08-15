@@ -147,6 +147,11 @@ document.addEventListener('DOMContentLoaded', () => {
   // Initial load
   loadFamilyDashboard();
 
+  // Listen for language change events to re-render the dashboard lists with updated translation templates
+  window.addEventListener('languageChanged', () => {
+    loadFamilyDashboard(true);
+  });
+
   // Auto-refresh every 30 seconds
   pollInterval = setInterval(() => {
     loadFamilyDashboard(true); // silent refresh
@@ -255,8 +260,7 @@ async function viewVolunteerProfile(volId) {
   if (!vol) {
     detailsEl.innerHTML = `
       <div style="padding: 1.5rem; text-align: center; color: #666;">
-        <p style="font-weight: bold; font-size: 1.1rem; color: #c62828;">Volunteer details loading or unavailable.</p>
-        <p style="font-size: 0.9rem;">Please try refreshing the portal page.</p>
+        <p style="font-weight: bold; font-size: 1.1rem; color: #c62828;">${t('fd_vol_details_unavail')}</p>
       </div>`;
     modal.style.display = 'flex';
     return;
@@ -294,9 +298,9 @@ async function viewVolunteerProfile(volId) {
 
   const skillsHtml = (vol.skills && vol.skills.length > 0)
     ? vol.skills.map(s => `<span class="skill-tag" style="background:#e8f5e9; color:#2e7d32; border:1px solid #a5d6a7; font-weight:600; font-size:0.9rem; padding:4px 12px; border-radius:15px;">${escapeHTML(s)}</span>`).join('')
-    : `<span style="color:#888; font-style:italic;">No specific skills listed</span>`;
+    : `<span style="color:#888; font-style:italic;">${t('fd_no_skills_listed')}</span>`;
 
-  const memberSince = vol.createdAt ? new Date(vol.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Registered Volunteer';
+  const memberSince = vol.createdAt ? new Date(vol.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : t('fd_registered_volunteer');
 
   detailsEl.innerHTML = `
     <!-- Header Banner with Symmetrical Ratings Badges -->
@@ -310,24 +314,24 @@ async function viewVolunteerProfile(volId) {
           <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 8px;">
             <h3 style="margin: 0; color: #1b5e20; font-size: 1.3rem; font-weight: 700; line-height: 1.2;">${vName}</h3>
             <span style="font-weight: 700; color: #b45309; background: #fffdf5; border: 1.5px solid #fde68a; padding: 3px 12px; border-radius: 16px; font-size: 0.88rem; white-space: nowrap; box-shadow: 0 2px 5px rgba(245,158,11,0.12);">
-              ⭐ ${stats.reviewsCount > 0 ? stats.overallRating.toFixed(1) : '0.0'} Overall Rating
+              ⭐ ${stats.reviewsCount > 0 ? stats.overallRating.toFixed(1) : '0.0'} ${t('fd_overall_rating')}
             </span>
           </div>
 
           <!-- Symmetrical Badges Grid -->
           <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center; font-size: 0.88rem; color: #374151; margin-bottom: 8px;">
-            <span style="background: #ffffff; border: 1px solid #c8e6c9; padding: 3px 10px; border-radius: 12px; font-weight: 500;">💰 Cost Utilization <strong style="color: #2e7d32;">${stats.costUtilization > 0 ? stats.costUtilization.toFixed(1) : '0'}/5</strong></span>
-            <span style="background: #ffffff; border: 1px solid #c8e6c9; padding: 3px 10px; border-radius: 12px; font-weight: 500;">⏱️ Speed <strong style="color: #2e7d32;">${stats.speedTimeliness > 0 ? stats.speedTimeliness.toFixed(1) : '0'}/5</strong></span>
-            <span style="background: #ffffff; border: 1px solid #c8e6c9; padding: 3px 10px; border-radius: 12px; font-weight: 500;">📞 Communication <strong style="color: #2e7d32;">${stats.communication > 0 ? stats.communication.toFixed(1) : '0'}/5</strong></span>
-            <span style="background: #ffffff; border: 1px solid #c8e6c9; padding: 3px 10px; border-radius: 12px; font-weight: 500;">👍 <strong style="color: #2e7d32;">${stats.recommendationRate}%</strong> recommend</span>
-            <span style="background: #ffffff; border: 1px solid #c8e6c9; padding: 3px 10px; border-radius: 12px; font-weight: 500;">✓ <strong style="color: #2e7d32;">${stats.tasksCompleted}</strong> tasks</span>
+            <span style="background: #ffffff; border: 1px solid #c8e6c9; padding: 3px 10px; border-radius: 12px; font-weight: 500;">💰 ${t('fd_feedback_cost_utilization')} <strong style="color: #2e7d32;">${stats.costUtilization > 0 ? stats.costUtilization.toFixed(1) : '0'}/5</strong></span>
+            <span style="background: #ffffff; border: 1px solid #c8e6c9; padding: 3px 10px; border-radius: 12px; font-weight: 500;">⏱️ ${t('fd_feedback_speed_timeliness')} <strong style="color: #2e7d32;">${stats.speedTimeliness > 0 ? stats.speedTimeliness.toFixed(1) : '0'}/5</strong></span>
+            <span style="background: #ffffff; border: 1px solid #c8e6c9; padding: 3px 10px; border-radius: 12px; font-weight: 500;">📞 ${t('fd_feedback_communication')} <strong style="color: #2e7d32;">${stats.communication > 0 ? stats.communication.toFixed(1) : '0'}/5</strong></span>
+            <span style="background: #ffffff; border: 1px solid #c8e6c9; padding: 3px 10px; border-radius: 12px; font-weight: 500;">👍 <strong style="color: #2e7d32;">${stats.recommendationRate}%</strong> ${t('fd_recommend')}</span>
+            <span style="background: #ffffff; border: 1px solid #c8e6c9; padding: 3px 10px; border-radius: 12px; font-weight: 500;">✓ <strong style="color: #2e7d32;">${stats.tasksCompleted}</strong> ${t('fd_tasks')}</span>
           </div>
 
           <!-- Verification Status & Member Date -->
           <div style="font-size: 0.86rem; color: #2e7d32; font-weight: 600; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-            <span>${isFullyVerified ? '🛡️ Multi-Level Verified Volunteer ✅' : '⏳ Background Clearance Pending'}</span>
+            <span>${isFullyVerified ? t('fd_fully_verified') : t('fd_background_clearance_pending')}</span>
             <span style="color: #a5d6a7;">•</span>
-            <span style="color: #555; font-weight: 500;">Joined: ${memberSince}</span>
+            <span style="color: #555; font-weight: 500;">${t('fd_joined')} ${memberSince}</span>
           </div>
         </div>
       </div>
@@ -336,38 +340,38 @@ async function viewVolunteerProfile(volId) {
     <!-- Multi-Level Verification Clearances -->
     <div style="margin-bottom: 1.2rem; background: #ffffff; border: 2px solid #e0e0e0; border-radius: 12px; padding: 1rem;">
       <h4 style="color: #1b5e20; margin-top: 0; margin-bottom: 10px; font-size: 1.05rem; display: flex; align-items: center; gap: 6px;">
-        🛡️ Admin &amp; Police Verification Clearances:
+        🛡️ ${t('fd_verification_clearances')}
       </h4>
       <div style="display: flex; gap: 8px; flex-wrap: wrap;">
         <span class="skill-tag" style="background: ${isIdVerified ? '#e8f5e9' : '#ffebee'}; color: ${isIdVerified ? '#2e7d32' : '#c62828'}; border: 1px solid ${isIdVerified ? '#a5d6a7' : '#ef9a9a'}; font-weight: bold; font-size: 0.88rem; padding: 6px 12px;">
-          📄 Govt Photo ID: ${isIdVerified ? 'Verified ✅' : 'Pending'}
+          📄 ${t('fd_govt_photo_id')} ${isIdVerified ? t('fd_govt_id_verified') : t('fd_govt_id_pending')}
         </span>
         <span class="skill-tag" style="background: ${isPoliceVerified ? '#e8f5e9' : '#fff3e0'}; color: ${isPoliceVerified ? '#2e7d32' : '#e65100'}; border: 1px solid ${isPoliceVerified ? '#a5d6a7' : '#ffe082'}; font-weight: bold; font-size: 0.88rem; padding: 6px 12px;">
-          👮 Police Check: ${isPoliceVerified ? 'Clearance Approved ✅' : 'Pending Admin Clearance'}
+          👮 ${t('fd_police_check_label')} ${isPoliceVerified ? t('fd_police_check_approved') : t('fd_police_check_pending')}
         </span>
         <span class="skill-tag" style="background: ${isPhoneVerified ? '#e8f5e9' : '#ffebee'}; color: ${isPhoneVerified ? '#2e7d32' : '#c62828'}; border: 1px solid ${isPhoneVerified ? '#a5d6a7' : '#ef9a9a'}; font-weight: bold; font-size: 0.88rem; padding: 6px 12px;">
-          📞 Phone: ${isPhoneVerified ? 'Verified ✅' : 'Unverified'}
+          📞 ${t('fd_phone')} ${isPhoneVerified ? t('fd_phone_verified') : t('fd_phone_unverified')}
         </span>
         <span class="skill-tag" style="background: ${isEmailVerified ? '#e8f5e9' : '#ffebee'}; color: ${isEmailVerified ? '#2e7d32' : '#c62828'}; border: 1px solid ${isEmailVerified ? '#a5d6a7' : '#ef9a9a'}; font-weight: bold; font-size: 0.88rem; padding: 6px 12px;">
-          📧 Email: ${isEmailVerified ? 'Verified ✅' : 'Unverified'}
+          📧 ${t('fd_email')} ${isEmailVerified ? t('fd_email_verified') : t('fd_email_unverified')}
         </span>
       </div>
     </div>
 
     <!-- Contact Details -->
     <div style="margin-bottom: 1.2rem; background: #ffffff; border: 2px solid #e0e0e0; border-radius: 12px; padding: 1rem;">
-      <h4 style="color: #1565c0; margin-top: 0; margin-bottom: 10px; font-size: 1.05rem;">📞 Direct Contact Details:</h4>
+      <h4 style="color: #1565c0; margin-top: 0; margin-bottom: 10px; font-size: 1.05rem;">${t('fd_direct_contact')}</h4>
       <p style="margin: 6px 0; font-size: 1rem;">
-        <strong>Phone:</strong> <a href="tel:${vPhone}" style="color: #1565c0; font-weight: bold; text-decoration: none;">${vPhone}</a>
+        <strong>${t('fd_phone')}</strong> <a href="tel:${vPhone}" style="color: #1565c0; font-weight: bold; text-decoration: none;">${vPhone}</a>
       </p>
       <p style="margin: 6px 0; font-size: 1rem;">
-        <strong>Email:</strong> <a href="mailto:${vEmail}" style="color: #1565c0; text-decoration: none;">${vEmail}</a>
+        <strong>${t('fd_email')}</strong> <a href="mailto:${vEmail}" style="color: #1565c0; text-decoration: none;">${vEmail}</a>
       </p>
     </div>
 
     <!-- Skills & Expertise -->
     <div style="background: #ffffff; border: 2px solid #e0e0e0; border-radius: 12px; padding: 1rem;">
-      <h4 style="color: #2e7d32; margin-top: 0; margin-bottom: 10px; font-size: 1.05rem;">🧰 Volunteer Skills &amp; Capabilities:</h4>
+      <h4 style="color: #2e7d32; margin-top: 0; margin-bottom: 10px; font-size: 1.05rem;">${t('fd_vol_skills_expertise')}</h4>
       <div style="display: flex; gap: 8px; flex-wrap: wrap;">
         ${skillsHtml}
       </div>
@@ -410,6 +414,27 @@ function updateApprovalBadge(count) {
   }
 }
 
+function translateCategory(cat) {
+  if (!cat) return '';
+  const lower = cat.toLowerCase();
+  if (lower.includes('grocery')) return t('skill_grocery');
+  if (lower.includes('medical') || lower.includes('escort') || lower.includes('doctor')) return t('skill_medical');
+  if (lower.includes('tech') || lower.includes('phone') || lower.includes('computer')) return t('skill_tech');
+  if (lower.includes('house') || lower.includes('clean') || lower.includes('maid')) return t('skill_housekeeping');
+  if (lower.includes('companion') || lower.includes('talk') || lower.includes('visit')) return t('skill_companionship');
+  return t('skill_other');
+}
+
+function translateUrgency(urg) {
+  if (!urg) return '';
+  const lower = urg.toLowerCase();
+  if (lower === 'low') return t('priority_low');
+  if (lower === 'medium') return t('priority_medium');
+  if (lower === 'high') return t('priority_high');
+  if (lower === 'emergency' || lower === 'sos') return t('priority_emergency');
+  return urg;
+}
+
 // ──────────────────────────────────────────────────────────
 // RENDER SECTION 1: SENIOR HELP REQUESTS & FULFILLMENT DECISIONS
 // ──────────────────────────────────────────────────────────
@@ -438,28 +463,28 @@ function renderSeniorHelpRequests(seniorRequests) {
   if (seniorRequests.length === 0) {
     container.innerHTML = `
       <div style="padding: 2rem; text-align: center; border: 3px dashed #e65100; border-radius: var(--border-radius); background: #fff8e1;">
-        <p style="font-size: 1.2rem; color: #e65100; font-weight: bold;">✅ No new senior help requests requiring decision right now.</p>
-        <p style="font-size: 0.95rem; color: #777; margin-top: 6px;">When your senior citizen submits a request, it will appear here for you to fulfill yourself, allot to volunteers, or reject.</p>
+        <p style="font-size: 1.2rem; color: #e65100; font-weight: bold;">${t('fd_no_requests')}</p>
+        <p style="font-size: 0.95rem; color: #777; margin-top: 6px;">${t('fd_no_requests_desc')}</p>
       </div>`;
     return;
   }
 
   container.innerHTML = seniorRequests.map(req => {
     const urgencyBadge = req.urgency === 'emergency'
-      ? `<span class="badge badge-urgency-emergency">🚨 SOS Emergency</span>`
+      ? `<span class="badge badge-urgency-emergency">🚨 ${translateUrgency(req.urgency)}</span>`
       : req.urgency === 'high'
-        ? `<span class="badge badge-urgency-high">⚠️ High Priority</span>`
-        : `<span class="badge badge-urgency">${req.urgency.charAt(0).toUpperCase() + req.urgency.slice(1)} Priority</span>`;
+        ? `<span class="badge badge-urgency-high">⚠️ ${translateUrgency(req.urgency)}</span>`
+        : `<span class="badge badge-urgency">${translateUrgency(req.urgency)}</span>`;
 
     let statusBadge = '';
     let borderAccent = '#e65100';
     let actionAreaHtml = '';
-    let footerHelpText = '🛡️ Choose whether you want to fulfill this request directly for your loved one, publish it to community volunteers, or reject it.';
+    let footerHelpText = t('fd_action_footer_help');
 
     if (req.status === 'accepted') {
-      statusBadge = `<span class="badge badge-accepted">🤝 Volunteer Assigned (In Progress)</span>`;
+      statusBadge = `<span class="badge badge-accepted">${t('fd_assigned_in_progress')}</span>`;
       borderAccent = '#2e7d32';
-      footerHelpText = '🤝 A community volunteer has been approved and is actively carrying out this task.';
+      footerHelpText = t('fd_assigned_in_progress');
 
       const vol = req.volunteer;
       const volName = vol ? escapeHTML(vol.name || 'Volunteer') : 'Volunteer';
@@ -471,18 +496,18 @@ function renderSeniorHelpRequests(seniorRequests) {
         <div class="request-details" style="background:#f1f8e9; border: 2px solid #a5d6a7; border-left: 5px solid #2e7d32; border-radius: 10px; padding: 1rem; margin-top: 1rem; width: 100%;">
           <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
             <div>
-              <p style="margin: 0; font-size: 1.1rem; color: #1b5e20;"><strong>Approved Volunteer:</strong> <strong>${volName}</strong></p>
-              ${volPhone ? `<p style="margin: 4px 0 0 0; font-size: 0.95rem;">📞 Contact: <a href="tel:${volPhone}" style="color: #1b5e20; font-weight: bold;">${volPhone}</a></p>` : ''}
-              ${volEmail ? `<p style="margin: 2px 0 0 0; font-size: 0.95rem;">📧 Email: ${volEmail}</p>` : ''}
+              <p style="margin: 0; font-size: 1.1rem; color: #1b5e20;"><strong>${t('fd_approved_volunteer')}</strong> <strong>${volName}</strong></p>
+              ${volPhone ? `<p style="margin: 4px 0 0 0; font-size: 0.95rem;">📞 ${t('fd_volunteer_contact')} <a href="tel:${volPhone}" style="color: #1b5e20; font-weight: bold;">${volPhone}</a></p>` : ''}
+              ${volEmail ? `<p style="margin: 2px 0 0 0; font-size: 0.95rem;">📧 ${t('fd_volunteer_email')} ${volEmail}</p>` : ''}
             </div>
-            ${volId ? `<button type="button" class="btn btn-secondary" onclick="viewVolunteerProfile('${volId}')" style="padding: 6px 14px; font-size: 0.9rem; border-radius: 18px; background: #ffffff; color: #1b5e20; border: 1.5px solid #a5d6a7; font-weight: bold; cursor: pointer;">👤 View Volunteer Profile</button>` : ''}
+            ${volId ? `<button type="button" class="btn btn-secondary" onclick="viewVolunteerProfile('${volId}')" style="padding: 6px 14px; font-size: 0.9rem; border-radius: 18px; background: #ffffff; color: #1b5e20; border: 1.5px solid #a5d6a7; font-weight: bold; cursor: pointer;">${t('btn_view_profile')}</button>` : ''}
           </div>
         </div>`;
 
     } else if (req.status === 'purchase_funded') {
-      statusBadge = `<span class="badge" style="background:#e8f5e9;color:#1b5e20;border:2px solid #2e7d32;font-weight:bold;">✅ Purchase Funded (In Progress)</span>`;
+      statusBadge = `<span class="badge" style="background:#e8f5e9;color:#1b5e20;border:2px solid #2e7d32;font-weight:bold;">${t('fd_purchase_funded_progress')}</span>`;
       borderAccent = '#2e7d32';
-      footerHelpText = '💳 Purchase cost has been approved & funded. The volunteer is currently buying the items.';
+      footerHelpText = t('fd_purchase_funded_progress');
 
       const vol = req.volunteer;
       const volName = vol ? escapeHTML(vol.name || 'Volunteer') : 'Volunteer';
@@ -490,14 +515,14 @@ function renderSeniorHelpRequests(seniorRequests) {
 
       actionAreaHtml = `
         <div class="request-details" style="background:#e8f5e9; border: 2px solid #a5d6a7; border-left: 5px solid #2e7d32; border-radius: 10px; padding: 1rem; margin-top: 1rem; width: 100%;">
-          <p style="margin: 0; font-size: 1.05rem; color: #1b5e20;"><strong>Funded Purchase Cost:</strong> <strong style="font-size: 1.2rem; color: #2e7d32;">₹${req.actualPurchaseCost || 0}</strong></p>
-          <p style="margin: 4px 0 0 0; font-size: 0.95rem;">Assisted by: <strong>${volName}</strong> ${volPhone ? `(📞 <a href="tel:${volPhone}" style="color: #1b5e20; font-weight: bold;">${volPhone}</a>)` : ''}</p>
+          <p style="margin: 0; font-size: 1.05rem; color: #1b5e20;"><strong>${t('fd_funded_purchase_cost')}</strong> <strong style="font-size: 1.2rem; color: #2e7d32;">₹${req.actualPurchaseCost || 0}</strong></p>
+          <p style="margin: 4px 0 0 0; font-size: 0.95rem;">${t('fd_assisted_by')} <strong>${volName}</strong> ${volPhone ? `(📞 <a href="tel:${volPhone}" style="color: #1b5e20; font-weight: bold;">${volPhone}</a>)` : ''}</p>
         </div>`;
 
     } else if (req.status === 'pending' && req.familyApprovalStatus === 'approved') {
-      statusBadge = `<span class="badge badge-pending">🔍 Allotted to Volunteers (Seeking Help)</span>`;
+      statusBadge = `<span class="badge badge-pending">${t('fd_seeking_help')}</span>`;
       borderAccent = '#1565c0';
-      footerHelpText = '🔍 Request published to community volunteers. You will be notified as soon as a volunteer accepts & quotes.';
+      footerHelpText = t('fd_seeking_help');
       actionAreaHtml = `
         <div class="approval-actions" style="display: flex; gap: 12px; flex-wrap: wrap; margin-top: 1.2rem;">
           <button
@@ -506,7 +531,7 @@ function renderSeniorHelpRequests(seniorRequests) {
             style="background-color: #2e7d32; color: #ffffff !important; font-weight: 700; flex: 1; min-width: 180px; padding: 14px; font-size: 1.05rem;"
             aria-label="Fulfill request yourself"
           >
-            🙋 I will fulfill this myself instead
+            ${t('btn_fulfill_myself')}
           </button>
           <button
             class="btn"
@@ -514,7 +539,7 @@ function renderSeniorHelpRequests(seniorRequests) {
             style="background-color: #1565c0; color: #ffffff !important; font-weight: 700; flex: 1; min-width: 180px; padding: 14px; font-size: 1.05rem;"
             aria-label="Update shopping preference"
           >
-            🛒 Preference
+            ${t('btn_preference')}
           </button>
           <button
             class="btn btn-reject"
@@ -522,12 +547,12 @@ function renderSeniorHelpRequests(seniorRequests) {
             style="background-color: #c62828; color: #ffffff !important; font-weight: 700; flex: 1; min-width: 140px; padding: 14px; font-size: 1.05rem;"
             aria-label="Reject request"
           >
-            ❌ Reject Request
+            ${t('fd_reject_request')}
           </button>
         </div>`;
 
     } else {
-      statusBadge = `<span class="badge" style="background:#ffe082;color:#e65100;font-weight:bold;">⏳ Awaiting Fulfillment Decision</span>`;
+      statusBadge = `<span class="badge" style="background:#ffe082;color:#e65100;font-weight:bold;">${t('fd_awaiting_decision')}</span>`;
       borderAccent = '#e65100';
       actionAreaHtml = `
         <div class="approval-actions" style="display: flex; gap: 12px; flex-wrap: wrap; margin-top: 1.2rem;">
@@ -537,7 +562,7 @@ function renderSeniorHelpRequests(seniorRequests) {
             style="background-color: #2e7d32; color: #ffffff !important; font-weight: 700; flex: 1; min-width: 180px; padding: 14px; font-size: 1.05rem;"
             aria-label="Fulfill request yourself"
           >
-            🙋 I will fulfill this myself
+            ${t('btn_fulfill_myself')}
           </button>
 
           <button
@@ -546,7 +571,7 @@ function renderSeniorHelpRequests(seniorRequests) {
             style="background-color: #1565c0; color: #ffffff !important; font-weight: 700; flex: 1; min-width: 180px; padding: 14px; font-size: 1.05rem;"
             aria-label="Allot to volunteers"
           >
-            🤝 Allot to Volunteers
+            ${t('btn_allot_volunteers')}
           </button>
 
           <button
@@ -555,7 +580,7 @@ function renderSeniorHelpRequests(seniorRequests) {
             style="background-color: #c62828; color: #ffffff !important; font-weight: 700; flex: 1; min-width: 140px; padding: 14px; font-size: 1.05rem;"
             aria-label="Reject request"
           >
-            ❌ Reject Request
+            ${t('fd_reject_request')}
           </button>
         </div>`;
     }
@@ -566,7 +591,7 @@ function renderSeniorHelpRequests(seniorRequests) {
           <div>
             <div style="font-size: 1.3rem; font-weight: 700; color: ${borderAccent};">📋 ${escapeHTML(req.title)}</div>
             <div style="font-size: 0.95rem; color: #777; margin-top: 4px;">
-              Category: <strong>${escapeHTML(req.category)}</strong> · Raised: ${new Date(req.createdAt).toLocaleDateString()}
+              ${t('fd_category')} <strong>${translateCategory(req.category)}</strong> · ${t('fd_raised')} ${new Date(req.createdAt).toLocaleDateString()}
             </div>
           </div>
           <div style="display: flex; gap: 8px; flex-wrap: wrap;">
@@ -579,7 +604,7 @@ function renderSeniorHelpRequests(seniorRequests) {
         ${req.audioFile ? `<div class="request-audio-player"><label>🎙️ Senior's Spoken Voice Message:</label><audio controls src="${req.audioFile}"></audio></div>` : ''}
         ${req.shoppingPreference ? `
           <div style="margin-top: 10px; margin-bottom: 12px; padding: 10px 14px; background: #e3f2fd; border-left: 4px solid #1976d2; border-radius: 8px; font-size: 0.98rem; color: #0d47a1; font-weight: 600;">
-            🛒 <strong>Shopping Preference:</strong> ${escapeHTML(req.shoppingPreference)}
+            🛒 <strong>${t('fd_shopping_preference')}</strong> ${escapeHTML(req.shoppingPreference)}
           </div>` : ''}
 
         ${actionAreaHtml}
@@ -601,8 +626,8 @@ function renderApprovalQueue(awaitingRequests) {
   if (awaitingRequests.length === 0) {
     approvalList.innerHTML = `
       <div style="padding: 2rem; text-align: center; border: 3px dashed #1565c0; border-radius: var(--border-radius); background: #e3f2fd;">
-        <p style="font-size: 1.2rem; color: #0d47a1; font-weight: bold;">✅ No volunteers waiting for approval right now.</p>
-        <p style="font-size: 0.95rem; color: #555; margin-top: 6px;">When a community volunteer accepts an allotted request and quotes their service fee, their profile will appear here for your review.</p>
+        <p style="font-size: 1.2rem; color: #0d47a1; font-weight: bold;">${t('fd_no_volunteers')}</p>
+        <p style="font-size: 0.95rem; color: #555; margin-top: 6px;">${t('fd_no_volunteers_desc')}</p>
       </div>`;
     return;
   }
@@ -614,13 +639,13 @@ function renderApprovalQueue(awaitingRequests) {
     const volEmail = vol ? escapeHTML(vol.email || 'Not provided') : '—';
     const volSkills = vol && vol.skills && vol.skills.length > 0
       ? vol.skills.map(s => `<span class="skill-tag">${escapeHTML(s)}</span>`).join('')
-      : `<span class="skill-tag" style="background:#eee; color:#888;">No specific skills listed</span>`;
+      : `<span class="skill-tag" style="background:#eee; color:#888;">${t('fd_no_skills_listed')}</span>`;
 
     const urgencyBadge = req.urgency === 'emergency'
-      ? `<span class="badge badge-urgency-emergency">🚨 SOS Emergency</span>`
+      ? `<span class="badge badge-urgency-emergency">🚨 ${translateUrgency(req.urgency)}</span>`
       : req.urgency === 'high'
-        ? `<span class="badge badge-urgency-high">⚠️ High Priority</span>`
-        : `<span class="badge badge-urgency">${req.urgency.charAt(0).toUpperCase() + req.urgency.slice(1)} Priority</span>`;
+        ? `<span class="badge badge-urgency-high">⚠️ ${translateUrgency(req.urgency)}</span>`
+        : `<span class="badge badge-urgency">${translateUrgency(req.urgency)}</span>`;
 
     return `
       <div class="approval-card" id="approvalCard-${req._id}" style="border-left: 5px solid #1565c0;">
@@ -628,12 +653,12 @@ function renderApprovalQueue(awaitingRequests) {
           <div>
             <div style="font-size: 1.3rem; font-weight: 700; color: #1565c0;">📋 ${escapeHTML(req.title)}</div>
             <div style="font-size: 0.95rem; color: #777; margin-top: 4px;">
-              Category: <strong>${escapeHTML(req.category)}</strong> · Raised: ${new Date(req.createdAt).toLocaleDateString()}
+              ${t('fd_category')} <strong>${translateCategory(req.category)}</strong> · ${t('fd_raised')} ${new Date(req.createdAt).toLocaleDateString()}
             </div>
           </div>
           <div style="display: flex; gap: 8px; flex-wrap: wrap;">
             ${urgencyBadge}
-            <span class="badge" style="background:#bbdefb;color:#0d47a1;font-weight:bold;">⏳ Volunteer Approval Needed</span>
+            <span class="badge" style="background:#bbdefb;color:#0d47a1;font-weight:bold;">${t('fd_pending_approval')}</span>
           </div>
         </div>
 
@@ -641,12 +666,12 @@ function renderApprovalQueue(awaitingRequests) {
         ${req.audioFile ? `<div class="request-audio-player"><label>🎙️ Senior's Voice Message:</label><audio controls src="${req.audioFile}"></audio></div>` : ''}
         ${req.shoppingPreference ? `
           <div style="margin-top: 10px; margin-bottom: 12px; padding: 10px 14px; background: #e3f2fd; border-left: 4px solid #1976d2; border-radius: 8px; font-size: 0.98rem; color: #0d47a1; font-weight: 600;">
-            🛒 <strong>Shopping Preference:</strong> ${escapeHTML(req.shoppingPreference)}
+            🛒 <strong>${t('fd_shopping_preference')}</strong> ${escapeHTML(req.shoppingPreference)}
           </div>` : ''}
 
         <div style="margin-top: 1rem;">
           <h4 style="color: #1565c0; margin-bottom: 0.5rem; font-size: 1.1rem;">
-            👥 Volunteers Who Accepted &amp; Quoted Service Fees (${(req.volunteerQuotes && req.volunteerQuotes.length) ? req.volunteerQuotes.length : 1}):
+            👥 ${t('fd_volunteers_quoted_count', { count: (req.volunteerQuotes && req.volunteerQuotes.length) ? req.volunteerQuotes.length : 1 })}
           </h4>
           
           ${(() => {
@@ -663,7 +688,7 @@ function renderApprovalQueue(awaitingRequests) {
               const vEmail = typeof volObj === 'object' ? escapeHTML(volObj.email || 'Not provided') : '—';
               const vSkills = (typeof volObj === 'object' && volObj.skills && volObj.skills.length > 0)
                 ? volObj.skills.map(s => `<span class="skill-tag">${escapeHTML(s)}</span>`).join('')
-                : `<span class="skill-tag" style="background:#eee; color:#888;">No specific skills listed</span>`;
+                : `<span class="skill-tag" style="background:#eee; color:#888;">${t('fd_no_skills_listed')}</span>`;
 
               const feeText = (q.serviceFee !== undefined && q.serviceFee > 0) ? `₹${q.serviceFee}` : '₹0 (Voluntary / Free Service)';
 
@@ -675,7 +700,7 @@ function renderApprovalQueue(awaitingRequests) {
                       <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 4px;">
                         <h4 style="margin: 0; font-size: 1.25rem; color: var(--color-primary-dark);">${vName}</h4>
                         <button type="button" class="btn btn-secondary" onclick="viewVolunteerProfile('${vId}')" style="padding: 4px 12px; font-size: 0.88rem; border-radius: 16px; background: #e3f2fd; color: #1565c0; border: 1.5px solid #90caf9; font-weight: bold; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
-                          👤 View Volunteer Profile
+                          ${t('btn_view_profile')}
                         </button>
                       </div>
                       <p style="margin: 4px 0;">📞 <a href="tel:${vPhone}" style="color: var(--color-primary-dark); font-weight: bold;">${vPhone}</a></p>
@@ -686,10 +711,10 @@ function renderApprovalQueue(awaitingRequests) {
                     <div style="flex: 1; min-width: 250px;">
                       <div style="padding: 12px 16px; background-color: #e8f5e9; border: 3px solid #2e7d32; border-radius: 10px;">
                         <span style="font-size: 1.15rem; font-weight: 800; color: #1b5e20;">
-                          💰 Quoted Service Charge: ${feeText}
+                          💰 ${t('fd_quoted_service_charge')} ${feeText}
                         </span>
                         <p style="color: #2e7d32; font-size: 0.9rem; margin-top: 4px; margin-bottom: 0;">
-                          🛒 Extra purchase costs (receipts) added upon completion.
+                          ${t('fd_extra_purchase_costs_help')}
                         </p>
                         ${q.volunteerNotes ? `<p style="color: #333; font-size: 0.92rem; margin-top: 6px; margin-bottom: 0; font-style: italic; background: #fff; padding: 6px 10px; border-radius: 6px; border-left: 3px solid #2e7d32;">💬 "${escapeHTML(q.volunteerNotes)}"</p>` : ''}
                       </div>
@@ -701,7 +726,7 @@ function renderApprovalQueue(awaitingRequests) {
                           style="background-color: #1565c0; color: #ffffff !important; font-weight: 700; width: 100%; padding: 12px; font-size: 1.05rem;"
                           aria-label="Select and approve this volunteer"
                         >
-                          ✅ Select &amp; Approve ${vName} (${feeText})
+                          ${t('btn_select_approve_vol', { name: vName, fee: feeText })}
                         </button>
                       </div>
                     </div>
@@ -719,7 +744,7 @@ function renderApprovalQueue(awaitingRequests) {
             style="background-color: #2e7d32; color: #ffffff !important; font-weight: 700; flex: 1; min-width: 180px; padding: 12px; font-size: 1rem;"
             aria-label="Fulfill request yourself"
           >
-            🙋 Fulfill Myself Instead
+            ${t('btn_fulfill_myself')}
           </button>
 
           <button
@@ -728,12 +753,12 @@ function renderApprovalQueue(awaitingRequests) {
             style="background-color: #c62828; color: #ffffff !important; font-weight: 700; flex: 1; min-width: 140px; padding: 12px; font-size: 1rem;"
             aria-label="Reject volunteer requests"
           >
-            ❌ Reject All Volunteer Quotes
+            ${t('btn_reject_all_quotes')}
           </button>
         </div>
 
         <p style="font-size: 0.9rem; color: #777; margin-top: 1rem; margin-bottom: 0;">
-          🔒 Once you select a volunteer, the task will be assigned exclusively to them.
+          ${t('fd_select_vol_assigned_help')}
         </p>
       </div>`;
   }).join('');
@@ -766,8 +791,8 @@ function renderCompletionVerificationQueue(pendingVerifications) {
   if (pendingVerifications.length === 0) {
     container.innerHTML = `
       <div style="padding: 1.2rem; text-align: center; border: 2px dashed var(--color-primary-light); border-radius: var(--border-radius); background: #f1f8e9;">
-        <p style="color: var(--color-primary-dark); font-weight: bold;">No pending delivery or receipt verifications at this time.</p>
-        <p style="font-size: 0.95rem; margin-top: 5px;">When a volunteer submits purchase cost proof or uploads a store receipt, it will appear here for your review.</p>
+        <p style="color: var(--color-primary-dark); font-weight: bold;">${t('fd_no_verifications')}</p>
+        <p style="font-size: 0.95rem; margin-top: 5px;">${t('fd_no_verifications_desc')}</p>
       </div>`;
     return;
   }
@@ -798,24 +823,24 @@ function renderCompletionVerificationQueue(pendingVerifications) {
       const isZeroPurchaseCost = Number(req.actualPurchaseCost || 0) === 0;
       const approveBtnHtml = isZeroPurchaseCost ? `
         <button type="button" onclick="directReleaseServiceCharge('${req._id}', '${resolvedFee}', '${escapeHTML(volName).replace(/'/g, "\\'")}')" style="background-color: #2e7d32; color: #ffffff !important; padding: 12px 20px; font-size: 1.05rem; font-weight: 700; cursor: pointer; border-radius: 10px; border: none; display: flex; align-items: center; justify-content: center; text-align: center; gap: 8px; box-shadow: 0 4px 10px rgba(46,125,50,0.3); min-height: 52px; width: 340px; max-width: 95%;">
-          ✅ Release Volunteer Service Charge (₹${resolvedFee})
+          ✅ ${t('btn_release_service_charge', { fee: resolvedFee })}
         </button>` : `
         <button type="button" onclick="approvePurchaseFunding('${req._id}', '${req.actualPurchaseCost || 0}', '${resolvedFee}', '${escapeHTML(volName).replace(/'/g, "\\'")}')" style="background-color: #2e7d32; color: #ffffff !important; padding: 12px 20px; font-size: 1.05rem; font-weight: 700; cursor: pointer; border-radius: 10px; border: none; display: flex; align-items: center; justify-content: center; text-align: center; gap: 8px; box-shadow: 0 4px 10px rgba(46,125,50,0.3); min-height: 52px; width: 320px; max-width: 90%;">
-          ✅ Approve Payment (₹${req.actualPurchaseCost || 0}) &amp; Release Funds
+          ✅ ${t('btn_approve_payment_release', { cost: req.actualPurchaseCost || 0 })}
         </button>`;
 
       cardContent = `
         <div style="margin: 12px 0; padding: 16px 18px; background: #fff8e1; border-left: 5px solid #e65100; border-radius: 12px; font-size: 1rem; color: #bf360c;">
           <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; border-bottom: 1px dashed #ffe0b2; padding-bottom: 8px;">
-            <span style="font-weight: 700; color: #e65100; font-size: 1.2rem;">💳 Volunteer Submitted Purchase Cost: <strong style="font-size: 1.3rem; color: #d84315;">₹${req.actualPurchaseCost || 0}</strong></span>
-            ${req.purchaseNotes ? `<span style="font-size: 1rem; color: #444; font-style: italic; background: #fff3e0; padding: 4px 10px; border-radius: 6px;">Notes: "${escapeHTML(req.purchaseNotes)}"</span>` : ''}
+            <span style="font-weight: 700; color: #e65100; font-size: 1.2rem;">💳 ${t('fd_vol_submitted_purchase_cost')} <strong style="font-size: 1.3rem; color: #d84315;">₹${req.actualPurchaseCost || 0}</strong></span>
+            ${req.purchaseNotes ? `<span style="font-size: 1rem; color: #444; font-style: italic; background: #fff3e0; padding: 4px 10px; border-radius: 6px;">${t('fd_notes')} "${escapeHTML(req.purchaseNotes)}"</span>` : ''}
           </div>
           <div style="display: flex; gap: 16px; align-items: center; flex-wrap: wrap; margin-top: 8px;">
             <div style="flex: 1; min-width: 280px;">${proofSlider}</div>
             <div style="flex: 1; min-width: 240px; display: flex; flex-direction: column; gap: 16px; justify-content: center; align-items: center; padding: 0 10px;">
               ${approveBtnHtml}
               <button type="button" onclick="openRejectRevisionModal('${req._id}', '${escapeHTML(req.title).replace(/'/g, "\\'")}', '${escapeHTML(req.category).replace(/'/g, "\\'")}')" style="background-color: #c62828; color: #ffffff !important; padding: 12px 20px; font-size: 1.05rem; font-weight: 700; cursor: pointer; border-radius: 10px; border: none; display: flex; align-items: center; justify-content: center; text-align: center; gap: 8px; box-shadow: 0 4px 10px rgba(198,40,40,0.3); min-height: 52px; width: 320px; max-width: 90%;">
-                ❌ Reject / Request Revision &amp; Send Note
+                ❌ ${t('btn_reject_request_revision')}
               </button>
             </div>
           </div>
@@ -829,21 +854,21 @@ function renderCompletionVerificationQueue(pendingVerifications) {
       let proofHtml = proofSlider ? `
         <div style="margin: 1rem 0; background: #ffffff; padding: 12px; border-radius: 12px; border: 2px solid var(--color-primary-light);">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-            <label style="font-weight: bold; color: var(--color-primary-dark); font-size: 1rem;">📸 Uploaded Store Receipt / Delivery Photo Proof:</label>
+            <label style="font-weight: bold; color: var(--color-primary-dark); font-size: 1rem;">${t('fd_uploaded_proof')}</label>
           </div>
           ${proofSlider}
         </div>` : `<div style="margin: 10px 0; color: #888; font-style: italic;">No photo proof attached by volunteer.</div>`;
 
       cardContent = `
         <div style="font-size: 1rem; color: #444; margin-bottom: 10px;">
-          <strong>Volunteer Completion Notes:</strong> "${escapeHTML(req.resolutionNotes || 'Task completed & store receipt uploaded.')}"
+          <strong>${t('fd_vol_completion_notes')}</strong> "${escapeHTML(req.resolutionNotes || 'Task completed & store receipt uploaded.')}"
         </div>
         ${proofHtml}
         <div style="margin-top: 14px; padding: 14px 16px; background: #f1f8e9; border: 2px solid #a5d6a7; border-left: 5px solid #2e7d32; border-radius: 10px; margin-bottom: 12px;">
           <div style="font-size: 1rem; font-weight: 700; color: #1b5e20; margin-bottom: 4px;">
-            💰 Service Charge to Release: <strong style="font-size: 1.2rem;">₹${resolvedFee > 0 ? resolvedFee : 0}</strong>
+            💰 ${t('fd_service_charge_release')} <strong style="font-size: 1.2rem;">₹${resolvedFee > 0 ? resolvedFee : 0}</strong>
           </div>
-          <div style="font-size: 0.88rem; color: #388e3c;">After verifying the receipt, you will release the volunteer's agreed service charge. You can optionally give a tip after rating.</div>
+          <div style="font-size: 0.88rem; color: #388e3c;">${t('fd_receipt_verify_help')}</div>
         </div>
         <div class="approval-actions" style="display: flex; gap: 12px; margin-top: 1rem; flex-wrap: wrap;">
           <button
@@ -851,14 +876,14 @@ function renderCompletionVerificationQueue(pendingVerifications) {
             onclick="verifyTaskCompletion('${req._id}', true)"
             style="background-color: #2e7d32; flex: 1; padding: 14px; font-size: 1.05rem; font-weight: 700; min-width: 220px;"
           >
-            ✅ Verify Receipt &amp; Release Service Charge (₹${resolvedFee > 0 ? resolvedFee : 0})
+            ✅ ${t('btn_verify_receipt_release', { fee: resolvedFee > 0 ? resolvedFee : 0 })}
           </button>
           <button
             class="btn btn-reject"
             onclick="verifyTaskCompletion('${req._id}', false)"
             style="background-color: #c62828; color: #ffffff !important; flex: 1; padding: 14px; font-size: 1.05rem; font-weight: 700; min-width: 160px;"
           >
-            ❌ Reject / Report Issue
+            ${t('btn_reject_report_issue')}
           </button>
         </div>`;
     }
@@ -867,10 +892,10 @@ function renderCompletionVerificationQueue(pendingVerifications) {
       <div class="approval-card" id="completionCard-${req._id}" style="border-color: var(--color-primary-dark); background: #f9fbe7; margin-bottom: 1.5rem;">
         <div class="approval-card-header">
           <div>
-            <span class="badge badge-urgency">${escapeHTML(req.category)}</span>
+            <span class="badge badge-urgency">${translateCategory(req.category)}</span>
             <h3 style="color: var(--color-primary-dark); margin-top: 6px; font-size: 1.3rem;">${escapeHTML(req.title)}</h3>
           </div>
-          <span class="badge" style="background-color: var(--color-primary-dark); color: #fff;">📸 Delivery &amp; Receipt Verification</span>
+          <span class="badge" style="background-color: var(--color-primary-dark); color: #fff;">${t('fd_proof_verifications_title')}</span>
         </div>
 
         ${cardContent}
@@ -880,9 +905,9 @@ function renderCompletionVerificationQueue(pendingVerifications) {
           <div class="volunteer-info" style="flex: 1;">
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
               <h4 style="margin: 0;">${escapeHTML(volName)}</h4>
-              ${volId ? `<button type="button" class="btn btn-secondary" onclick="viewVolunteerProfile('${volId}')" style="padding: 4px 12px; font-size: 0.85rem; border-radius: 16px; background: #e3f2fd; color: #1565c0; border: 1.5px solid #90caf9; font-weight: bold; cursor: pointer;">👤 View Volunteer Profile</button>` : ''}
+              ${volId ? `<button type="button" class="btn btn-secondary" onclick="viewVolunteerProfile('${volId}')" style="padding: 4px 12px; font-size: 0.85rem; border-radius: 16px; background: #e3f2fd; color: #1565c0; border: 1.5px solid #90caf9; font-weight: bold; cursor: pointer;">${t('btn_view_profile')}</button>` : ''}
             </div>
-            <p style="margin-top: 4px;">📞 Phone: ${escapeHTML(volPhone)}</p>
+            <p style="margin-top: 4px;">📞 ${t('fd_phone')} ${escapeHTML(volPhone)}</p>
           </div>
         </div>
       </div>`;
@@ -1428,7 +1453,7 @@ function renderAllRequests(requests) {
   if (!allRequestsList) return;
 
   if (requests.length === 0) {
-    allRequestsList.innerHTML = `<div style="text-align: center; color: #666; padding: 2rem;">No help requests have been made yet.</div>`;
+    allRequestsList.innerHTML = `<div style="text-align: center; color: #666; padding: 2rem;">${t('fd_no_history')}</div>`;
     return;
   }
 
@@ -1456,26 +1481,26 @@ function renderAllRequests(requests) {
     const isFulfilledByFamily = req.status === 'fulfilled_by_family' || req.fulfilledByFamily;
 
     if (isFulfilledByFamily) {
-      statusBadge = `<span class="badge" style="background:#e8f5e9;color:#1b5e20;border:2px solid #2e7d32;font-weight:bold;">🏡 Fulfilled by Family Caregiver</span>`;
+      statusBadge = `<span class="badge" style="background:#e8f5e9;color:#1b5e20;border:2px solid #2e7d32;font-weight:bold;">🏡 ${t('btn_fulfill_myself')}</span>`;
       statusColor = '#2e7d32';
     } else if (req.status === 'pending') {
-      statusBadge = `<span class="badge badge-pending">🔍 Allotted to Volunteers</span>`;
+      statusBadge = `<span class="badge badge-pending">🔍 ${t('fd_seeking_help')}</span>`;
     } else if (req.status === 'awaiting_approval') {
-      statusBadge = `<span class="badge" style="background:#ffe082;color:#e65100;">⏳ Awaiting Your Decision</span>`;
+      statusBadge = `<span class="badge" style="background:#ffe082;color:#e65100;">⏳ ${t('fd_awaiting_decision')}</span>`;
       statusColor = '#e65100';
     } else if (req.status === 'accepted') {
-      statusBadge = `<span class="badge badge-accepted">✅ Volunteer Assigned</span>`;
+      statusBadge = `<span class="badge badge-accepted">✅ ${t('fd_assigned_in_progress')}</span>`;
     } else if (req.status === 'purchase_cost_submitted') {
-      statusBadge = `<span class="badge" style="background:#fff3e0;color:#e65100;border:1.5px solid #ffe0b2;font-weight:bold;">💳 Purchase Cost (₹${req.actualPurchaseCost || 0}) Submitted</span>`;
+      statusBadge = `<span class="badge" style="background:#fff3e0;color:#e65100;border:1.5px solid #ffe0b2;font-weight:bold;">💳 ${t('fd_vol_submitted_purchase_cost')} (₹${req.actualPurchaseCost || 0})</span>`;
       statusColor = '#e65100';
     } else if (req.status === 'purchase_funded') {
-      statusBadge = `<span class="badge" style="background:#e8f5e9;color:#1b5e20;border:1.5px solid #a5d6a7;font-weight:bold;">✅ Purchase Funded (₹${req.actualPurchaseCost || 0})</span>`;
+      statusBadge = `<span class="badge" style="background:#e8f5e9;color:#1b5e20;border:1.5px solid #a5d6a7;font-weight:bold;">✅ ${t('fd_purchase_funded_progress')} (₹${req.actualPurchaseCost || 0})</span>`;
       statusColor = '#2e7d32';
     } else if (req.status === 'awaiting_verification') {
-      statusBadge = `<span class="badge" style="background:#f3e5f5;color:#4a148c;border:1.5px solid #ce93d8;font-weight:bold;">🧾 Receipt Uploaded - Needs Verification</span>`;
+      statusBadge = `<span class="badge" style="background:#f3e5f5;color:#4a148c;border:1.5px solid #ce93d8;font-weight:bold;">🧾 ${t('fd_proof_verifications_title')}</span>`;
       statusColor = '#7b1fa2';
     } else if (req.status === 'completed') {
-      statusBadge = `<span class="badge badge-completed">🏆 Completed &amp; Service Charge Released</span>`;
+      statusBadge = `<span class="badge badge-completed">🏆 ${t('status_completed')}</span>`;
     }
 
     // Status timeline: Submitted -> Volunteer Assigned -> Purchase Funded -> Service In Progress -> Delivered and Paid -> Completed
@@ -1487,24 +1512,24 @@ function renderAllRequests(requests) {
 
     const timeline = isFulfilledByFamily ? `
       <div class="request-timeline">
-        <div class="timeline-step done">📝 Submitted</div>
+        <div class="timeline-step done">📝 ${t('status_pending')}</div>
         <span class="timeline-arrow">→</span>
-        <div class="timeline-step done">❤️ Family Decision</div>
+        <div class="timeline-step done">❤️ ${t('fd_awaiting_decision')}</div>
         <span class="timeline-arrow">→</span>
-        <div class="timeline-step done" style="color:#2e7d32; font-weight:bold;">🏡 Fulfilled by You</div>
+        <div class="timeline-step done" style="color:#2e7d32; font-weight:bold;">🏡 ${t('btn_fulfill_myself')}</div>
       </div>` : `
       <div class="request-timeline">
-        <div class="timeline-step done">📝 Submitted</div>
+        <div class="timeline-step done">📝 ${t('status_pending')}</div>
         <span class="timeline-arrow">→</span>
-        <div class="timeline-step ${isVolAssigned ? 'done' : 'future'}">🙋 Volunteer Assigned</div>
+        <div class="timeline-step ${isVolAssigned ? 'done' : 'future'}">🙋 ${t('fd_assigned_in_progress')}</div>
         <span class="timeline-arrow">→</span>
-        <div class="timeline-step ${isPurchaseFunded ? 'done' : (req.status === 'purchase_cost_submitted' ? 'active' : 'future')}">💳 Purchase Funded</div>
+        <div class="timeline-step ${isPurchaseFunded ? 'done' : (req.status === 'purchase_cost_submitted' ? 'active' : 'future')}">💳 ${t('fd_purchase_funded_progress')}</div>
         <span class="timeline-arrow">→</span>
-        <div class="timeline-step ${isServiceInProgress ? 'done' : 'future'}">🤝 Service In Progress</div>
+        <div class="timeline-step ${isServiceInProgress ? 'done' : 'future'}">🤝 ${t('status_approved')}</div>
         <span class="timeline-arrow">→</span>
-        <div class="timeline-step ${isDeliveredAndPaid ? 'done' : (req.status === 'awaiting_verification' ? 'active' : 'future')}">🚚 Delivered and Paid</div>
+        <div class="timeline-step ${isDeliveredAndPaid ? 'done' : (req.status === 'awaiting_verification' ? 'active' : 'future')}">🚚 ${t('fd_proof_verifications_title')}</div>
         <span class="timeline-arrow">→</span>
-        <div class="timeline-step ${isCompleted ? 'done' : 'future'}">✅ Completed</div>
+        <div class="timeline-step ${isCompleted ? 'done' : 'future'}">✅ ${t('status_completed')}</div>
       </div>`;
 
     let volunteerInfo = '';
@@ -1517,13 +1542,13 @@ function renderAllRequests(requests) {
       volunteerInfo = `
         <div class="request-details" style="margin-top: 1rem; background: #f9f9f9; padding: 12px; border-radius: 8px; border-left: 4px solid var(--color-primary-dark);">
           <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
-            <p style="margin: 0; font-size: 1.05rem;"><strong>Volunteer:</strong> <span style="color: var(--color-primary-dark); font-weight: bold;">${escapeHTML(vName)}</span></p>
-            ${vId ? `<button type="button" class="btn btn-secondary" onclick="viewVolunteerProfile('${vId}')" style="padding: 4px 12px; font-size: 0.85rem; border-radius: 16px; background: #ffffff; color: #1565c0; border: 1.5px solid #90caf9; font-weight: bold; cursor: pointer;">👤 View Volunteer Profile</button>` : ''}
+            <p style="margin: 0; font-size: 1.05rem;"><strong>${t('fd_approved_volunteer')}</strong> <span style="color: var(--color-primary-dark); font-weight: bold;">${escapeHTML(vName)}</span></p>
+            ${vId ? `<button type="button" class="btn btn-secondary" onclick="viewVolunteerProfile('${vId}')" style="padding: 4px 12px; font-size: 0.85rem; border-radius: 16px; background: #ffffff; color: #1565c0; border: 1.5px solid #90caf9; font-weight: bold; cursor: pointer;">${t('btn_view_profile')}</button>` : ''}
           </div>
-          <p style="margin-top: 6px;"><strong>💰 Quoted Service Charge:</strong> <span style="color: #2e7d32; font-weight: bold;">${feeLabel}</span></p>
-          ${req.status !== 'awaiting_approval' && typeof volObj === 'object' ? `<p style="margin-top: 4px;"><strong>Contact:</strong> ${escapeHTML(volObj.phone || '—')}</p>` : ''}
-          ${req.volunteerNotes ? `<p style="margin-top: 4px; font-style: italic;"><strong>Volunteer Message:</strong> "${escapeHTML(req.volunteerNotes)}"</p>` : ''}
-          ${req.status === 'completed' && req.resolutionNotes ? `<p style="margin-top: 6px;"><strong>Completion Notes:</strong> ${escapeHTML(req.resolutionNotes)}</p>` : ''}
+          <p style="margin-top: 6px;"><strong>💰 ${t('fd_quoted_service_charge')}</strong> <span style="color: #2e7d32; font-weight: bold;">${feeLabel}</span></p>
+          ${req.status !== 'awaiting_approval' && typeof volObj === 'object' ? `<p style="margin-top: 4px;"><strong>${t('fd_volunteer_contact')}</strong> ${escapeHTML(volObj.phone || '—')}</p>` : ''}
+          ${req.volunteerNotes ? `<p style="margin-top: 4px; font-style: italic;"><strong>${t('fd_notes')}</strong> "${escapeHTML(req.volunteerNotes)}"</p>` : ''}
+          ${req.status === 'completed' && req.resolutionNotes ? `<p style="margin-top: 6px;"><strong>${t('fd_vol_completion_notes')}</strong> ${escapeHTML(req.resolutionNotes)}</p>` : ''}
           ${req.familyReviewedBy ? `<p style="margin-top: 4px; font-size: 0.9rem; color: #666;">Reviewed by caregiver on ${new Date(req.familyReviewedAt).toLocaleDateString()}</p>` : ''}
         </div>`;
     }
@@ -1550,10 +1575,10 @@ function renderAllRequests(requests) {
       totalSpentHtml = `
         <div style="margin-top: 12px; padding: 14px 18px; background: #e8f5e9; border: 2px solid #a5d6a7; border-left: 6px solid #2e7d32; border-radius: 12px; box-shadow: 0 2px 8px rgba(46,125,50,0.08);">
           <div style="font-size: 1.15rem; font-weight: 800; color: #1b5e20;">
-            💵 Total Amount Spent: <strong style="font-size: 1.3rem; color: #2e7d32;">₹${totalSpent}</strong>
+            💵 ${t('fd_total_spent')}: <strong style="font-size: 1.3rem; color: #2e7d32;">₹${totalSpent}</strong>
           </div>
           <div style="margin-top: 6px; font-size: 0.9rem; color: #388e3c; font-weight: 500;">
-            Breakdown: ${breakdownText}
+            ${t('fd_breakdown')}: ${breakdownText}
           </div>
         </div>`;
     }
@@ -1577,7 +1602,7 @@ function renderAllRequests(requests) {
 
     let proofHtml = proofSlider ? `
       <div style="margin-top: 10px; background: #ffffff; padding: 10px; border-radius: 8px; border: 1px solid var(--color-primary-light);">
-        <div style="font-weight: bold; color: var(--color-primary-dark); font-size: 0.9rem; margin-bottom: 6px;">📸 Uploaded Store Receipt / Delivery Photo Proof:</div>
+        <div style="font-weight: bold; color: var(--color-primary-dark); font-size: 0.9rem; margin-bottom: 6px;">${t('fd_uploaded_proof')}</div>
         ${proofSlider}
       </div>` : '';
 
@@ -1587,13 +1612,13 @@ function renderAllRequests(requests) {
           <div class="request-title" style="color: ${statusColor};">${escapeHTML(req.title)}</div>
           <div style="display: flex; gap: 8px; flex-wrap: wrap;">
             ${statusBadge}
-            <span class="badge badge-urgency">${escapeHTML(req.category)}</span>
+            <span class="badge badge-urgency">${translateCategory(req.category)}</span>
           </div>
         </div>
         ${req.description ? `<div class="request-description">${escapeHTML(req.description)}</div>` : ''}
         ${req.shoppingPreference ? `
           <div style="margin-top: 6px; margin-bottom: 10px; padding: 8px 12px; background: #e3f2fd; border-left: 4px solid #1976d2; border-radius: 8px; font-size: 0.95rem; color: #0d47a1; font-weight: 600;">
-            🛒 <strong>Caregiver Shopping Preference:</strong> ${escapeHTML(req.shoppingPreference)}
+            🛒 <strong>${t('fd_shopping_preference')}</strong> ${escapeHTML(req.shoppingPreference)}
           </div>` : ''}
         ${audioHtml}
         ${proofHtml}
@@ -1602,7 +1627,7 @@ function renderAllRequests(requests) {
         ${volunteerInfo}
         ${totalSpentHtml}
         <div style="font-size: 0.85rem; color: #999; margin-top: 0.8rem;">
-          Submitted: ${new Date(req.createdAt).toLocaleDateString()}
+          ${t('fd_raised')} ${new Date(req.createdAt).toLocaleDateString()}
         </div>
       </div>`;
   }).join('');

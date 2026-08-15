@@ -140,7 +140,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // Create language switcher wrapper
     const langWrapper = document.createElement('div');
     langWrapper.className = 'lang-switcher';
-    langWrapper.style.cssText = 'display: inline-flex; gap: 8px; margin-left: 20px; align-items: center; border-left: 2px solid #ccc; padding-left: 15px;';
+    const hasTextSizeButtons = document.getElementById('btnTextIncrease') !== null;
+    if (hasTextSizeButtons) {
+      langWrapper.style.cssText = 'display: inline-flex; gap: 8px; margin-left: 20px; align-items: center; border-left: 2px solid #ccc; padding-left: 15px;';
+    } else {
+      langWrapper.style.cssText = 'display: inline-flex; gap: 8px; align-items: center;';
+    }
     
     // Hindi/Marathi translation labels for the label itself
     const labelSpan = document.createElement('span');

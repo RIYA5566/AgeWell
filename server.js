@@ -34,6 +34,7 @@ app.use('/api/requests',  require('./routes/requestRoutes'));
 app.use('/api/admin',     require('./routes/adminRoutes'));
 app.use('/api/family',    require('./routes/familyRoutes'));
 app.use('/api/volunteer', require('./routes/volunteerRoutes'));
+app.use('/api/payments',  require('./routes/paymentRoutes'));
 
 // Fallback: Send static frontend HTML for any non-API routes (SPA routing style if users manually type links)
 app.get('*', (req, res, next) => {
