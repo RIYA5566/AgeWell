@@ -1048,6 +1048,8 @@ function cleanProductQuery(q) {
                  .replace(/Help Request\s*[-–—]?\s*/gi, ' ')
                  .replace(/\bHelp Request\b/gi, ' ')
                  .replace(/\bEMERGENCY ALARM ACTIVE\b/gi, ' ')
+                 .replace(/\bआपातकालीन अलार्म सक्रिय\b/gi, ' ')
+                 .replace(/\bआणीबाणीचा अलार्म सक्रिय\b/gi, ' ')
                  .replace(/\b\d{1,2}\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{4}\b/gi, ' ')
                  .trim();
   if (!cleaned || cleaned.toLowerCase().includes('help request')) {

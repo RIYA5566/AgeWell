@@ -40,8 +40,8 @@ document.addEventListener('DOMContentLoaded', () => {
     btnSos.addEventListener('click', async () => {
       // Trigger API to log emergency request
       const sosData = {
-        title: 'EMERGENCY ALARM ACTIVE',
-        description: 'SOS triggered by Senior Citizen via dashboard. Instant assistance required.',
+        title: t('sos_alert_title'),
+        description: t('sos_alert_desc'),
         category: 'Medical Escort',
         urgency: 'emergency'
       };

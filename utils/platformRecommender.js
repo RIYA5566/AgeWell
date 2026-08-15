@@ -286,7 +286,11 @@ function extractItemsQuery(text) {
   cleaned = cleaned.replace(/Help Request\s*[-–—]?\s*/gi, ' ');
   cleaned = cleaned.replace(/\bHelp Request\b/gi, ' ');
   cleaned = cleaned.replace(/\bEMERGENCY ALARM ACTIVE\b/gi, ' ');
+  cleaned = cleaned.replace(/\bआपातकालीन अलार्म सक्रिय\b/gi, ' ');
+  cleaned = cleaned.replace(/\bआणीबाणीचा अलार्म सक्रिय\b/gi, ' ');
   cleaned = cleaned.replace(/SOS triggered by Senior Citizen via dashboard\. Instant assistance required\./gi, ' ');
+  cleaned = cleaned.replace(/वरिष्ठ नागरिक द्वारा डैशबोर्ड के माध्यम से एसओएस सक्रिय किया गया। तत्काल सहायता की आवश्यकता है।/gi, ' ');
+  cleaned = cleaned.replace(/ज्येष्ठ नागरिकाने डॅशबोर्डद्वारे एसओएस सक्रिय केला. त्वरित मदतीची आवश्यकता आहे./gi, ' ');
   cleaned = cleaned.replace(/\b\d{1,2}\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{4}\b/gi, ' ');
 
   // 2. Extract matched items/keywords from serviceMapping dataset
@@ -344,7 +348,9 @@ function recommendPlatforms({ title = '', description = '', transcript = '', cat
   cleanedText = cleanedText.replace(/help request\s*[-–—]?\s*\d{1,2}\s+\w+\s+\d{4}/gi, ' ')
                            .replace(/help request\s*[-–—]?\s*/gi, ' ')
                            .replace(/\bhelp request\b/gi, ' ')
-                           .replace(/\bemergency alarm active\b/gi, ' ');
+                           .replace(/\bemergency alarm active\b/gi, ' ')
+                           .replace(/\bआपातकालीन अलार्म सक्रिय\b/gi, ' ')
+                           .replace(/\bआणीबाणीचा अलार्म सक्रिय\b/gi, ' ');
 
   let matchedCategoryObj = null;
 
