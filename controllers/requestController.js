@@ -234,7 +234,14 @@ exports.deleteRequest = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Cannot cancel a request after payment or purchase cost has been processed' });
     }
 
-    await HelpRequest.findByIdAndDelete(req.params.id);
+    if (request.volunteer) {
+      request.status = 'cancelled';
+      await request.save();
+      // Delete any pending earning record for this request
+      await Earning.deleteOne({ request: request._id, volunteer: request.volunteer, status: 'PENDING' });
+    } else {
+      await HelpRequest.findByIdAndDelete(req.params.id);
+    }
     res.status(200).json({ success: true, message: 'Help request cancelled successfully' });
   } catch (error) {
     console.error('Delete Request Error:', error);

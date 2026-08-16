@@ -484,8 +484,13 @@ async function loadVolunteerRequests(silent = false) {
     // 0. Task Assignment Notifications: Requests where this volunteer submitted a quote, but caregiver selected another volunteer (excluding dismissed)
     const notifiedRequests  = requests.filter(r => (r.status === 'accepted' || r.status === 'completed') && hasMyQuote(r) && !isMyApprovedTask(r) && !dismissedList.includes(r._id));
     
+    // Requests where this volunteer was allotted, but the senior cancelled
+    const cancelledRequests = requests.filter(r => r.status === 'cancelled' && isMyApprovedTask(r) && !dismissedList.includes(r._id));
+    
+    const allNotifRequests = [...notifiedRequests, ...cancelledRequests];
+
     // Save to window for Clear All action
-    window.notifiedRequestIds = notifiedRequests.map(r => r._id);
+    window.notifiedRequestIds = allNotifRequests.map(r => r._id);
 
     // 1. Available Help Requests: Open requests with status 'pending' or 'awaiting_approval'
     const pendingRequests   = requests.filter(r => r.status === 'pending' || r.status === 'awaiting_approval');
@@ -498,10 +503,33 @@ async function loadVolunteerRequests(silent = false) {
 
     // --- Render Task Notifications ---
     if (notificationsCard && notificationsList) {
-      if (notifiedRequests.length > 0) {
+      if (allNotifRequests.length > 0) {
         notificationsCard.style.display = 'block';
-        notificationsList.innerHTML = notifiedRequests.map(req => {
+        notificationsList.innerHTML = allNotifRequests.map(req => {
           const seniorName = req.senior ? escapeHTML(req.senior.name) : 'Senior Citizen';
+
+          if (req.status === 'cancelled') {
+            return `
+              <div class="request-card" style="border-left: 5px solid #c62828; background: #ffffff; margin-bottom: 1rem;">
+                <div class="request-card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                  <div class="request-title" style="color: #c62828;">📋 ${escapeHTML(req.title)}</div>
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <span class="badge" style="background: #c62828; color: #fff;">❌ Cancelled</span>
+                    <button type="button" class="btn btn-secondary" onclick="dismissTaskNotification('${req._id}')" style="padding: 4px 10px; font-size: 0.85rem; border-radius: 6px; cursor: pointer; border: 1.5px solid #ccc; background: #f9f9f9; color: #333; min-height: 32px; display: inline-flex; align-items: center; justify-content: center; gap: 4px; font-weight: bold;" title="Dismiss this notification">
+                      ✕ Dismiss
+                    </button>
+                  </div>
+                </div>
+                <div style="margin-top: 10px; padding: 12px 16px; background-color: #ffebee; border: 2px solid #c62828; border-radius: 10px;">
+                  <p style="color: #c62828; font-weight: bold; font-size: 1.02rem; margin-bottom: 4px;">
+                    📢 The senior has cancelled this request.
+                  </p>
+                  <p style="color: #c62828; font-size: 0.93rem; margin: 0;">
+                    Help is no longer required. Thank you so much for your support to <strong>${seniorName}</strong>!
+                  </p>
+                </div>
+              </div>`;
+          }
 
           return `
             <div class="request-card" style="border-left: 5px solid #2e7d32; background: #ffffff; margin-bottom: 1rem;">

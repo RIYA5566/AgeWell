@@ -336,7 +336,7 @@ async function loadRequests() {
       return;
     }
 
-    const completedStatuses = ['completed', 'fulfilled_by_family', 'rejected'];
+    const completedStatuses = ['completed', 'fulfilled_by_family', 'rejected', 'cancelled'];
 
     const sortedRequests = [...requests].sort((a, b) => {
       const aDone = completedStatuses.includes(a.status) || a.fulfilledByFamily || a.familyApprovalStatus === 'rejected';
@@ -358,6 +358,8 @@ async function loadRequests() {
         statusBadge = `<span class="badge" style="background:#e8f5e9;color:#1b5e20;border:2px solid #2e7d32;font-weight:bold;">${t('status_fulfilled_by_family')}</span>`;
       } else if (req.status === 'rejected' || req.familyApprovalStatus === 'rejected') {
         statusBadge = `<span class="badge" style="background:#ffebee;color:#c62828;border:2px solid #b71c1c;font-weight:bold;">${t('status_rejected_by_caregiver')}</span>`;
+      } else if (req.status === 'cancelled') {
+        statusBadge = `<span class="badge" style="background:#ffebee;color:#c62828;border:2px solid #b71c1c;font-weight:bold;">❌ Request Cancelled</span>`;
       } else if (req.status === 'pending' && (req.familyApprovalStatus === 'none' || !req.familyApprovalStatus)) {
         statusBadge = `<span class="badge" style="background:#fff8e1;color:#e65100;border:2px solid #ffa000;font-weight:bold;">${t('status_awaiting_allotment')}</span>`;
       } else if (req.status === 'pending' && req.familyApprovalStatus === 'approved') {
@@ -398,6 +400,12 @@ async function loadRequests() {
           <div class="request-details" style="background:#ffebee; border-color:#c62828;">
             <p style="color:#c62828; font-weight:bold;">${t('status_rejected_by_caregiver')}</p>
             <p style="margin-top:4px; color:#b71c1c;"><strong>${t('sd_reason_label')}</strong> "${escapeHTML(req.familyRejectionReason || 'Caregiver marked this request as invalid.')}"</p>
+          </div>`;
+      } else if (req.status === 'cancelled') {
+        assignmentInfo = `
+          <div class="request-details" style="background:#ffebee; border-color:#c62828;">
+            <p style="color:#c62828; font-weight:bold;">❌ Cancelled</p>
+            <p style="margin-top:4px; color:#b71c1c;">You cancelled this request.</p>
           </div>`;
       } else if (req.status === 'fulfilled_by_family' || req.fulfilledByFamily) {
         assignmentInfo = `
@@ -454,7 +462,7 @@ async function loadRequests() {
           </div>`;
       }
 
-      const nonCancellable = ['purchase_cost_submitted', 'purchase_funded', 'awaiting_verification', 'delivery_completed', 'completed', 'rejected', 'fulfilled_by_family'];
+      const nonCancellable = ['purchase_cost_submitted', 'purchase_funded', 'awaiting_verification', 'delivery_completed', 'completed', 'rejected', 'fulfilled_by_family', 'cancelled'];
       const canDelete = !nonCancellable.includes(req.status);
       const deleteButton = canDelete 
         ? `<button class="btn btn-outline-danger" onclick="cancelHelpRequest('${req._id}')" style="padding: 10px 18px; font-size: 1rem; min-height: 44px;">${t('btn_cancel_request')}</button>` 

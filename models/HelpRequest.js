@@ -91,7 +91,8 @@ const helpRequestSchema = new mongoose.Schema({
       'awaiting_verification',
       'completed',
       'fulfilled_by_family',
-      'rejected'
+      'rejected',
+      'cancelled'
     ],
     default: 'pending'
   },

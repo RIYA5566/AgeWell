@@ -1468,7 +1468,7 @@ function renderAllRequests(requests) {
   }
 
   // Sort requests: Active tasks FIRST (most recently created active request at position #1), followed by completed/historical requests
-  const completedStatuses = ['completed', 'fulfilled_by_family', 'rejected'];
+  const completedStatuses = ['completed', 'fulfilled_by_family', 'rejected', 'cancelled'];
 
   const sortedRequests = [...requests].sort((a, b) => {
     const aDone = completedStatuses.includes(a.status) || a.fulfilledByFamily || a.familyApprovalStatus === 'rejected';
@@ -1493,6 +1493,9 @@ function renderAllRequests(requests) {
     if (isFulfilledByFamily) {
       statusBadge = `<span class="badge" style="background:#e8f5e9;color:#1b5e20;border:2px solid #2e7d32;font-weight:bold;">🏡 ${t('btn_fulfill_myself')}</span>`;
       statusColor = '#2e7d32';
+    } else if (req.status === 'cancelled') {
+      statusBadge = `<span class="badge" style="background:#ffebee;color:#c62828;border:2px solid #b71c1c;font-weight:bold;">❌ Request Cancelled by Senior</span>`;
+      statusColor = '#c62828';
     } else if (req.status === 'pending') {
       statusBadge = `<span class="badge badge-pending">🔍 ${t('fd_seeking_help')}</span>`;
     } else if (req.status === 'awaiting_approval') {
