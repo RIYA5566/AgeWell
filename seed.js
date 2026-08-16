@@ -5,193 +5,101 @@ const HelpRequest = require('./models/HelpRequest');
 
 dotenv.config();
 
-// ─── Demo Users ────────────────────────────────────────────────────────────
-const usersData = [
-  {
-    name: "Admin User",
-    email: "admin@agewell.com",
-    password: "adminpassword",
-    role: "admin",
-    phone: "555-0100",
-    address: "AgeWell Headquarters, Suite 1"
-  },
-  {
-    name: "Eleanor Vance",
-    email: "eleanor@agewell.com",
-    password: "seniorpassword",
-    role: "senior",
-    phone: "555-0155",
-    address: "Apartment 4B, Pinecrest Retirement Village",
-    emergencyContact: "Daughter: Clara Vance - 555-0199"
-  },
-  {
-    name: "Arthur Pendelton",
-    email: "arthur@agewell.com",
-    password: "seniorpassword",
-    role: "senior",
-    phone: "555-0122",
-    address: "88 Maple Avenue, Sunnyvale",
-    emergencyContact: "Neighbor: Mark - 555-0211"
-  },
-  {
-    name: "Sarah Connor",
-    email: "sarah@agewell.com",
-    password: "volunteerpassword",
-    role: "volunteer",
-    phone: "555-0188",
-    address: "123 Elm Street",
-    skills: ["Grocery Shopping", "Tech Support", "Companionship"],
-    aadhaarNumber: "9876-5432-1098",
-    govtIdCard: "/uploads/kyc/demo-sarah-id.jpg",
-    selfiePhoto: "/uploads/kyc/demo-sarah-selfie.jpg",
-    isPhoneVerified: true,
-    isEmailVerified: true,
-    isIdVerified: true,
-    isPoliceVerified: true,
-    verificationStatus: "verified"
-  },
-  {
-    name: "David Beckham",
-    email: "david@agewell.com",
-    password: "volunteerpassword",
-    role: "volunteer",
-    phone: "555-0144",
-    address: "52 Chelsea Road",
-    skills: ["Medical Escort", "Housekeeping"],
-    aadhaarNumber: "1234-5678-9012",
-    govtIdCard: "/uploads/kyc/demo-david-id.jpg",
-    selfiePhoto: "/uploads/kyc/demo-david-selfie.jpg",
-    isPhoneVerified: true,
-    isEmailVerified: true,
-    isIdVerified: false,
-    isPoliceVerified: false,
-    verificationStatus: "pending"
-  }
-  // Note: Clara Vance (family member) is added after senior Eleanor is created,
-  // because we need Eleanor's _id to set the linkedSenior reference.
-];
-
-// ─── Seed ──────────────────────────────────────────────────────────────────
 const seedDB = async () => {
   try {
     await mongoose.connect(process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/agewell');
     console.log('Database connected for seeding...');
 
-    // Clear existing data
-    await User.deleteMany();
+    // Delete all users except riya, avdhut, soham, and admin
+    await User.deleteMany({
+      $and: [
+        { name: { $nin: [/riya/i, /avdhut/i, /soham/i, /admin/i] } },
+        { email: { $nin: [/riya/i, /avdhut/i, /soham/i, /admin/i] } }
+      ]
+    });
+    
+    // Clear all help requests since they belong to deleted test users
     await HelpRequest.deleteMany();
-    console.log('Cleared existing records.');
+    console.log('Cleared all other test users and help requests.');
 
-    // Insert initial users
-    const createdUsers = [];
-    for (const u of usersData) {
-      const user = await User.create(u);
-      createdUsers.push(user);
+    // Ensure Admin User exists
+    let admin = await User.findOne({ email: 'admin@agewell.com' });
+    if (!admin) {
+      admin = await User.create({
+        name: "Admin User",
+        email: "admin@agewell.com",
+        password: "adminpassword",
+        role: "admin",
+        phone: "555-0100",
+        address: "AgeWell Headquarters, Suite 1"
+      });
+      console.log('Created Admin User.');
+    } else {
+      console.log('Admin User already exists.');
     }
-    console.log(`Created ${createdUsers.length} base users.`);
 
-    const eleanor = createdUsers.find(u => u.email === 'eleanor@agewell.com');
-    const arthur  = createdUsers.find(u => u.email === 'arthur@agewell.com');
-    const sarah   = createdUsers.find(u => u.email === 'sarah@agewell.com');
-    const david   = createdUsers.find(u => u.email === 'david@agewell.com');
+    // Ensure Senior Avdhut Giri exists
+    let avdhut = await User.findOne({ email: 'avdhut@gmail.com' });
+    if (!avdhut) {
+      avdhut = await User.create({
+        name: 'Avdhut Giri',
+        email: 'avdhut@gmail.com',
+        password: 'seniorpassword',
+        role: 'senior',
+        phone: '1111111111',
+        address: 'Shaniwarwada',
+        emergencyContact: 'Soham Giri- 9999999999'
+      });
+      console.log('Created Senior Avdhut Giri.');
+    } else {
+      console.log('Senior Avdhut Giri already exists.');
+    }
 
-    // Add family/caregiver accounts linked to seniors
-    const clara = await User.create({
-      name: "Clara Vance",
-      email: "clara@agewell.com",
-      password: "familypassword",
-      role: "family",
-      phone: "555-0199",
-      address: "72 Pinecrest Drive",
-      linkedSenior: eleanor._id,
-      relationship: "Daughter"
-    });
-    console.log(`Created family caregiver: ${clara.name} (linked to ${eleanor.name})`);
+    // Ensure Caregiver Soham Giri exists
+    let soham = await User.findOne({ email: 'soham@gmail.com' });
+    if (!soham) {
+      soham = await User.create({
+        name: 'Soham Giri',
+        email: 'soham@gmail.com',
+        password: 'familypassword',
+        role: 'family',
+        phone: '9999999999',
+        address: 'Shaniwarwada',
+        relationship: 'Son',
+        linkedSenior: avdhut._id
+      });
+      console.log('Created Caregiver Soham Giri.');
+    } else {
+      console.log('Caregiver Soham Giri already exists.');
+    }
 
-    const robertPendelton = await User.create({
-      name: "Robert Pendelton",
-      email: "robert@agewell.com",
-      password: "familypassword",
-      role: "family",
-      phone: "555-0230",
-      address: "16 Birchwood Lane",
-      linkedSenior: arthur._id,
-      relationship: "Son"
-    });
-    console.log(`Created family caregiver: ${robertPendelton.name} (linked to ${arthur.name})`);
-
-    // ─── Sample Requests ──────────────────────────────────────────────────
-    const sampleRequests = [
-      // Eleanor's requests (she has a caregiver linked, so volunteers' acceptance will need family approval)
-      {
-        title: "Need help fetching fresh milk and bread",
-        description: "Looking for someone who could stop by the local grocery store on their way and help me get a gallon of whole milk and a loaf of whole wheat bread. Thank you!",
-        category: "Grocery Shopping",
-        urgency: "low",
-        status: "pending",
-        familyApprovalStatus: "approved",
-        shoppingPreference: "Lowest Cost, Nearby Shop",
-        senior: eleanor._id
-      },
-      {
-        title: "Help setting up medical tablet screen",
-        description: "My doctor sent me a new monitor screen for my blood pressure, but the Bluetooth is not pairing with my tablet. I would appreciate some tech support to configure it.",
-        category: "Tech Support",
-        urgency: "medium",
-        status: "awaiting_approval",     // Sarah accepted, but Clara must approve
-        shoppingPreference: "Fastest Purchase, Premium Brands",
-        senior: eleanor._id,
-        volunteer: sarah._id,
-        familyApprovalStatus: "none"
-      },
-      // Arthur's requests (he also has Robert as caregiver)
-      {
-        title: "Companionship for afternoon chat",
-        description: "I am feeling a bit lonely today and would love to have a friendly volunteer stop by for a cup of tea and a pleasant conversation for an hour or so.",
-        category: "Companionship",
-        urgency: "low",
-        status: "accepted",              // Robert approved this one
-        shoppingPreference: "Nearby Shop",
-        senior: arthur._id,
-        volunteer: sarah._id,
-        familyApprovalStatus: "approved",
-        familyReviewedBy: robertPendelton._id,
-        familyReviewedAt: new Date(Date.now() - 3600000),
-        acceptedAt: new Date(Date.now() - 3600000)
-      },
-      {
-        title: "Urgent medicine collection from clinic",
-        description: "I need my prescription picked up from the pharmacy today. My joints are hurting quite bad and I cannot walk in this cold rain.",
-        category: "Medical Escort",
-        urgency: "high",
-        status: "completed",
-        shoppingPreference: "Fastest Purchase",
-        senior: arthur._id,
-        volunteer: david._id,
-        familyApprovalStatus: "approved",
-        familyReviewedBy: robertPendelton._id,
-        familyReviewedAt: new Date(Date.now() - 7200000),
-        acceptedAt: new Date(Date.now() - 7200000),
-        completedAt: new Date(Date.now() - 3600000),
-        resolutionNotes: "Picked up Arthur's medicines from the pharmacy and delivered them safely to his door. He was very grateful!"
-      }
-    ];
-
-    await HelpRequest.insertMany(sampleRequests);
-    console.log('Successfully seeded sample help requests.');
+    // Ensure Volunteer Riya Gandhi exists
+    let riya = await User.findOne({ email: 'riya@gmail.com' });
+    if (!riya) {
+      riya = await User.create({
+        name: 'Riya Gandhi',
+        email: 'riya@gmail.com',
+        password: 'volunteerpassword',
+        role: 'volunteer',
+        phone: '5555555555',
+        address: 'Satara Road',
+        skills: ['Grocery Shopping', 'Medical Escort', 'Housekeeping', 'Companionship'],
+        aadhaarNumber: '1234 5678 9012',
+        isIdVerified: true,
+        isPoliceVerified: true,
+        verificationStatus: 'verified'
+      });
+      console.log('Created Volunteer Riya Gandhi.');
+    } else {
+      console.log('Volunteer Riya Gandhi already exists.');
+    }
 
     console.log('\n=== Seeding Completed Successfully! ===');
-    console.log('\nDemo Accounts:');
-    console.log('  👵 Senior:    eleanor@agewell.com / seniorpassword');
-    console.log('  👴 Senior:    arthur@agewell.com  / seniorpassword');
-    console.log('  🤝 Volunteer: sarah@agewell.com   / volunteerpassword');
-    console.log('  🤝 Volunteer: david@agewell.com   / volunteerpassword');
-    console.log('  ❤️  Family:    clara@agewell.com   / familypassword (linked to Eleanor)');
-    console.log('  ❤️  Family:    robert@agewell.com  / familypassword (linked to Arthur)');
-    console.log('  🛡️  Admin:     admin@agewell.com   / adminpassword');
-    console.log('\nWorkflow demo:');
-    console.log('  → eleanor\'s "Tech Support" request is at awaiting_approval.');
-    console.log('  → Login as Clara to approve/reject Sarah as the volunteer.');
+    console.log('\nPreserved Accounts:');
+    console.log('  🛡️  Admin:     admin@agewell.com / adminpassword');
+    console.log('  👵  Senior:    avdhut@gmail.com / seniorpassword');
+    console.log('  ❤️  Caregiver: soham@gmail.com / familypassword');
+    console.log('  🙋  Volunteer: riya@gmail.com / volunteerpassword');
 
     process.exit(0);
   } catch (error) {

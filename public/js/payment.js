@@ -21,6 +21,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   const qItems = params.get('itemsCost');
   const qFee = params.get('serviceFee');
   const qTip = params.get('tipAmount');
+  const qVolName = params.get('volunteerName');
+
+  if (qVolName) {
+    volunteerName = qVolName;
+  }
 
   if (qItems !== null && qItems !== undefined && !isNaN(Number(qItems))) {
     itemsCost = Number(qItems);
@@ -39,11 +44,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   updateSummaryUI();
 
   // Load User & Check Auth
-  const user = checkAuth();
-  if (!user || user.role !== 'family') {
-    window.location.href = 'index.html';
+  const auth = checkAuthAndRedirect('family');
+  if (!auth) {
     return;
   }
+  const user = auth.user;
 
   // Initialize interactive star rating listeners
   initStarRatings();
@@ -300,20 +305,7 @@ async function processPayment() {
     const badge = document.getElementById('rzpTestModeBadge');
     if (badge) badge.textContent = '🧪 Simulated Mode — No gateway (keys not configured)';
 
-    // Post to verify endpoint with simulated flag
-    const verifyRes = await apiCall('/payments/verify', 'POST', {
-      razorpay_order_id: orderData.orderId,
-      razorpay_payment_id: `sim_pay_${Date.now()}`,
-      razorpay_signature: '',
-      simulated: true,
-      requestId: currentRequestId,
-      paymentType,
-      tipAmount
-    });
-
-    transactionId = verifyRes.data?.transactionId || generateTxnId();
-    if (verifyRes.data?.success && orderData.volunteerName) volunteerName = orderData.volunteerName;
-    showSuccessCard();
+    openRzpMockModal(orderData);
     return;
   }
 
@@ -363,7 +355,11 @@ async function processPayment() {
 
         if (verifyRes.data?.success) {
           transactionId = razorpay_payment_id;
-          if (orderData.volunteerName) volunteerName = orderData.volunteerName;
+          if (verifyRes.data?.volunteerName && verifyRes.data.volunteerName !== 'Volunteer' && verifyRes.data.volunteerName !== 'Assigned Volunteer') {
+            volunteerName = verifyRes.data.volunteerName;
+          } else if (orderData.volunteerName && orderData.volunteerName !== 'Volunteer' && orderData.volunteerName !== 'Assigned Volunteer') {
+            volunteerName = orderData.volunteerName;
+          }
           showSuccessCard();
         } else {
           alert('Payment verification failed: ' + (verifyRes.data?.message || 'Unknown error'));
@@ -598,4 +594,235 @@ async function handleFeedbackSubmit(event) {
 
   // Redirect home to family dashboard
   window.location.href = 'family-dashboard.html';
+}
+
+// ─── Razorpay Mock Modal Flow ────────────────────────────────────────────────
+let mockOrderDataGlobal = null;
+
+function openRzpMockModal(orderData) {
+  mockOrderDataGlobal = orderData;
+  const modal = document.getElementById('rzpMockModal');
+  if (!modal) return;
+
+  // Set amounts
+  document.getElementById('rzpMockHeaderAmount').textContent = `₹${totalAmount}`;
+  document.getElementById('rzpMockBtnAmountUpi').textContent = `₹${totalAmount}`;
+  document.getElementById('rzpMockBtnAmountCard').textContent = `₹${totalAmount}`;
+  document.getElementById('rzpMockBtnAmountNet').textContent = `₹${totalAmount}`;
+  document.getElementById('rzpMockBtnAmountWallet').textContent = `₹${totalAmount}`;
+
+  // Hide loader if open
+  document.getElementById('rzpMockLoader').style.display = 'none';
+
+  // Reset inputs
+  document.getElementById('rzpUpiId').value = 'agewell@pay';
+  document.getElementById('rzpCardNumber').value = '4111 1111 1111 1111';
+  document.getElementById('rzpCardExpiry').value = '12/29';
+  document.getElementById('rzpCardCvv').value = '123';
+  document.getElementById('rzpCardName').value = 'John Doe';
+  document.getElementById('rzpNetbankingSelect').value = '';
+
+  // Reset grids (active classes)
+  document.querySelectorAll('#rzpNetbankingGrid .rzp-mock-grid-item').forEach((item, idx) => {
+    if (idx === 0) item.classList.add('active');
+    else item.classList.remove('active');
+  });
+  document.querySelectorAll('#rzpWalletGrid .rzp-mock-grid-item').forEach((item, idx) => {
+    if (idx === 0) item.classList.add('active');
+    else item.classList.remove('active');
+  });
+
+  // Switch to default tab (upi)
+  switchRzpMockTab('upi');
+
+  // Display modal
+  modal.style.display = 'flex';
+}
+
+function closeRzpMockModal() {
+  const modal = document.getElementById('rzpMockModal');
+  if (modal) modal.style.display = 'none';
+
+  // Re-enable payment button on the page
+  const btnPay = document.getElementById('btnPay');
+  if (btnPay) {
+    btnPay.disabled = false;
+    btnPay.textContent = `🔐 Pay ₹${totalAmount} via Razorpay`;
+  }
+}
+
+function switchRzpMockTab(tabName) {
+  // Hide all panels
+  document.querySelectorAll('.rzp-mock-tab-panel').forEach(panel => {
+    panel.classList.remove('active');
+  });
+  // Deactivate all sidebar items
+  document.querySelectorAll('.rzp-mock-sidebar-item').forEach(item => {
+    item.classList.remove('active');
+  });
+
+  // Show active tab
+  if (tabName === 'upi') {
+    document.getElementById('rzpPanelUpi').classList.add('active');
+    document.getElementById('rzpTabLinkUpi').classList.add('active');
+  } else if (tabName === 'card') {
+    document.getElementById('rzpPanelCard').classList.add('active');
+    document.getElementById('rzpTabLinkCard').classList.add('active');
+  } else if (tabName === 'net') {
+    document.getElementById('rzpPanelNet').classList.add('active');
+    document.getElementById('rzpTabLinkNet').classList.add('active');
+  } else if (tabName === 'wallet') {
+    document.getElementById('rzpPanelWallet').classList.add('active');
+    document.getElementById('rzpTabLinkWallet').classList.add('active');
+  }
+}
+
+function prefillRzpMockUpi(app) {
+  const upiInput = document.getElementById('rzpUpiId');
+  if (!upiInput) return;
+  
+  if (app === 'gpay') upiInput.value = 'agewell@okaxis';
+  else if (app === 'phonepe') upiInput.value = 'agewell@ybl';
+  else if (app === 'paytm') upiInput.value = 'agewell@paytm';
+  else if (app === 'ybl') upiInput.value = 'agewell@upi';
+}
+
+function formatCardNumber(input) {
+  let value = input.value.replace(/\D/g, '');
+  let formatted = '';
+  for (let i = 0; i < value.length; i++) {
+    if (i > 0 && i % 4 === 0) {
+      formatted += ' ';
+    }
+    formatted += value[i];
+  }
+  input.value = formatted;
+}
+
+function formatCardExpiry(input) {
+  let value = input.value.replace(/\D/g, '');
+  if (value.length > 2) {
+    input.value = value.substring(0, 2) + '/' + value.substring(2, 4);
+  } else {
+    input.value = value;
+  }
+}
+
+let selectedBank = 'SBI';
+function selectRzpMockBank(element, bankName) {
+  document.querySelectorAll('#rzpNetbankingGrid .rzp-mock-grid-item').forEach(item => {
+    item.classList.remove('active');
+  });
+  element.classList.add('active');
+  document.getElementById('rzpNetbankingSelect').value = '';
+  selectedBank = bankName;
+}
+
+function selectRzpMockBankDropdown(selectElem) {
+  if (selectElem.value) {
+    // Deselect grid items
+    document.querySelectorAll('#rzpNetbankingGrid .rzp-mock-grid-item').forEach(item => {
+      item.classList.remove('active');
+    });
+    selectedBank = selectElem.value;
+  }
+}
+
+let selectedWallet = 'Paytm';
+function selectRzpMockWallet(element, walletName) {
+  document.querySelectorAll('#rzpWalletGrid .rzp-mock-grid-item').forEach(item => {
+    item.classList.remove('active');
+  });
+  element.classList.add('active');
+  selectedWallet = walletName;
+}
+
+async function submitRzpMockPayment(method) {
+  // Simple validation
+  if (method === 'upi') {
+    const upiId = document.getElementById('rzpUpiId').value.trim();
+    if (!upiId || !upiId.includes('@')) {
+      alert('Please enter a valid UPI ID (e.g. username@bank)');
+      return;
+    }
+  } else if (method === 'card') {
+    const cardNo = document.getElementById('rzpCardNumber').value.replace(/\s/g, '');
+    const cardExp = document.getElementById('rzpCardExpiry').value.trim();
+    const cardCvv = document.getElementById('rzpCardCvv').value.trim();
+    const cardName = document.getElementById('rzpCardName').value.trim();
+
+    if (cardNo.length < 16) {
+      alert('Please enter a valid 16-digit card number');
+      return;
+    }
+    if (!cardExp.includes('/') || cardExp.length < 5) {
+      alert('Please enter a valid expiry date (MM/YY)');
+      return;
+    }
+    if (cardCvv.length < 3) {
+      alert('Please enter a valid 3-digit CVV');
+      return;
+    }
+    if (!cardName) {
+      alert('Please enter cardholder name');
+      return;
+    }
+  }
+
+  // Show loader overlay in the modal
+  const loader = document.getElementById('rzpMockLoader');
+  const loaderStatus = document.getElementById('rzpLoaderStatus');
+  if (loader) {
+    loader.style.display = 'flex';
+    const loaderSubtext = loader.querySelector('.rzp-mock-loader-subtext');
+    if (loaderSubtext && typeof t === 'function') {
+      loaderSubtext.textContent = t('rzp_mock_loader_subtext');
+    }
+  }
+  
+  if (loaderStatus) {
+    loaderStatus.textContent = typeof t === 'function' ? t('rzp_mock_loader_contacting') : 'Contacting payment network...';
+  }
+
+  // Wait 1 sec, then change status, then wait 0.8 sec and call verify
+  setTimeout(() => {
+    if (loaderStatus) {
+      loaderStatus.textContent = typeof t === 'function' ? t('rzp_mock_loader_verifying') : 'Verifying payment with AgeWell server...';
+    }
+    
+    setTimeout(async () => {
+      try {
+        const verifyRes = await apiCall('/payments/verify', 'POST', {
+          razorpay_order_id: mockOrderDataGlobal.orderId,
+          razorpay_payment_id: `sim_pay_${Date.now()}`,
+          razorpay_signature: '',
+          simulated: true,
+          requestId: currentRequestId,
+          paymentType,
+          tipAmount
+        });
+
+        if (verifyRes.data?.success) {
+          transactionId = verifyRes.data?.transactionId || generateTxnId();
+          if (verifyRes.data?.volunteerName && verifyRes.data.volunteerName !== 'Volunteer' && verifyRes.data.volunteerName !== 'Assigned Volunteer') {
+            volunteerName = verifyRes.data.volunteerName;
+          } else if (mockOrderDataGlobal.volunteerName && mockOrderDataGlobal.volunteerName !== 'Volunteer' && mockOrderDataGlobal.volunteerName !== 'Assigned Volunteer') {
+            volunteerName = mockOrderDataGlobal.volunteerName;
+          }
+
+          // Close modal and show success card
+          const modal = document.getElementById('rzpMockModal');
+          if (modal) modal.style.display = 'none';
+          showSuccessCard();
+        } else {
+          alert('Payment verification failed: ' + (verifyRes.data?.message || 'Unknown error'));
+          if (loader) loader.style.display = 'none';
+        }
+      } catch (err) {
+        console.error('Verify error:', err);
+        alert('Payment recorded but verification call failed. Please contact support.');
+        if (loader) loader.style.display = 'none';
+      }
+    }, 800);
+  }, 1000);
 }

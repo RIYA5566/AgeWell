@@ -29,12 +29,12 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // API Routes
-app.use('/api/auth',      require('./routes/authRoutes'));
-app.use('/api/requests',  require('./routes/requestRoutes'));
-app.use('/api/admin',     require('./routes/adminRoutes'));
-app.use('/api/family',    require('./routes/familyRoutes'));
+app.use('/api/auth', require('./routes/authRoutes'));
+app.use('/api/requests', require('./routes/requestRoutes'));
+app.use('/api/admin', require('./routes/adminRoutes'));
+app.use('/api/family', require('./routes/familyRoutes'));
 app.use('/api/volunteer', require('./routes/volunteerRoutes'));
-app.use('/api/payments',  require('./routes/paymentRoutes'));
+app.use('/api/payments', require('./routes/paymentRoutes'));
 
 // Fallback: Send static frontend HTML for any non-API routes (SPA routing style if users manually type links)
 app.get('*', (req, res, next) => {
@@ -56,8 +56,9 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 5000;
 
 const server = app.listen(PORT, () => {
-  console.log(`Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
-  console.log(`Open http://localhost:${PORT} in your browser to view the application.`);
+  console.log(
+    `AgeWell running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`
+  );
 });
 
 // Handle unhandled promise rejections

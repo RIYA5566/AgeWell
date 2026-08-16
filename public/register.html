@@ -162,91 +162,92 @@
         <!-- Role Specific Fields: Volunteer -->
         <div id="volunteerFields" class="form-group" style="display: none;">
           <fieldset style="border: 3px solid var(--color-primary-light); padding: 1.5rem; border-radius: var(--border-radius); background: #f9fbf9; margin-bottom: 1.5rem;">
-            <legend style="font-weight: 700; color: var(--color-primary-dark); padding: 0 10px; font-size: 1.1rem;">
+            <legend data-i18n="kyc_title" style="font-weight: 700; color: var(--color-primary-dark); padding: 0 10px; font-size: 1.1rem;">
               🛡️ Mandatory KYC &amp; Verification Documents
             </legend>
-            <p style="font-size: 0.95rem; color: #555; margin-bottom: 1.2rem;">
+            <p data-i18n="kyc_desc" style="font-size: 0.95rem; color: #555; margin-bottom: 1.2rem;">
               To ensure senior citizens are safe, all volunteers must complete identity &amp; background verification before visiting seniors.
             </p>
 
             <!-- Aadhaar Number -->
             <div class="form-group">
-              <label for="aadhaarNumber">🪪 Aadhaar / National ID Number <span style="color: red;">*</span></label>
+              <label for="aadhaarNumber"><span data-i18n="label_aadhaar">🪪 Aadhaar / National ID Number</span> <span style="color: red;">*</span></label>
               <input 
                 type="text" 
                 id="aadhaarNumber" 
                 name="aadhaarNumber" 
                 class="form-input" 
                 placeholder="e.g. 1234 5678 9012"
+                data-i18n="placeholder_aadhaar"
                 maxlength="14"
               >
             </div>
 
             <!-- Phone OTP Verification -->
             <div class="form-group" style="background: #ffffff; padding: 1rem; border: 2px dashed #43a047; border-radius: 8px; margin-bottom: 1rem;">
-              <label style="font-weight: 700; color: #2e7d32;">📞 Phone Number OTP Verification</label>
+              <label style="font-weight: 700; color: #2e7d32;" data-i18n="label_phone_otp_section">📞 Phone Number OTP Verification</label>
               <div style="display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap;">
-                <input type="text" id="phoneOtpInput" class="form-input" placeholder="Enter 6-digit OTP (e.g. 123456)" style="flex: 1; min-width: 180px;">
-                <button type="button" id="btnSendPhoneOtp" class="btn btn-secondary" style="padding: 8px 16px; font-size: 0.95rem;">Send OTP</button>
-                <button type="button" id="btnVerifyPhoneOtp" class="btn btn-primary" style="padding: 8px 16px; font-size: 0.95rem; background-color: #2e7d32;">Verify OTP</button>
+                <input type="text" id="phoneOtpInput" class="form-input" placeholder="Enter 6-digit OTP (e.g. 123456)" data-i18n="placeholder_phone_otp" style="flex: 1; min-width: 180px;">
+                <button type="button" id="btnSendPhoneOtp" class="btn btn-secondary" style="padding: 8px 16px; font-size: 0.95rem;" data-i18n="btn_send_otp">Send OTP</button>
+                <button type="button" id="btnVerifyPhoneOtp" class="btn btn-primary" style="padding: 8px 16px; font-size: 0.95rem; background-color: #2e7d32;" data-i18n="btn_verify_otp">Verify OTP</button>
               </div>
-              <div id="phoneOtpStatus" style="font-size: 0.9rem; font-weight: bold; margin-top: 6px; color: #c62828;">❌ Phone Not Verified (Click Send OTP)</div>
+              <div id="phoneOtpStatus" style="font-size: 0.9rem; font-weight: bold; margin-top: 6px; color: #c62828;" data-i18n="phone_not_verified">❌ Phone Not Verified (Click Send OTP)</div>
             </div>
 
             <!-- Email OTP Verification -->
             <div class="form-group" style="background: #ffffff; padding: 1rem; border: 2px dashed #0288d1; border-radius: 8px; margin-bottom: 1rem;">
-              <label style="font-weight: 700; color: #0288d1;">📧 Email OTP Verification</label>
+              <label style="font-weight: 700; color: #0288d1;" data-i18n="label_email_otp_section">📧 Email OTP Verification</label>
               <div style="display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap;">
-                <input type="text" id="emailOtpInput" class="form-input" placeholder="Enter 6-digit OTP (e.g. 654321)" style="flex: 1; min-width: 180px;">
-                <button type="button" id="btnSendEmailOtp" class="btn btn-secondary" style="padding: 8px 16px; font-size: 0.95rem;">Send OTP</button>
-                <button type="button" id="btnVerifyEmailOtp" class="btn btn-primary" style="padding: 8px 16px; font-size: 0.95rem; background-color: #0288d1;">Verify OTP</button>
+                <input type="text" id="emailOtpInput" class="form-input" placeholder="Enter 6-digit OTP (e.g. 654321)" data-i18n="placeholder_email_otp" style="flex: 1; min-width: 180px;">
+                <button type="button" id="btnSendEmailOtp" class="btn btn-secondary" style="padding: 8px 16px; font-size: 0.95rem;" data-i18n="btn_send_otp">Send OTP</button>
+                <button type="button" id="btnVerifyEmailOtp" class="btn btn-primary" style="padding: 8px 16px; font-size: 0.95rem; background-color: #0288d1;" data-i18n="btn_verify_otp">Verify OTP</button>
               </div>
-              <div id="emailOtpStatus" style="font-size: 0.9rem; font-weight: bold; margin-top: 6px; color: #c62828;">❌ Email Not Verified (Click Send OTP)</div>
+              <div id="emailOtpStatus" style="font-size: 0.9rem; font-weight: bold; margin-top: 6px; color: #c62828;" data-i18n="email_not_verified">❌ Email Not Verified (Click Send OTP)</div>
             </div>
 
             <!-- Govt ID Upload -->
             <div class="form-group">
-              <label for="govtIdCard">📄 Upload Government Photo ID (Aadhaar / Voter ID / Passport) <span style="color: red;">*</span></label>
+              <label for="govtIdCard"><span data-i18n="label_upload_govt_id">📄 Upload Government Photo ID (Aadhaar / Voter ID / Passport)</span> <span style="color: red;">*</span></label>
               <input type="file" id="govtIdCard" name="govtIdCard" class="form-control" accept="image/*,.pdf">
-              <small style="color: #666; display: block; margin-top: 4px;">Upload clear image or document of your Govt issued ID.</small>
+              <small style="color: #666; display: block; margin-top: 4px;" data-i18n="upload_govt_id_desc">Upload clear image or document of your Govt issued ID.</small>
             </div>
 
             <!-- Selfie Upload -->
             <div class="form-group">
-              <label for="selfiePhoto">📸 Upload Live Selfie / Profile Photo <span style="color: red;">*</span></label>
+              <label for="selfiePhoto"><span data-i18n="label_upload_selfie">📸 Upload Live Selfie / Profile Photo</span> <span style="color: red;">*</span></label>
               <input type="file" id="selfiePhoto" name="selfiePhoto" class="form-control" accept="image/*">
-              <small style="color: #666; display: block; margin-top: 4px;">Clear front-facing picture of your face for identity matching.</small>
+              <small style="color: #666; display: block; margin-top: 4px;" data-i18n="upload_selfie_desc">Clear front-facing picture of your face for identity matching.</small>
             </div>
           </fieldset>
 
           <fieldset style="border: 3px solid var(--color-primary-light); padding: 1.5rem; border-radius: var(--border-radius);">
-            <legend style="font-weight: 700; color: var(--color-primary-dark); padding: 0 10px;">
+            <legend style="font-weight: 700; color: var(--color-primary-dark); padding: 0 10px;" data-i18n="skills_title">
               Select the Skills / Areas you can support:
             </legend>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px;">
               <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
                 <input type="checkbox" name="skills" value="Grocery Shopping" style="width: 22px; height: 22px; accent-color: var(--color-primary);">
-                <span>Grocery Shopping</span>
+                <span data-i18n="skill_grocery">Grocery Shopping</span>
               </label>
               <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
                 <input type="checkbox" name="skills" value="Medical Escort" style="width: 22px; height: 22px; accent-color: var(--color-primary);">
-                <span>Medical Escort</span>
+                <span data-i18n="skill_medical">Medical Escort</span>
               </label>
               <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
                 <input type="checkbox" name="skills" value="Tech Support" style="width: 22px; height: 22px; accent-color: var(--color-primary);">
-                <span>Tech Support</span>
+                <span data-i18n="skill_tech">Tech Support</span>
               </label>
               <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
                 <input type="checkbox" name="skills" value="Housekeeping" style="width: 22px; height: 22px; accent-color: var(--color-primary);">
-                <span>Housekeeping</span>
+                <span data-i18n="skill_housekeeping">Housekeeping</span>
               </label>
               <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
                 <input type="checkbox" name="skills" value="Companionship" style="width: 22px; height: 22px; accent-color: var(--color-primary);">
-                <span>Companionship</span>
+                <span data-i18n="skill_companionship">Companionship</span>
               </label>
               <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
                 <input type="checkbox" name="skills" value="Other" style="width: 22px; height: 22px; accent-color: var(--color-primary);">
-                <span>Other Assistance</span>
+                <span data-i18n="skill_other">Other Assistance</span>
               </label>
             </div>
           </fieldset>
@@ -265,7 +266,7 @@
                 id="linkedSeniorEmail" 
                 name="linkedSeniorEmail" 
                 class="form-input" 
-                placeholder="Enter the senior's email (e.g. eleanor@agewell.com)"
+                placeholder="Enter the senior's email (e.g. avdhut@gmail.com)"
               >
               <p style="font-size: 0.9rem; color: #666; margin-top: 6px;">This links your account to your senior. They must already be registered.</p>
             </div>

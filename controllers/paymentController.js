@@ -3,6 +3,7 @@ const Razorpay = require('razorpay');
 const HelpRequest = require('../models/HelpRequest');
 const Payment = require('../models/Payment');
 const Earning = require('../models/Earning');
+const User = require('../models/User');
 
 // ─── Razorpay SDK instance ─────────────────────────────────────────────────────
 // Initialised lazily so the server starts fine even without keys in .env.
@@ -116,6 +117,7 @@ exports.createRazorpayOrder = async (req, res) => {
         amount: totalAmount,
         key: '',
         paymentType,
+        volunteerName: request.volunteer?.name || 'Volunteer',
         message: 'Razorpay keys not configured — using simulated payment mode.'
       });
     }
@@ -185,6 +187,21 @@ exports.verifyRazorpayPayment = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Payment record not found for this order' });
     }
 
+    // Retrieve volunteer name for response
+    let volunteerName = 'Volunteer';
+    if (payment.volunteer) {
+      const volUser = await User.findById(payment.volunteer);
+      if (volUser) {
+        volunteerName = volUser.name;
+      }
+    }
+    if (volunteerName === 'Volunteer' && payment.request) {
+      const reqDoc = await HelpRequest.findById(payment.request).populate('volunteer', 'name');
+      if (reqDoc && reqDoc.volunteer && reqDoc.volunteer.name) {
+        volunteerName = reqDoc.volunteer.name;
+      }
+    }
+
     // ── Handle simulated payment (no Razorpay keys) ───────────────────────────
     if (simulated || !process.env.RAZORPAY_KEY_SECRET) {
       payment.razorpayPaymentId = `sim_pay_${Date.now()}`;
@@ -198,6 +215,7 @@ exports.verifyRazorpayPayment = async (req, res) => {
         success: true,
         simulated: true,
         transactionId: payment.razorpayPaymentId,
+        volunteerName,
         message: 'Simulated payment recorded successfully.'
       });
     }
@@ -232,6 +250,7 @@ exports.verifyRazorpayPayment = async (req, res) => {
       success: true,
       simulated: false,
       transactionId: razorpay_payment_id,
+      volunteerName,
       message: 'Payment verified and recorded successfully!'
     });
 

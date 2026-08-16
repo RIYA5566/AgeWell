@@ -691,6 +691,15 @@ function renderApprovalQueue(awaitingRequests) {
                 : `<span class="skill-tag" style="background:#eee; color:#888;">${t('fd_no_skills_listed')}</span>`;
 
               const feeText = (q.serviceFee !== undefined && q.serviceFee > 0) ? `₹${q.serviceFee}` : '₹0 (Voluntary / Free Service)';
+              const tasksCompleted = typeof volObj === 'object' ? (volObj.tasksCompleted || 0) : 0;
+              
+              let newVolunteerBadge = '';
+              if (tasksCompleted === 0) {
+                newVolunteerBadge = `
+                  <div style="margin-top: 10px; padding: 8px 12px; background: #fff3e0; border: 1.5px dashed #ff9800; border-radius: 8px; font-size: 0.92rem; color: #e65100; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 5px rgba(230,81,0,0.05);">
+                    🌱 <span>New Helper! Help them complete their 1st task!</span>
+                  </div>`;
+              }
 
               return `
                 <div class="volunteer-profile-card" style="background: #ffffff; border: 2px solid #1565c0; border-radius: 12px; padding: 1.2rem; margin-top: 0.8rem; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
@@ -706,6 +715,7 @@ function renderApprovalQueue(awaitingRequests) {
                       <p style="margin: 4px 0;">📞 <a href="tel:${vPhone}" style="color: var(--color-primary-dark); font-weight: bold;">${vPhone}</a></p>
                       <p style="margin: 4px 0;">📧 ${vEmail}</p>
                       <div class="volunteer-skills" style="margin-top: 6px;">${vSkills}</div>
+                      ${newVolunteerBadge}
                     </div>
 
                     <div style="flex: 1; min-width: 250px;">
@@ -722,7 +732,7 @@ function renderApprovalQueue(awaitingRequests) {
                       <div style="margin-top: 10px;">
                         <button
                           class="btn"
-                          onclick="openSelectVolunteerConfirmModal('${req._id}', '${vId}', '${escapeHTML(vName).replace(/'/g, "\\'")}', '${escapeHTML(feeText).replace(/'/g, "\\'")}')"
+                          onclick="openSelectVolunteerConfirmModal('${req._id}', '${vId}', '${escapeHTML(vName).replace(/'/g, "\\'")}', '${escapeHTML(feeText).replace(/'/g, "\\'")}', ${tasksCompleted === 0})"
                           style="background-color: #1565c0; color: #ffffff !important; font-weight: 700; width: 100%; padding: 12px; font-size: 1.05rem;"
                           aria-label="Select and approve this volunteer"
                         >
@@ -1032,11 +1042,11 @@ window.confirmTipAndRedirect = function() {
   const inputEl = document.getElementById('customTipInput');
   const tipAmount = Math.max(1, Number(inputEl ? inputEl.value : 50) || 50);
 
-  const { requestId, itemsCost, serviceFee } = pendingTipContext;
+  const { requestId, itemsCost, serviceFee, volName } = pendingTipContext;
   pendingTipContext = null;
 
   // Proceed to payment page immediately for tip
-  window.location.href = `/payment.html?requestId=${requestId}&type=tip&tipAmount=${tipAmount}&itemsCost=${itemsCost || 0}&serviceFee=${serviceFee || 0}`;
+  window.location.href = `/payment.html?requestId=${requestId}&type=tip&tipAmount=${tipAmount}&itemsCost=${itemsCost || 0}&serviceFee=${serviceFee || 0}&volunteerName=${encodeURIComponent(volName)}`;
 };
 
 window.skipTipAndAskRatings = function() {
@@ -1317,7 +1327,7 @@ function approvePurchaseFunding(requestId, amount, serviceFee, volName) {
     return;
   }
   // Redirect to payment page with purchase amount + service fee. Tip NOT included here.
-  window.location.href = `/payment.html?requestId=${requestId}&type=purchase&itemsCost=${amount}&serviceFee=${serviceFee || 0}`;
+  window.location.href = `/payment.html?requestId=${requestId}&type=purchase&itemsCost=${amount}&serviceFee=${serviceFee || 0}&volunteerName=${encodeURIComponent(volName || 'Assigned Volunteer')}`;
 }
 
 // Open Custom Modal Tab for Requesting Purchase Cost Revision & Sending Bargain Note

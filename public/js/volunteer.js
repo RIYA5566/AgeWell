@@ -477,9 +477,16 @@ async function loadVolunteerRequests(silent = false) {
       return isMyApprovedTask(r);
     };
 
+    const dismissedKey = currentUserId ? `dismissed_notifications_${currentUserId}` : 'dismissed_notifications';
+    const dismissedList = JSON.parse(localStorage.getItem(dismissedKey) || '[]');
+
     // Split by status:
-    // 0. Task Assignment Notifications: Requests where this volunteer submitted a quote, but caregiver selected another volunteer
-    const notifiedRequests  = requests.filter(r => (r.status === 'accepted' || r.status === 'completed') && hasMyQuote(r) && !isMyApprovedTask(r));
+    // 0. Task Assignment Notifications: Requests where this volunteer submitted a quote, but caregiver selected another volunteer (excluding dismissed)
+    const notifiedRequests  = requests.filter(r => (r.status === 'accepted' || r.status === 'completed') && hasMyQuote(r) && !isMyApprovedTask(r) && !dismissedList.includes(r._id));
+    
+    // Save to window for Clear All action
+    window.notifiedRequestIds = notifiedRequests.map(r => r._id);
+
     // 1. Available Help Requests: Open requests with status 'pending' or 'awaiting_approval'
     const pendingRequests   = requests.filter(r => r.status === 'pending' || r.status === 'awaiting_approval');
     // 2. Awaiting Family Approval: Requests where this volunteer submitted a quote and status is 'awaiting_approval'
@@ -498,9 +505,14 @@ async function loadVolunteerRequests(silent = false) {
 
           return `
             <div class="request-card" style="border-left: 5px solid #2e7d32; background: #ffffff; margin-bottom: 1rem;">
-              <div class="request-card-header">
+              <div class="request-card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
                 <div class="request-title" style="color: #1b5e20;">📋 ${escapeHTML(req.title)}</div>
-                <span class="badge" style="background: #2e7d32; color: #fff;">ℹ️ Task Assigned</span>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span class="badge" style="background: #2e7d32; color: #fff;">ℹ️ Task Assigned</span>
+                  <button type="button" class="btn btn-secondary" onclick="dismissTaskNotification('${req._id}')" style="padding: 4px 10px; font-size: 0.85rem; border-radius: 6px; cursor: pointer; border: 1.5px solid #ccc; background: #f9f9f9; color: #333; min-height: 32px; display: inline-flex; align-items: center; justify-content: center; gap: 4px; font-weight: bold;" title="Dismiss this notification">
+                    ✕ Dismiss
+                  </button>
+                </div>
               </div>
               <div style="margin-top: 10px; padding: 12px 16px; background-color: #e8f5e9; border: 2px solid #2e7d32; border-radius: 10px;">
                 <p style="color: #1b5e20; font-weight: bold; font-size: 1.02rem; margin-bottom: 4px;">
@@ -1695,3 +1707,52 @@ async function confirmWithdrawal() {
     }
   }
 }
+
+// ─── Task Notification Dismiss Handlers ─────────────────────────────────────
+window.dismissTaskNotification = function(requestId) {
+  const userStr = localStorage.getItem('user');
+  let currentUserId = '';
+  if (userStr) {
+    try {
+      const u = JSON.parse(userStr);
+      currentUserId = String(u._id || u.id || '');
+    } catch (e) {
+      console.error(e);
+    }
+  }
+  if (!currentUserId) return;
+
+  const key = `dismissed_notifications_${currentUserId}`;
+  const dismissed = JSON.parse(localStorage.getItem(key) || '[]');
+  if (!dismissed.includes(requestId)) {
+    dismissed.push(requestId);
+    localStorage.setItem(key, JSON.stringify(dismissed));
+  }
+  loadVolunteerRequests(true); // silent refresh
+};
+
+window.clearAllTaskNotifications = function() {
+  const userStr = localStorage.getItem('user');
+  let currentUserId = '';
+  if (userStr) {
+    try {
+      const u = JSON.parse(userStr);
+      currentUserId = String(u._id || u.id || '');
+    } catch (e) {
+      console.error(e);
+    }
+  }
+  if (!currentUserId) return;
+
+  const key = `dismissed_notifications_${currentUserId}`;
+  const dismissed = JSON.parse(localStorage.getItem(key) || '[]');
+  
+  if (window.notifiedRequestIds && window.notifiedRequestIds.length > 0) {
+    window.notifiedRequestIds.forEach(id => {
+      if (!dismissed.includes(id)) dismissed.push(id);
+    });
+    localStorage.setItem(key, JSON.stringify(dismissed));
+  }
+  loadVolunteerRequests(true); // silent refresh
+};
+

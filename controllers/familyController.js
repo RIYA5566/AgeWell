@@ -14,12 +14,30 @@ exports.getFamilyDashboard = async (req, res) => {
     }
 
     // Fetch all requests for the linked senior
-    const requests = await HelpRequest.find({ senior: req.user.linkedSenior })
+    let requests = await HelpRequest.find({ senior: req.user.linkedSenior })
       .populate('senior', 'name phone address emergencyContact')
       .populate('volunteer', 'name phone email skills verificationStatus isIdVerified isPoliceVerified isPhoneVerified isEmailVerified govtIdCard selfiePhoto aadhaarNumber createdAt')
       .populate('volunteerQuotes.volunteer', 'name phone email skills verificationStatus isIdVerified isPoliceVerified isPhoneVerified isEmailVerified govtIdCard selfiePhoto aadhaarNumber createdAt')
       .populate('familyReviewedBy', 'name relationship')
       .sort({ createdAt: -1 });
+
+    // Convert mongoose documents to plain objects to append tasksCompleted field
+    requests = JSON.parse(JSON.stringify(requests));
+
+    for (const r of requests) {
+      if (r.volunteer) {
+        const volId = typeof r.volunteer === 'object' ? r.volunteer._id : r.volunteer;
+        r.volunteer.tasksCompleted = await HelpRequest.countDocuments({ volunteer: volId, status: 'completed' });
+      }
+      if (r.volunteerQuotes) {
+        for (const q of r.volunteerQuotes) {
+          if (q.volunteer) {
+            const volId = typeof q.volunteer === 'object' ? q.volunteer._id : q.volunteer;
+            q.volunteer.tasksCompleted = await HelpRequest.countDocuments({ volunteer: volId, status: 'completed' });
+          }
+        }
+      }
+    }
 
     // Requests specifically waiting for THIS family member's approval
     const pendingApprovals = requests.filter(r => r.status === 'awaiting_approval');

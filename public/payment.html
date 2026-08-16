@@ -502,6 +502,335 @@
       background: #1b5e20;
       transform: translateY(-1px);
     }
+
+    /* Razorpay Mock Modal Styles */
+    .rzp-mock-modal-overlay {
+      display: none;
+      position: fixed;
+      z-index: 2500;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.6);
+      align-items: center;
+      justify-content: center;
+    }
+
+    .rzp-mock-modal {
+      display: flex;
+      flex-direction: column;
+      width: 680px;
+      max-width: 95%;
+      height: 500px;
+      background: #ffffff;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.35);
+      position: relative;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    .rzp-mock-header {
+      background: #0f2b46;
+      color: #ffffff;
+      padding: 1rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .rzp-mock-header-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .rzp-mock-header-logo {
+      width: 32px;
+      height: 32px;
+      background: #1f72e5;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+      font-weight: bold;
+      color: #fff;
+    }
+
+    .rzp-mock-header-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+
+    .rzp-mock-header-desc {
+      font-size: 0.75rem;
+      color: #a5b4fc;
+      margin-top: 1px;
+    }
+
+    .rzp-mock-header-amount {
+      text-align: right;
+    }
+
+    .rzp-mock-amount-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #a5b4fc;
+    }
+
+    .rzp-mock-amount-value {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: #ffffff;
+    }
+
+    .rzp-mock-body {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .rzp-mock-sidebar {
+      width: 220px;
+      background: #f8f9fa;
+      border-right: 1px solid #e9ecef;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .rzp-mock-sidebar-item {
+      padding: 1rem 1.2rem;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+      border-left: 4px solid transparent;
+      font-weight: 500;
+      font-size: 0.95rem;
+      color: #495057;
+      border-bottom: 1px solid #f1f3f5;
+      transition: all 0.15s ease;
+    }
+
+    .rzp-mock-sidebar-item:hover {
+      background: #f1f3f5;
+      color: #212529;
+    }
+
+    .rzp-mock-sidebar-item.active {
+      background: #eef2f7;
+      border-left-color: #1f72e5;
+      color: #1f72e5;
+      font-weight: 600;
+    }
+
+    .rzp-mock-sidebar-icon {
+      font-size: 1.15rem;
+      width: 20px;
+      text-align: center;
+    }
+
+    .rzp-mock-content {
+      flex: 1;
+      padding: 1.5rem;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      background: #ffffff;
+    }
+
+    .rzp-mock-tab-panel {
+      display: none;
+      height: 100%;
+    }
+
+    .rzp-mock-tab-panel.active {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .rzp-mock-section-title {
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #868e96;
+      font-weight: 700;
+      margin-bottom: 0.8rem;
+    }
+
+    .rzp-mock-input-group {
+      margin-bottom: 1rem;
+    }
+
+    .rzp-mock-input-group label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #495057;
+      margin-bottom: 0.3rem;
+    }
+
+    .rzp-mock-input-row {
+      display: flex;
+      gap: 12px;
+    }
+
+    .rzp-mock-input {
+      width: 100%;
+      padding: 0.65rem 0.8rem;
+      border: 1.5px solid #ced4da;
+      border-radius: 4px;
+      font-size: 0.95rem;
+      box-sizing: border-box;
+      outline: none;
+      transition: border-color 0.15s ease;
+      font-family: inherit;
+    }
+
+    .rzp-mock-input:focus {
+      border-color: #1f72e5;
+      box-shadow: 0 0 0 3px rgba(31, 114, 229, 0.15);
+    }
+
+    .rzp-mock-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-bottom: 1rem;
+    }
+
+    .rzp-mock-grid-item {
+      border: 1.5px solid #dee2e6;
+      padding: 0.65rem;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: #495057;
+      transition: all 0.15s ease;
+      background: #ffffff;
+      justify-content: flex-start;
+    }
+
+    .rzp-mock-grid-item:hover {
+      border-color: #1f72e5;
+      background: #f8fbff;
+      color: #1f72e5;
+    }
+
+    .rzp-mock-grid-item.active {
+      border-color: #1f72e5;
+      background: #eef5fc;
+      color: #1f72e5;
+      box-shadow: 0 0 0 1px #1f72e5;
+    }
+
+    .rzp-mock-btn-pay {
+      width: 100%;
+      padding: 0.85rem;
+      background: #1f72e5;
+      color: #ffffff;
+      border: none;
+      border-radius: 4px;
+      font-size: 1.05rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s ease;
+      margin-top: auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 4px 10px rgba(31, 114, 229, 0.2);
+    }
+
+    .rzp-mock-btn-pay:hover {
+      background: #155cb4;
+    }
+
+    .rzp-mock-btn-pay:disabled {
+      background: #a5c7f7;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    .rzp-mock-footer-branding {
+      text-align: center;
+      font-size: 0.72rem;
+      color: #adb5bd;
+      margin-top: auto;
+      padding-top: 0.8rem;
+      border-top: 1px solid #f1f3f5;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+    }
+
+    .rzp-mock-close {
+      cursor: pointer;
+      color: #ced4da;
+      font-size: 1.5rem;
+      font-weight: bold;
+      transition: color 0.15s ease;
+      background: none;
+      border: none;
+      padding: 0;
+      line-height: 1;
+      margin-left: 1.5rem;
+    }
+
+    .rzp-mock-close:hover {
+      color: #ffffff;
+    }
+
+    /* Simulated Loader overlay */
+    .rzp-mock-loader-overlay {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: #ffffff;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      text-align: center;
+      padding: 2rem;
+      box-sizing: border-box;
+    }
+
+    .rzp-mock-spinner {
+      width: 48px;
+      height: 48px;
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #1f72e5;
+      border-radius: 50%;
+      animation: rzp-spin 1s linear infinite;
+      margin-bottom: 1.5rem;
+    }
+
+    .rzp-mock-loader-status {
+      font-size: 1.15rem;
+      font-weight: 600;
+      color: #212529;
+      margin-bottom: 0.5rem;
+    }
+
+    .rzp-mock-loader-subtext {
+      font-size: 0.88rem;
+      color: #6c757d;
+    }
+
+    @keyframes rzp-spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
   </style>
 </head>
 <body>
@@ -849,6 +1178,159 @@
           <button type="submit" id="btnSubmitFeedback" class="btn-submit-feedback">Submit Feedback & Go Home ➔</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- Razorpay Mock Payment Modal Overlay -->
+  <div id="rzpMockModal" class="rzp-mock-modal-overlay">
+    <div class="rzp-mock-modal">
+      <!-- Simulated Gateway Loading State -->
+      <div id="rzpMockLoader" class="rzp-mock-loader-overlay">
+        <div class="rzp-mock-spinner"></div>
+        <div class="rzp-mock-loader-status" id="rzpLoaderStatus">Verifying Payment Details...</div>
+        <div class="rzp-mock-loader-subtext">Do not close this window or click the back button.</div>
+      </div>
+
+      <!-- Header -->
+      <div class="rzp-mock-header">
+        <div class="rzp-mock-header-brand">
+          <div class="rzp-mock-header-logo">🌸</div>
+          <div>
+            <div class="rzp-mock-header-title">AgeWell</div>
+            <div class="rzp-mock-header-desc" data-i18n="rzp_mock_sim_checkout">Simulated Test Checkout</div>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center;">
+          <div class="rzp-mock-header-amount">
+            <div class="rzp-mock-amount-label" data-i18n="rzp_mock_amt_payable">Amount Payable</div>
+            <div class="rzp-mock-amount-value" id="rzpMockHeaderAmount">₹0.00</div>
+          </div>
+          <button class="rzp-mock-close" onclick="closeRzpMockModal()">&times;</button>
+        </div>
+      </div>
+
+      <!-- Body -->
+      <div class="rzp-mock-body">
+        <!-- Sidebar -->
+        <div class="rzp-mock-sidebar">
+          <div class="rzp-mock-sidebar-item active" id="rzpTabLinkUpi" onclick="switchRzpMockTab('upi')">
+            <span class="rzp-mock-sidebar-icon">📱</span>
+            <span>UPI / QR</span>
+          </div>
+          <div class="rzp-mock-sidebar-item" id="rzpTabLinkCard" onclick="switchRzpMockTab('card')">
+            <span class="rzp-mock-sidebar-icon">💳</span>
+            <span>Card</span>
+          </div>
+          <div class="rzp-mock-sidebar-item" id="rzpTabLinkNet" onclick="switchRzpMockTab('net')">
+            <span class="rzp-mock-sidebar-icon">🏦</span>
+            <span>Netbanking</span>
+          </div>
+          <div class="rzp-mock-sidebar-item" id="rzpTabLinkWallet" onclick="switchRzpMockTab('wallet')">
+            <span class="rzp-mock-sidebar-icon">💼</span>
+            <span>Wallets</span>
+          </div>
+        </div>
+
+        <!-- Content Panel -->
+        <div class="rzp-mock-content">
+          <!-- UPI Tab -->
+          <div class="rzp-mock-tab-panel active" id="rzpPanelUpi">
+            <div class="rzp-mock-section-title" data-i18n="rzp_mock_upi_title">Pay via UPI</div>
+            <div style="font-size: 0.85rem; color: #6c757d; margin-bottom: 0.8rem;" data-i18n="rzp_mock_upi_subtitle">Select a UPI App or enter your UPI ID</div>
+            <div class="rzp-mock-grid">
+              <div class="rzp-mock-grid-item" onclick="prefillRzpMockUpi('gpay')">
+                <span style="font-size: 1.1rem;">Ⓜ️</span> Google Pay
+              </div>
+              <div class="rzp-mock-grid-item" onclick="prefillRzpMockUpi('phonepe')">
+                <span style="font-size: 1.1rem;">👾</span> PhonePe
+              </div>
+              <div class="rzp-mock-grid-item" onclick="prefillRzpMockUpi('paytm')">
+                <span style="font-size: 1.1rem;">💎</span> Paytm
+              </div>
+              <div class="rzp-mock-grid-item" onclick="prefillRzpMockUpi('ybl')">
+                <span style="font-size: 1.1rem;">⚡</span> BHIM UPI
+              </div>
+            </div>
+            <div class="rzp-mock-input-group">
+              <label for="rzpUpiId" data-i18n="rzp_mock_upi_label">Enter UPI ID (e.g. success@okaxis)</label>
+              <input type="text" id="rzpUpiId" class="rzp-mock-input" placeholder="e.g. username@bank" value="agewell@pay">
+            </div>
+            <button class="rzp-mock-btn-pay" onclick="submitRzpMockPayment('upi')">
+              <span data-i18n="rzp_mock_pay_securely">🔒 Pay Securely</span> <strong id="rzpMockBtnAmountUpi">₹0.00</strong>
+            </button>
+          </div>
+
+          <!-- Card Tab -->
+          <div class="rzp-mock-tab-panel" id="rzpPanelCard">
+            <div class="rzp-mock-section-title" data-i18n="rzp_mock_card_title">Pay via Card</div>
+            <div class="rzp-mock-input-group">
+              <label for="rzpCardNumber" data-i18n="rzp_mock_card_no">Card Number</label>
+              <input type="text" id="rzpCardNumber" class="rzp-mock-input" placeholder="4111 1111 1111 1111" maxlength="19" oninput="formatCardNumber(this)" value="4111 1111 1111 1111">
+            </div>
+            <div class="rzp-mock-input-row">
+              <div class="rzp-mock-input-group" style="flex: 1;">
+                <label for="rzpCardExpiry" data-i18n="rzp_mock_card_exp">Expiry</label>
+                <input type="text" id="rzpCardExpiry" class="rzp-mock-input" placeholder="MM/YY" maxlength="5" oninput="formatCardExpiry(this)" value="12/29">
+              </div>
+              <div class="rzp-mock-input-group" style="flex: 1;">
+                <label for="rzpCardCvv" data-i18n="rzp_mock_card_cvv">CVV</label>
+                <input type="password" id="rzpCardCvv" class="rzp-mock-input" placeholder="123" maxlength="3" value="123">
+              </div>
+            </div>
+            <div class="rzp-mock-input-group">
+              <label for="rzpCardName" data-i18n="rzp_mock_card_name">Card Holder Name</label>
+              <input type="text" id="rzpCardName" class="rzp-mock-input" placeholder="Cardholder Name" value="John Doe">
+            </div>
+            <button class="rzp-mock-btn-pay" onclick="submitRzpMockPayment('card')">
+              <span data-i18n="rzp_mock_pay_securely">🔒 Pay Securely</span> <strong id="rzpMockBtnAmountCard">₹0.00</strong>
+            </button>
+          </div>
+
+          <!-- Netbanking Tab -->
+          <div class="rzp-mock-tab-panel" id="rzpPanelNet">
+            <div class="rzp-mock-section-title" data-i18n="rzp_mock_net_title">Popular Banks</div>
+            <div class="rzp-mock-grid" id="rzpNetbankingGrid">
+              <div class="rzp-mock-grid-item active" onclick="selectRzpMockBank(this, 'SBI')">🏦 State Bank of India</div>
+              <div class="rzp-mock-grid-item" onclick="selectRzpMockBank(this, 'HDFC')">🏦 HDFC Bank</div>
+              <div class="rzp-mock-grid-item" onclick="selectRzpMockBank(this, 'ICICI')">🏦 ICICI Bank</div>
+              <div class="rzp-mock-grid-item" onclick="selectRzpMockBank(this, 'AXIS')">🏦 Axis Bank</div>
+            </div>
+            <div class="rzp-mock-input-group">
+              <label for="rzpNetbankingSelect" data-i18n="rzp_mock_net_select">Or Select Other Bank</label>
+              <select id="rzpNetbankingSelect" class="rzp-mock-input" onchange="selectRzpMockBankDropdown(this)">
+                <option value="">Choose a bank...</option>
+                <option value="KOTAK">Kotak Mahindra Bank</option>
+                <option value="PNB">Punjab National Bank</option>
+                <option value="BOB">Bank of Baroda</option>
+                <option value="CANARA">Canara Bank</option>
+                <option value="INDUSIND">IndusInd Bank</option>
+              </select>
+            </div>
+            <button class="rzp-mock-btn-pay" onclick="submitRzpMockPayment('net')">
+              <span data-i18n="rzp_mock_pay_securely">🔒 Pay Securely</span> <strong id="rzpMockBtnAmountNet">₹0.00</strong>
+            </button>
+          </div>
+
+          <!-- Wallets Tab -->
+          <div class="rzp-mock-tab-panel" id="rzpPanelWallet">
+            <div class="rzp-mock-section-title" data-i18n="rzp_mock_wallet_title">Select Wallet</div>
+            <div class="rzp-mock-grid" id="rzpWalletGrid">
+              <div class="rzp-mock-grid-item active" onclick="selectRzpMockWallet(this, 'Paytm')">💼 Paytm Wallet</div>
+              <div class="rzp-mock-grid-item" onclick="selectRzpMockWallet(this, 'PhonePe')">💼 PhonePe Wallet</div>
+              <div class="rzp-mock-grid-item" onclick="selectRzpMockWallet(this, 'AmazonPay')">💼 Amazon Pay</div>
+              <div class="rzp-mock-grid-item" onclick="selectRzpMockWallet(this, 'MobiKwik')">💼 MobiKwik</div>
+            </div>
+            <button class="rzp-mock-btn-pay" onclick="submitRzpMockPayment('wallet')">
+              <span data-i18n="rzp_mock_pay_securely">🔒 Pay Securely</span> <strong id="rzpMockBtnAmountWallet">₹0.00</strong>
+            </button>
+          </div>
+
+          <!-- Secure footer -->
+          <div class="rzp-mock-footer-branding">
+            <span data-i18n="rzp_mock_sec_branding">🛡️ Secured by Razorpay Mock Checkout</span>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 

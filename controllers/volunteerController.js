@@ -27,90 +27,83 @@ exports.getEarnings = async (req, res) => {
   try {
     const volunteerId = req.user.id;
 
-    // ── 1. Fetch all Earning records for this volunteer ───────────────────────
-    const dbEarnings = await Earning.find({ volunteer: volunteerId })
-      .sort({ createdAt: -1 })
-      .lean();
-
-    // ── 2. Fallback: derive earnings from completed HelpRequests for tasks ────
-    //    that existed before the Earning model was introduced (backward compat).
-    //    We only include requests that don't already have an Earning record.
-    const coveredRequestIds = new Set(dbEarnings.map(e => e.request.toString()));
-
-    const legacyRequests = await HelpRequest.find({
-      volunteer: volunteerId,
-      status: 'completed',
-      serviceChargeReleased: true
-    })
-      .select('_id title category serviceFee tipAmount serviceChargeReleasedAt completedAt createdAt')
-      .lean();
-
-    // Build synthetic earning records from legacy completed requests
-    const legacyEarnings = [];
-    for (const r of legacyRequests) {
-      if (!coveredRequestIds.has(r._id.toString())) {
-        // Service charge earning (RELEASED because task is completed)
-        legacyEarnings.push({
-          _id: `legacy-sc-${r._id}`,
-          volunteer: volunteerId,
-          request: r._id,
-          amount: r.serviceFee || 0,
-          type: 'SERVICE_CHARGE',
-          status: 'RELEASED',
-          taskTitle: r.title || 'Completed Task',
-          taskCategory: r.category || 'Other',
-          createdAt: r.serviceChargeReleasedAt || r.completedAt || r.createdAt,
-          releasedAt: r.serviceChargeReleasedAt || r.completedAt
-        });
-        // Tip earning (if any)
-        if (r.tipAmount && r.tipAmount > 0) {
-          legacyEarnings.push({
-            _id: `legacy-tip-${r._id}`,
-            volunteer: volunteerId,
-            request: r._id,
-            amount: r.tipAmount,
-            type: 'TIP',
-            status: 'RELEASED',
-            taskTitle: r.title || 'Completed Task',
-            taskCategory: r.category || 'Other',
-            createdAt: r.serviceChargeReleasedAt || r.completedAt || r.createdAt,
-            releasedAt: r.serviceChargeReleasedAt || r.completedAt
-          });
+    // 1. Delete stale Earning records for requests that no longer exist
+    const earnings = await Earning.find({ volunteer: volunteerId }).select('request').lean();
+    for (const e of earnings) {
+      if (e.request) {
+        const exists = await HelpRequest.exists({ _id: e.request });
+        if (!exists) {
+          await Earning.deleteOne({ _id: e._id });
         }
       }
     }
 
-    // Also: include PENDING earnings for tasks in-flight (accepted → awaiting_verification)
-    // These are tasks accepted by this volunteer but not yet completed.
-    // Only if not already covered by an Earning record.
-    const pendingRequests = await HelpRequest.find({
-      volunteer: volunteerId,
-      status: { $in: ['accepted', 'purchase_cost_submitted', 'purchase_funded', 'awaiting_verification'] },
-      serviceChargeReleased: false
-    })
-      .select('_id title category serviceFee createdAt acceptedAt')
-      .lean();
+    // 2. Fetch all HelpRequests for this volunteer
+    const requests = await HelpRequest.find({ volunteer: volunteerId }).lean();
 
-    const legacyPendingEarnings = [];
-    for (const r of pendingRequests) {
-      if (!coveredRequestIds.has(r._id.toString())) {
-        legacyPendingEarnings.push({
-          _id: `pending-${r._id}`,
+    // 2. Synchronize Earning records for each HelpRequest dynamically
+    for (const r of requests) {
+      const isReleased = r.status === 'completed' && r.serviceChargeReleased === true;
+
+      // Find or create SERVICE_CHARGE earning
+      let scEarning = await Earning.findOne({ volunteer: volunteerId, request: r._id, type: 'SERVICE_CHARGE' });
+      if (!scEarning) {
+        scEarning = await Earning.create({
           volunteer: volunteerId,
           request: r._id,
           amount: r.serviceFee || 0,
           type: 'SERVICE_CHARGE',
-          status: 'PENDING',
-          taskTitle: r.title || 'Active Task',
+          status: isReleased ? 'RELEASED' : 'PENDING',
+          taskTitle: r.title || 'Help Request',
           taskCategory: r.category || 'Other',
-          createdAt: r.acceptedAt || r.createdAt
+          createdAt: r.createdAt
         });
+      } else {
+        // Sync status if it is not already WITHDRAWN
+        if (scEarning.status !== 'WITHDRAWN') {
+          const targetStatus = isReleased ? 'RELEASED' : 'PENDING';
+          if (scEarning.status !== targetStatus) {
+            scEarning.status = targetStatus;
+            scEarning.releasedAt = isReleased ? (r.serviceChargeReleasedAt || new Date()) : null;
+            await scEarning.save();
+          }
+        }
+      }
+
+      // Find, create or sync TIP earning
+      if (r.tipAmount && r.tipAmount > 0) {
+        let tipEarning = await Earning.findOne({ volunteer: volunteerId, request: r._id, type: 'TIP' });
+        if (!tipEarning) {
+          tipEarning = await Earning.create({
+            volunteer: volunteerId,
+            request: r._id,
+            amount: r.tipAmount,
+            type: 'TIP',
+            status: isReleased ? 'RELEASED' : 'PENDING',
+            taskTitle: r.title || 'Help Request',
+            taskCategory: r.category || 'Other',
+            createdAt: r.createdAt
+          });
+        } else {
+          if (tipEarning.status !== 'WITHDRAWN') {
+            const targetStatus = isReleased ? 'RELEASED' : 'PENDING';
+            if (tipEarning.status !== targetStatus) {
+              tipEarning.status = targetStatus;
+              tipEarning.releasedAt = isReleased ? (r.serviceChargeReleasedAt || new Date()) : null;
+              await tipEarning.save();
+            }
+          }
+        }
+      } else {
+        // Delete any obsolete tip earning if tipAmount is 0
+        await Earning.deleteMany({ volunteer: volunteerId, request: r._id, type: 'TIP' });
       }
     }
 
-    // ── 3. Merge all earnings (DB + legacy released + legacy pending) ─────────
-    const allEarnings = [...dbEarnings, ...legacyEarnings, ...legacyPendingEarnings]
-      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    // 3. Fetch all synchronized Earning records from database
+    const allEarnings = await Earning.find({ volunteer: volunteerId })
+      .sort({ createdAt: -1 })
+      .lean();
 
     // ── 4. Calculate wallet summary ───────────────────────────────────────────
     let totalEarned = 0;   // sum of all RELEASED + WITHDRAWN

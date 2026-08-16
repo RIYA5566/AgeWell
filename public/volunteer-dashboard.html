@@ -217,7 +217,12 @@
  
       <!-- Section 4: Task Assignment Notifications -->
       <div id="notificationsCard" class="dashboard-card" style="margin-bottom: 2rem; border-color: #0288d1; display: none; background: #f0f4c3;">
-        <h2 style="color: #2e7d32; display: flex; align-items: center; gap: 8px;" data-i18n="vd_status_notifications">📢 Task Assignment Notifications</h2>
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 0.6rem;">
+          <h2 style="color: #2e7d32; display: flex; align-items: center; gap: 8px; margin: 0;" data-i18n="vd_status_notifications">📢 Task Assignment Notifications</h2>
+          <button id="btnClearAllNotifications" class="btn btn-secondary" onclick="clearAllTaskNotifications()" style="padding: 6px 14px; font-size: 0.88rem; border-radius: 8px; cursor: pointer; border: 1.5px solid #a5d6a7; background: #ffffff; color: #2e7d32; font-weight: bold; min-height: 38px; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 2px 6px rgba(46,125,50,0.12);" onmouseover="this.style.background='#e8f5e9'" onmouseout="this.style.background='#ffffff'">
+            🧹 Clear All
+          </button>
+        </div>
         <p style="font-size: 0.98rem; color: #33691e; margin-bottom: 1rem;">
           Updates regarding help requests where you submitted a quote:
         </p>
@@ -517,29 +522,29 @@
     <div id="kycModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="kycModalTitle" style="display: none;">
       <div class="modal-content" style="max-width: 550px;">
         <div class="modal-header">
-          <h3 id="kycModalTitle" style="color: var(--color-primary-dark); font-size: 1.4rem;">📄 Submit Verification Documents</h3>
+          <h3 id="kycModalTitle" style="color: var(--color-primary-dark); font-size: 1.4rem;" data-i18n="vd_kyc_modal_title">📄 Submit Verification Documents</h3>
           <button id="kycModalClose" class="modal-close" aria-label="Close">&times;</button>
         </div>
 
         <form id="kycForm" novalidate>
           <div class="form-group">
-            <label for="modalAadhaarNumber">🪪 Aadhaar / National ID Number</label>
-            <input type="text" id="modalAadhaarNumber" class="form-input" placeholder="e.g. 1234 5678 9012" required>
+            <label for="modalAadhaarNumber" data-i18n="label_aadhaar">🪪 Aadhaar / National ID Number</label>
+            <input type="text" id="modalAadhaarNumber" class="form-input" placeholder="e.g. 1234 5678 9012" data-i18n="placeholder_aadhaar" required>
           </div>
 
           <div class="form-group">
-            <label for="modalGovtIdCard">📄 Government Photo ID (Aadhaar / Voter ID / Passport)</label>
+            <label for="modalGovtIdCard" data-i18n="label_upload_govt_id">📄 Government Photo ID (Aadhaar / Voter ID / Passport)</label>
             <input type="file" id="modalGovtIdCard" class="form-control" accept="image/*,.pdf" required>
           </div>
 
           <div class="form-group">
-            <label for="modalSelfiePhoto">📸 Live Selfie / Profile Photo</label>
+            <label for="modalSelfiePhoto" data-i18n="label_upload_selfie">📸 Live Selfie / Profile Photo</label>
             <input type="file" id="modalSelfiePhoto" class="form-control" accept="image/*" required>
           </div>
 
           <div class="modal-footer" style="display: flex; gap: 10px; margin-top: 1.2rem;">
-            <button type="button" id="btnCancelKyc" class="btn btn-secondary" style="flex: 1;">Cancel</button>
-            <button type="submit" class="btn btn-primary" style="flex: 2; background-color: var(--color-primary-dark);">
+            <button type="button" id="btnCancelKyc" class="btn btn-secondary" style="flex: 1;" data-i18n="btn_cancel">Cancel</button>
+            <button type="submit" class="btn btn-primary" style="flex: 2; background-color: var(--color-primary-dark);" data-i18n="vd_submit_clearance">
               💾 Submit for Admin &amp; Police Clearance
             </button>
           </div>
