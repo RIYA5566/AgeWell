@@ -27,19 +27,19 @@ exports.getEarnings = async (req, res) => {
   try {
     const volunteerId = req.user.id;
 
-    // 1. Delete stale Earning records for requests that no longer exist
+    // 1. Delete stale Earning records for requests that no longer exist, are cancelled, or are no longer assigned to this volunteer
     const earnings = await Earning.find({ volunteer: volunteerId }).select('request').lean();
     for (const e of earnings) {
       if (e.request) {
-        const exists = await HelpRequest.exists({ _id: e.request });
-        if (!exists) {
+        const reqDoc = await HelpRequest.findById(e.request).select('status volunteer');
+        if (!reqDoc || reqDoc.status === 'cancelled' || !reqDoc.volunteer || reqDoc.volunteer.toString() !== volunteerId.toString()) {
           await Earning.deleteOne({ _id: e._id });
         }
       }
     }
 
-    // 2. Fetch all HelpRequests for this volunteer
-    const requests = await HelpRequest.find({ volunteer: volunteerId }).lean();
+    // 2. Fetch all HelpRequests for this volunteer (excluding cancelled ones)
+    const requests = await HelpRequest.find({ volunteer: volunteerId, status: { $ne: 'cancelled' } }).lean();
 
     // 2. Synchronize Earning records for each HelpRequest dynamically
     for (const r of requests) {

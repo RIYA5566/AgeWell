@@ -953,6 +953,8 @@ async function loadVolunteerRequests(silent = false) {
       }
     }
 
+    // Refresh volunteer earnings wallet silently to match loaded active/service history
+    await loadVolunteerEarnings(true);
   } else {
     alert("Error loading requests data");
   }
