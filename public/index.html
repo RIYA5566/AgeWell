@@ -1,249 +1,709 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="h-full">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="AgeWell - Senior Citizen Assistance Platform. Connecting seniors with compassionate volunteers for daily support.">
   <title>AgeWell - Senior Citizen Assistance Platform</title>
-  <link rel="stylesheet" href="/css/style.css">
+
+  <!-- Google Fonts: Plus Jakarta Sans for high-end modern layout -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Core Scripts -->
   <script src="/js/i18n.js"></script>
-  <style>
-    /* Landing page specific styles */
-    .landing-wrapper {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 0 1.5rem;
-    }
+  <script src="/js/api.js"></script>
 
-    .landing-layout {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 2rem;
-      align-items: start;
-      margin-top: 2.5rem;
-    }
-
-    @media (max-width: 800px) {
-      .landing-layout {
-        grid-template-columns: 1fr;
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#f0f7ff',
+              100: '#e0effe',
+              200: '#b9dbfe',
+              300: '#7cc0fd',
+              400: '#36a2fa',
+              500: '#0c87eb',
+              600: '#026bc9', /* Primary Blue */
+              700: '#0355a3',
+              800: '#074887',
+              900: '#0b3d70',
+              950: '#082547', /* Deep Trust Navy */
+            },
+            slate: {
+              50: '#f8fafc',
+              100: '#f1f5f9',
+              200: '#e2e8f0',
+              300: '#cbd5e1',
+              400: '#94a3b8',
+              500: '#64748b',
+              600: '#475569',
+              700: '#334155',
+              800: '#1e293b',
+              900: '#0f172a',
+            }
+          },
+          boxShadow: {
+            premium: '0 10px 30px -10px rgba(15, 23, 42, 0.04)',
+            cardHover: '0 20px 40px -15px rgba(2, 107, 201, 0.08)',
+            modal: '0 25px 50px -12px rgba(15, 23, 42, 0.15)'
+          }
+        }
       }
     }
+  </script>
 
-    .features-panel {
-      display: flex;
-      flex-direction: column;
-      gap: 1.2rem;
+  <!-- React & Babel CDNs -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <!-- Modern Styling Overrides -->
+  <style>
+    *:focus-visible {
+      outline: 4px solid #026bc9 !important;
+      outline-offset: 4px !important;
     }
-
-    .feature-item {
-      display: flex;
-      align-items: flex-start;
-      gap: 1rem;
-      background: var(--color-white);
-      border-radius: var(--border-radius);
-      padding: 1.2rem 1.5rem;
-      border: 3px solid var(--color-primary-light);
-      transition: border-color 0.2s, box-shadow 0.2s;
+    html {
+      font-size: var(--base-font-size, 18px);
+      scroll-behavior: smooth;
     }
-
-    .feature-item:hover {
-      border-color: var(--color-primary);
-      box-shadow: 0 4px 12px rgba(46, 125, 50, 0.12);
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
     }
-
-    .feature-icon {
-      font-size: 2rem;
-      flex-shrink: 0;
+    .skip-link {
+      position: absolute;
+      top: -100px;
+      left: 0;
+      background: #026bc9;
+      color: white;
+      padding: 1rem;
+      z-index: 100;
+      font-weight: bold;
+      transition: top 0.2s;
     }
-
-    .feature-text h3 {
-      font-size: 1.1rem;
-      font-weight: 700;
-      color: var(--color-primary-dark);
-      margin-bottom: 4px;
+    .skip-link:focus {
+      top: 0;
+      outline: 4px solid #f57f17;
     }
-
-    .feature-text p {
-      font-size: 0.95rem;
-      color: #555;
-      line-height: 1.4;
-    }
-
-    .demo-credentials {
-      background: var(--color-bg-light);
-      border: 3px solid var(--color-primary-light);
-      border-radius: var(--border-radius);
-      padding: 1.2rem 1.5rem;
-      margin-top: 0.5rem;
-    }
-
-    .demo-credentials h4 {
-      color: var(--color-primary-dark);
-      font-size: 1rem;
-      font-weight: 700;
-      margin-bottom: 0.6rem;
-    }
-
-    .demo-cred-item {
-      font-size: 0.9rem;
-      margin-bottom: 0.3rem;
-      font-family: monospace;
-      background: var(--color-white);
-      padding: 4px 10px;
-      border-radius: 6px;
-      display: block;
+    .bg-gradient-mesh {
+      background-color: #f8fafc;
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(224, 239, 254, 0.5) 0px, transparent 50%),
+        radial-gradient(at 100% 0%, rgba(241, 245, 249, 0.6) 0px, transparent 50%),
+        radial-gradient(at 50% 100%, rgba(219, 234, 254, 0.3) 0px, transparent 50%);
     }
   </style>
 </head>
-<body>
-  <!-- Accessibility Skip-Link -->
+<body class="bg-gradient-mesh text-[#0f172a] min-h-full flex flex-col transition-colors duration-200">
   <a href="#mainContent" class="skip-link">Skip to main content</a>
 
-  <!-- Global Accessibility Header -->
-  <header>
-    <div class="nav-container">
-      <div class="logo" role="img" aria-label="AgeWell Logo">
-        <span class="logo-icon">🌸</span>
-        <span>AgeWell</span>
-      </div>
-      
-      <!-- Text Sizing Widget -->
-      <div class="accessibility-panel" role="region" aria-label="Accessibility Sizing Controls">
-        <span>Text Size:</span>
-        <button id="btnTextDecrease" class="font-btn" aria-label="Make text smaller">A-</button>
-        <button id="btnTextReset" class="font-btn" aria-label="Reset text size to normal">Reset</button>
-        <button id="btnTextIncrease" class="font-btn" aria-label="Make text larger">A+</button>
-        <span id="fontSizeIndicator" style="font-size: 0.9rem; font-weight: bold; min-width: 44px; text-align: center;">18px</span>
-      </div>
-    </div>
-  </header>
+  <!-- React Mount Point -->
+  <div id="root" class="flex-grow flex flex-col"></div>
 
-  <!-- Main Content -->
-  <main id="mainContent">
-    <div class="landing-wrapper">
-      <!-- Hero Banner -->
-      <div class="hero-banner">
-        <div style="font-size: 3.5rem; margin-bottom: 1rem;">🌸</div>
-        <h1 data-i18n="hero_title">AgeWell</h1>
-        <p data-i18n="hero_subtitle">Connecting Senior Citizens with compassionate local Volunteers for everyday support and peace of mind.</p>
-      </div>
+  <!-- React Component Code using Babel JSX -->
+  <script type="text/babel">
+    const { useState, useEffect } = React;
 
-      <div class="landing-layout">
-        <!-- Left: Features -->
-        <div class="features-panel">
-          <div class="feature-item">
-            <div class="feature-icon" aria-hidden="true">🛒</div>
-            <div class="feature-text">
-              <h3 data-i18n="feat_req_title">Request Help</h3>
-              <p data-i18n="feat_req_desc">Easily ask for help with groceries, tech support, medical visits, housekeeping, or companionship.</p>
-            </div>
-          </div>
-          <div class="feature-item">
-            <div class="feature-icon" aria-hidden="true">🤝</div>
-            <div class="feature-text">
-              <h3 data-i18n="feat_vol_title">Volunteer Support</h3>
-              <p data-i18n="feat_vol_desc">Volunteers can browse and accept pending requests, and stay connected with seniors throughout.</p>
-            </div>
-          </div>
-          <div class="feature-item">
-            <div class="feature-icon" aria-hidden="true">🚨</div>
-            <div class="feature-text">
-              <h3 data-i18n="feat_sos_title">Emergency SOS</h3>
-              <p data-i18n="feat_sos_desc">One tap emergency alert instantly notifies volunteers and admins for immediate support.</p>
-            </div>
-          </div>
-          <div class="feature-item">
-            <div class="feature-icon" aria-hidden="true">🎙️</div>
-            <div class="feature-text">
-              <h3 data-i18n="feat_voice_title">Voice Requests</h3>
-              <p data-i18n="feat_voice_desc">Use your voice to describe what you need. No typing required — just speak!</p>
-            </div>
-          </div>
-          <div class="feature-item">
-            <div class="feature-icon" aria-hidden="true">🔠</div>
-            <div class="feature-text">
-              <h3 data-i18n="feat_acc_title">Accessibility First</h3>
-              <p data-i18n="feat_acc_desc">Large text, high contrast, oversized buttons, and adjustable font size for easy use by all.</p>
-            </div>
-          </div>
+    // Custom vector SVGs
+    const Icons = {
+      Logo: () => (
+        <svg className="w-7 h-7 text-brand-600" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+        </svg>
+      ),
+      RequestHelp: () => (
+        <svg className="w-6 h-6 text-brand-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+        </svg>
+      ),
+      Volunteer: () => (
+        <svg className="w-6 h-6 text-brand-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+        </svg>
+      ),
+      SOS: () => (
+        <svg className="w-6 h-6 text-rose-600 animate-pulse" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+      ),
+      Voice: () => (
+        <svg className="w-6 h-6 text-brand-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+        </svg>
+      ),
+      Accessibility: () => (
+        <svg className="w-6 h-6 text-brand-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+        </svg>
+      ),
+      Key: () => (
+        <svg className="w-5 h-5 text-brand-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M15 7a2 2 0 012 2m-9.5 5.5L2 18v2h2v-2h2v-2h2.5M9 13l2.5 2.5M15 7a4 4 0 11-8 0 4 4 0 018 0z" />
+        </svg>
+      ),
+      Close: () => (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      ),
+      Caregiver: () => (
+        <svg className="w-6 h-6 text-brand-600" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+        </svg>
+      )
+    };
 
-          <!-- Demo Credentials Box -->
-          <div class="demo-credentials">
-            <h4 data-i18n="demo_creds_title">🔐 Demo Login Credentials:</h4>
+    function AgeWellLanding() {
+      const [lang, setLangState] = useState(window.getLang());
+      const [fontSize, setFontSizeState] = useState(parseInt(localStorage.getItem('fontSize') || '18'));
+      const [email, setEmail] = useState('');
+      const [password, setPassword] = useState('');
+      const [loading, setLoading] = useState(false);
+      const [alertMsg, setAlertMsg] = useState(null);
+      const [alertType, setAlertType] = useState('error');
+      const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
-            <span class="demo-cred-item">👵 Senior: avdhut@gmail.com / seniorpassword</span>
-            <span class="demo-cred-item">🙋 Volunteer: riya@gmail.com / volunteerpassword</span>
-            <span class="demo-cred-item">❤️ Caregiver: soham@gmail.com / familypassword</span>
-            <span class="demo-cred-item">🛡️ Admin: admin@agewell.com / adminpassword</span>
-          </div>
+      useEffect(() => {
+        const handleLangChange = (e) => {
+          setLangState(e.detail.language);
+        };
+        window.addEventListener('languageChanged', handleLangChange);
+        return () => window.removeEventListener('languageChanged', handleLangChange);
+      }, []);
+
+      useEffect(() => {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('message') === 'session_expired') {
+          setAlertMsg(window.t('session_expired') || 'Your session has expired. Please login again.');
+          setAlertType('error');
+          setIsLoginModalOpen(true);
+        }
+      }, []);
+
+      const t = (key, vars = {}) => {
+        return window.t ? window.t(key, vars) : key;
+      };
+
+      const handleIncreaseFont = () => {
+        if (window.increaseFontSize) {
+          window.increaseFontSize();
+          setFontSizeState(parseInt(localStorage.getItem('fontSize') || '18'));
+        }
+      };
+
+      const handleDecreaseFont = () => {
+        if (window.decreaseFontSize) {
+          window.decreaseFontSize();
+          setFontSizeState(parseInt(localStorage.getItem('fontSize') || '18'));
+        }
+      };
+
+      const handleResetFont = () => {
+        if (window.resetFontSize) {
+          window.resetFontSize();
+          setFontSizeState(18);
+        }
+      };
+
+      const handleSetLang = (langCode) => {
+        if (window.setLang) {
+          window.setLang(langCode);
+        }
+      };
+
+      const handleAutofill = (demoEmail, demoPassword) => {
+        setEmail(demoEmail);
+        setPassword(demoPassword);
+        setAlertMsg(null);
+        setIsLoginModalOpen(true);
+      };
+
+      const handleLogin = async (e) => {
+        e.preventDefault();
+        if (!email || !password) {
+          setAlertMsg('Please fill in both fields.');
+          setAlertType('error');
+          return;
+        }
+
+        setLoading(true);
+        setAlertMsg(null);
+
+        try {
+          const res = await window.apiCall('/auth/login', 'POST', { email, password });
+          if (res.ok && res.data.success) {
+            localStorage.setItem('token', res.data.token);
+            localStorage.setItem('user', JSON.stringify(res.data.user));
+            setAlertType('success');
+            setAlertMsg('Redirecting...');
+            setTimeout(() => {
+              if (window.redirectToDashboard) {
+                window.redirectToDashboard(res.data.user.role);
+              }
+            }, 800);
+          } else {
+            setAlertType('error');
+            setAlertMsg(res.data.message || 'Invalid email or password.');
+          }
+        } catch (err) {
+          setAlertType('error');
+          setAlertMsg('Connection error. Is the server running?');
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      const capabilities = [
+        { icon: Icons.RequestHelp, titleKey: 'feat_req_title', descKey: 'feat_req_desc' },
+        { icon: Icons.Volunteer, titleKey: 'feat_vol_title', descKey: 'feat_vol_desc' },
+        { icon: Icons.SOS, titleKey: 'feat_sos_title', descKey: 'feat_sos_desc' },
+        { icon: Icons.Voice, titleKey: 'feat_voice_title', descKey: 'feat_voice_desc' },
+        { icon: Icons.Accessibility, titleKey: 'feat_acc_title', descKey: 'feat_acc_desc' },
+        { icon: Icons.Caregiver, titleKey: 'feat_caregiver_title', descKey: 'feat_caregiver_desc' },
+      ];
+
+      return (
+        <div className="flex-grow flex flex-col justify-between min-h-screen">
+          
+          {/* Header/Nav */}
+          <nav className="bg-white border-b border-slate-200/80 shadow-premium sticky top-0 z-40 py-4 px-6">
+            <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-brand-50 rounded-xl flex items-center justify-center border border-brand-100 shadow-sm">
+                  <Icons.Logo />
+                </div>
+                <div>
+                  <span className="font-sans text-xl font-extrabold text-slate-900 tracking-tight">{t('hero_title')}</span>
+                  <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mt-0.5">{t('nav_subtitle')}</span>
+                </div>
+              </div>
+
+              {/* Sizing & Language Controls */}
+              <div className="flex flex-wrap items-center gap-3 bg-slate-50 rounded-xl p-1.5 border border-slate-200/60 text-sm">
+                
+                <div className="flex items-center gap-1" role="region" aria-label="Accessibility Font Size Controls">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider px-1.5">{t('nav_text_size')}</span>
+                  <button onClick={handleDecreaseFont} className="bg-white hover:bg-slate-100 text-slate-700 font-bold w-8 h-8 rounded-lg border border-slate-200 transition-all flex items-center justify-center text-xs active:scale-95 shadow-xs">-A</button>
+                  <button onClick={handleResetFont} className="bg-white hover:bg-slate-100 text-slate-700 font-semibold px-2.5 h-8 rounded-lg border border-slate-200 transition-all flex items-center justify-center text-xs active:scale-95 shadow-xs">{t('nav_reset')}</button>
+                  <button onClick={handleIncreaseFont} className="bg-white hover:bg-slate-100 text-slate-700 font-bold w-8 h-8 rounded-lg border border-slate-200 transition-all flex items-center justify-center text-xs active:scale-95 shadow-xs">+A</button>
+                  <span className="bg-brand-600 text-white font-bold px-2 py-1 rounded-lg text-xs shadow-xs ml-1">{fontSize}px</span>
+                </div>
+
+                <div className="h-5 w-px bg-slate-300 hidden sm:block"></div>
+
+                <div className="flex items-center gap-1">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider px-1.5">{t('nav_language_label')}</span>
+                  <button onClick={() => handleSetLang('en')} className={`px-2.5 h-8 rounded-lg font-bold text-xs transition-all ${lang === 'en' ? 'bg-brand-600 text-white' : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'}`}>EN</button>
+                  <button onClick={() => handleSetLang('hi')} className={`px-2.5 h-8 rounded-lg font-bold text-xs transition-all ${lang === 'hi' ? 'bg-brand-600 text-white' : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'}`}>हि</button>
+                  <button onClick={() => handleSetLang('mr')} className={`px-2.5 h-8 rounded-lg font-bold text-xs transition-all ${lang === 'mr' ? 'bg-brand-600 text-white' : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'}`}>म</button>
+                </div>
+              </div>
+
+              {/* Login Button in Navbar */}
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setIsLoginModalOpen(true)}
+                  className="px-4 py-2 text-brand-700 font-bold text-sm bg-brand-50 hover:bg-brand-100 border border-brand-200 rounded-xl transition-all active:scale-95 shadow-xs"
+                >
+                  {t('nav_signin')}
+                </button>
+                <a
+                  href="/register.html"
+                  className="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white font-bold text-sm rounded-xl transition-all active:scale-95 shadow-sm"
+                >
+                  {t('nav_register')}
+                </a>
+              </div>
+            </div>
+          </nav>
+
+          {/* Core Landing Page Content */}
+          <main id="mainContent" className="max-w-7xl w-full mx-auto px-6 pt-16 md:pt-24 pb-12 flex-grow space-y-24">
+            
+            {/* Section 1: Hero Area (Split Grid with User-provided Photo of Senior and Volunteer) */}
+            <section className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+              {/* Left Column: Copy & Actions */}
+              <div className="lg:col-span-7 space-y-6 text-left lg:pl-12">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-brand-50 text-brand-700 rounded-full text-xs font-bold border border-brand-200 shadow-xs uppercase tracking-wider">
+                  <span className="w-1.5 h-1.5 rounded-full bg-brand-500 animate-ping"></span>
+                  Empowering Elders
+                </span>
+                
+                <h1 className="font-sans text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-slate-900 leading-tight">
+                  {t('hero_title')}
+                </h1>
+                
+                <p className="text-base sm:text-lg text-slate-500 font-medium leading-relaxed max-w-xl">
+                  {t('hero_subtitle')}
+                </p>
+
+                <div className="flex flex-col sm:flex-row justify-start items-center gap-4 pt-2">
+                  <button 
+                    onClick={() => setIsLoginModalOpen(true)}
+                    className="w-full sm:w-auto px-8 py-3.5 bg-brand-600 hover:bg-brand-700 text-white font-extrabold rounded-xl transition-all shadow-md text-base hover:shadow-brand-200/50"
+                  >
+                    {t('hero_btn_signin')}
+                  </button>
+                  <a 
+                    href="/register.html"
+                    className="w-full sm:w-auto px-8 py-3.5 bg-white hover:bg-slate-50 text-slate-700 font-bold border border-slate-200 rounded-xl transition-all shadow-2xs text-base text-center"
+                  >
+                    {t('hero_btn_create')}
+                  </a>
+                </div>
+              </div>
+
+              {/* Right Column: Photo Showcase (Senior & Volunteer - Zoomed in to hide black borders) */}
+              <div className="lg:col-span-5 flex justify-center w-full">
+                <div className="relative w-full max-w-[440px]">
+                  
+                  {/* Image Card Container (with overflow-hidden for border cropping) */}
+                  <div className="w-full aspect-[4/3] bg-white border border-slate-200 rounded-3xl shadow-premium hover:shadow-cardHover hover:scale-[1.01] transition-all duration-300 overflow-hidden">
+                    <img 
+                      src="/senior_and_volunteer.png" 
+                      alt="Smiling senior citizen grandmother learning to use technology with volunteer" 
+                      className="w-full h-full object-cover scale-[1.16] origin-center"
+                    />
+                  </div>
+
+                  {/* Verified Badge (overlapping top-left: half on, half off) */}
+                  <div className="absolute -top-10 -left-10 bg-white border border-slate-200 p-3 rounded-2xl shadow-md hidden sm:flex items-center gap-2 z-10">
+                    <div className="w-8 h-8 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <span className="block text-[9px] font-bold text-slate-400 uppercase tracking-wide">{t('badge_community_care')}</span>
+                      <span className="block text-xs font-bold text-slate-800">{t('badge_verified_helpers')}</span>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+            </section>
+
+            {/* Section 2: Platform Capabilities (Full Grid) */}
+            <section className="space-y-8 pt-10">
+              <div className="text-center space-y-2">
+                <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">{t('services_section_title')}</h2>
+                <p className="text-slate-500 font-medium text-sm sm:text-base">{t('services_section_subtitle')}</p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {capabilities.map((cap, i) => {
+                  const IconComponent = cap.icon;
+                  return (
+                    <div key={i} className="bg-white border border-slate-200/60 rounded-2xl p-6 shadow-premium hover:shadow-cardHover hover:-translate-y-1 transition-all duration-300 group">
+                      <div className="w-12 h-12 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center transition-all duration-300 group-hover:scale-110 group-hover:shadow-sm shadow-xs mb-5">
+                        <IconComponent />
+                      </div>
+                      <h3 className="text-lg font-bold text-slate-900 mb-2 group-hover:text-brand-700 transition-colors">{t(cap.titleKey)}</h3>
+                      <p className="text-slate-500 text-sm leading-relaxed">{t(cap.descKey)}</p>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+
+            {/* Section 3: Technology Showcase (Two Column with User-provided Photo of Senior Man - Zoomed in to hide black borders) */}
+            <section className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center border-t border-slate-200/80 pt-16">
+              
+              {/* Left Column: Photo of Senior Man using phone */}
+              <div className="lg:col-span-5 flex justify-center order-2 lg:order-1 w-full">
+                <div className="relative w-full max-w-[500px] aspect-[4/3] bg-white border border-slate-200 rounded-3xl shadow-premium hover:shadow-cardHover hover:scale-[1.01] transition-all duration-300 overflow-hidden">
+                  <img 
+                    src="/senior_using_phone.png" 
+                    alt="Elderly grandfather speaking to smartphone app via voice-to-text" 
+                    className="w-full h-full object-cover scale-[1.16] origin-center"
+                  />
+                  <div className="absolute top-4 left-4 bg-brand-600 text-white py-1.5 px-3 rounded-xl shadow-md text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 z-10">
+                    <span className="w-2 h-2 bg-white rounded-full animate-pulse"></span>
+                    Voice Enabled
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Column: Value Proposition Copy */}
+              <div className="lg:col-span-7 space-y-6 text-left order-1 lg:order-2">
+                <span className="text-xs font-bold text-brand-600 uppercase tracking-widest bg-brand-50 border border-brand-200 px-3 py-1 rounded-full">
+                  {t('tech_tag')}
+                </span>
+                <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight leading-tight">
+                  {t('tech_title')}
+                </h2>
+                <p className="text-slate-500 font-medium text-sm sm:text-base leading-relaxed">
+                  {t('tech_desc')}
+                </p>
+
+                {/* Key Accessibility Sub-features */}
+                <div className="space-y-4 pt-2">
+                  <div className="flex gap-4">
+                    <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-700 font-bold text-sm">1</div>
+                    <div>
+                      <h4 className="font-bold text-slate-800 text-sm sm:text-base">{t('tech_item1_title')}</h4>
+                      <p className="text-slate-400 text-xs sm:text-sm mt-0.5">{t('tech_item1_desc')}</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-4">
+                    <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-700 font-bold text-sm">2</div>
+                    <div>
+                      <h4 className="font-bold text-slate-800 text-sm sm:text-base">{t('tech_item2_title')}</h4>
+                      <p className="text-slate-400 text-xs sm:text-sm mt-0.5">{t('tech_item2_desc')}</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-4">
+                    <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-700 font-bold text-sm">3</div>
+                    <div>
+                      <h4 className="font-bold text-slate-800 text-sm sm:text-base">{t('tech_item3_title')}</h4>
+                      <p className="text-slate-400 text-xs sm:text-sm mt-0.5">{t('tech_item3_desc')}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* Section 4: Care and Support Impact Gallery */}
+            <section className="space-y-8 border-t border-slate-200/80 pt-16">
+              <div className="text-center space-y-2">
+                <span className="text-xs font-bold text-brand-600 uppercase tracking-widest bg-brand-50 border border-brand-200 px-3 py-1 rounded-full">
+                  {t('impact_tag')}
+                </span>
+                <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight leading-tight">
+                  {t('impact_title')}
+                </h2>
+                <p className="text-slate-500 font-medium text-sm sm:text-base max-w-xl mx-auto">
+                  {t('impact_desc')}
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4">
+                {/* Mobility Assistance Card */}
+                <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-premium group hover:shadow-cardHover transition-all duration-300">
+                  <div className="relative w-full aspect-[16/9] overflow-hidden">
+                    <img 
+                      src="/senior_crutches.png" 
+                      alt="Volunteer assisting a senior grandmother walk with crutches" 
+                      className="w-full h-full object-cover scale-[1.02] hover:scale-[1.05] transition-transform duration-300"
+                    />
+                  </div>
+                  <div className="p-6 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">{t('card_mobility_tag')}</h4>
+                    </div>
+                    <h3 className="text-lg font-bold text-slate-900">{t('card_mobility_title')}</h3>
+                    <p className="text-slate-500 text-sm leading-relaxed">
+                      {t('card_mobility_desc')}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Emotional Support Card */}
+                <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-premium group hover:shadow-cardHover transition-all duration-300">
+                  <div className="relative w-full aspect-[16/9] overflow-hidden">
+                    <img 
+                      src="/senior_wheelchair.png" 
+                      alt="Volunteer holding hands with senior grandfather in a wheelchair in a park" 
+                      className="w-full h-full object-cover scale-[1.02] hover:scale-[1.05] transition-transform duration-300"
+                    />
+                  </div>
+                  <div className="p-6 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">{t('card_mental_tag')}</h4>
+                    </div>
+                    <h3 className="text-lg font-bold text-slate-900">{t('card_mental_title')}</h3>
+                    <p className="text-slate-500 text-sm leading-relaxed">
+                      {t('card_mental_desc')}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* Section 5: Tester Demo Portals Section */}
+            <section className="bg-slate-100/60 border border-slate-200/60 rounded-3xl p-8 space-y-6">
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-200 pb-4">
+                <div>
+                  <h3 className="font-extrabold text-slate-800 flex items-center gap-2 text-lg">
+                    <Icons.Key />
+                    <span>{t('dev_portal_title')}</span>
+                  </h3>
+                  <p className="text-slate-400 font-medium text-xs mt-0.5">{t('dev_portal_desc')}</p>
+                </div>
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-white border border-slate-200 px-3 py-1 rounded-full">{t('dev_tag')}</span>
+              </div>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <button 
+                  onClick={() => handleAutofill('avdhut@gmail.com', 'seniorpassword')}
+                  className="flex flex-col text-left p-4 bg-white hover:bg-brand-50 border border-slate-200/50 hover:border-brand-300 rounded-2xl shadow-premium hover:shadow-cardHover transition-all duration-150 group"
+                >
+                  <span className="text-[10px] font-bold text-slate-400 group-hover:text-brand-700 uppercase tracking-wider">{t('dev_role_senior')}</span>
+                  <span className="text-sm font-semibold text-slate-800 mt-1 truncate">avdhut@gmail.com</span>
+                  <span className="text-[11px] font-medium text-slate-400 mt-0.5">{t('dev_password_label', {password: 'seniorpassword'})}</span>
+                </button>
+
+                <button 
+                  onClick={() => handleAutofill('riya@gmail.com', 'volunteerpassword')}
+                  className="flex flex-col text-left p-4 bg-white hover:bg-brand-50 border border-slate-200/50 hover:border-brand-300 rounded-2xl shadow-premium hover:shadow-cardHover transition-all duration-150 group"
+                >
+                  <span className="text-[10px] font-bold text-slate-400 group-hover:text-brand-700 uppercase tracking-wider">{t('dev_role_volunteer')}</span>
+                  <span className="text-sm font-semibold text-slate-800 mt-1 truncate">riya@gmail.com</span>
+                  <span className="text-[11px] font-medium text-slate-400 mt-0.5">{t('dev_password_label', {password: 'volunteerpassword'})}</span>
+                </button>
+
+                <button 
+                  onClick={() => handleAutofill('soham@gmail.com', 'familypassword')}
+                  className="flex flex-col text-left p-4 bg-white hover:bg-brand-50 border border-slate-200/50 hover:border-brand-300 rounded-2xl shadow-premium hover:shadow-cardHover transition-all duration-150 group"
+                >
+                  <span className="text-[10px] font-bold text-slate-400 group-hover:text-brand-700 uppercase tracking-wider">{t('dev_role_family')}</span>
+                  <span className="text-sm font-semibold text-slate-800 mt-1 truncate">soham@gmail.com</span>
+                  <span className="text-[11px] font-medium text-slate-400 mt-0.5">{t('dev_password_label', {password: 'familypassword'})}</span>
+                </button>
+
+                <button 
+                  onClick={() => handleAutofill('admin@agewell.com', 'adminpassword')}
+                  className="flex flex-col text-left p-4 bg-white hover:bg-brand-50 border border-slate-200/50 hover:border-brand-300 rounded-2xl shadow-premium hover:shadow-cardHover transition-all duration-150 group"
+                >
+                  <span className="text-[10px] font-bold text-slate-400 group-hover:text-brand-700 uppercase tracking-wider">{t('dev_role_admin')}</span>
+                  <span className="text-sm font-semibold text-slate-800 mt-1 truncate">admin@agewell.com</span>
+                  <span className="text-[11px] font-medium text-slate-400 mt-0.5">{t('dev_password_label', {password: 'adminpassword'})}</span>
+                </button>
+              </div>
+            </section>
+          </main>
+
+          {/* Footer */}
+          <footer className="bg-white border-t border-slate-200 text-slate-400 py-6 px-6 text-center text-xs sm:text-sm font-semibold">
+            <div className="max-w-7xl mx-auto">
+              <p>{t('footer_text')}</p>
+            </div>
+          </footer>
+
+          {/* Sign In Overlay Modal Dialog */}
+          {isLoginModalOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+              {/* Backdrop */}
+              <div 
+                className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity duration-300"
+                onClick={() => setIsLoginModalOpen(false)}
+              ></div>
+              
+              {/* Modal Container */}
+              <div className="bg-white rounded-2xl shadow-modal border border-slate-200 w-full max-w-md overflow-hidden relative z-10 animate-in fade-in zoom-in-95 duration-200">
+                
+                {/* Close Button */}
+                <button 
+                  onClick={() => setIsLoginModalOpen(false)}
+                  className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-colors p-1.5 rounded-lg hover:bg-slate-100"
+                  aria-label="Close modal"
+                >
+                  <Icons.Close />
+                </button>
+
+                {/* Form Content */}
+                <div className="p-6 sm:p-8 space-y-6">
+                  <div className="space-y-1.5 pr-8">
+                    <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">
+                      {t('login_title')}
+                    </h2>
+                    <p className="text-slate-500 font-medium text-xs leading-normal">
+                      {t('login_subtitle')}
+                    </p>
+                  </div>
+
+                  {/* Alerts */}
+                  {alertMsg && (
+                    <div className={`p-3.5 rounded-xl border flex items-start gap-2.5 transition-all ${
+                      alertType === 'success' 
+                        ? 'bg-emerald-50 border-emerald-200 text-emerald-800' 
+                        : 'bg-rose-50 border-rose-200 text-rose-800'
+                    }`} role="alert">
+                      <span className="text-base leading-none mt-0.5">{alertType === 'success' ? '✓' : '⚠'}</span>
+                      <div className="text-xs font-semibold leading-normal">{alertMsg}</div>
+                    </div>
+                  )}
+
+                  <form onSubmit={handleLogin} className="space-y-4" noValidate>
+                    <div className="space-y-1.5">
+                      <label htmlFor="modal_email" className="block text-xs font-bold text-slate-700">
+                        {t('label_email')}
+                      </label>
+                      <input
+                        type="email"
+                        id="modal_email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="w-full px-3 py-2.5 rounded-lg border border-slate-200 focus:border-brand-600 focus:ring-0 transition-all font-medium bg-slate-50/50 text-sm"
+                        placeholder="example@email.com"
+                        required
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label htmlFor="modal_password" className="block text-xs font-bold text-slate-700">
+                        {t('label_password')}
+                      </label>
+                      <input
+                        type="password"
+                        id="modal_password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="w-full px-3 py-2.5 rounded-lg border border-slate-200 focus:border-brand-600 focus:ring-0 transition-all font-medium bg-slate-50/50 text-sm"
+                        placeholder="••••••••"
+                        required
+                      />
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      className="w-full mt-2 py-3 bg-brand-600 hover:bg-brand-700 text-white font-extrabold rounded-lg transition-all shadow-xs flex items-center justify-center gap-1.5 text-sm disabled:opacity-50"
+                    >
+                      {loading ? (
+                        <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                      ) : (
+                        <span>{t('btn_login')}</span>
+                      )}
+                    </button>
+                  </form>
+
+                  <div className="border-t border-slate-100 pt-5 space-y-3 text-center">
+                    <p className="font-bold text-slate-400 text-xs">
+                      {t('new_to_agewell')}
+                    </p>
+                    <a
+                      href="/register.html"
+                      className="w-full py-2.5 bg-white hover:bg-slate-50 text-brand-700 font-extrabold rounded-lg border border-brand-600 transition-all flex items-center justify-center gap-1.5 text-xs shadow-2xs"
+                    >
+                      <span>{t('modal_create_new')}</span>
+                    </a>
+                  </div>
+
+                </div>
+
+              </div>
+            </div>
+          )}
+
         </div>
+      );
+    }
 
-        <!-- Right: Login Form -->
-        <div class="auth-container" style="margin: 0;">
-          <div class="auth-header">
-            <h2 style="font-size: 1.7rem; color: var(--color-primary-dark); margin-bottom: 0.5rem;" data-i18n="login_title">Sign In to AgeWell</h2>
-            <p data-i18n="login_subtitle">Welcome back! Please log in to continue.</p>
-          </div>
-
-          <!-- User Alert Area -->
-          <div id="alertArea" aria-live="polite"></div>
-
-          <!-- Login Form -->
-          <form id="loginForm" novalidate>
-            <div class="form-group">
-              <label for="email" data-i18n="label_email">Email Address</label>
-              <input 
-                type="email" 
-                id="email" 
-                name="email" 
-                class="form-input" 
-                placeholder="example@email.com" 
-                required 
-                autocomplete="email"
-                aria-required="true"
-                data-i18n="label_email"
-              >
-            </div>
-
-            <div class="form-group">
-              <label for="password" data-i18n="label_password">Password</label>
-              <input 
-                type="password" 
-                id="password" 
-                name="password" 
-                class="form-input" 
-                placeholder="Enter your password" 
-                required
-                autocomplete="current-password"
-                aria-required="true"
-                data-i18n="label_password"
-              >
-            </div>
-
-            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;" data-i18n="btn_login">
-              🔑 Log In to AgeWell
-            </button>
-          </form>
-
-          <div style="text-align: center; margin-top: 2rem; border-top: 2px solid var(--color-primary-light); padding-top: 1.5rem;">
-            <p style="font-weight: 500; margin-bottom: 0.8rem; color: var(--color-primary-dark);" data-i18n="new_to_agewell">New to AgeWell?</p>
-            <a href="/register.html" class="btn btn-secondary" style="width: 100%;" data-i18n="btn_create_account">
-              ✍️ Create a New Account
-            </a>
-          </div>
-        </div>
-
-      </div>
-    </div>
-  </main>
-
-  <!-- Footer -->
-  <footer>
-    <p>&copy; 2026 AgeWell Platform. Designed with care and compassion for Senior Citizens, Volunteers, and Administrators.</p>
-  </footer>
-
-  <!-- Scripts -->
-  <script src="/js/api.js"></script>
-  <script src="/js/auth.js"></script>
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<AgeWellLanding />);
+  </script>
 </body>
 </html>

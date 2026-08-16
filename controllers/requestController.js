@@ -234,7 +234,12 @@ exports.deleteRequest = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Cannot cancel a request after payment or purchase cost has been processed' });
     }
 
-    if (request.volunteer) {
+    if (req.user.role === 'admin') {
+      // Admin: always hard-delete the request and clean up all associated earnings
+      await Earning.deleteMany({ request: request._id });
+      await HelpRequest.findByIdAndDelete(req.params.id);
+    } else if (request.volunteer) {
+      // Non-admin: soft-cancel if a volunteer is already assigned
       request.status = 'cancelled';
       await request.save();
       // Delete any pending earning record for this request
