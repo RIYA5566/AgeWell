@@ -4,39 +4,105 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Dashboard - AgeWell</title>
+  <!-- Google Fonts: Plus Jakarta Sans for high-end modern layout -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
   <link rel="stylesheet" href="/css/style.css">
   <script src="/js/i18n.js"></script>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#f0f7ff',
+              100: '#e0effe',
+              200: '#b9dbfe',
+              300: '#7cc0fd',
+              400: '#36a2fa',
+              500: '#0c87eb',
+              600: '#026bc9',
+              700: '#0355a3',
+              800: '#074887',
+              900: '#0b3d70',
+              950: '#082547',
+            },
+            slate: {
+              50: '#f8fafc',
+              100: '#f1f5f9',
+              200: '#e2e8f0',
+              300: '#cbd5e1',
+              400: '#94a3b8',
+              500: '#64748b',
+              600: '#475569',
+              700: '#334155',
+              800: '#1e293b',
+              900: '#0f172a',
+            }
+          },
+          boxShadow: {
+            premium: '0 10px 30px -10px rgba(15, 23, 42, 0.04)',
+            cardHover: '0 20px 40px -15px rgba(2, 107, 201, 0.08)',
+            modal: '0 25px 50px -12px rgba(15, 23, 42, 0.15)'
+          }
+        }
+      }
+    }
+  </script>
 </head>
-<body>
+<body class="bg-slate-50 text-slate-900 min-h-screen flex flex-col">
   <!-- Accessibility Skip-Link -->
   <a href="#mainContent" class="skip-link">Skip to main content</a>
 
-  <!-- Navigation Header -->
-  <header>
-    <div class="nav-container">
-      <div class="logo">
-        <span class="logo-icon">🌸</span>
-        <span>AgeWell Control Panel</span>
+  <!-- Global Header / Navbar (Sticky & Stable) -->
+  <nav class="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-premium py-3.5 px-6 transition-all">
+    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
+      <!-- Logo and Subtitle -->
+      <div class="flex items-center gap-3">
+        <a href="/" class="flex items-center gap-3 group">
+          <div class="w-10 h-10 bg-brand-50 rounded-xl flex items-center justify-center border border-brand-100 shadow-sm group-hover:bg-brand-100 transition-colors">
+            <svg class="w-7 h-7 text-brand-600" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+            </svg>
+          </div>
+          <div>
+            <span class="font-sans text-xl font-extrabold text-slate-900 tracking-tight">AgeWell</span>
+            <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mt-0.5">Control Panel</span>
+          </div>
+        </a>
       </div>
 
-      <!-- User Nav info -->
-      <div class="user-nav">
-        <span id="navUserName" class="nav-user-name">Hello, Administrator</span>
-        <button id="btnLogout" class="btn btn-secondary" style="padding: 8px 16px; min-height: 44px; min-width: 80px; font-size: 1rem; border-color: transparent;">
-          🚪 Log Out
+      <!-- Text Sizing and Accessibility Panel -->
+      <div class="accessibility-panel flex flex-wrap items-center gap-3 bg-slate-50 rounded-xl p-1.5 border border-slate-200/60 text-sm" role="region" aria-label="Accessibility Sizing Controls">
+        <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider px-1.5">Text Size</span>
+        <button id="btnTextDecrease" class="bg-white hover:bg-slate-100 text-slate-700 font-bold w-8 h-8 rounded-lg border border-slate-200 transition-all flex items-center justify-center text-xs active:scale-95 shadow-xs" aria-label="Make text smaller">-A</button>
+        <button id="btnTextReset" class="bg-white hover:bg-slate-100 text-slate-700 font-semibold px-2.5 h-8 rounded-lg border border-slate-200 transition-all flex items-center justify-center text-xs active:scale-95 shadow-xs" aria-label="Reset text size to normal">Reset</button>
+        <button id="btnTextIncrease" class="bg-white hover:bg-slate-100 text-slate-700 font-bold w-8 h-8 rounded-lg border border-slate-200 transition-all flex items-center justify-center text-xs active:scale-95 shadow-xs" aria-label="Make text larger">+A</button>
+        <span id="fontSizeIndicator" class="bg-brand-600 text-white font-bold px-2 py-1 rounded-lg text-xs shadow-xs ml-1">18px</span>
+      </div>
+
+      <!-- User Nav info and Logout -->
+      <div class="flex items-center gap-3 sm:gap-4">
+        <div class="flex items-center gap-2 bg-brand-50 border border-brand-200/80 rounded-xl px-3.5 py-1.5">
+          <span class="text-sm font-extrabold text-brand-900" id="navUserName">Hello, Administrator</span>
+        </div>
+        <button id="btnLogout" class="px-4 py-2 text-brand-700 font-bold text-sm bg-brand-50 hover:bg-brand-100 border border-brand-200 rounded-xl transition-all active:scale-95 shadow-xs flex items-center gap-1.5">
+          <svg class="w-4 h-4 text-brand-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+          </svg>
+          Log Out
         </button>
       </div>
-
-      <!-- Text Sizing Widget -->
-      <div class="accessibility-panel" role="region" aria-label="Accessibility Sizing Controls">
-        <span>Text Size:</span>
-        <button id="btnTextDecrease" class="font-btn" aria-label="Make text smaller">A-</button>
-        <button id="btnTextReset" class="font-btn" aria-label="Reset text size to normal">Reset</button>
-        <button id="btnTextIncrease" class="font-btn" aria-label="Make text larger">A+</button>
-        <span id="fontSizeIndicator" style="font-size: 0.9rem; font-weight: bold; min-width: 44px; text-align: center;">18px</span>
-      </div>
     </div>
-  </header>
+  </nav>
 
   <!-- Main Content -->
   <main id="mainContent">

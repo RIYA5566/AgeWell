@@ -3,109 +3,553 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Senior Citizen Dashboard - AgeWell</title>
+  <meta name="description" content="AgeWell Senior Citizen Portal - Easily request assistance with groceries, medical visits, tech help, housekeeping, or companionship.">
+  <title>Senior Citizen Portal - AgeWell</title>
+  
+  <!-- Google Fonts: Plus Jakarta Sans for high-end modern layout -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
   <link rel="stylesheet" href="/css/style.css">
   <script src="/js/i18n.js"></script>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#f0f7ff',
+              100: '#e0effe',
+              200: '#b9dbfe',
+              300: '#7cc0fd',
+              400: '#36a2fa',
+              500: '#0c87eb',
+              600: '#026bc9', /* Primary Blue */
+              700: '#0355a3',
+              800: '#074887',
+              900: '#0b3d70',
+              950: '#082547', /* Deep Trust Navy */
+            },
+            slate: {
+              50: '#f8fafc',
+              100: '#f1f5f9',
+              200: '#e2e8f0',
+              300: '#cbd5e1',
+              400: '#94a3b8',
+              500: '#64748b',
+              600: '#475569',
+              700: '#334155',
+              800: '#1e293b',
+              900: '#0f172a',
+            }
+          },
+          boxShadow: {
+            premium: '0 10px 30px -10px rgba(15, 23, 42, 0.04)',
+            cardHover: '0 20px 40px -15px rgba(2, 107, 201, 0.08)',
+            modal: '0 25px 50px -12px rgba(15, 23, 42, 0.15)'
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- CSS Variables Matching the Brand Navy/Blue Palette -->
+  <style>
+    :root {
+      --color-primary-dark: #026bc9;     /* brand-600 */
+      --color-primary: #0c87eb;          /* brand-500 */
+      --color-primary-light: #b9dbfe;    /* brand-200 */
+      --color-bg-light: #f0f7ff;         /* brand-50 */
+      --color-white: #ffffff;
+      --color-gray-dark: #0f172a;        /* slate-900 */
+      --color-gray-light: #f1f5f9;       /* slate-100 */
+      --border-radius: 16px;
+      --base-font-size: 18px;
+    }
+
+    *:focus-visible {
+      outline: 4px solid #026bc9 !important;
+      outline-offset: 4px !important;
+    }
+    html {
+      font-size: var(--base-font-size, 18px);
+      scroll-behavior: smooth;
+    }
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    .skip-link {
+      position: absolute;
+      top: -100px;
+      left: 0;
+      background: #026bc9;
+      color: white;
+      padding: 1rem;
+      z-index: 100;
+      font-weight: bold;
+      transition: top 0.2s;
+    }
+    .skip-link:focus {
+      top: 0;
+      outline: 4px solid #f59e0b;
+    }
+    .bg-gradient-mesh {
+      background-color: #f8fafc;
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(224, 239, 254, 0.5) 0px, transparent 50%),
+        radial-gradient(at 100% 0%, rgba(241, 245, 249, 0.6) 0px, transparent 50%),
+        radial-gradient(at 50% 100%, rgba(219, 234, 254, 0.3) 0px, transparent 50%);
+    }
+  </style>
 </head>
-<body>
+<body class="bg-gradient-mesh text-[#0f172a] min-h-screen flex flex-col transition-colors duration-200">
   <!-- Accessibility Skip-Link -->
   <a href="#mainContent" class="skip-link">Skip to main content</a>
 
-  <!-- Navigation Header -->
-  <header>
-    <div class="nav-container">
-      <div class="logo">
-        <span class="logo-icon">🌸</span>
-        <span>AgeWell</span>
+  <!-- Global Header / Navbar (Sticky & Stable) -->
+  <nav class="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-premium py-3.5 px-6 transition-all">
+    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
+      <!-- Logo and Subtitle -->
+      <div class="flex items-center gap-3">
+        <a href="/" class="flex items-center gap-3 group">
+          <div class="w-10 h-10 bg-brand-50 rounded-xl flex items-center justify-center border border-brand-100 shadow-sm group-hover:bg-brand-100 transition-colors">
+            <svg class="w-7 h-7 text-brand-600" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+            </svg>
+          </div>
+          <div>
+            <span class="font-sans text-xl font-extrabold text-slate-900 tracking-tight" data-i18n="hero_title">AgeWell</span>
+            <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mt-0.5" data-i18n="nav_subtitle">Senior Citizen Assistance Platform</span>
+          </div>
+        </a>
       </div>
 
-      <!-- User Nav info -->
-      <div class="user-nav">
-        <span id="navUserName" class="nav-user-name">Hello, Senior Citizen</span>
-        <button id="btnLogout" class="btn btn-secondary" style="padding: 8px 16px; min-height: 44px; min-width: 80px; font-size: 1rem; border-color: transparent;">
-          🚪 Log Out
+      <!-- Text Sizing and Accessibility Panel -->
+      <div class="accessibility-panel flex flex-wrap items-center gap-3 bg-slate-50 rounded-xl p-1.5 border border-slate-200/60 text-sm" role="region" aria-label="Accessibility Sizing Controls">
+        <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider px-1.5" data-i18n="nav_text_size">Text Size</span>
+        <button id="btnTextDecrease" class="bg-white hover:bg-slate-100 text-slate-700 font-bold w-8 h-8 rounded-lg border border-slate-200 transition-all flex items-center justify-center text-xs active:scale-95 shadow-xs" aria-label="Make text smaller">-A</button>
+        <button id="btnTextReset" class="bg-white hover:bg-slate-100 text-slate-700 font-semibold px-2.5 h-8 rounded-lg border border-slate-200 transition-all flex items-center justify-center text-xs active:scale-95 shadow-xs" aria-label="Reset text size to normal" data-i18n="nav_reset">Reset</button>
+        <button id="btnTextIncrease" class="bg-white hover:bg-slate-100 text-slate-700 font-bold w-8 h-8 rounded-lg border border-slate-200 transition-all flex items-center justify-center text-xs active:scale-95 shadow-xs" aria-label="Make text larger">+A</button>
+        <span id="fontSizeIndicator" class="bg-brand-600 text-white font-bold px-2 py-1 rounded-lg text-xs shadow-xs ml-1">18px</span>
+      </div>
+
+      <!-- User Nav info and Logout -->
+      <div class="flex items-center gap-3 sm:gap-4">
+        <div class="flex items-center gap-2 bg-brand-50 border border-brand-200/80 rounded-xl px-3.5 py-1.5">
+          <span class="text-sm font-extrabold text-brand-900" id="navUserName">Hello, Senior Citizen</span>
+        </div>
+        <button id="btnLogout" class="px-4 py-2 text-brand-700 font-bold text-sm bg-brand-50 hover:bg-brand-100 border border-brand-200 rounded-xl transition-all active:scale-95 shadow-xs flex items-center gap-1.5">
+          <svg class="w-4 h-4 text-brand-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+          </svg>
+          Log Out
         </button>
       </div>
-
-      <!-- Text Sizing Widget -->
-      <div class="accessibility-panel" role="region" aria-label="Accessibility Sizing Controls">
-        <span>Text Size:</span>
-        <button id="btnTextDecrease" class="font-btn" aria-label="Make text smaller">A-</button>
-        <button id="btnTextReset" class="font-btn" aria-label="Reset text size to normal">Reset</button>
-        <button id="btnTextIncrease" class="font-btn" aria-label="Make text larger">A+</button>
-        <span id="fontSizeIndicator" style="font-size: 0.9rem; font-weight: bold; min-width: 44px; text-align: center;">18px</span>
-      </div>
     </div>
-  </header>
+  </nav>
 
   <!-- SOS Overlay Siren (Hidden by Default) -->
   <div id="sosOverlay" class="sos-overlay" role="dialog" aria-modal="true" aria-labelledby="sosTitle">
     <div class="sos-overlay-content">
-      <div class="sos-pulse-ring" aria-hidden="true">🚨</div>
+      <div class="sos-pulse-ring" aria-hidden="true">
+        <svg class="w-8 h-8 sm:w-10 sm:h-10 text-rose-600 animate-pulse" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+      </div>
       <h2 id="sosTitle" data-i18n="sos_overlay_title">EMERGENCY SOS ACTIVE</h2>
       <p data-i18n="sos_overlay_desc">An emergency help request has been created and broadcasted to all local volunteers and administrators. Help is on the way!</p>
-      <p style="font-size: 1.2rem; background-color: rgba(0,0,0,0.3); padding: 15px; border-radius: var(--border-radius);" data-i18n="sos_overlay_alarm">
-        🔊 A loud alarm is playing. Please stay calm.
-      </p>
-      <button id="btnCancelSos" class="btn btn-primary" style="background-color: var(--color-white); color: var(--color-emergency); font-size: 1.4rem; padding: 20px 40px; margin-top: 1rem; width: 100%; border: 4px solid var(--color-emergency);" data-i18n="sos_overlay_cancel">
-        🔕 Cancel Emergency SOS
+      <div class="inline-flex items-center gap-2.5 px-5 py-2.5 bg-black/25 backdrop-blur-md rounded-2xl border border-white/20 text-xs sm:text-sm font-bold text-white shadow-inner" data-i18n="sos_overlay_alarm">
+        <svg class="w-4 h-4 text-amber-300 animate-bounce flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+        </svg>
+        <span>Loud alarm is playing. Please stay calm.</span>
+      </div>
+      <button id="btnCancelSos" class="btn btn-primary mt-1" style="background-color: #ffffff; color: #b71c1c; font-size: 1.15rem; font-weight: 800; padding: 15px 32px; width: 100%; max-width: 440px; border-radius: 18px; border: 3px solid #ffffff; box-shadow: 0 10px 25px rgba(0,0,0,0.3); transition: all 0.2s;" data-i18n="sos_overlay_cancel">
+        Cancel Emergency SOS
       </button>
     </div>
   </div>
 
   <!-- Main Content Area -->
-  <main id="mainContent">
-    <!-- Welcome Bar -->
-    <div class="dashboard-welcome" id="welcomeBar">
-      <div class="welcome-icon" aria-hidden="true">👵</div>
-      <div>
-        <h1 id="welcomeTitle">Welcome back!</h1>
-        <p>You can request help, track your requests, or activate SOS from this dashboard.</p>
-      </div>
-    </div>
+  <main id="mainContent" class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 pt-0 pb-8">
+    
+    <!-- Top Welcome Greeting Bar -->
+    <section class="bg-gradient-to-r from-brand-900 via-brand-700 to-brand-600 rounded-3xl p-6 sm:p-7 text-white shadow-premium relative overflow-hidden flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 -mt-1 mb-5 sm:mb-6" id="welcomeBar" aria-label="Welcome Banner">
+      <!-- Decorative background blur circles -->
+      <div class="absolute -top-16 -right-16 w-48 h-48 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
+      <div class="absolute -bottom-16 -left-16 w-48 h-48 bg-brand-400/20 rounded-full blur-2xl pointer-events-none"></div>
 
-    <div class="dashboard-grid">
-      <!-- Left Column: Actions -->
-      <div class="dashboard-card" style="display: flex; flex-direction: column; gap: 1.2rem; justify-content: flex-start;">
-        <h2 data-i18n="sd_actions_panel">Actions Panel</h2>
-        
-        <button id="btnVoiceConfirmation" class="btn" style="width: 100%; font-size: 1.35rem; padding: 20px; min-height: 75px; background: linear-gradient(135deg, #1565c0, #0288d1); color: white; border: none; border-radius: var(--border-radius); box-shadow: 0 6px 16px rgba(21, 101, 192, 0.35); font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 12px; transition: transform 0.2s;">
-          <span data-i18n="feat_voice_title">🎙️ Quick Voice Request ⭐</span>
-        </button>
- 
-        <button id="btnNewRequest" class="btn btn-primary" style="width: 100%; font-size: 1.2rem; padding: 16px 20px; min-height: 60px;">
-          <span data-i18n="sd_new_request_btn">📝 Form Help Request</span>
-        </button>
- 
-        <div style="border-top: 2px solid var(--color-primary-light); margin: 5px 0;"></div>
-        
-        <p style="font-size: 0.95rem; color: #555; text-align: center;" data-i18n="sd_sos_desc">
-          In case of immediate danger, medical emergency, or severe accidents, tap the button below.
-        </p>
- 
-        <button id="btnSos" class="btn btn-emergency" style="width: 100%; font-size: 1.4rem; padding: 20px 20px; min-height: 70px; letter-spacing: 1px;">
-          <span data-i18n="sd_sos_btn">🚨 EMERGENCY SOS</span>
-        </button>
-      </div>
- 
-      <!-- Right Column: Request log list -->
-      <div class="dashboard-card">
-        <h2 data-i18n="sd_support_requests">My Support Requests</h2>
-
-        <div id="requestList" class="request-list">
-          <div class="loading-wrapper">
-            <div class="spinner"></div>
-            <span>Loading your requests...</span>
-          </div>
+      <div class="flex items-center gap-4 relative z-10">
+        <div class="w-14 h-14 sm:w-16 sm:h-16 bg-white/15 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/20 shadow-inner flex-shrink-0 text-white">
+          <svg class="w-8 h-8 sm:w-9 sm:h-9 text-white" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+          </svg>
+        </div>
+        <div>
+          <h1 id="welcomeTitle" class="text-xl sm:text-2xl font-extrabold tracking-tight">Welcome back!</h1>
+          <p class="text-brand-100 text-xs sm:text-sm font-medium mt-0.5">
+            Your personal portal for daily assistance, verified local volunteers, and caregiver care.
+          </p>
         </div>
       </div>
+      
+      <div class="flex flex-wrap items-center gap-2 relative z-10 self-stretch sm:self-auto justify-end">
+        <div class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/20 backdrop-blur-md rounded-xl border border-emerald-400/40 text-xs font-bold text-emerald-100 shadow-sm">
+          <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+          <span>🟢 Senior Citizen Verified — Age 60+</span>
+        </div>
+        <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-white/10 backdrop-blur-md rounded-xl border border-white/20 text-xs font-bold text-white">
+          <svg class="w-3.5 h-3.5 text-emerald-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+          </svg>
+          <span>24/7 Safety Active</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Main Grid Layout: Left Column (Action Center & Safety) + Right Column (Metrics & Requests Feed) -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+      
+      <!-- ========================================== -->
+      <!-- LEFT COLUMN: Quick Action Hub & Safety (Col 1) - Independently Scrollable -->
+      <!-- ========================================== -->
+      <aside class="space-y-6 lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto lg:pr-2 custom-scrollbar" aria-label="Action and Emergency Center">
+        
+        <!-- 1. Request Assistance Hub Card -->
+        <div class="bg-white rounded-3xl border border-slate-200/80 shadow-premium p-5 sm:p-6 space-y-5 relative overflow-hidden">
+          
+          <!-- Card Header -->
+          <div class="flex items-center justify-between border-b border-slate-100 pb-3.5">
+            <div class="flex items-center gap-2.5">
+              <div class="w-7 h-7 rounded-lg bg-amber-50 border border-amber-200/60 flex items-center justify-center text-amber-600 shadow-2xs">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+              </div>
+              <h2 class="text-base font-extrabold text-slate-900 tracking-tight">Request Assistance</h2>
+            </div>
+            <span class="text-[10px] font-extrabold text-brand-700 bg-brand-50 border border-brand-200 px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+              Quick Actions
+            </span>
+          </div>
+
+          <!-- Equal-Sized 2-Column Primary Action Tiles -->
+          <div class="grid grid-cols-2 gap-3">
+            
+            <!-- Voice Assistant Tile -->
+            <div class="bg-brand-50/60 border border-brand-200/80 rounded-2xl p-3.5 flex flex-col justify-between text-center hover:border-brand-400 hover:shadow-xs transition-all group">
+              <div class="space-y-1">
+                <div class="w-10 h-10 mx-auto bg-white rounded-xl border border-brand-200/60 flex items-center justify-center text-brand-600 shadow-2xs group-hover:scale-105 transition-transform">
+                  <svg class="w-5 h-5 text-brand-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                  </svg>
+                </div>
+                <h3 class="text-xs sm:text-sm font-extrabold text-slate-900 leading-tight">AI Voice</h3>
+                <p class="text-[11px] text-slate-500 font-medium leading-tight">Speak & confirm</p>
+              </div>
+              <button id="btnVoiceConfirmation" class="mt-3 w-full py-2 px-2 bg-brand-600 hover:bg-brand-700 text-white font-extrabold rounded-xl transition-all shadow-xs text-xs flex items-center justify-center gap-1.5 active:scale-95" aria-label="Start Quick Voice Request">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                </svg>
+                <span>Speak</span>
+              </button>
+            </div>
+
+            <!-- Detailed Form Tile -->
+            <div class="bg-emerald-50/60 border border-emerald-200/80 rounded-2xl p-3.5 flex flex-col justify-between text-center hover:border-emerald-400 hover:shadow-xs transition-all group">
+              <div class="space-y-1">
+                <div class="w-10 h-10 mx-auto bg-white rounded-xl border border-emerald-200/60 flex items-center justify-center text-emerald-600 shadow-2xs group-hover:scale-105 transition-transform">
+                  <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                </div>
+                <h3 class="text-xs sm:text-sm font-extrabold text-slate-900 leading-tight">Help Form</h3>
+                <p class="text-[11px] text-slate-500 font-medium leading-tight">Step-by-step</p>
+              </div>
+              <button id="btnNewRequest" class="mt-3 w-full py-2 px-2 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold rounded-xl transition-all shadow-xs text-xs flex items-center justify-center gap-1.5 active:scale-95" aria-label="Open Full Help Request Form">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                </svg>
+                <span>Fill Form</span>
+              </button>
+            </div>
+
+          </div>
+
+          <!-- Uniform Equal-Sized Category Shortcuts Grid (3x2) -->
+          <div class="space-y-2.5 pt-1 border-t border-slate-100">
+            <span class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider">Quick Category Shortcuts:</span>
+            
+            <div class="grid grid-cols-3 gap-2">
+              
+              <!-- Category 1: Groceries -->
+              <button type="button" onclick="openRequestWithCategory('Grocery Shopping')" class="bg-white hover:bg-amber-50/70 text-slate-800 hover:text-amber-900 border border-slate-200/80 hover:border-amber-300 rounded-2xl p-2 flex flex-col items-center justify-center text-center transition-all group active:scale-95 shadow-2xs hover:shadow-xs">
+                <div class="w-8 h-8 rounded-xl bg-amber-50 border border-amber-200/60 text-amber-600 flex items-center justify-center mb-1 group-hover:bg-amber-500 group-hover:text-white group-hover:scale-110 group-hover:shadow-xs transition-all">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                  </svg>
+                </div>
+                <span class="text-[11px] font-extrabold leading-tight">Groceries</span>
+              </button>
+
+              <!-- Category 2: Doctor Visit -->
+              <button type="button" onclick="openRequestWithCategory('Medical Escort')" class="bg-white hover:bg-rose-50/70 text-slate-800 hover:text-rose-900 border border-slate-200/80 hover:border-rose-300 rounded-2xl p-2 flex flex-col items-center justify-center text-center transition-all group active:scale-95 shadow-2xs hover:shadow-xs">
+                <div class="w-8 h-8 rounded-xl bg-rose-50 border border-rose-200/60 text-rose-600 flex items-center justify-center mb-1 group-hover:bg-rose-500 group-hover:text-white group-hover:scale-110 group-hover:shadow-xs transition-all">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                  </svg>
+                </div>
+                <span class="text-[11px] font-extrabold leading-tight">Doctor</span>
+              </button>
+
+              <!-- Category 3: Tech Help -->
+              <button type="button" onclick="openRequestWithCategory('Tech Support')" class="bg-white hover:bg-blue-50/70 text-slate-800 hover:text-blue-900 border border-slate-200/80 hover:border-blue-300 rounded-2xl p-2 flex flex-col items-center justify-center text-center transition-all group active:scale-95 shadow-2xs hover:shadow-xs">
+                <div class="w-8 h-8 rounded-xl bg-blue-50 border border-blue-200/60 text-blue-600 flex items-center justify-center mb-1 group-hover:bg-blue-500 group-hover:text-white group-hover:scale-110 group-hover:shadow-xs transition-all">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                  </svg>
+                </div>
+                <span class="text-[11px] font-extrabold leading-tight">Tech</span>
+              </button>
+
+              <!-- Category 4: Housework -->
+              <button type="button" onclick="openRequestWithCategory('Housekeeping')" class="bg-white hover:bg-teal-50/70 text-slate-800 hover:text-teal-900 border border-slate-200/80 hover:border-teal-300 rounded-2xl p-2 flex flex-col items-center justify-center text-center transition-all group active:scale-95 shadow-2xs hover:shadow-xs">
+                <div class="w-8 h-8 rounded-xl bg-teal-50 border border-teal-200/60 text-teal-600 flex items-center justify-center mb-1 group-hover:bg-teal-500 group-hover:text-white group-hover:scale-110 group-hover:shadow-xs transition-all">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                  </svg>
+                </div>
+                <span class="text-[11px] font-extrabold leading-tight">House</span>
+              </button>
+
+              <!-- Category 5: Companionship -->
+              <button type="button" onclick="openRequestWithCategory('Companionship')" class="bg-white hover:bg-purple-50/70 text-slate-800 hover:text-purple-900 border border-slate-200/80 hover:border-purple-300 rounded-2xl p-2 flex flex-col items-center justify-center text-center transition-all group active:scale-95 shadow-2xs hover:shadow-xs">
+                <div class="w-8 h-8 rounded-xl bg-purple-50 border border-purple-200/60 text-purple-600 flex items-center justify-center mb-1 group-hover:bg-purple-500 group-hover:text-white group-hover:scale-110 group-hover:shadow-xs transition-all">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                  </svg>
+                </div>
+                <span class="text-[11px] font-extrabold leading-tight">Chat</span>
+              </button>
+
+              <!-- Category 6: Other -->
+              <button type="button" onclick="openRequestWithCategory('Other')" class="bg-white hover:bg-indigo-50/70 text-slate-800 hover:text-indigo-900 border border-slate-200/80 hover:border-indigo-300 rounded-2xl p-2 flex flex-col items-center justify-center text-center transition-all group active:scale-95 shadow-2xs hover:shadow-xs">
+                <div class="w-8 h-8 rounded-xl bg-indigo-50 border border-indigo-200/60 text-indigo-600 flex items-center justify-center mb-1 group-hover:bg-indigo-500 group-hover:text-white group-hover:scale-110 group-hover:shadow-xs transition-all">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                  </svg>
+                </div>
+                <span class="text-[11px] font-extrabold leading-tight">Other</span>
+              </button>
+
+            </div>
+          </div>
+
+        </div>
+
+        <!-- 2. Emergency SOS & Safety Support Card -->
+        <div class="bg-white rounded-3xl border border-slate-200/80 shadow-premium p-5 sm:p-6 space-y-4">
+          
+          <!-- Card Header -->
+          <div class="flex items-center justify-between border-b border-slate-100 pb-3.5">
+            <div class="flex items-center gap-2.5">
+              <div class="w-7 h-7 rounded-lg bg-blue-50 border border-blue-200/60 flex items-center justify-center text-brand-600 shadow-2xs">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+                </svg>
+              </div>
+              <h2 class="text-base font-extrabold text-slate-900 tracking-tight">Safety & Emergency</h2>
+            </div>
+            <span class="inline-flex items-center gap-1.5 text-[10px] font-extrabold text-rose-700 bg-rose-50 border border-rose-200/80 px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+              <span class="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"></span>
+              24/7 Active
+            </span>
+          </div>
+
+          <!-- Emergency SOS Box -->
+          <div class="bg-rose-50/70 border border-rose-200/90 rounded-2xl p-4 space-y-3">
+            <div class="flex items-center gap-2">
+              <div class="w-6 h-6 rounded-md bg-rose-100 text-rose-700 flex items-center justify-center shadow-2xs">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              </div>
+              <span class="text-xs font-extrabold text-rose-950 uppercase tracking-wider">Emergency Distress</span>
+            </div>
+            <p class="text-xs text-rose-800/90 font-medium leading-normal">
+              Broadcasts immediate alarm to local volunteers and caregivers.
+            </p>
+            <button id="btnSos" class="w-full py-3 px-4 bg-rose-600 hover:bg-rose-700 text-white font-extrabold rounded-xl transition-all shadow-xs flex items-center justify-center gap-2 text-xs tracking-wide active:scale-95 group" aria-label="Trigger Emergency SOS">
+              <svg class="w-4 h-4 text-white group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
+              </svg>
+              <span>TRIGGER SOS ALARM</span>
+            </button>
+          </div>
+
+          <!-- Senior Helpline Box -->
+          <div class="bg-amber-50/70 border border-amber-200/80 rounded-2xl p-3.5 flex items-center justify-between gap-3">
+            <div class="space-y-0.5">
+              <span class="text-[10px] font-extrabold text-amber-800 uppercase tracking-wider block">National Senior Helpline</span>
+              <span class="text-sm font-extrabold text-slate-900 block">Toll-Free 14567</span>
+            </div>
+            <a href="tel:14567" class="px-3.5 py-2 bg-amber-500 hover:bg-amber-600 text-white font-extrabold rounded-xl text-xs flex items-center gap-1.5 shadow-2xs transition-all active:scale-95" aria-label="Call National Senior Helpline">
+              <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z" />
+              </svg>
+              <span>Call</span>
+            </a>
+          </div>
+
+        </div>
+
+      </aside>
+
+      <!-- ========================================== -->
+      <!-- RIGHT COLUMN: Stats Overview & Requests Hub (Col 2 & 3) -->
+      <!-- ========================================== -->
+      <section class="lg:col-span-2 space-y-6" aria-label="Overview Metrics and Requests">
+        
+        <!-- 1. Stats Metric Tiles Overview -->
+        <div class="grid grid-cols-3 gap-3 sm:gap-4" aria-label="Summary Statistics">
+          
+          <!-- Total Requests Tile -->
+          <div class="bg-white rounded-3xl border border-slate-200/80 hover:border-brand-300 p-4 sm:p-5 shadow-premium hover:shadow-cardHover transition-all flex items-center gap-3.5 sm:gap-4 group">
+            <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-brand-50 border border-brand-200/70 text-brand-600 flex items-center justify-center flex-shrink-0 shadow-2xs group-hover:scale-105 group-hover:bg-brand-600 group-hover:text-white transition-all">
+              <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+            </div>
+            <div>
+              <span class="text-xl sm:text-2xl font-extrabold text-slate-900 block leading-tight tracking-tight" id="statTotalCount">0</span>
+              <span class="text-[10px] sm:text-[11px] font-extrabold text-slate-400 uppercase tracking-wider block mt-0.5">Total</span>
+            </div>
+          </div>
+
+          <!-- Active / In-Progress Tasks Tile -->
+          <div class="bg-white rounded-3xl border border-slate-200/80 hover:border-amber-300 p-4 sm:p-5 shadow-premium hover:shadow-cardHover transition-all flex items-center gap-3.5 sm:gap-4 group">
+            <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-amber-50 border border-amber-200/70 text-amber-600 flex items-center justify-center flex-shrink-0 shadow-2xs group-hover:scale-105 group-hover:bg-amber-500 group-hover:text-white transition-all">
+              <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div>
+              <span class="text-xl sm:text-2xl font-extrabold text-amber-600 block leading-tight tracking-tight" id="statActiveCount">0</span>
+              <span class="text-[10px] sm:text-[11px] font-extrabold text-amber-700/80 uppercase tracking-wider block mt-0.5">In-Progress</span>
+            </div>
+          </div>
+
+          <!-- Completed Tasks Tile -->
+          <div class="bg-white rounded-3xl border border-slate-200/80 hover:border-emerald-300 p-4 sm:p-5 shadow-premium hover:shadow-cardHover transition-all flex items-center gap-3.5 sm:gap-4 group">
+            <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-emerald-50 border border-emerald-200/70 text-emerald-600 flex items-center justify-center flex-shrink-0 shadow-2xs group-hover:scale-105 group-hover:bg-emerald-600 group-hover:text-white transition-all">
+              <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div>
+              <span class="text-xl sm:text-2xl font-extrabold text-emerald-600 block leading-tight tracking-tight" id="statCompletedCount">0</span>
+              <span class="text-[10px] sm:text-[11px] font-extrabold text-emerald-700/80 uppercase tracking-wider block mt-0.5">Completed</span>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- 2. Support Requests Hub Card Container -->
+        <div class="bg-white rounded-3xl border border-slate-200/80 shadow-premium p-6 sm:p-7 space-y-6" aria-labelledby="requestsSectionTitle">
+          
+          <!-- Hub Header & Live Search -->
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-100 pb-5">
+            <div class="flex items-center gap-3">
+              <h2 id="requestsSectionTitle" class="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight" data-i18n="sd_support_requests">
+                My Support Requests
+              </h2>
+            </div>
+
+            <!-- Search Input with Professional SVG Icon -->
+            <div class="w-full sm:w-auto relative">
+              <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+                </svg>
+              </div>
+              <input 
+                type="text" 
+                id="searchRequestsInput" 
+                class="w-full sm:w-64 pl-9 pr-4 py-2 rounded-xl border border-slate-200 focus:border-brand-600 focus:ring-0 text-xs sm:text-sm font-medium bg-slate-50/50" 
+                placeholder="Search requests..." 
+                aria-label="Search my support requests"
+              >
+            </div>
+          </div>
+
+          <!-- Filter Toolbar (Tabs & Category Dropdown) -->
+          <div class="flex flex-wrap justify-between items-center gap-3 bg-slate-50 p-2.5 rounded-2xl border border-slate-200/60">
+            <!-- Filter Tabs with Professional SVG Icons -->
+            <div class="flex flex-wrap gap-1.5" role="tablist" aria-label="Request Status Filter Tabs">
+              <button type="button" class="filter-tab-btn px-3.5 py-1.5 text-xs font-extrabold rounded-xl border transition-all active active:scale-95 flex items-center gap-1.5" data-filter="all" role="tab" aria-selected="true">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25 2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25 2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
+                </svg>
+                <span>All Requests</span>
+              </button>
+              <button type="button" class="filter-tab-btn px-3.5 py-1.5 text-xs font-extrabold rounded-xl border transition-all active:scale-95 flex items-center gap-1.5" data-filter="active" role="tab" aria-selected="false">
+                <svg class="w-3.5 h-3.5 text-amber-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>Active</span>
+              </button>
+              <button type="button" class="filter-tab-btn px-3.5 py-1.5 text-xs font-extrabold rounded-xl border transition-all active:scale-95 flex items-center gap-1.5" data-filter="completed" role="tab" aria-selected="false">
+                <svg class="w-3.5 h-3.5 text-emerald-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>Completed</span>
+              </button>
+            </div>
+
+            <!-- Category Filter Dropdown without emojis -->
+            <div class="flex items-center gap-2 w-full sm:w-auto">
+              <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Category:</span>
+              <select id="filterCategorySelect" class="flex-1 sm:flex-initial px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 bg-white" aria-label="Filter by Category">
+                <option value="all">All Categories</option>
+                <option value="Grocery Shopping">Grocery Shopping</option>
+                <option value="Medical Escort">Doctor Visit</option>
+                <option value="Tech Support">Tech Help</option>
+                <option value="Housekeeping">Housework</option>
+                <option value="Companionship">Companionship</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Dynamic Live Requests Card List -->
+          <div id="requestList" class="space-y-5" role="region" aria-live="polite">
+            <div class="loading-wrapper py-12 text-center text-slate-400">
+              <div class="spinner mx-auto mb-3"></div>
+              <span class="text-sm font-semibold">Loading your requests...</span>
+            </div>
+          </div>
+
+        </div>
+
+      </section>
+
     </div>
+  </main>
 
     <!-- Request Creation Modal -->
     <div id="requestModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-      <div class="modal-content">
+      <div class="modal-content" style="border-radius: 24px; border: 3px solid #026bc9; max-width: 680px;">
         <div class="modal-header">
-          <h3 id="modalTitle" data-i18n="sd_modal_title">Raise a Help Request</h3>
+          <h3 id="modalTitle" data-i18n="sd_modal_title" style="display: flex; align-items: center; gap: 10px; color: #026bc9;">
+            <span>📝</span> Raise a Help Request
+          </h3>
           <button id="modalClose" class="modal-close" aria-label="Close Modal">&times;</button>
         </div>
  
@@ -115,7 +559,9 @@
           
           <!-- Category button selection grid -->
           <div class="form-group">
-            <label style="margin-bottom: 8px;" data-i18n="sd_modal_category">1. Select What You Need Help With: <span style="color:#888; font-size:0.9rem;">(Optional)</span></label>
+            <label style="margin-bottom: 8px; font-weight: 700;" data-i18n="sd_modal_category">
+              1. Select What You Need Help With: <span style="color:#64748b; font-size:0.9rem;">(Optional)</span>
+            </label>
             <div class="category-selector" role="group" aria-label="Support Categories">
               <button type="button" class="category-option-btn" data-category="Grocery Shopping">
                 <span class="category-icon" aria-hidden="true">🛒</span>
@@ -146,7 +592,9 @@
  
           <!-- Title -->
           <div class="form-group">
-            <label for="requestTitle" data-i18n="sd_modal_title_label">2. Short Request Summary <span style="color:#888; font-size:0.9rem;">(Optional)</span></label>
+            <label for="requestTitle" style="font-weight: 700;" data-i18n="sd_modal_title_label">
+              2. Short Request Summary <span style="color:#64748b; font-size:0.9rem;">(Optional)</span>
+            </label>
             <input 
               type="text" 
               id="requestTitle" 
@@ -158,7 +606,9 @@
  
           <!-- Description and Voice Recording -->
           <div class="form-group">
-            <label for="requestDescription" data-i18n="sd_modal_desc_label">3. Detailed Explanation <span style="color:#888; font-size:0.9rem;">(Optional — you can also record a voice message below)</span></label>
+            <label for="requestDescription" style="font-weight: 700;" data-i18n="sd_modal_desc_label">
+              3. Detailed Explanation <span style="color:#64748b; font-size:0.9rem;">(Optional — or record a voice message below)</span>
+            </label>
             <textarea 
               id="requestDescription" 
               class="form-textarea" 
@@ -167,10 +617,11 @@
             ></textarea>
           </div>
 
-
           <!-- Audio Recorder -->
           <div class="form-group">
-            <label data-i18n="sd_voice_label">4. Record a Voice Message <span style="color:#888; font-size:0.9rem;">(Optional — max 2 minutes)</span></label>
+            <label style="font-weight: 700;" data-i18n="sd_voice_label">
+              4. Record a Voice Message <span style="color:#64748b; font-size:0.9rem;">(Optional — max 2 minutes)</span>
+            </label>
             
             <!-- Voice Recognition Language Selector -->
             <div style="margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
@@ -216,14 +667,16 @@
                     🗑️ Remove
                   </button>
                 </div>
-                <p style="font-size:0.85rem; color:#388e3c; margin-top:6px;">✅ Voice message recorded. It will be sent to the volunteer and your caregiver.</p>
+                <p style="font-size:0.85rem; color:#026bc9; margin-top:6px; font-weight:600;">
+                  ✅ Voice message recorded. It will be sent to the volunteer and your caregiver.
+                </p>
               </div>
             </div>
           </div>
 
           <!-- Urgency -->
           <div class="form-group">
-            <label for="requestUrgency" data-i18n="sd_urgency_label">5. How Urgent Is This?</label>
+            <label for="requestUrgency" style="font-weight: 700;" data-i18n="sd_urgency_label">5. How Urgent Is This?</label>
             <select id="requestUrgency" class="form-select">
               <option value="low" selected>Normal / Low (Can wait a few days)</option>
               <option value="medium">Medium (Needs help within 24 hours)</option>
@@ -233,8 +686,8 @@
  
           <!-- Footer Actions -->
           <div class="modal-footer">
-            <button type="button" id="btnCancelRequest" class="btn btn-secondary" data-i18n="btn_cancel">Cancel</button>
-            <button type="submit" class="btn btn-primary" data-i18n="btn_submit_request">Submit Request</button>
+            <button type="button" id="btnCancelRequest" class="btn btn-secondary" style="border-radius: 12px; font-weight: 700;" data-i18n="btn_cancel">Cancel</button>
+            <button type="submit" class="btn btn-primary" style="border-radius: 12px; font-weight: 700; background:#026bc9;" data-i18n="btn_submit_request">Submit Request</button>
           </div>
  
         </form>
@@ -242,88 +695,109 @@
     </div>
  
     <!-- Voice Confirmation Assistant Modal -->
-    <div id="voiceModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="voiceModalTitle" style="display:none; align-items:center; justify-content:center;">
-      <div class="modal-content" style="max-width: 550px; text-align: center; border: 4px solid #1976d2; padding: 2rem;">
+    <div id="voiceModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="voiceModalTitle" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; align-items:center; justify-content:center; z-index:99999; background:rgba(15,23,42,0.65); backdrop-filter:blur(8px);">
+      <div class="modal-content" style="max-width: 480px; width: 92%; max-height: 90vh; overflow-y: auto; text-align: center; border: 1px solid rgba(226, 232, 240, 0.85); border-radius: 28px; padding: 1.8rem 1.6rem; box-shadow: 0 25px 60px -15px rgba(15,23,42,0.35); background:#ffffff; animation: modalFadeIn 0.25s ease-out;">
         
-        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 2px solid #e3f2fd; padding-bottom: 1rem; margin-bottom: 1.5rem;">
-          <h3 id="voiceModalTitle" style="color: #0d47a1; font-size: 1.5rem; margin: 0; display:flex; align-items:center; gap:10px;" data-i18n="sd_voice_assistant_title">
-            🎙️ Voice Request Assistant
-          </h3>
-          <button id="voiceModalClose" class="modal-close" aria-label="Close Modal">&times;</button>
-        </div>
- 
-        <!-- Voice Status Header & Pulsing Mic -->
-        <div id="voiceMicStatusArea" style="margin-bottom: 1.5rem;">
-          <div id="voiceMicPulse" class="sos-pulse-ring" style="width: 90px; height: 90px; font-size: 3rem; background: linear-gradient(135deg, #1976d2, #0288d1); margin: 0 auto 1rem auto; display: flex; align-items: center; justify-content: center; border-radius: 50%; color: white; box-shadow: 0 0 20px rgba(25, 118, 210, 0.4);">
-            🎙️
+        <!-- Header -->
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+          <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-xl bg-brand-50 border border-brand-200/80 flex items-center justify-center text-brand-600 shadow-2xs">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15a3 3 0 01-3-3V4.5a3 3 0 116 0V12a3 3 0 01-3 3z" />
+              </svg>
+            </div>
+            <h3 id="voiceModalTitle" class="text-base sm:text-lg font-extrabold text-slate-900 tracking-tight" data-i18n="sd_voice_assistant_title">
+              Voice Request Assistant
+            </h3>
           </div>
-          <h4 id="voiceStepStatus" style="font-size: 1.35rem; color: #1565c0; margin: 0;" data-i18n="sd_voice_status_listening">
+          <button id="voiceModalClose" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-700 flex items-center justify-center transition-all cursor-pointer text-lg font-bold" aria-label="Close Modal">&times;</button>
+        </div>
+
+        <!-- Pulse Mic Area -->
+        <div id="voiceMicStatusArea" class="mb-4">
+          <div id="voiceMicPulse" class="w-20 h-20 mx-auto rounded-full bg-brand-600 text-white flex items-center justify-center shadow-lg shadow-brand-500/30 mb-3 transition-all duration-300 animate-pulse">
+            <svg class="w-9 h-9 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15a3 3 0 01-3-3V4.5a3 3 0 116 0V12a3 3 0 01-3 3z" />
+            </svg>
+          </div>
+          <h4 id="voiceStepStatus" class="text-base sm:text-lg font-extrabold text-slate-900 mb-1" data-i18n="sd_voice_status_listening">
             Speak your request now...
           </h4>
-          <p id="voiceSubStatus" style="font-size: 1rem; color: #666; margin-top: 6px;" data-i18n="sd_voice_sub_listening">
+          <p id="voiceSubStatus" class="text-xs sm:text-sm text-slate-500 font-medium" data-i18n="sd_voice_sub_listening">
             Listening to what you need help with.
           </p>
         </div>
- 
+
         <!-- Transcribed Speech Box -->
-        <div style="background: #f4f6f9; border: 2px dashed #90caf9; border-radius: 12px; padding: 1.2rem; margin-bottom: 1.5rem; text-align: left; min-height: 80px;">
-          <label style="font-size: 0.85rem; font-weight: 700; color: #1565c0; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 6px;" data-i18n="sd_voice_box_label">
-            🗣️ Speech Converted To Text:
-          </label>
-          <div id="voiceTranscriptBox" style="font-size: 1.2rem; color: #222; font-weight: 500; line-height: 1.4; word-break: break-word;">
-            <em style="color: #999;">Waiting for speech input...</em>
+        <div class="bg-slate-50 border border-slate-200/90 rounded-2xl p-3.5 mb-4 text-left shadow-2xs">
+          <div class="flex items-center gap-1.5 text-[11px] font-extrabold text-brand-700 uppercase tracking-wider mb-1.5">
+            <svg class="w-3.5 h-3.5 text-brand-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 01.865-.501 48.172 48.172 0 003.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v4.77z" />
+            </svg>
+            <span data-i18n="sd_voice_box_label">Speech Converted To Text</span>
+          </div>
+          <div id="voiceTranscriptBox" class="text-sm sm:text-base text-slate-800 font-semibold leading-relaxed" style="word-break: break-word;">
+            <em class="text-slate-400 font-normal">Waiting for speech input...</em>
           </div>
         </div>
- 
+
         <!-- Read Aloud & Confirmation Prompt Box -->
-        <div id="voiceConfirmationArea" style="background: #e3f2fd; border: 3px solid #1976d2; border-radius: 12px; padding: 1.2rem; margin-bottom: 1.5rem; display: none;">
-          <p id="voiceReadoutText" style="font-size: 1.3rem; font-weight: 700; color: #0d47a1; margin: 0;" data-i18n="sd_voice_confirm_prompt">
-            🔊 "Should I send this request?"
+        <div id="voiceConfirmationArea" class="bg-brand-50/70 border border-brand-200 rounded-2xl p-3.5 mb-4 shadow-2xs" style="display: none;">
+          <p id="voiceReadoutText" class="text-sm sm:text-base font-extrabold text-brand-950 mb-1" data-i18n="sd_voice_confirm_prompt">
+            "Should I send this request?"
           </p>
-          <p style="font-size: 1.05rem; color: #1565c0; margin-top: 8px; font-weight: 600;" data-i18n="sd_voice_confirm_desc">
-            Simply say <span style="background:#2e7d32; color:white; padding:2px 8px; border-radius:6px;">"YES"</span> to send or <span style="background:#c62828; color:white; padding:2px 8px; border-radius:6px;">"NO"</span> to cancel.
+          <p class="text-xs sm:text-sm text-brand-800/90 font-medium" data-i18n="sd_voice_confirm_desc">
+            Simply say <span class="bg-brand-600 text-white px-1.5 py-0.5 rounded font-bold text-xs">"YES"</span> to send or <span class="bg-rose-600 text-white px-1.5 py-0.5 rounded font-bold text-xs">"NO"</span> to cancel.
           </p>
-        </div>
- 
-        <!-- AI Confidence Indicator (if low) -->
-        <div id="voiceAiConfidenceBadge" style="display:none; background:#fff3e0; border:2px solid #ffa726; color:#e65100; border-radius:8px; padding:8px 12px; margin-bottom:1.2rem; font-size:0.95rem; font-weight:600;">
-          ⚠️ AI Speech Confidence is low. If sent, family caregiver will be requested to confirm.
-        </div>
- 
-        <!-- Touch Fallback Actions -->
-        <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; margin-top: 1rem;">
-          <button type="button" id="btnVoiceConfirmYes" class="btn" style="flex: 1; min-width: 180px; font-size: 1.25rem; padding: 16px; background: #2e7d32; color: white; border: none; border-radius: var(--border-radius); font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;" data-i18n="btn_voice_confirm_yes">
-            ✅ YES (Send)
-          </button>
-          <button type="button" id="btnVoiceConfirmNo" class="btn" style="flex: 1; min-width: 180px; font-size: 1.25rem; padding: 16px; background: #c62828; color: white; border: none; border-radius: var(--border-radius); font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;" data-i18n="btn_voice_confirm_no">
-            ❌ NO (Discard)
-          </button>
         </div>
 
+        <!-- AI Confidence Indicator (if low) -->
+        <div id="voiceAiConfidenceBadge" class="bg-amber-50 border border-amber-200 text-amber-800 rounded-xl p-2.5 mb-4 text-xs font-semibold text-left flex items-center gap-2" style="display: none;">
+          <svg class="w-4 h-4 text-amber-600 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+          <span>AI Speech Confidence is low. Your family caregiver will be requested to verify before assignment.</span>
+        </div>
+
+        <!-- Touch Actions -->
+        <div class="flex gap-2.5 justify-center flex-wrap pt-1">
+          <button type="button" id="btnVoiceConfirmYes" class="flex-1 min-w-[140px] py-3 px-4 bg-brand-600 hover:bg-brand-700 text-white font-extrabold rounded-xl transition-all shadow-xs flex items-center justify-center gap-2 text-xs sm:text-sm active:scale-95 cursor-pointer" data-i18n="btn_voice_confirm_yes">
+            <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
+            </svg>
+            <span>Send Request</span>
+          </button>
+          <button type="button" id="btnVoiceConfirmNo" class="flex-1 min-w-[140px] py-3 px-4 bg-rose-600 hover:bg-rose-700 text-white font-extrabold rounded-xl transition-all shadow-xs flex items-center justify-center gap-2 text-xs sm:text-sm active:scale-95 cursor-pointer" data-i18n="btn_voice_confirm_no">
+            <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+            <span>Discard</span>
+          </button>
+        </div>
 
       </div>
     </div>
 
     <!-- Interactive Automated Voice Call Confirmation Modal (IVR Call Simulation) -->
     <div id="ivrCallModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="ivrCallTitle" style="display: none; z-index: 10000; background: rgba(0, 0, 0, 0.75);">
-      <div class="modal-content" style="max-width: 500px; text-align: center; border: 4px solid var(--color-primary); background: linear-gradient(135deg, #e8f5e9, #ffffff); border-radius: 24px; padding: 2rem; box-shadow: 0 12px 48px rgba(0,0,0,0.4);">
+      <div class="modal-content" style="max-width: 500px; text-align: center; border: 4px solid #026bc9; background: #ffffff; border-radius: 24px; padding: 2rem; box-shadow: 0 12px 48px rgba(0,0,0,0.4);">
         <div style="font-size: 3.5rem; margin-bottom: 0.5rem; animation: pulse-sos 1.5s infinite;">📞</div>
-        <span class="badge" style="background-color: var(--color-primary-dark); color: white; font-size: 0.95rem; padding: 6px 14px; margin-bottom: 1rem; display: inline-block;" data-i18n="ivr_badge">Automated Delivery Confirmation Call</span>
-        <h2 id="ivrCallTitle" style="color: var(--color-primary-dark); font-size: 1.6rem; margin-bottom: 0.5rem;" data-i18n="ivr_title">Incoming Confirmation Call</h2>
+        <span class="badge" style="background-color: #026bc9; color: white; font-size: 0.95rem; padding: 6px 14px; margin-bottom: 1rem; display: inline-block;" data-i18n="ivr_badge">Automated Delivery Confirmation Call</span>
+        <h2 id="ivrCallTitle" style="color: #026bc9; font-size: 1.6rem; margin-bottom: 0.5rem;" data-i18n="ivr_title">Incoming Confirmation Call</h2>
         <p id="ivrCallSubtitle" style="font-size: 1.15rem; color: #444; margin-bottom: 1.5rem; line-height: 1.4;">
           Your volunteer completed your request: <strong id="ivrRequestTitle">Delivery Items</strong>.
         </p>
 
         <!-- Prompt Text Box -->
-        <div style="background: white; border: 3px solid var(--color-primary-light); border-radius: 16px; padding: 1.2rem; margin-bottom: 1.5rem;">
-          <p id="ivrReadoutText" style="font-size: 1.25rem; font-weight: 700; color: var(--color-primary-dark); margin: 0; line-height: 1.4;">
+        <div style="background: #f8fafc; border: 3px solid #b9dbfe; border-radius: 16px; padding: 1.2rem; margin-bottom: 1.5rem;">
+          <p id="ivrReadoutText" style="font-size: 1.25rem; font-weight: 700; color: #026bc9; margin: 0; line-height: 1.4;">
             🔊 "Press 1 or say 'YES' if you received the items.<br>Press 2 or say 'NO' if you did not."
           </p>
         </div>
 
         <!-- Keypad Dialpad & Voice Buttons -->
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 1rem;">
-          <button type="button" id="btnIvrPress1" class="btn" style="background: #2e7d32; color: white; padding: 16px; font-size: 1.3rem; font-weight: 800; border-radius: 14px; border: none; cursor: pointer; box-shadow: 0 4px 12px rgba(46,125,50,0.3);" data-i18n="btn_ivr_press_1">
+          <button type="button" id="btnIvrPress1" class="btn" style="background: #026bc9; color: white; padding: 16px; font-size: 1.3rem; font-weight: 800; border-radius: 14px; border: none; cursor: pointer; box-shadow: 0 4px 12px rgba(2,107,201,0.3);" data-i18n="btn_ivr_press_1">
             1️⃣ PRESS 1<br><span style="font-size: 0.95rem; font-weight: 600;">(Received Items / YES)</span>
           </button>
           <button type="button" id="btnIvrPress2" class="btn" style="background: #c62828; color: white; padding: 16px; font-size: 1.3rem; font-weight: 800; border-radius: 14px; border: none; cursor: pointer; box-shadow: 0 4px 12px rgba(198,40,40,0.3);" data-i18n="btn_ivr_press_2">
@@ -339,45 +813,55 @@
   </main>
 
   <!-- Footer -->
-  <footer>
-    <p>&copy; 2026 AgeWell Platform. Designed with care for Senior Citizens, Volunteers, and Admins.</p>
+  <footer class="bg-white border-t border-slate-200 text-slate-400 py-6 px-6 text-center text-xs sm:text-sm font-semibold mt-auto">
+    <div class="max-w-7xl mx-auto">
+      <p>&copy; 2026 AgeWell Platform. Designed with care for Senior Citizens, Volunteers, and Admins.</p>
+    </div>
   </footer>
 
   <!-- Tab Pop-Up Modal (In-Tab Popup Dialog) -->
-  <div id="tabPopupModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="tabPopupTitle" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; align-items: center; justify-content: center; z-index: 99999; background: rgba(0, 0, 0, 0.75);">
-    <div class="modal-content" style="max-width: 500px; text-align: center; border: 4px solid #2e7d32; border-radius: 24px; padding: 2.2rem; box-shadow: 0 12px 40px rgba(0,0,0,0.4); background: #ffffff; animation: modalFadeIn 0.3s ease-out;">
-      <div id="tabPopupIcon" style="font-size: 3.8rem; margin-bottom: 0.5rem; line-height: 1;">🎉</div>
-      <h3 id="tabPopupTitle" style="color: #2e7d32; font-size: 1.7rem; margin-bottom: 0.8rem; font-weight: 800;">Request Submitted!</h3>
-      <p id="tabPopupMessage" style="font-size: 1.18rem; color: #333; line-height: 1.5; margin-bottom: 1.8rem; font-weight: 500;">
+  <div id="tabPopupModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="tabPopupTitle" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; align-items: center; justify-content: center; z-index: 99999; background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(8px);">
+    <div class="modal-content" style="max-width: 460px; width: 90%; text-align: center; border: 1px solid rgba(226, 232, 240, 0.8); border-radius: 28px; padding: 2rem 1.8rem; box-shadow: 0 25px 60px -15px rgba(15, 23, 42, 0.35); background: #ffffff; animation: modalFadeIn 0.25s ease-out; position: relative;">
+      <div id="tabPopupIconContainer" class="mb-3.5 flex items-center justify-center">
+        <div id="tabPopupIconBadge" class="w-16 h-16 rounded-2xl flex items-center justify-center shadow-xs text-brand-600 bg-brand-50 border border-brand-200/70">
+          <div id="tabPopupIcon" class="flex items-center justify-center"></div>
+        </div>
+      </div>
+      <h3 id="tabPopupTitle" style="color: #0f172a; font-size: 1.45rem; margin-bottom: 0.6rem; font-weight: 800; letter-spacing: -0.02em;">Request Submitted!</h3>
+      <p id="tabPopupMessage" style="font-size: 1.05rem; color: #475569; line-height: 1.5; margin-bottom: 1.6rem; font-weight: 500;">
         Your voice request was sent successfully.
       </p>
-      <button type="button" id="btnTabPopupClose" class="btn" style="width: 100%; font-size: 1.25rem; padding: 16px; background: linear-gradient(135deg, #2e7d32, #1b5e20); color: white; border: none; border-radius: var(--border-radius); font-weight: 700; cursor: pointer; box-shadow: 0 4px 12px rgba(46,125,50,0.3); transition: transform 0.2s;" data-i18n="btn_ok">
-        👍 OK, Got It!
+      <button type="button" id="btnTabPopupClose" class="btn" style="width: 100%; font-size: 1.1rem; padding: 14px 24px; background: #026bc9; color: white; border: none; border-radius: 16px; font-weight: 800; cursor: pointer; box-shadow: 0 4px 14px rgba(2,107,201,0.25); transition: all 0.2s;" data-i18n="btn_ok">
+        OK, Got It
       </button>
     </div>
   </div>
 
   <!-- Tab Confirm Action Modal (In-Tab Confirmation Dialog) -->
-  <div id="tabConfirmModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="tabConfirmTitle" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; align-items: center; justify-content: center; z-index: 99999; background: rgba(0, 0, 0, 0.75);">
-    <div class="modal-content" style="max-width: 500px; text-align: center; border: 4px solid #c62828; border-radius: 24px; padding: 2.2rem; box-shadow: 0 12px 40px rgba(0,0,0,0.4); background: #ffffff; animation: modalFadeIn 0.3s ease-out;">
-      <div id="tabConfirmIcon" style="font-size: 3.8rem; margin-bottom: 0.5rem; line-height: 1;">❓</div>
-      <h3 id="tabConfirmTitle" style="color: #c62828; font-size: 1.7rem; margin-bottom: 0.8rem; font-weight: 800;">Cancel Request?</h3>
-      <p id="tabConfirmMessage" style="font-size: 1.18rem; color: #333; line-height: 1.5; margin-bottom: 1.8rem; font-weight: 500;">
+  <div id="tabConfirmModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="tabConfirmTitle" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; align-items: center; justify-content: center; z-index: 99999; background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(8px);">
+    <div class="modal-content" style="max-width: 460px; width: 90%; text-align: center; border: 1px solid rgba(226, 232, 240, 0.8); border-radius: 28px; padding: 2rem 1.8rem; box-shadow: 0 25px 60px -15px rgba(15, 23, 42, 0.35); background: #ffffff; animation: modalFadeIn 0.25s ease-out; position: relative;">
+      <div id="tabConfirmIconContainer" class="mb-3.5 flex items-center justify-center">
+        <div id="tabConfirmIconBadge" class="w-16 h-16 rounded-2xl flex items-center justify-center shadow-xs text-rose-600 bg-rose-50 border border-rose-200/70">
+          <div id="tabConfirmIcon" class="flex items-center justify-center"></div>
+        </div>
+      </div>
+      <h3 id="tabConfirmTitle" style="color: #0f172a; font-size: 1.45rem; margin-bottom: 0.6rem; font-weight: 800; letter-spacing: -0.02em;">Cancel Request?</h3>
+      <p id="tabConfirmMessage" style="font-size: 1.05rem; color: #475569; line-height: 1.5; margin-bottom: 1.6rem; font-weight: 500;">
         Are you sure you want to cancel this help request?
       </p>
-      <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
-        <button type="button" id="btnTabConfirmYes" class="btn" style="flex: 1; min-width: 140px; font-size: 1.15rem; padding: 14px; background: #c62828; color: white; border: none; border-radius: var(--border-radius); font-weight: 700; cursor: pointer; box-shadow: 0 4px 12px rgba(198,40,40,0.3);" data-i18n="btn_yes_cancel">
-          ❌ Yes, Cancel
+      <div style="display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap;">
+        <button type="button" id="btnTabConfirmYes" class="btn" style="flex: 1; min-width: 140px; font-size: 1.05rem; padding: 13px 20px; background: #c62828; color: white; border: none; border-radius: 16px; font-weight: 800; cursor: pointer; box-shadow: 0 4px 14px rgba(198,40,40,0.25); transition: all 0.2s;" data-i18n="btn_yes_cancel">
+          Yes, Cancel
         </button>
-        <button type="button" id="btnTabConfirmNo" class="btn" style="flex: 1; min-width: 140px; font-size: 1.15rem; padding: 14px; background: #757575; color: white; border: none; border-radius: var(--border-radius); font-weight: 700; cursor: pointer;" data-i18n="btn_no_keep">
-          ↩️ No, Keep Request
+        <button type="button" id="btnTabConfirmNo" class="btn" style="flex: 1; min-width: 140px; font-size: 1.05rem; padding: 13px 20px; background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; border-radius: 16px; font-weight: 800; cursor: pointer; transition: all 0.2s;" data-i18n="btn_no_keep">
+          Keep Request
         </button>
       </div>
     </div>
   </div>
 
   <!-- Scripts -->
-  <script src="/js/api.js?v=240"></script>
-  <script src="/js/senior.js?v=240"></script>
+  <script src="/js/api.js?v=260"></script>
+  <script src="/js/senior.js?v=260"></script>
 </body>
 </html>

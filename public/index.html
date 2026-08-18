@@ -172,6 +172,14 @@
       const [alertMsg, setAlertMsg] = useState(null);
       const [alertType, setAlertType] = useState('error');
       const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+      const [currentUser, setCurrentUser] = useState(() => {
+        try {
+          const u = localStorage.getItem('user');
+          return u ? JSON.parse(u) : null;
+        } catch (e) {
+          return null;
+        }
+      });
 
       useEffect(() => {
         const handleLangChange = (e) => {
@@ -186,6 +194,8 @@
         if (urlParams.get('message') === 'session_expired') {
           setAlertMsg(window.t('session_expired') || 'Your session has expired. Please login again.');
           setAlertType('error');
+          setIsLoginModalOpen(true);
+        } else if (urlParams.get('message') === 'show_login') {
           setIsLoginModalOpen(true);
         }
       }, []);
@@ -309,20 +319,48 @@
                 </div>
               </div>
 
-              {/* Login Button in Navbar */}
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => setIsLoginModalOpen(true)}
-                  className="px-4 py-2 text-brand-700 font-bold text-sm bg-brand-50 hover:bg-brand-100 border border-brand-200 rounded-xl transition-all active:scale-95 shadow-xs"
-                >
-                  {t('nav_signin')}
-                </button>
-                <a
-                  href="/register.html"
-                  className="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white font-bold text-sm rounded-xl transition-all active:scale-95 shadow-sm"
-                >
-                  {t('nav_register')}
-                </a>
+              {/* User Nav info or Login / Register */}
+              <div className="flex items-center gap-3 sm:gap-4">
+                {currentUser ? (
+                  <>
+                    <div className="flex items-center gap-2 bg-brand-50 border border-brand-200/80 rounded-xl px-3.5 py-1.5">
+                      <span className="text-sm font-extrabold text-brand-900">
+                        Hello, {currentUser.name || 'User'}
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => {
+                        if (window.logoutUser) window.logoutUser();
+                        else {
+                          localStorage.removeItem('token');
+                          localStorage.removeItem('user');
+                          window.location.reload();
+                        }
+                      }}
+                      className="px-4 py-2 text-brand-700 font-bold text-sm bg-brand-50 hover:bg-brand-100 border border-brand-200 rounded-xl transition-all active:scale-95 shadow-xs flex items-center gap-1.5"
+                    >
+                      <svg className="w-4 h-4 text-brand-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                      </svg>
+                      Log Out
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      onClick={() => setIsLoginModalOpen(true)}
+                      className="px-4 py-2 text-brand-700 font-bold text-sm bg-brand-50 hover:bg-brand-100 border border-brand-200 rounded-xl transition-all active:scale-95 shadow-xs"
+                    >
+                      {t('nav_signin')}
+                    </button>
+                    <a
+                      href="/register.html"
+                      className="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white font-bold text-sm rounded-xl transition-all active:scale-95 shadow-sm"
+                    >
+                      {t('nav_register')}
+                    </a>
+                  </>
+                )}
               </div>
             </div>
           </nav>
@@ -489,7 +527,7 @@
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4">
                 {/* Mobility Assistance Card */}
-                <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-premium group hover:shadow-cardHover transition-all duration-300">
+                <div className="w-full max-w-[480px] mx-auto bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-premium group hover:shadow-cardHover transition-all duration-300">
                   <div className="relative w-full aspect-[16/9] overflow-hidden">
                     <img 
                       src="/senior_crutches.png" 
@@ -510,7 +548,7 @@
                 </div>
 
                 {/* Emotional Support Card */}
-                <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-premium group hover:shadow-cardHover transition-all duration-300">
+                <div className="w-full max-w-[480px] mx-auto bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-premium group hover:shadow-cardHover transition-all duration-300">
                   <div className="relative w-full aspect-[16/9] overflow-hidden">
                     <img 
                       src="/senior_wheelchair.png" 
@@ -639,7 +677,7 @@
                   <form onSubmit={handleLogin} className="space-y-4" noValidate>
                     <div className="space-y-1.5">
                       <label htmlFor="modal_email" className="block text-xs font-bold text-slate-700">
-                        {t('label_email')}
+                        {t('label_email')} <span className="text-rose-500">*</span>
                       </label>
                       <input
                         type="email"
@@ -654,7 +692,7 @@
 
                     <div className="space-y-1.5">
                       <label htmlFor="modal_password" className="block text-xs font-bold text-slate-700">
-                        {t('label_password')}
+                        {t('label_password')} <span className="text-rose-500">*</span>
                       </label>
                       <input
                         type="password"

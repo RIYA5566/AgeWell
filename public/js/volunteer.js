@@ -250,6 +250,13 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     });
   }
+
+  // Initialize the default tab
+  if (typeof switchTaskTab === 'function') {
+    switchTaskTab('pending');
+  } else if (window.switchTaskTab) {
+    window.switchTaskTab('pending');
+  }
 });
 
 function resDataUser(u) {
@@ -501,6 +508,37 @@ async function loadVolunteerRequests(silent = false) {
     // 4. Completed History: Tasks completed by this volunteer
     const completedRequests = requests.filter(r => r.status === 'completed' && isMyApprovedTask(r));
 
+    // Update badge counts on tabs dynamically
+    const elCountPending = document.getElementById('countPending');
+    const elCountActive = document.getElementById('countActive');
+    const elCountAwaiting = document.getElementById('countAwaiting');
+    const elCountHistory = document.getElementById('countHistory');
+
+    if (elCountPending) {
+      elCountPending.textContent = pendingRequests.length;
+      elCountPending.className = pendingRequests.length > 0
+        ? "bg-brand-600 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full"
+        : "bg-slate-200 text-slate-500 text-[10px] font-extrabold px-2 py-0.5 rounded-full";
+    }
+    if (elCountActive) {
+      elCountActive.textContent = activeRequests.length;
+      elCountActive.className = activeRequests.length > 0
+        ? "bg-brand-600 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full"
+        : "bg-slate-200 text-slate-500 text-[10px] font-extrabold px-2 py-0.5 rounded-full";
+    }
+    if (elCountAwaiting) {
+      elCountAwaiting.textContent = awaitingRequests.length;
+      elCountAwaiting.className = awaitingRequests.length > 0
+        ? "bg-brand-600 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full"
+        : "bg-slate-200 text-slate-500 text-[10px] font-extrabold px-2 py-0.5 rounded-full";
+    }
+    if (elCountHistory) {
+      elCountHistory.textContent = completedRequests.length;
+      elCountHistory.className = completedRequests.length > 0
+        ? "bg-brand-600 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full"
+        : "bg-slate-200 text-slate-500 text-[10px] font-extrabold px-2 py-0.5 rounded-full";
+    }
+
     // --- Render Task Notifications ---
     if (notificationsCard && notificationsList) {
       if (allNotifRequests.length > 0) {
@@ -561,15 +599,16 @@ async function loadVolunteerRequests(silent = false) {
     if (pendingList) {
       if (pendingRequests.length === 0) {
         pendingList.innerHTML = `
-          <div style="padding: 1.5rem; background: var(--color-white); border-radius: var(--border-radius); text-align: center; border: 2px dashed var(--color-primary-light);">
-            <p style="color: var(--color-primary-dark); font-weight: bold;">No pending help requests at this time.</p>
-            <p style="font-size: 0.95rem; margin-top: 5px;">Check back later to support Senior Citizens in need!</p>
+          <div class="col-span-full py-12 px-6 bg-white rounded-2xl text-center border-2 border-dashed border-slate-200">
+            <div class="text-3xl mb-2">🔍</div>
+            <p class="text-slate-800 font-extrabold text-sm" data-i18n="vd_no_pending">No pending help requests at this time.</p>
+            <p class="text-xs text-slate-400 font-medium mt-1">Check back later to support Senior Citizens in need!</p>
           </div>`;
       } else {
         pendingList.innerHTML = pendingRequests.map(req => {
           let urgencyClass = req.urgency === 'high' ? 'urgency-high' : req.urgency === 'emergency' ? 'urgency-emergency' : '';
           let urgencyLabel = req.urgency === 'emergency' ? 'SOS EMERGENCY' : req.urgency === 'high' ? 'High Priority' : 'Normal';
-          let audioHtml = req.audioFile ? `<div class="request-audio-player"><label>🎙️ Senior's Voice Message:</label><audio controls src="${req.audioFile}"></audio></div>` : '';
+          let audioHtml = req.audioFile ? `<div class="request-audio-player mt-3 bg-slate-50 border border-slate-100 p-2.5 rounded-xl text-xs"><label class="block font-bold text-slate-600 mb-1">🎙️ Senior's Voice Message:</label><audio class="w-full h-8" controls src="${req.audioFile}"></audio></div>` : '';
 
           let existingQuoteBadge = '';
           let myQuote = null;
@@ -583,14 +622,14 @@ async function loadVolunteerRequests(silent = false) {
           if (myQuote) {
             const feeStr = (myQuote.serviceFee !== undefined && myQuote.serviceFee > 0) ? `₹${myQuote.serviceFee}` : '₹0 (Free)';
             existingQuoteBadge = `
-              <div style="margin-top: 10px; padding: 10px 14px; background: #e8f5e9; border-left: 4px solid #2e7d32; border-radius: 8px; font-size: 0.92rem; color: #1b5e20;">
+              <div class="mt-3 p-3 bg-emerald-50 border border-emerald-100 rounded-xl text-xs text-emerald-800 leading-normal font-semibold">
                 ✅ <strong>You submitted a quote: ${feeStr}</strong> (Awaiting Caregiver Selection). You can update your quote below!
               </div>`;
           } else if (otherQuote) {
             const feeStr = (otherQuote.serviceFee !== undefined && otherQuote.serviceFee > 0) ? `₹${otherQuote.serviceFee}` : '₹0 (Free)';
             const countStr = req.volunteerQuotes.length > 1 ? ` (${req.volunteerQuotes.length} quotes submitted)` : '';
             existingQuoteBadge = `
-              <div style="margin-top: 10px; padding: 10px 14px; background: #e3f2fd; border-left: 4px solid #1976d2; border-radius: 8px; font-size: 0.92rem; color: #0d47a1;">
+              <div class="mt-3 p-3 bg-brand-50 border border-brand-100 rounded-xl text-xs text-brand-800 leading-normal font-semibold">
                 ℹ️ A volunteer quoted <strong>${feeStr}</strong>${countStr} (Awaiting Caregiver Selection). You can also submit your quote!
               </div>`;
           }
@@ -598,32 +637,38 @@ async function loadVolunteerRequests(silent = false) {
           const btnText = myQuote ? '✏️ Update Your Quote' : '🤝 Volunteer to Help';
 
           return `
-            <div class="request-card ${urgencyClass}">
-              <div class="request-card-header">
-                <div class="request-title">${escapeHTML(req.title)}</div>
-                <div style="display: flex; gap: 8px;">
-                  <span class="badge ${req.urgency === 'emergency' ? 'badge-urgency-emergency' : req.urgency === 'high' ? 'badge-urgency-high' : 'badge-urgency'}">${urgencyLabel}</span>
-                  <span class="badge badge-urgency">${escapeHTML(req.category)}</span>
+            <div class="bg-white rounded-2xl border ${req.urgency === 'emergency' ? 'border-red-200 bg-red-50/5' : 'border-slate-200/80'} shadow-sm hover:shadow-premium hover:-translate-y-0.5 transition-all duration-200 p-5 flex flex-col justify-between">
+              <div>
+                <div class="flex justify-between items-start gap-3 flex-wrap mb-3">
+                  <h4 class="text-sm font-extrabold text-slate-900 tracking-tight leading-tight flex-1">${escapeHTML(req.title)}</h4>
+                  <div class="flex gap-1.5 flex-wrap">
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-extrabold tracking-wider uppercase ${req.urgency === 'emergency' ? 'bg-red-100 text-red-700' : req.urgency === 'high' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-500'}">
+                      ${urgencyLabel}
+                    </span>
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-extrabold tracking-wider uppercase bg-brand-50 text-brand-700">
+                      ${escapeHTML(req.category)}
+                    </span>
+                  </div>
                 </div>
-              </div>
-              ${req.description ? `<div class="request-description">${escapeHTML(req.description)}</div>` : ''}
-              
-              <!-- Caregiver Shopping Preference Banner -->
-              <div class="caregiver-pref-box" style="margin: 12px 0; padding: 12px 16px; background: linear-gradient(135deg, #fff3e0, #ffe0b2); border: 2px solid #f57c00; border-left: 6px solid #e65100; border-radius: 10px; box-shadow: 0 2px 8px rgba(230,81,0,0.12);">
-                <div style="display: flex; align-items: center; gap: 8px; font-size: 1.02rem; font-weight: 800; color: #e65100;">
-                  <span>🛒 Caregiver Shopping Preference:</span>
+                
+                ${req.description ? `<p class="text-xs text-slate-500 leading-relaxed mb-3 line-clamp-3">${escapeHTML(req.description)}</p>` : ''}
+                
+                <!-- Caregiver Shopping Preference -->
+                <div class="rounded-xl p-3 bg-amber-50/50 border border-amber-100 mb-3">
+                  <div class="text-[9px] font-extrabold text-amber-800 uppercase tracking-wider">🛒 Caregiver Shopping Preference</div>
+                  <div class="text-xs font-bold text-amber-900 mt-0.5">
+                    ${escapeHTML((req.shoppingPreference && req.shoppingPreference.trim()) ? req.shoppingPreference.trim() : 'No Preference')}
+                  </div>
                 </div>
-                <div style="margin-top: 4px; font-size: 1.08rem; font-weight: 700; color: #bf360c;">
-                  ${escapeHTML((req.shoppingPreference && req.shoppingPreference.trim()) ? req.shoppingPreference.trim() : 'No Preference')}
-                </div>
+
+                ${audioHtml}
+                ${existingQuoteBadge}
+                ${renderPlatformHelperHtml(req)}
               </div>
 
-              ${audioHtml}
-              ${existingQuoteBadge}
-              ${renderPlatformHelperHtml(req)}
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; flex-wrap: wrap; gap: 10px;">
-                <span style="font-size: 0.9rem; color: #666;">Posted: ${new Date(req.createdAt).toLocaleDateString()}</span>
-                <button class="btn btn-primary" onclick="acceptHelpRequest('${req._id}', '${escapeHTML(req.title).replace(/'/g, "\\'")}', '${escapeHTML(req.shoppingPreference || 'No Preference').replace(/'/g, "\\'")}')" style="padding: 10px 20px; font-size: 1rem; min-height: 48px;">
+              <div class="flex justify-between items-center mt-4 pt-3 border-t border-slate-100 text-[10px] text-slate-400 font-semibold gap-3 flex-wrap">
+                <span>Posted: ${new Date(req.createdAt).toLocaleDateString()}</span>
+                <button class="px-4 py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-xs font-extrabold rounded-xl transition-all cursor-pointer shadow-xs focus:outline-none flex items-center gap-1.5 border-none" onclick="acceptHelpRequest('${req._id}', '${escapeHTML(req.title).replace(/'/g, "\\'")}', '${escapeHTML(req.shoppingPreference || 'No Preference').replace(/'/g, "\\'")}')">
                   ${btnText}
                 </button>
               </div>
@@ -634,30 +679,38 @@ async function loadVolunteerRequests(silent = false) {
     // --- Render Awaiting Family Approval ---
     if (awaitingList) {
       if (awaitingRequests.length === 0) {
-        awaitingList.innerHTML = `<div style="text-align: center; color: #666; padding: 1rem;">No tasks currently awaiting family approval.</div>`;
+        awaitingList.innerHTML = `
+          <div class="col-span-full py-12 px-6 bg-white rounded-2xl text-center border-2 border-dashed border-slate-200">
+            <div class="text-3xl mb-2">⏳</div>
+            <p class="text-slate-800 font-extrabold text-sm" data-i18n="vd_no_awaiting">No tasks currently awaiting family approval.</p>
+            <p class="text-xs text-slate-400 font-medium mt-1">When you commit to help, the family reviews your profile here.</p>
+          </div>`;
       } else {
         awaitingList.innerHTML = awaitingRequests.map(req => {
           return `
-            <div class="request-card" style="border-left: 4px solid var(--color-warning);">
-              <div class="request-card-header">
-                <div class="request-title">${escapeHTML(req.title)}</div>
-                <span class="badge badge-warning">⏳ Awaiting Family Approval</span>
-              </div>
-              ${req.description ? `<div class="request-description">${escapeHTML(req.description)}</div>` : ''}
-              
-              <!-- Caregiver Shopping Preference Banner -->
-              <div class="caregiver-pref-box" style="margin: 12px 0; padding: 12px 16px; background: linear-gradient(135deg, #fff3e0, #ffe0b2); border: 2px solid #f57c00; border-left: 6px solid #e65100; border-radius: 10px; box-shadow: 0 2px 8px rgba(230,81,0,0.12);">
-                <div style="display: flex; align-items: center; gap: 8px; font-size: 1.02rem; font-weight: 800; color: #e65100;">
-                  <span>🛒 Caregiver Shopping Preference:</span>
+            <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-premium transition-all duration-200 p-5 flex flex-col justify-between">
+              <div>
+                <div class="flex justify-between items-start gap-3 flex-wrap mb-3">
+                  <h4 class="text-sm font-extrabold text-slate-900 tracking-tight leading-tight flex-1">${escapeHTML(req.title)}</h4>
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-extrabold tracking-wider uppercase bg-amber-100 text-amber-700">
+                    ⏳ Awaiting Approval
+                  </span>
                 </div>
-                <div style="margin-top: 4px; font-size: 1.08rem; font-weight: 700; color: #bf360c;">
-                  ${escapeHTML((req.shoppingPreference && req.shoppingPreference.trim()) ? req.shoppingPreference.trim() : 'No Preference')}
+                
+                ${req.description ? `<p class="text-xs text-slate-500 leading-relaxed mb-3 line-clamp-3">${escapeHTML(req.description)}</p>` : ''}
+                
+                <!-- Caregiver Shopping Preference -->
+                <div class="rounded-xl p-3 bg-amber-50/50 border border-amber-100 mb-3">
+                  <div class="text-[9px] font-extrabold text-amber-800 uppercase tracking-wider">🛒 Caregiver Shopping Preference</div>
+                  <div class="text-xs font-bold text-amber-900 mt-0.5">
+                    ${escapeHTML((req.shoppingPreference && req.shoppingPreference.trim()) ? req.shoppingPreference.trim() : 'No Preference')}
+                  </div>
                 </div>
-              </div>
 
-              <div class="request-details">
-                <p><strong>Senior:</strong> ${req.senior ? req.senior.name : 'Senior Citizen'}</p>
-                <p><em>You have accepted this task. The senior's family caregiver has been notified to review and approve your commitment.</em></p>
+                <div class="rounded-xl p-3 bg-slate-50 border border-slate-100 text-xs text-slate-650 font-semibold space-y-1">
+                  <p><strong>Senior:</strong> ${req.senior ? escapeHTML(req.senior.name) : 'Senior Citizen'}</p>
+                  <p class="text-[10px] text-slate-400 font-medium italic mt-1 leading-normal">The senior's family caregiver has been notified to review and approve your commitment.</p>
+                </div>
               </div>
             </div>`;
         }).join('');
@@ -667,7 +720,12 @@ async function loadVolunteerRequests(silent = false) {
     // --- Render Active Commitments (Accepted) ---
     if (activeList) {
       if (activeRequests.length === 0) {
-        activeList.innerHTML = `<div style="text-align: center; color: #666; padding: 1rem;">You have no active help commitments right now.</div>`;
+        activeList.innerHTML = `
+          <div class="col-span-full py-12 px-6 bg-white rounded-2xl text-center border-2 border-dashed border-slate-200">
+            <div class="text-3xl mb-2">🤝</div>
+            <p class="text-slate-800 font-extrabold text-sm" data-i18n="vd_no_active">You have no active help commitments right now.</p>
+            <p class="text-xs text-slate-400 font-medium mt-1">Browse open requests and quote your fee to start helping!</p>
+          </div>`;
       } else {
         activeList.innerHTML = activeRequests.map(req => {
           let seniorName    = req.senior ? req.senior.name : 'Senior Citizen';
@@ -692,30 +750,30 @@ async function loadVolunteerRequests(silent = false) {
           let rejectionWarningBox = '';
           if (isRejected) {
             rejectionWarningBox = `
-              <div style="margin: 1rem 0; padding: 12px 16px; background-color: #ffebee; border: 2px solid var(--color-emergency); border-radius: 12px;">
-                <p style="color: var(--color-emergency); font-weight: bold; font-size: 1.05rem; margin-bottom: 4px;">
-                  ⚠️ Delivery Verification Rejected by Family Caregiver
+              <div class="mt-3 p-3.5 bg-red-55/10 border-l-4 border-red-500 rounded-xl text-xs text-red-800 leading-normal font-semibold">
+                <p class="text-red-750 font-bold mb-1">
+                  ⚠️ Delivery Verification Rejected by Caregiver
                 </p>
-                <p style="color: #c62828; font-size: 0.95rem; margin: 0;">
+                <p class="text-red-700 font-medium">
                   <strong>Reason:</strong> "${escapeHTML(req.verificationRejectionReason || 'Caregiver requested updated receipt or delivery photo proof.')}"
                 </p>
-                <p style="color: #444; font-size: 0.9rem; margin-top: 6px;">
-                  This task has been un-marked as complete. Please re-upload the updated receipt or delivery photo below and re-apply for verification.
+                <p class="text-slate-500 font-normal mt-1 leading-normal">
+                  Please check the reason, re-upload the updated receipt or delivery photo proof below, and re-apply for verification.
                 </p>
               </div>`;
           }
 
           if (req.purchaseRejectionReason && req.status === 'accepted') {
             rejectionWarningBox += `
-              <div style="margin: 1rem 0; padding: 12px 16px; background-color: #fff3e0; border: 2px solid #f57c00; border-radius: 12px;">
-                <p style="color: #e65100; font-weight: bold; font-size: 1.05rem; margin-bottom: 4px;">
-                  ⚠️ Caregiver Requested Revision on Purchase Cost / Quality
+              <div class="mt-3 p-3.5 bg-amber-55/10 border-l-4 border-amber-500 rounded-xl text-xs text-amber-800 leading-normal font-semibold">
+                <p class="text-amber-750 font-bold mb-1">
+                  ⚠️ Caregiver Requested Revision on Purchase Cost
                 </p>
-                <p style="color: #bf360c; font-size: 0.95rem; margin: 0;">
+                <p class="text-amber-700 font-medium">
                   <strong>Caregiver Note:</strong> "${escapeHTML(req.purchaseRejectionReason)}"
                 </p>
-                <p style="color: #444; font-size: 0.9rem; margin-top: 6px;">
-                  Please check prices/quality, adjust purchase cost & proof, and re-submit below.
+                <p class="text-slate-500 font-normal mt-1 leading-normal">
+                  Please review the cost/prices, adjust your purchase details, and re-submit below.
                 </p>
               </div>`;
           }
@@ -725,14 +783,14 @@ async function loadVolunteerRequests(silent = false) {
 
           if (req.status === 'accepted') {
             stepBoxHtml = `
-              <div style="margin: 12px 0; padding: 16px 18px; background: #e3f2fd; border-left: 5px solid #1976d2; border-radius: 10px; font-size: 0.95rem; color: #0d47a1;">
-                💡 <strong>Step 1 of 2: Submit Purchase Cost &amp; Proof</strong><br/><br/>
-                Check the store price for the items needed. Then click below to submit the <strong>actual purchase cost</strong> along with a cart screenshot or price tag photo.<br/><br/>
-                <span style="font-size: 0.88rem; color: #1565c0; display: block; margin-top: 4px;">📌 The caregiver will pay the purchase amount + your service charge. After receiving the funds, buy the items and upload the final store cash receipt.</span>
+              <div class="mt-3 p-3.5 bg-blue-50 border-l-4 border-blue-500 rounded-xl text-xs text-blue-800 leading-normal font-semibold">
+                💡 <strong>Step 1 of 2: Submit Purchase Cost &amp; Price Proof</strong><br/><br/>
+                Check the store price for the items needed. Then click below to submit the <strong>actual purchase cost</strong> along with a price tag photo or cart screenshot.<br/><br/>
+                <span class="text-[10px] text-blue-600 font-bold block mt-1 leading-normal">📌 The caregiver will fund the purchase amount + your service charge. Once funded, proceed to buy and deliver.</span>
               </div>`;
             actionBtnHtml = `
-              <button class="btn btn-primary" onclick="openPurchaseCostModal('${req._id}')" style="padding: 12px 24px; font-size: 1rem; min-height: 50px; background-color: #1565c0; border-color: #0d47a1; font-weight: 700;">
-                💰 Submit Purchase Cost &amp; Price Proof
+              <button class="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-extrabold rounded-xl transition-all cursor-pointer shadow-xs border-none focus:outline-none flex items-center gap-1.5" onclick="openPurchaseCostModal('${req._id}')">
+                💰 Submit Purchase Cost
               </button>`;
           } else if (req.status === 'purchase_cost_submitted') {
             let proofImages = req.purchaseProofDocs && req.purchaseProofDocs.length > 0 
@@ -741,84 +799,85 @@ async function loadVolunteerRequests(silent = false) {
             let proofSlider = renderProofSliderHtml(req._id, proofImages);
 
             stepBoxHtml = `
-              <div style="margin: 12px 0; padding: 12px 16px; background: #fff3e0; border-left: 4px solid #f57c00; border-radius: 8px; font-size: 0.95rem; color: #e65100;">
+              <div class="mt-3 p-3.5 bg-amber-50 border-l-4 border-amber-500 rounded-xl text-xs text-amber-800 leading-normal font-semibold">
                 💳 <strong>Purchase Cost (₹${req.actualPurchaseCost || 0}) &amp; Proof Submitted</strong><br/>
                 ⏳ Awaiting Caregiver Payment Approval &amp; Escrow Funding.
                 ${proofSlider}
               </div>`;
             actionBtnHtml = `
-              <div style="display: inline-flex; align-items: center; justify-content: center; padding: 10px 20px; font-size: 0.95rem; min-height: 48px; background: #e8f5e9; color: #2e7d32; border: 1.5px solid #a5d6a7; border-radius: 10px; font-weight: 700; cursor: default; user-select: none;">
-                ⏳ Awaiting Caregiver Escrow Payment
+              <div class="inline-flex items-center justify-center px-4 py-2 bg-amber-50 text-amber-700 border border-amber-250 rounded-xl text-xs font-bold cursor-default select-none">
+                ⏳ Awaiting Caregiver Escrow
               </div>`;
           } else if (req.status === 'purchase_funded' || req.status === 'in_progress') {
             stepBoxHtml = `
-              <div style="margin: 12px 0; padding: 16px 18px; background: #e8f5e9; border-left: 5px solid #2e7d32; border-radius: 10px; font-size: 0.95rem; color: #1b5e20;">
+              <div class="mt-3 p-3.5 bg-emerald-50 border-l-4 border-emerald-500 rounded-xl text-xs text-emerald-800 leading-normal font-semibold">
                 ✅ <strong>Step 2 of 2: Purchase Funded — Buy Items &amp; Upload Receipt</strong><br/><br/>
                 <strong>₹${req.actualPurchaseCost || 0}</strong> has been released by the caregiver. Go buy the items and deliver them to the senior citizen.<br/><br/>
-                <span style="font-size: 0.88rem; color: #388e3c; display: block; margin-top: 4px;">📌 After delivery, click below to upload the final store cash receipt / delivery proof. The caregiver will verify it and release your service charge of <strong>₹${myQuotedFee > 0 ? myQuotedFee : 0}</strong>.</span>
+                <span class="text-[10px] text-emerald-600 font-bold block mt-1 leading-normal">📌 After delivery, click below to upload the final store cash receipt / delivery proof. The caregiver will verify it and release your service charge of <strong>₹${myQuotedFee > 0 ? myQuotedFee : 0}</strong>.</span>
               </div>`;
             actionBtnHtml = `
-              <button class="btn btn-primary" onclick="openCompletionModal('${req._id}')" style="padding: 12px 24px; font-size: 1rem; min-height: 50px; background-color: #2e7d32; border-color: #1b5e20; font-weight: 700;">
-                🧾 Upload Final Store Cash Receipt / Delivery Proof
+              <button class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold rounded-xl transition-all cursor-pointer shadow-xs border-none focus:outline-none flex items-center gap-1.5" onclick="openCompletionModal('${req._id}')">
+                🧾 Upload Proof &amp; Complete
               </button>`;
           } else if (req.status === 'awaiting_verification') {
             stepBoxHtml = `
-              <div style="margin: 12px 0; padding: 12px 16px; background: #f3e5f5; border-left: 4px solid #7b1fa2; border-radius: 8px; font-size: 0.95rem; color: #4a148c;">
+              <div class="mt-3 p-3.5 bg-purple-50 border-l-4 border-purple-500 rounded-xl text-xs text-purple-800 leading-normal font-semibold">
                 🧾 <strong>Store Cash Receipt Uploaded</strong><br/>
                 ⏳ Awaiting Caregiver Final Verification &amp; Volunteer Service Charge (₹${myQuotedFee > 0 ? myQuotedFee : 150}) Escrow Release.
-                ${req.finalReceiptDoc || req.completionProof ? `<div style="margin-top: 6px;"><a href="${req.finalReceiptDoc || req.completionProof}" target="_blank" onclick="event.stopPropagation(); openImageLightbox('${req.finalReceiptDoc || req.completionProof}'); return false;" style="color: #7b1fa2; font-weight: bold; text-decoration: underline;">🔍 View Uploaded Receipt Photo</a></div>` : ''}
+                ${req.finalReceiptDoc || req.completionProof ? `<div class="mt-2"><a href="${req.finalReceiptDoc || req.completionProof}" target="_blank" onclick="event.stopPropagation(); openImageLightbox('${req.finalReceiptDoc || req.completionProof}'); return false;" class="text-purple-700 font-bold hover:underline">🔍 View Uploaded Receipt Photo</a></div>` : ''}
               </div>`;
             actionBtnHtml = `
-              <div style="display: inline-flex; align-items: center; justify-content: center; padding: 10px 20px; font-size: 0.95rem; min-height: 48px; background: #e8f5e9; color: #2e7d32; border: 1.5px solid #a5d6a7; border-radius: 10px; font-weight: 700; cursor: default; user-select: none;">
-                ⏳ Verification &amp; Service Fee Release Pending
+              <div class="inline-flex items-center justify-center px-4 py-2 bg-purple-50 text-purple-750 border border-purple-250 rounded-xl text-xs font-bold cursor-default select-none">
+                ⏳ Verification Pending
               </div>`;
           } else {
             actionBtnHtml = `
-              <button class="btn btn-primary" onclick="openCompletionModal('${req._id}')" style="padding: 10px 20px; font-size: 1rem; min-height: 48px; background-color: ${isRejected ? '#c62828' : 'var(--color-primary-dark)'};">
-                ${isRejected ? '📸 Re-upload Receipt & Re-apply for Verification' : '✅ Complete Request & Upload Receipt'}
+              <button class="px-4 py-2.5 text-white text-xs font-extrabold rounded-xl transition-all cursor-pointer shadow-xs border-none focus:outline-none" onclick="openCompletionModal('${req._id}')" style="background-color: ${isRejected ? '#c62828' : 'var(--color-primary-dark)'};">
+                ${isRejected ? '📸 Re-upload & Re-apply' : '✅ Complete & Upload Proof'}
               </button>`;
           }
 
           return `
-            <div class="request-card" style="border-left: 5px solid ${isRejected ? 'var(--color-emergency)' : 'var(--color-primary-dark)'};">
-              <div class="request-card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-                <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-                  <div class="request-title">${escapeHTML(req.title)}</div>
-                  <span style="background: #e8f5e9; color: #2e7d32; padding: 4px 12px; border-radius: 16px; font-size: 0.95rem; font-weight: 800; border: 1.5.px solid #a5d6a7; display: inline-flex; align-items: center; gap: 4px;">💰 Quoted Fee: ₹${myQuotedFee > 0 ? myQuotedFee : '0 (Free)'}</span>
+            <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-premium transition-all duration-200 p-5 flex flex-col justify-between ${isRejected ? 'border-red-200 bg-red-50/5' : ''}">
+              <div>
+                <div class="flex justify-between items-start gap-3 flex-wrap mb-3">
+                  <div>
+                    <h4 class="text-sm font-extrabold text-slate-900 tracking-tight leading-tight">${escapeHTML(req.title)}</h4>
+                    <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-100 mt-1">
+                      💰 Quoted Fee: ₹${myQuotedFee > 0 ? myQuotedFee : '0 (Free)'}
+                    </span>
+                  </div>
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-extrabold tracking-wider uppercase bg-brand-50 text-brand-700">
+                    In Progress
+                  </span>
                 </div>
-                <span class="badge ${isRejected ? 'badge-urgency-emergency' : 'badge-active'}">${isRejected ? '⚠️ Action Required: Re-apply' : 'In Progress'}</span>
+
+                ${req.description ? `<p class="text-xs text-slate-500 leading-relaxed mb-3 line-clamp-3">${escapeHTML(req.description)}</p>` : ''}
+
+                <!-- Caregiver Shopping Preference -->
+                <div class="rounded-xl p-3 bg-amber-50/50 border border-amber-100 mb-3">
+                  <div class="text-[9px] font-extrabold text-amber-800 uppercase tracking-wider">🛒 Caregiver Shopping Preference</div>
+                  <div class="text-xs font-bold text-amber-900 mt-0.5">
+                    ${escapeHTML((req.shoppingPreference && req.shoppingPreference.trim()) ? req.shoppingPreference.trim() : 'No Preference')}
+                  </div>
+                </div>
+
+                <!-- Senior Citizen Info Box -->
+                <div class="rounded-xl p-3 bg-brand-50/50 border border-brand-100 text-xs text-slate-600 space-y-1 mb-3">
+                  <p class="font-extrabold text-slate-900 border-b border-brand-100/50 pb-1 mb-1 text-[10px] uppercase tracking-wider">Senior Information</p>
+                  <p><strong>Name:</strong> ${escapeHTML(seniorName)}</p>
+                  <p><strong>Phone:</strong> <a href="tel:${seniorPhone}" class="text-brand-600 font-bold hover:underline">${escapeHTML(seniorPhone)}</a></p>
+                  <p><strong>Address:</strong> ${escapeHTML(seniorAddress)}</p>
+                  <p><strong>Emergency Contact:</strong> ${escapeHTML(emergencyContact)}</p>
+                </div>
+
+                ${rejectionWarningBox}
+                ${stepBoxHtml}
+                ${renderPlatformHelperHtml(req)}
               </div>
 
-              ${req.description ? `<div class="request-description" style="margin-top: 10px;">${escapeHTML(req.description)}</div>` : ''}
-
-              <!-- Caregiver Shopping Preference Banner -->
-              <div class="caregiver-pref-box" style="margin: 12px 0; padding: 12px 16px; background: linear-gradient(135deg, #fff3e0, #ffe0b2); border: 2px solid #f57c00; border-left: 6px solid #e65100; border-radius: 10px; box-shadow: 0 2px 8px rgba(230,81,0,0.12);">
-                <div style="display: flex; align-items: center; gap: 8px; font-size: 1.02rem; font-weight: 800; color: #e65100;">
-                  <span>🛒 Caregiver Shopping Preference:</span>
-                </div>
-                <div style="margin-top: 4px; font-size: 1.08rem; font-weight: 700; color: #bf360c;">
-                  ${escapeHTML((req.shoppingPreference && req.shoppingPreference.trim()) ? req.shoppingPreference.trim() : 'No Preference')}
-                </div>
-              </div>
-              
-              <div class="request-details" style="background-color: var(--color-bg-light); border: 2px solid var(--color-primary-light);">
-                <p style="font-size: 1.1rem; border-bottom: 2px solid var(--color-primary-light); padding-bottom: 5px; margin-bottom: 8px;"><strong>Senior Citizen Information:</strong></p>
-                <p><strong>Name:</strong> ${escapeHTML(seniorName)}</p>
-                <p><strong>Phone:</strong> <a href="tel:${seniorPhone}" style="color: var(--color-primary-dark); font-weight: bold;">${escapeHTML(seniorPhone)}</a></p>
-                <p><strong>Address:</strong> ${escapeHTML(seniorAddress)}</p>
-                <p><strong>Emergency Contact:</strong> ${escapeHTML(emergencyContact)}</p>
-                <p style="margin-top: 8px; font-size: 1.05rem; color: #1b5e20; border-top: 1px dashed #a5d6a7; padding-top: 6px;">
-                  <strong>💰 Your Agreed Service Charge:</strong> 
-                  <span style="font-weight: 800; color: #2e7d32; font-size: 1.12rem; background: #e8f5e9; padding: 2px 10px; border-radius: 6px; border: 1px solid #c8e6c9;">₹${myQuotedFee > 0 ? myQuotedFee : '0 (Voluntary / Free Service)'}</span>
-                </p>
-              </div>
-
-              ${rejectionWarningBox}
-              ${stepBoxHtml}
-              ${renderPlatformHelperHtml(req)}
-
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; flex-wrap: wrap; gap: 10px;">
-                <span style="font-size: 0.9rem; color: #666;">Accepted: ${new Date(req.acceptedAt || Date.now()).toLocaleDateString()}</span>
+              <div class="flex justify-between items-center mt-4 pt-3 border-t border-slate-100 text-[10px] text-slate-400 font-semibold gap-3 flex-wrap">
+                <span>Accepted: ${new Date(req.acceptedAt || Date.now()).toLocaleDateString()}</span>
                 ${actionBtnHtml}
               </div>
             </div>`;
@@ -829,10 +888,15 @@ async function loadVolunteerRequests(silent = false) {
     // --- Render Service History (Completed Tasks with Verification Status) ---
     if (historyList) {
       if (completedRequests.length === 0) {
-        historyList.innerHTML = `<div style="text-align: center; color: #666; padding: 1rem;">No completed requests logged yet.</div>`;
+        historyList.innerHTML = `
+          <div class="col-span-full py-12 px-6 bg-white rounded-2xl text-center border-2 border-dashed border-slate-200">
+            <div class="text-3xl mb-2">📜</div>
+            <p class="text-slate-800 font-extrabold text-sm" data-i18n="vd_no_history">No completed requests logged yet.</p>
+            <p class="text-xs text-slate-400 font-medium mt-1">Your verified completions will appear here.</p>
+          </div>`;
       } else {
         historyList.innerHTML = completedRequests.map(req => {
-          let audioHtml = req.audioFile ? `<div class="request-audio-player"><label>🎙️ Senior's Voice Message:</label><audio controls src="${req.audioFile}"></audio></div>` : '';
+          let audioHtml = req.audioFile ? `<div class="request-audio-player mt-3 bg-slate-50 border border-slate-100 p-2.5 rounded-xl text-xs"><label class="block font-bold text-slate-600 mb-1">🎙️ Senior's Voice Message:</label><audio class="w-full h-8" controls src="${req.audioFile}"></audio></div>` : '';
           
           const serviceFeeEarned = Number((req.serviceFee !== undefined && req.serviceFee !== null)
             ? req.serviceFee
@@ -849,64 +913,58 @@ async function loadVolunteerRequests(silent = false) {
           const totalEarned = serviceFeeEarned + tipEarned;
 
           let earningsHtml = `
-            <div style="margin-top: 12px; padding: 12px 16px; background: #e8f5e9; border: 2px solid #a5d6a7; border-left: 6px solid #2e7d32; border-radius: 10px; box-shadow: 0 2px 8px rgba(46,125,50,0.08);">
-              <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
-                <span style="font-size: 1.05rem; font-weight: 800; color: #1b5e20;">
-                  💰 Total Amount Earned: <strong style="font-size: 1.2rem; color: #2e7d32;">₹${totalEarned}</strong>
+            <div class="mt-3 p-3 bg-emerald-50 border border-emerald-100 rounded-xl">
+              <div class="flex justify-between items-center flex-wrap gap-2">
+                <span class="text-xs font-bold text-emerald-800">
+                  💰 Total Amount Earned: <strong class="text-sm font-extrabold">₹${totalEarned}</strong>
                 </span>
                 ${tipEarned > 0 ? `
-                  <button type="button" onclick="showTipEarnedModal('${escapeHTML(req.title)}', ${tipEarned}, ${serviceFeeEarned})" style="background: #fff8e1; color: #b45309; border: 1.5px solid #fde68a; padding: 5px 14px; border-radius: 16px; font-weight: 800; font-size: 0.88rem; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(245,158,11,0.18);">
-                    🎁 Special Tip Received: ₹${tipEarned} ✨
+                  <button type="button" onclick="showTipEarnedModal('${escapeHTML(req.title)}', ${tipEarned}, ${serviceFeeEarned})" class="bg-amber-100 text-amber-850 hover:bg-amber-150 border border-amber-200 px-3 py-1 rounded-full font-extrabold text-[10px] cursor-pointer transition-all shadow-xs focus:outline-none flex items-center gap-1">
+                    🎁 Special Tip: ₹${tipEarned} ✨
                   </button>
                 ` : ''}
               </div>
-              <div style="margin-top: 4px; font-size: 0.88rem; color: #388e3c; font-weight: 500;">
+              <div class="text-[10px] text-emerald-600 font-semibold mt-1">
                 Breakdown: Service Fee ₹${serviceFeeEarned} ${tipEarned > 0 ? `+ Caregiver Tip ₹${tipEarned}` : ''}
               </div>
             </div>`;
           
           let proofHtml = req.completionProof ? `
-            <div style="margin-top: 10px; background: #fff; padding: 10px; border-radius: 8px; border: 1px solid #ddd;">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                <label style="font-weight: bold; color: var(--color-primary-dark); font-size: 0.9rem;">📸 Uploaded Receipt / Delivery Photo:</label>
-                <button type="button" onclick="openImageLightbox('${escapeHTML(req.completionProof)}')" class="btn btn-secondary" style="padding: 4px 10px; font-size: 0.85rem; min-height: 32px;">🔍 View Photo</button>
+            <div class="mt-3 background-white p-3 rounded-xl border border-slate-200/60 shadow-xs">
+              <div class="flex justify-between items-center mb-2 flex-wrap gap-2">
+                <label class="font-extrabold text-slate-800 text-[10px] uppercase tracking-wider">📸 Receipt / Proof:</label>
+                <button type="button" onclick="openImageLightbox('${escapeHTML(req.completionProof)}')" class="px-2.5 py-1 text-[10px] font-bold bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-lg cursor-pointer transition-all">🔍 View Full Photo</button>
               </div>
-              <img src="${escapeHTML(req.completionProof)}" alt="Receipt Photo Proof" onclick="openImageLightbox('${escapeHTML(req.completionProof)}')" style="max-width: 100%; max-height: 180px; border-radius: 6px; margin-top: 5px; display: block; object-fit: contain; cursor: pointer;">
-            </div>` : '<div style="margin-top: 8px; font-size: 0.85rem; color: #888;">No receipt/delivery photo attached.</div>';
+              <img src="${escapeHTML(req.completionProof)}" alt="Receipt Photo Proof" onclick="openImageLightbox('${escapeHTML(req.completionProof)}')" class="max-w-full max-h-[120px] rounded-lg mt-1 block object-contain cursor-pointer mx-auto border border-slate-150">
+            </div>` : '<div class="mt-2 text-[10px] text-slate-400 font-semibold">No receipt/delivery photo attached.</div>';
 
           let verifyBadge = '';
           let reapplyButtonHtml = '';
           let rejectionReasonAlert = '';
 
           if (req.completionVerified === 'verified') {
-            verifyBadge = `<span class="badge" style="background-color: #2e7d32; color: #fff;">✅ Delivery Verified</span>`;
+            verifyBadge = `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-extrabold tracking-wider uppercase bg-emerald-100 text-emerald-700">✅ Verified</span>`;
           } else if (req.completionVerified === 'rejected') {
-            verifyBadge = `<span class="badge" style="background-color: #c62828; color: #fff;">❌ VERIFICATION REJECTED</span>`;
+            verifyBadge = `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-extrabold tracking-wider uppercase bg-red-100 text-red-700">❌ Rejected</span>`;
             
             rejectionReasonAlert = `
-              <div style="margin-top: 10px; padding: 12px 16px; background-color: #ffebee; border: 2px solid var(--color-emergency); border-radius: 10px;">
-                <p style="color: var(--color-emergency); font-weight: bold; font-size: 1rem; margin-bottom: 4px;">
-                  ⚠️ Verification Rejected by Family Caregiver
+              <div class="mt-3 p-3 bg-red-50/50 border border-red-200 rounded-xl text-xs text-red-800 leading-normal font-semibold">
+                <p class="text-red-750 font-bold mb-1">
+                  ⚠️ Verification Rejected by Caregiver
                 </p>
-                <p style="color: #c62828; font-size: 0.95rem; margin: 0;">
+                <p class="text-red-700 font-medium">
                   <strong>Reason:</strong> "${escapeHTML(req.verificationRejectionReason || 'Caregiver requested updated receipt or delivery photo proof.')}"
                 </p>
               </div>`;
 
             reapplyButtonHtml = `
-              <div style="margin-top: 14px; text-align: right;">
-                <button 
-                  class="btn" 
-                  onclick="openCompletionModal('${req._id}')" 
-                  style="background-color: #c62828; color: #ffffff !important; font-weight: 700; padding: 14px 22px; font-size: 1.05rem; border-radius: 10px; border: none; cursor: pointer; box-shadow: 0 4px 12px rgba(198,40,40,0.3);"
-                >
-                  📸 Re-upload Receipt &amp; Re-apply for Verification
-                </button>
-              </div>`;
+              <button class="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-[10px] font-extrabold rounded-lg transition-all cursor-pointer shadow-xs border-none focus:outline-none" onclick="openCompletionModal('${req._id}')">
+                📸 Re-apply
+              </button>`;
           } else if (req.requiresSeniorVoiceCall) {
-            verifyBadge = `<span class="badge" style="background-color: #0288d1; color: #fff;">📞 Voice Call Sent to Senior</span>`;
+            verifyBadge = `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-extrabold tracking-wider uppercase bg-blue-100 text-blue-700">📞 Voice Call Sent</span>`;
           } else {
-            verifyBadge = `<span class="badge" style="background-color: #f57c00; color: #fff;">⏳ Pending Caregiver Verification</span>`;
+            verifyBadge = `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-extrabold tracking-wider uppercase bg-amber-100 text-amber-700">⏳ Pending Verification</span>`;
           }
 
           return `
@@ -1784,5 +1842,32 @@ window.clearAllTaskNotifications = function() {
     localStorage.setItem(key, JSON.stringify(dismissed));
   }
   loadVolunteerRequests(true); // silent refresh
+};
+
+// Switch between Task dashboard tabs: Browse Requests, Active, Awaiting Approval, History
+window.switchTaskTab = function(tab) {
+  const tabs = ['pending', 'active', 'awaiting', 'history'];
+  const tabBtnIds = { pending: 'tabBtnPending', active: 'tabBtnActive', awaiting: 'tabBtnAwaiting', history: 'tabBtnHistory' };
+  const paneIds = { pending: 'tabPanePending', active: 'tabPaneActive', awaiting: 'tabPaneAwaiting', history: 'tabPaneHistory' };
+
+  tabs.forEach(t => {
+    const btn = document.getElementById(tabBtnIds[t]);
+    const pane = document.getElementById(paneIds[t]);
+    const isActive = (t === tab);
+    if (btn) {
+      if (isActive) {
+        btn.classList.add('bg-white', 'text-brand-600', 'shadow-sm');
+        btn.classList.remove('text-slate-600', 'hover:bg-slate-100/50');
+        btn.setAttribute('aria-selected', 'true');
+      } else {
+        btn.classList.remove('bg-white', 'text-brand-600', 'shadow-sm');
+        btn.classList.add('text-slate-600', 'hover:bg-slate-100/50');
+        btn.setAttribute('aria-selected', 'false');
+      }
+    }
+    if (pane) {
+      pane.style.display = isActive ? 'block' : 'none';
+    }
+  });
 };
 

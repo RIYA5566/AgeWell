@@ -3,13 +3,38 @@
 let selectedCategory = '';
 let audioCtx = null;
 let alarmInterval = null;
+let allFetchedRequests = [];
+let currentFilter = 'all';
+let searchQuery = '';
+let selectedCategoryFilter = 'all';
+
+// Quick category opener helper for Action Card shortcuts
+window.openRequestWithCategory = function(category) {
+  const modal = document.getElementById('requestModal');
+  if (!modal) return;
+  modal.style.display = 'flex';
+  resetForm();
+
+  selectedCategory = category;
+  const categoryButtons = document.querySelectorAll('.category-option-btn');
+  categoryButtons.forEach(btn => {
+    if (btn.getAttribute('data-category') === category) {
+      btn.classList.add('selected');
+    }
+  });
+
+  const titleInput = document.getElementById('requestTitle');
+  if (titleInput) {
+    titleInput.focus();
+  }
+};
 
 document.addEventListener('DOMContentLoaded', () => {
   // Validate authentication
   const auth = checkAuthAndRedirect('senior');
   if (!auth) return;
 
-  // Personalize welcome bar
+  // Personalize welcome bar & live date
   const user = JSON.parse(localStorage.getItem('user'));
   const welcomeTitle = document.getElementById('welcomeTitle');
   if (welcomeTitle && user) {
@@ -23,6 +48,9 @@ document.addEventListener('DOMContentLoaded', () => {
     else if (user.language === 'mr') voiceLangSelect.value = 'mr-IN';
     else voiceLangSelect.value = 'en-IN';
   }
+
+  // Setup search & filter tab listeners
+  setupFilterToolbar();
 
   // Load requests
   loadRequests();
@@ -67,6 +95,13 @@ document.addEventListener('DOMContentLoaded', () => {
       document.body.style.overflow = '';
       stopEmergencyAlarm();
       showTabPopup(t('popup_sos_cancelled_title'), t('popup_sos_cancelled_msg'), '🔕', '#c62828');
+
+      const appLang = (typeof getLang === 'function' ? getLang() : localStorage.getItem('agewell_lang')) || 'en';
+      if (appLang === 'mr') {
+        speakUtteranceWithLocale('आणीबाणीचा अलार्म रद्द करण्यात आला आहे', 'mr-IN');
+      } else if (appLang === 'hi') {
+        speakUtteranceWithLocale('आपातकालीन अलार्म रद्द कर दिया गया है', 'hi-IN');
+      }
     });
   }
 
@@ -93,6 +128,13 @@ document.addEventListener('DOMContentLoaded', () => {
     btnCancelRequest.addEventListener('click', () => {
       closeModal();
       showTabPopup(t('popup_form_cancelled_title'), t('popup_form_cancelled_msg'), '❌', '#c62828');
+
+      const appLang = (typeof getLang === 'function' ? getLang() : localStorage.getItem('agewell_lang')) || 'en';
+      if (appLang === 'mr') {
+        speakUtteranceWithLocale('मदत विनंती फॉर्म रद्द करण्यात आला आहे', 'mr-IN');
+      } else if (appLang === 'hi') {
+        speakUtteranceWithLocale('सहायता अनुरोध फ़ॉर्म रद्द कर दिया गया है', 'hi-IN');
+      }
     });
   }
 
@@ -272,6 +314,39 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
+// Setup filter tabs, search and category select
+function setupFilterToolbar() {
+  const filterTabBtns = document.querySelectorAll('.filter-tab-btn');
+  filterTabBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      filterTabBtns.forEach(b => {
+        b.classList.remove('active');
+        b.setAttribute('aria-selected', 'false');
+      });
+      btn.classList.add('active');
+      btn.setAttribute('aria-selected', 'true');
+      currentFilter = btn.getAttribute('data-filter') || 'all';
+      renderFilteredRequests();
+    });
+  });
+
+  const searchInput = document.getElementById('searchRequestsInput');
+  if (searchInput) {
+    searchInput.addEventListener('input', (e) => {
+      searchQuery = e.target.value.toLowerCase().trim();
+      renderFilteredRequests();
+    });
+  }
+
+  const categorySelect = document.getElementById('filterCategorySelect');
+  if (categorySelect) {
+    categorySelect.addEventListener('change', (e) => {
+      selectedCategoryFilter = e.target.value;
+      renderFilteredRequests();
+    });
+  }
+}
+
 // Reset Request Form
 function resetForm() {
   const form = document.getElementById('requestForm');
@@ -313,10 +388,13 @@ async function loadRequests() {
 
   const res = await apiCall('/requests', 'GET');
   if (res.ok && res.data.success) {
-    const requests = res.data.requests;
+    allFetchedRequests = res.data.requests || [];
+
+    // Calculate Summary Statistics
+    updateSeniorStats(allFetchedRequests);
 
     // Check if any completed request requires automated senior IVR voice call confirmation
-    const pendingVoiceRequest = requests.find(r => 
+    const pendingVoiceRequest = allFetchedRequests.find(r => 
       r.status === 'completed' && 
       r.completionVerified === 'pending_verification' && 
       r.requiresSeniorVoiceCall === true
@@ -326,191 +404,450 @@ async function loadRequests() {
       triggerSeniorVoiceConfirmationCall(pendingVoiceRequest);
     }
 
-    if (requests.length === 0) {
-      requestList.innerHTML = `
-        <div style="text-align: center; padding: 3rem; background: var(--color-white); border-radius: var(--border-radius); border: 3px dashed var(--color-primary-light);">
-          <span style="font-size: 3rem; display: block; margin-bottom: 1rem;">🌸</span>
-          <p style="font-size: 1.2rem; font-weight: 600; color: var(--color-primary-dark);">No active requests found.</p>
-          <p style="margin-top: 5px;">Need help? Click the green button above to raise a request!</p>
-        </div>`;
-      return;
-    }
+    // Render filtered requests
+    renderFilteredRequests();
 
-    const completedStatuses = ['completed', 'fulfilled_by_family', 'rejected', 'cancelled'];
-
-    const sortedRequests = [...requests].sort((a, b) => {
-      const aDone = completedStatuses.includes(a.status) || a.fulfilledByFamily || a.familyApprovalStatus === 'rejected';
-      const bDone = completedStatuses.includes(b.status) || b.fulfilledByFamily || b.familyApprovalStatus === 'rejected';
-
-      // Active/Pending requests MUST appear FIRST
-      if (!aDone && bDone) return -1;
-      if (aDone && !bDone) return 1;
-
-      // Newer requests first
-      const aTime = new Date(a.createdAt || 0).getTime();
-      const bTime = new Date(b.createdAt || 0).getTime();
-      return bTime - aTime;
-    });
-
-    requestList.innerHTML = sortedRequests.map(req => {
-      let statusBadge = '';
-      if (req.status === 'fulfilled_by_family' || req.familyApprovalStatus === 'fulfilled_by_family' || req.fulfilledByFamily) {
-        statusBadge = `<span class="badge" style="background:#e8f5e9;color:#1b5e20;border:2px solid #2e7d32;font-weight:bold;">${t('status_fulfilled_by_family')}</span>`;
-      } else if (req.status === 'rejected' || req.familyApprovalStatus === 'rejected') {
-        statusBadge = `<span class="badge" style="background:#ffebee;color:#c62828;border:2px solid #b71c1c;font-weight:bold;">${t('status_rejected_by_caregiver')}</span>`;
-      } else if (req.status === 'cancelled') {
-        statusBadge = `<span class="badge" style="background:#ffebee;color:#c62828;border:2px solid #b71c1c;font-weight:bold;">❌ Request Cancelled</span>`;
-      } else if (req.status === 'pending' && (req.familyApprovalStatus === 'none' || !req.familyApprovalStatus)) {
-        statusBadge = `<span class="badge" style="background:#fff8e1;color:#e65100;border:2px solid #ffa000;font-weight:bold;">${t('status_awaiting_allotment')}</span>`;
-      } else if (req.status === 'pending' && req.familyApprovalStatus === 'approved') {
-        statusBadge = `<span class="badge badge-pending">${t('status_allotted_volunteers')}</span>`;
-      } else if (req.status === 'awaiting_approval' || req.status === 'quoted') {
-        statusBadge = `<span class="badge" style="background:#ffe082;color:#e65100;border:2px solid #f57f17;font-weight:bold;">${t('status_caregiver_reviewing')}</span>`;
-      } else if (req.status === 'accepted') {
-        statusBadge = `<span class="badge badge-accepted">${t('status_volunteer_assigned')}</span>`;
-      } else if (req.status === 'purchase_cost_submitted') {
-        statusBadge = `<span class="badge" style="background:#fff3e0;color:#e65100;border:2px solid #f57c00;font-weight:bold;">${t('status_cart_proof_submitted')}</span>`;
-      } else if (req.status === 'purchase_funded') {
-        statusBadge = `<span class="badge" style="background:#e8f5e9;color:#1b5e20;border:2px solid #2e7d32;font-weight:bold;">${t('status_purchase_funded')}</span>`;
-      } else if (req.status === 'awaiting_verification') {
-        statusBadge = `<span class="badge" style="background:#f3e5f5;color:#4a148c;border:2px solid #7b1fa2;font-weight:bold;">${t('status_awaiting_verification')}</span>`;
-      } else if (req.status === 'completed') {
-        statusBadge = `<span class="badge badge-completed">${t('status_service_completed')}</span>`;
-      }
-
-      let urgencyBadge = '';
-      if (req.urgency === 'high') {
-        urgencyBadge = `<span class="badge badge-urgency-high">${t('badge_high_priority')}</span>`;
-      } else if (req.urgency === 'emergency') {
-        urgencyBadge = `<span class="badge badge-urgency-emergency">${t('badge_sos_emergency')}</span>`;
-      }
-
-      let audioPlayerHtml = '';
-      if (req.audioFile) {
-        audioPlayerHtml = `
-          <div class="request-audio-player">
-            <label>${t('sd_voice_recording_label')}</label>
-            <audio controls src="${req.audioFile}"></audio>
-          </div>`;
-      }
-
-      let assignmentInfo = '';
-      if (req.status === 'rejected' || req.familyApprovalStatus === 'rejected') {
-        assignmentInfo = `
-          <div class="request-details" style="background:#ffebee; border-color:#c62828;">
-            <p style="color:#c62828; font-weight:bold;">${t('status_rejected_by_caregiver')}</p>
-            <p style="margin-top:4px; color:#b71c1c;"><strong>${t('sd_reason_label')}</strong> "${escapeHTML(req.familyRejectionReason || 'Caregiver marked this request as invalid.')}"</p>
-          </div>`;
-      } else if (req.status === 'cancelled') {
-        assignmentInfo = `
-          <div class="request-details" style="background:#ffebee; border-color:#c62828;">
-            <p style="color:#c62828; font-weight:bold;">❌ Cancelled</p>
-            <p style="margin-top:4px; color:#b71c1c;">You cancelled this request.</p>
-          </div>`;
-      } else if (req.status === 'fulfilled_by_family' || req.fulfilledByFamily) {
-        assignmentInfo = `
-          <div class="request-details" style="background:#e8f5e9; border-color:#2e7d32;">
-            <p style="color:#1b5e20; font-weight:bold;">${t('sd_completed_directly_caregiver')}</p>
-            <p style="margin-top:4px; color:#2e7d32;">${t('sd_completed_directly_caregiver_desc')}</p>
-          </div>`;
-      } else if ((req.status === 'awaiting_approval' || req.status === 'quoted') && (req.volunteer || (req.volunteerQuotes && req.volunteerQuotes.length > 0))) {
-        const volName = req.volunteer ? req.volunteer.name : (req.volunteerQuotes && req.volunteerQuotes[0] && req.volunteerQuotes[0].volunteer ? req.volunteerQuotes[0].volunteer.name : 'A Volunteer');
-        assignmentInfo = `
-          <div class="request-details" style="background:#fff8e1; border-color:#f57f17;">
-            <p><strong>${t('sd_volunteer_candidate')}</strong> ${escapeHTML(volName)}</p>
-            <p style="margin-top:6px; color:#e65100;">${t('sd_caregiver_reviewing_quotes')}</p>
-          </div>`;
-      } else if (['accepted', 'purchase_cost_submitted', 'purchase_funded', 'awaiting_verification'].includes(req.status) && req.volunteer) {
-        const volObj = typeof req.volunteer === 'object' ? req.volunteer : null;
-        const volName = volObj ? volObj.name : 'Assigned Volunteer';
-        const volPhone = volObj ? volObj.phone : '';
-        const volEmail = volObj ? volObj.email : '';
-
-        assignmentInfo = `
-          <div class="request-details" style="background:#f1f8e9; border-color:#558b2f;">
-            <p><strong>${t('sd_approved_volunteer')}</strong> ${escapeHTML(volName)}</p>
-            ${volPhone ? `<p><strong>${t('sd_volunteer_contact')}</strong> <a href="tel:${escapeHTML(volPhone)}" style="color: var(--color-primary-dark); font-weight: bold;">${escapeHTML(volPhone)}</a></p>` : ''}
-            ${volEmail ? `<p><strong>${t('sd_volunteer_email')}</strong> ${escapeHTML(volEmail)}</p>` : ''}
-          </div>`;
-      } else if (req.status === 'completed') {
-        const volObj = typeof req.volunteer === 'object' ? req.volunteer : null;
-        const volName = volObj ? volObj.name : 'Platform Volunteer';
-
-        const serviceFeeVal = Number((req.serviceFee !== undefined && req.serviceFee !== null)
-          ? req.serviceFee
-          : ((req.volunteerQuotes && req.volunteerQuotes[0] && req.volunteerQuotes[0].serviceFee !== undefined)
-            ? req.volunteerQuotes[0].serviceFee
-            : (req.paymentDetails ? req.paymentDetails.volunteerFee : 0))) || 0;
-
-        const itemCostVal = Number((req.actualPurchaseCost !== undefined && req.actualPurchaseCost !== null)
-          ? req.actualPurchaseCost
-          : (req.purchasePaymentDetails ? req.purchasePaymentDetails.amountPaid : (req.paymentDetails ? req.paymentDetails.itemsCost : 0))) || 0;
-
-        const tipVal = Number(req.tipAmount || (req.paymentDetails ? req.paymentDetails.tipAmount : 0) || (req.tipPaymentDetails ? req.tipPaymentDetails.amountPaid : 0)) || 0;
-        const totalSpent = itemCostVal + serviceFeeVal + tipVal;
-
-        const totalSpentBadge = `
-          <div style="margin-top: 10px; padding: 8px 14px; background: #e8f5e9; border-left: 4px solid #2e7d32; border-radius: 8px; font-size: 0.95rem; color: #1b5e20; font-weight: bold;">
-            ${t('sd_total_spent')} ₹${totalSpent} ${totalSpent === 0 ? `<span style="font-weight: normal; color: #2e7d32;">${t('sd_free_service')}</span>` : ''}
-          </div>`;
-
-        assignmentInfo = `
-          <div class="request-details">
-            <p><strong>${t('sd_assisted_by')}</strong> ${escapeHTML(volName)}</p>
-            <p><strong>${t('sd_completion_notes')}</strong> ${escapeHTML(req.resolutionNotes || t('sd_no_notes_provided'))}</p>
-            ${totalSpentBadge}
-          </div>`;
-      }
-
-      const nonCancellable = ['purchase_cost_submitted', 'purchase_funded', 'awaiting_verification', 'delivery_completed', 'completed', 'rejected', 'fulfilled_by_family', 'cancelled'];
-      const canDelete = !nonCancellable.includes(req.status);
-      const deleteButton = canDelete 
-        ? `<button class="btn btn-outline-danger" onclick="cancelHelpRequest('${req._id}')" style="padding: 10px 18px; font-size: 1rem; min-height: 44px;">${t('btn_cancel_request')}</button>` 
-        : '';
-
-      const cardUrgencyClass = req.urgency === 'high' ? 'urgency-high' : req.urgency === 'emergency' ? 'urgency-emergency' : '';
-
-      const categoryMap = {
-        'Grocery Shopping': 'skill_grocery',
-        'Medical Escort': 'skill_medical',
-        'Tech Support': 'skill_tech',
-        'Housekeeping': 'skill_housekeeping',
-        'Companionship': 'skill_companionship',
-        'Other': 'skill_other'
-      };
-      const categoryKey = categoryMap[req.category] || 'skill_other';
-      const categoryTranslated = t(categoryKey);
-
-      let prefVal = req.shoppingPreference || '';
-      if (prefVal === 'No Preference') prefVal = t('sd_pref_no_preference');
-      else if (prefVal === 'Store Brand Only') prefVal = t('sd_pref_store_brand');
-
-      return `
-        <div class="request-card ${cardUrgencyClass}">
-          <div class="request-card-header">
-            <div class="request-title">${escapeHTML(req.title)}</div>
-            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-              ${statusBadge}
-              ${urgencyBadge}
-              <span class="badge badge-urgency">${escapeHTML(categoryTranslated)}</span>
-            </div>
-          </div>
-          ${req.description ? `<div class="request-description">${escapeHTML(req.description)}</div>` : ''}
-          ${req.shoppingPreference ? `
-            <div style="margin-top: 6px; margin-bottom: 10px; padding: 8px 12px; background: #e3f2fd; border-left: 4px solid #1976d2; border-radius: 8px; font-size: 0.95rem; color: #0d47a1; font-weight: 600;">
-              ${t('sd_pref_label')}${escapeHTML(prefVal)}
-            </div>` : ''}
-          ${audioPlayerHtml}
-          ${assignmentInfo}
-          <div class="request-card-footer" style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem;">
-            <span style="font-size: 0.9rem; color: #666;">${t('sd_requested_on_label')}${new Date(req.createdAt).toLocaleDateString()}</span>
-            ${deleteButton}
-          </div>
-        </div>`;
-    }).join('');
   } else {
     requestList.innerHTML = `<div class="alert alert-danger">Error loading requests: ${res.data.message || 'Server error'}</div>`;
   }
+}
+
+// Update the top Stats Metrics
+function updateSeniorStats(requests) {
+  const totalEl = document.getElementById('statTotalCount');
+  const activeEl = document.getElementById('statActiveCount');
+  const completedEl = document.getElementById('statCompletedCount');
+  const countBadge = document.getElementById('requestsCountBadge');
+
+  const completedStatuses = ['completed', 'fulfilled_by_family', 'rejected', 'cancelled'];
+  
+  const total = requests.length;
+  const completedCount = requests.filter(r => 
+    r.status === 'completed' || r.status === 'fulfilled_by_family' || r.fulfilledByFamily
+  ).length;
+  const activeCount = requests.filter(r => 
+    !completedStatuses.includes(r.status) && !r.fulfilledByFamily && r.familyApprovalStatus !== 'rejected'
+  ).length;
+
+  if (totalEl) totalEl.textContent = total;
+  if (activeEl) activeEl.textContent = activeCount;
+  if (completedEl) completedEl.textContent = completedCount;
+  if (countBadge) countBadge.textContent = `${total} Request${total === 1 ? '' : 's'}`;
+}
+
+// Render Request Cards based on Filter and Search
+function renderFilteredRequests() {
+  const requestList = document.getElementById('requestList');
+  if (!requestList) return;
+
+  const completedStatuses = ['completed', 'fulfilled_by_family', 'rejected', 'cancelled'];
+
+  // Apply filters
+  let filtered = allFetchedRequests.filter(req => {
+    const isDone = completedStatuses.includes(req.status) || req.fulfilledByFamily || req.familyApprovalStatus === 'rejected';
+
+    // Tab filter
+    if (currentFilter === 'active' && isDone) return false;
+    if (currentFilter === 'completed' && !isDone) return false;
+
+    // Category filter
+    if (selectedCategoryFilter !== 'all' && req.category !== selectedCategoryFilter) {
+      return false;
+    }
+
+    // Search query filter
+    if (searchQuery) {
+      const titleMatch = (req.title || '').toLowerCase().includes(searchQuery);
+      const descMatch = (req.description || '').toLowerCase().includes(searchQuery);
+      const catMatch = (req.category || '').toLowerCase().includes(searchQuery);
+      if (!titleMatch && !descMatch && !catMatch) return false;
+    }
+
+    return true;
+  });
+
+  if (filtered.length === 0) {
+    if (allFetchedRequests.length === 0) {
+      requestList.innerHTML = `
+        <div class="senior-empty-state-card">
+          <div class="w-14 h-14 mx-auto mb-3 bg-brand-50 border border-brand-200/70 rounded-2xl flex items-center justify-center text-brand-600 shadow-2xs">
+            <svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 13.5h3.86a2.25 2.25 0 012.012 1.244l.256.512a2.25 2.25 0 002.013 1.244h3.218a2.25 2.25 0 002.013-1.244l.256-.512a2.25 2.25 0 012.013-1.244h3.859m-19.5.338V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18v-4.162c0-.224-.034-.447-.1-.661L19.24 5.338A2.25 2.25 0 0017.095 4H6.905A2.25 2.25 0 004.76 5.338L2.35 13.177a2.25 2.25 0 00-.1.661z" />
+            </svg>
+          </div>
+          <h3 class="senior-empty-title">No requests raised yet</h3>
+          <p class="senior-empty-desc">Need assistance with groceries, tech help, or doctor visits? Use the Quick Action buttons above to ask for help!</p>
+          <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+            <button onclick="document.getElementById('btnVoiceConfirmation')?.click()" class="btn btn-primary" style="padding: 12px 24px; font-weight: 700;">
+              🎙️ Speak a Request
+            </button>
+            <button onclick="document.getElementById('btnNewRequest')?.click()" class="btn btn-secondary" style="padding: 12px 24px; font-weight: 700;">
+              📝 Fill Form
+            </button>
+          </div>
+        </div>`;
+    } else {
+      requestList.innerHTML = `
+        <div class="senior-empty-state-card">
+          <span class="senior-empty-icon" aria-hidden="true">🔍</span>
+          <h3 class="senior-empty-title">No matching requests found</h3>
+          <p class="senior-empty-desc">Try clearing your search query or switching to "All Requests".</p>
+          <button onclick="clearSeniorFilters()" class="btn btn-secondary" style="padding: 10px 20px; font-weight: 700;">
+            Clear Search & Filters
+          </button>
+        </div>`;
+    }
+    return;
+  }
+
+  // Sort: Active first, then by date descending
+  const sortedRequests = [...filtered].sort((a, b) => {
+    const aDone = completedStatuses.includes(a.status) || a.fulfilledByFamily || a.familyApprovalStatus === 'rejected';
+    const bDone = completedStatuses.includes(b.status) || b.fulfilledByFamily || b.familyApprovalStatus === 'rejected';
+
+    if (!aDone && bDone) return -1;
+    if (aDone && !bDone) return 1;
+
+    const aTime = new Date(a.createdAt || 0).getTime();
+    const bTime = new Date(b.createdAt || 0).getTime();
+    return bTime - aTime;
+  });
+
+  requestList.innerHTML = sortedRequests.map(req => buildSeniorRequestCardHtml(req)).join('');
+}
+
+window.clearSeniorFilters = function() {
+  currentFilter = 'all';
+  searchQuery = '';
+  selectedCategoryFilter = 'all';
+
+  const searchInput = document.getElementById('searchRequestsInput');
+  if (searchInput) searchInput.value = '';
+
+  const catSelect = document.getElementById('filterCategorySelect');
+  if (catSelect) catSelect.value = 'all';
+
+  const filterTabBtns = document.querySelectorAll('.filter-tab-btn');
+  filterTabBtns.forEach(b => {
+    b.classList.remove('active');
+    if (b.getAttribute('data-filter') === 'all') b.classList.add('active');
+  });
+
+  renderFilteredRequests();
+};
+
+// Builder for individual request cards
+function buildSeniorRequestCardHtml(req) {
+  // Status Badge with Color & Professional SVG Icon
+  let statusBadge = '';
+  if (req.status === 'fulfilled_by_family' || req.familyApprovalStatus === 'fulfilled_by_family' || req.fulfilledByFamily) {
+    statusBadge = `<span class="req-status-pill inline-flex items-center gap-1.5" style="background:#dcfce7;color:#15803d;border:1.5px solid #86efac;"><svg class="w-3.5 h-3.5 text-emerald-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" /></svg><span>${t('status_fulfilled_by_family')}</span></span>`;
+  } else if (req.status === 'rejected' || req.familyApprovalStatus === 'rejected') {
+    statusBadge = `<span class="req-status-pill inline-flex items-center gap-1.5" style="background:#fee2e2;color:#b91c1c;border:1.5px solid #fca5a5;"><svg class="w-3.5 h-3.5 text-rose-600" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg><span>${t('status_rejected_by_caregiver')}</span></span>`;
+  } else if (req.status === 'cancelled') {
+    statusBadge = `<span class="req-status-pill inline-flex items-center gap-1.5" style="background:#fee2e2;color:#b91c1c;border:1.5px solid #fca5a5;"><svg class="w-3.5 h-3.5 text-rose-600" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg><span>${t('popup_cancelled_title') || 'Request Cancelled'}</span></span>`;
+  } else if (req.status === 'pending' && (req.familyApprovalStatus === 'none' || !req.familyApprovalStatus)) {
+    statusBadge = `<span class="req-status-pill inline-flex items-center gap-1.5" style="background:#fef3c7;color:#b45309;border:1.5px solid #fde68a;"><svg class="w-3.5 h-3.5 text-amber-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg><span>${t('status_awaiting_allotment')}</span></span>`;
+  } else if (req.status === 'pending' && req.familyApprovalStatus === 'approved') {
+    statusBadge = `<span class="req-status-pill inline-flex items-center gap-1.5" style="background:#e0e7ff;color:#4338ca;border:1.5px solid #c7d2fe;"><svg class="w-3.5 h-3.5 text-indigo-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" /></svg><span>${t('status_allotted_volunteers')}</span></span>`;
+  } else if (req.status === 'awaiting_approval' || req.status === 'quoted') {
+    statusBadge = `<span class="req-status-pill inline-flex items-center gap-1.5" style="background:#ffedd5;color:#c2410c;border:1.5px solid #fed7aa;"><svg class="w-3.5 h-3.5 text-orange-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg><span>${t('status_caregiver_reviewing')}</span></span>`;
+  } else if (req.status === 'accepted') {
+    statusBadge = `<span class="req-status-pill inline-flex items-center gap-1.5" style="background:#dbeafe;color:#1d4ed8;border:1.5px solid #93c5fd;"><svg class="w-3.5 h-3.5 text-blue-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" /></svg><span>${t('status_volunteer_assigned')}</span></span>`;
+  } else if (req.status === 'purchase_cost_submitted') {
+    statusBadge = `<span class="req-status-pill inline-flex items-center gap-1.5" style="background:#ffedd5;color:#c2410c;border:1.5px solid #fdba74;"><svg class="w-3.5 h-3.5 text-orange-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" /></svg><span>${t('status_cart_proof_submitted')}</span></span>`;
+  } else if (req.status === 'purchase_funded') {
+    statusBadge = `<span class="req-status-pill inline-flex items-center gap-1.5" style="background:#dcfce7;color:#15803d;border:1.5px solid #86efac;"><svg class="w-3.5 h-3.5 text-emerald-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg><span>${t('status_purchase_funded')}</span></span>`;
+  } else if (req.status === 'awaiting_verification') {
+    statusBadge = `<span class="req-status-pill inline-flex items-center gap-1.5" style="background:#f3e8ff;color:#7e22ce;border:1.5px solid #d8b4fe;"><svg class="w-3.5 h-3.5 text-purple-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg><span>${t('status_awaiting_verification')}</span></span>`;
+  } else if (req.status === 'completed') {
+    statusBadge = `<span class="req-status-pill inline-flex items-center gap-1.5" style="background:#dcfce7;color:#15803d;border:1.5px solid #86efac;"><svg class="w-3.5 h-3.5 text-emerald-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg><span>${t('status_service_completed')}</span></span>`;
+  }
+
+  // Urgency badge
+  let urgencyBadge = '';
+  if (req.urgency === 'high') {
+    urgencyBadge = `<span class="req-urgency-pill inline-flex items-center gap-1" style="background:#fef3c7;color:#b45309;border:1.5px solid #fde68a;"><svg class="w-3.5 h-3.5 text-amber-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" /></svg><span>${t('badge_high_priority')}</span></span>`;
+  } else if (req.urgency === 'emergency') {
+    urgencyBadge = `<span class="req-urgency-pill inline-flex items-center gap-1" style="background:#fee2e2;color:#b91c1c;border:1.5px solid #fca5a5;"><svg class="w-3.5 h-3.5 text-rose-600 animate-pulse" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" /></svg><span>${t('badge_sos_emergency')}</span></span>`;
+  }
+
+  // Category Icon & Tag
+  const categoryMap = {
+    'Grocery Shopping': { key: 'skill_grocery', icon: '<svg class="w-3.5 h-3.5 inline-block text-brand-600 mr-1" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" /></svg>' },
+    'Medical Escort': { key: 'skill_medical', icon: '<svg class="w-3.5 h-3.5 inline-block text-brand-600 mr-1" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>' },
+    'Tech Support': { key: 'skill_tech', icon: '<svg class="w-3.5 h-3.5 inline-block text-brand-600 mr-1" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3" /></svg>' },
+    'Housekeeping': { key: 'skill_housekeeping', icon: '<svg class="w-3.5 h-3.5 inline-block text-brand-600 mr-1" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" /></svg>' },
+    'Companionship': { key: 'skill_companionship', icon: '<svg class="w-3.5 h-3.5 inline-block text-brand-600 mr-1" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a.75.75 0 01-.76-.867l.322-1.748C3.178 16.897 2.25 14.569 2.25 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" /></svg>' },
+    'Other': { key: 'skill_other', icon: '<svg class="w-3.5 h-3.5 inline-block text-brand-600 mr-1" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z" /></svg>' }
+  };
+  const catInfo = categoryMap[req.category] || { key: 'skill_other', icon: '<svg class="w-3.5 h-3.5 inline-block text-brand-600 mr-1" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z" /></svg>' };
+  const categoryTranslated = t(catInfo.key);
+
+  // Audio recording player
+  let audioPlayerHtml = '';
+  if (req.audioFile) {
+    audioPlayerHtml = `
+      <div class="request-audio-player" style="margin: 0.8rem 0; padding: 10px 14px; background: #f0fdf4; border: 1.5px solid #bbf7d0; border-radius: 12px;">
+        <label style="display:flex; align-items:center; gap:6px; font-size:0.85rem; font-weight:700; color:#15803d; margin-bottom:6px;">
+          <svg class="w-4 h-4 text-emerald-600 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15a3 3 0 01-3-3V4.5a3 3 0 116 0V12a3 3 0 01-3 3z" /></svg>
+          <span>${t('sd_voice_recording_label')}</span>
+        </label>
+        <audio controls src="${req.audioFile}" style="width: 100%; height: 38px;"></audio>
+      </div>`;
+  }
+
+  // Stepper Visual Timeline Tracker
+  const stepperHtml = buildStepTrackerHtml(req);
+
+  // Nested Volunteer / Caregiver info
+  let assignmentInfo = '';
+  if (req.status === 'rejected' || req.familyApprovalStatus === 'rejected') {
+    assignmentInfo = `
+      <div class="req-caregiver-callout callout-rejected">
+        <h4 style="font-size:1.05rem; font-weight:800; margin-bottom:4px; display:flex; align-items:center; gap:6px;">
+          <svg class="w-4 h-4 text-rose-600" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+          <span>${t('status_rejected_by_caregiver')}</span>
+        </h4>
+        <p style="font-size:0.95rem;"><strong>${t('sd_reason_label')}</strong> "${escapeHTML(req.familyRejectionReason || 'Caregiver marked this request as invalid.')}"</p>
+      </div>`;
+  } else if (req.status === 'cancelled') {
+    assignmentInfo = `
+      <div class="req-caregiver-callout callout-rejected">
+        <h4 style="font-size:1.05rem; font-weight:800; margin-bottom:4px; display:flex; align-items:center; gap:6px;">
+          <svg class="w-4 h-4 text-rose-600" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+          <span>Request Cancelled</span>
+        </h4>
+        <p style="font-size:0.95rem;">You cancelled this help request.</p>
+      </div>`;
+  } else if (req.status === 'fulfilled_by_family' || req.fulfilledByFamily) {
+    assignmentInfo = `
+      <div class="req-caregiver-callout callout-fulfilled">
+        <h4 style="font-size:1.05rem; font-weight:800; margin-bottom:4px; display:flex; align-items:center; gap:6px;">
+          <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" /></svg>
+          <span>${t('sd_completed_directly_caregiver')}</span>
+        </h4>
+        <p style="font-size:0.95rem;">${t('sd_completed_directly_caregiver_desc')}</p>
+      </div>`;
+  } else if ((req.status === 'awaiting_approval' || req.status === 'quoted') && (req.volunteer || (req.volunteerQuotes && req.volunteerQuotes.length > 0))) {
+    const volName = req.volunteer ? req.volunteer.name : (req.volunteerQuotes && req.volunteerQuotes[0] && req.volunteerQuotes[0].volunteer ? req.volunteerQuotes[0].volunteer.name : 'A Volunteer');
+    assignmentInfo = `
+      <div class="req-caregiver-callout callout-review">
+        <h4 style="font-size:1.05rem; font-weight:800; margin-bottom:4px; display:flex; align-items:center; gap:6px;">
+          <svg class="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+          <span>${t('sd_volunteer_candidate')} ${escapeHTML(volName)}</span>
+        </h4>
+        <p style="font-size:0.95rem;">${t('sd_caregiver_reviewing_quotes')}</p>
+      </div>`;
+  } else if (['accepted', 'purchase_cost_submitted', 'purchase_funded', 'awaiting_verification'].includes(req.status) && req.volunteer) {
+    const volObj = typeof req.volunteer === 'object' ? req.volunteer : null;
+    const volName = volObj ? volObj.name : 'Assigned Volunteer';
+    const volPhone = volObj ? volObj.phone : '';
+    const volEmail = volObj ? volObj.email : '';
+
+    assignmentInfo = `
+      <div class="req-volunteer-card">
+        <div class="vol-profile-left">
+          <div class="vol-avatar-circle" aria-hidden="true">
+            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>
+          </div>
+          <div class="vol-profile-info">
+            <h4>${escapeHTML(volName)} <span style="font-size:0.8rem; background:#dcfce7; color:#15803d; padding:2px 8px; border-radius:10px; border:1px solid #86efac;">Verified Volunteer</span></h4>
+            <p>Ready to assist with this task.</p>
+          </div>
+        </div>
+        <div class="vol-actions-right">
+          ${volPhone ? `<a href="tel:${escapeHTML(volPhone)}" class="btn-call-vol"><svg class="w-3.5 h-3.5 inline-block mr-1" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z" /></svg>Call Volunteer (${escapeHTML(volPhone)})</a>` : ''}
+          ${volEmail ? `<span style="font-size:0.88rem; color:#64748b; display:inline-flex; align-items:center; gap:4px;"><svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" /></svg>${escapeHTML(volEmail)}</span>` : ''}
+        </div>
+      </div>`;
+  } else if (req.status === 'completed') {
+    const volObj = typeof req.volunteer === 'object' ? req.volunteer : null;
+    const volName = volObj ? volObj.name : 'Platform Volunteer';
+
+    const serviceFeeVal = Number((req.serviceFee !== undefined && req.serviceFee !== null)
+      ? req.serviceFee
+      : ((req.volunteerQuotes && req.volunteerQuotes[0] && req.volunteerQuotes[0].serviceFee !== undefined)
+        ? req.volunteerQuotes[0].serviceFee
+        : (req.paymentDetails ? req.paymentDetails.volunteerFee : 0))) || 0;
+
+    const itemCostVal = Number((req.actualPurchaseCost !== undefined && req.actualPurchaseCost !== null)
+      ? req.actualPurchaseCost
+      : (req.purchasePaymentDetails ? req.purchasePaymentDetails.amountPaid : (req.paymentDetails ? req.paymentDetails.itemsCost : 0))) || 0;
+
+    const tipVal = Number(req.tipAmount || (req.paymentDetails ? req.paymentDetails.tipAmount : 0) || (req.tipPaymentDetails ? req.tipPaymentDetails.amountPaid : 0)) || 0;
+    const totalSpent = itemCostVal + serviceFeeVal + tipVal;
+
+    assignmentInfo = `
+      <div class="bg-slate-50/70 border border-slate-200/90 rounded-2xl p-3.5 sm:p-4 my-3 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3.5 shadow-2xs">
+        <div class="flex items-start gap-3">
+          <div class="w-10 h-10 rounded-xl bg-brand-50 border border-brand-200/80 text-brand-600 flex items-center justify-center flex-shrink-0 shadow-2xs mt-0.5">
+            <svg class="w-5 h-5 text-brand-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+            </svg>
+          </div>
+          <div>
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">${t('sd_assisted_by')}</span>
+              <span class="text-sm font-extrabold text-slate-900">${escapeHTML(volName)}</span>
+              <span class="inline-flex items-center gap-1 text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/80">
+                <svg class="w-3 h-3 text-emerald-600" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                </svg>
+                Fulfilled
+              </span>
+            </div>
+            <p class="text-xs text-slate-600 font-medium mt-1 leading-normal">
+              <span class="font-bold text-slate-700">${t('sd_completion_notes')}</span> "${escapeHTML(req.resolutionNotes || t('sd_no_notes_provided'))}"
+            </p>
+          </div>
+        </div>
+        <div class="self-start sm:self-auto flex-shrink-0">
+          <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white border border-slate-200/90 shadow-2xs text-xs font-extrabold text-slate-800">
+            <span class="text-slate-400 font-medium text-[11px] uppercase tracking-wider">${t('sd_total_spent')}</span>
+            <span class="text-emerald-700 text-sm font-black">₹${totalSpent}</span>
+            ${totalSpent === 0 ? `<span class="text-[10px] font-bold text-slate-400">(${t('sd_free_service')})</span>` : ''}
+          </div>
+        </div>
+      </div>`;
+  }
+
+  // Cancel Button
+  const nonCancellable = ['purchase_cost_submitted', 'purchase_funded', 'awaiting_verification', 'delivery_completed', 'completed', 'rejected', 'fulfilled_by_family', 'cancelled'];
+  const canDelete = !nonCancellable.includes(req.status);
+  const deleteButton = canDelete 
+    ? `<button class="btn btn-outline-danger" onclick="cancelHelpRequest('${req._id}')" style="display:inline-flex; align-items:center; gap:6px; padding: 8px 16px; font-size: 0.92rem; border-radius: 12px; font-weight: 700; border-width: 1.5px;">
+        <svg class="w-4 h-4 text-rose-600" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+        <span>${t('btn_cancel_request')}</span>
+      </button>` 
+    : '';
+
+  const cardUrgencyClass = req.urgency === 'high' ? 'urgency-high' : req.urgency === 'emergency' ? 'urgency-emergency' : '';
+
+  let prefVal = req.shoppingPreference || '';
+  if (prefVal === 'No Preference') prefVal = t('sd_pref_no_preference');
+  else if (prefVal === 'Store Brand Only') prefVal = t('sd_pref_store_brand');
+
+  const createdDateStr = new Date(req.createdAt).toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric'
+  });
+
+  return `
+    <article class="senior-request-card ${cardUrgencyClass}" aria-label="Request: ${escapeHTML(req.title)}">
+      <!-- Top Row: Badges and Date -->
+      <div class="req-card-top-row">
+        <div class="req-card-badges">
+          <span class="req-category-pill">
+            <span>${catInfo.icon}</span> ${escapeHTML(categoryTranslated)}
+          </span>
+          ${statusBadge}
+          ${urgencyBadge}
+        </div>
+        <span class="req-date-text">
+          <svg class="w-3.5 h-3.5 text-slate-400 inline-block -mt-0.5 mr-1" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span>${t('sd_requested_on_label')}</span>${createdDateStr}
+        </span>
+      </div>
+
+      <!-- Title & Description -->
+      <h3 class="req-card-title">${escapeHTML(req.title)}</h3>
+      ${(req.description && req.description.trim() && req.description.trim().toLowerCase() !== req.title.trim().toLowerCase()) ? `<div class="req-card-desc">${escapeHTML(req.description)}</div>` : ''}
+
+      <!-- Shopping Preference if any -->
+      ${req.shoppingPreference ? `
+        <div style="margin-bottom: 0.8rem; padding: 7px 12px; background: #eff6ff; border-left: 3px solid #3b82f6; border-radius: 8px; font-size: 0.88rem; color: #1e40af; font-weight: 600; display:flex; align-items:center; gap:6px;">
+          <svg class="w-4 h-4 text-blue-600 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" /></svg>
+          <span>${t('sd_pref_label')}<strong>${escapeHTML(prefVal)}</strong></span>
+        </div>` : ''}
+
+      <!-- Voice Player -->
+      ${audioPlayerHtml}
+
+      <!-- Visual Step Progress Tracker -->
+      ${stepperHtml}
+
+      <!-- Volunteer / Caregiver details -->
+      ${assignmentInfo}
+
+      <!-- Footer Row -->
+      ${deleteButton ? `
+        <div class="req-card-footer-row" style="justify-content: flex-end;">
+          ${deleteButton}
+        </div>` : ''}
+    </article>`;
+}
+
+// Generate the 5-step interactive progress bar
+function buildStepTrackerHtml(req) {
+  if (req.status === 'cancelled') {
+    return `
+      <div class="req-step-tracker" style="background:#fff1f2; border-color:#fca5a5;">
+        <div class="step-item completed"><div class="step-icon-circle">1</div><span class="step-label">Created</span></div>
+        <div class="step-item cancelled"><div class="step-icon-circle">&#10005;</div><span class="step-label">Cancelled</span></div>
+      </div>`;
+  }
+  if (req.status === 'rejected' || req.familyApprovalStatus === 'rejected') {
+    return `
+      <div class="req-step-tracker" style="background:#fff1f2; border-color:#fca5a5;">
+        <div class="step-item completed"><div class="step-icon-circle">1</div><span class="step-label">Created</span></div>
+        <div class="step-item cancelled"><div class="step-icon-circle">&#10005;</div><span class="step-label">Declined</span></div>
+      </div>`;
+  }
+  if (req.status === 'fulfilled_by_family' || req.fulfilledByFamily) {
+    return `
+      <div class="req-step-tracker" style="background:#f0fdf4; border-color:#86efac;">
+        <div class="step-item completed"><div class="step-icon-circle">1</div><span class="step-label">Created</span></div>
+        <div class="step-item completed"><div class="step-icon-circle">&#10003;</div><span class="step-label">Family Fulfilled</span></div>
+        <div class="step-item completed"><div class="step-icon-circle">&#10003;</div><span class="step-label">Complete</span></div>
+      </div>`;
+  }
+
+  // Normal flow:
+  // 1: Created
+  // 2: Caregiver Approved / Quoting
+  // 3: Volunteer Assigned
+  // 4: In-Progress / Funded
+  // 5: Completed
+  let step = 1;
+  if (req.status === 'pending' && req.familyApprovalStatus === 'approved') step = 2;
+  else if (req.status === 'awaiting_approval' || req.status === 'quoted') step = 2;
+  else if (req.status === 'accepted') step = 3;
+  else if (['purchase_cost_submitted', 'purchase_funded', 'awaiting_verification'].includes(req.status)) step = 4;
+  else if (req.status === 'completed') step = 5;
+
+  const s1Class = step >= 1 ? (step === 1 ? 'current' : 'completed') : '';
+  const s2Class = step >= 2 ? (step === 2 ? 'current' : 'completed') : '';
+  const s3Class = step >= 3 ? (step === 3 ? 'current' : 'completed') : '';
+  const s4Class = step >= 4 ? (step === 4 ? 'current' : 'completed') : '';
+  const s5Class = step >= 5 ? 'completed' : '';
+
+  return `
+    <div class="req-step-tracker" aria-label="Request Progress Status">
+      <div class="step-item ${s1Class}">
+        <div class="step-icon-circle">${step > 1 ? '✓' : '1'}</div>
+        <span class="step-label">Submitted</span>
+      </div>
+      <div class="step-item ${s2Class}">
+        <div class="step-icon-circle">${step > 2 ? '✓' : '2'}</div>
+        <span class="step-label">Allotment</span>
+      </div>
+      <div class="step-item ${s3Class}">
+        <div class="step-icon-circle">${step > 3 ? '✓' : '3'}</div>
+        <span class="step-label">Volunteer</span>
+      </div>
+      <div class="step-item ${s4Class}">
+        <div class="step-icon-circle">${step > 4 ? '✓' : '4'}</div>
+        <span class="step-label">In-Progress</span>
+      </div>
+      <div class="step-item ${s5Class}">
+        <div class="step-icon-circle">${step === 5 ? '✓' : '5'}</div>
+        <span class="step-label">Completed</span>
+      </div>
+    </div>`;
 }
 
 // Cancel a pending/active request (Exposed globally to window)
@@ -539,7 +876,7 @@ window.cancelHelpRequest = async function cancelHelpRequest(id) {
     },
     '⚠️'
   );
-}
+};
 
 // Helper to escape HTML characters to prevent XSS
 function escapeHTML(str) {
@@ -640,13 +977,8 @@ function initVoiceConfirmationAssistant() {
 
   if (voiceModalClose) {
     voiceModalClose.addEventListener('click', () => {
-      closeVoiceModal();
-      showTabPopup(
-        t('popup_cancelled_title'),
-        t('popup_voice_assistant_cancelled_msg'),
-        '❌',
-        '#c62828'
-      );
+      if (window.speechSynthesis) window.speechSynthesis.cancel();
+      closeVoiceModal(true);
     });
   }
 
@@ -658,13 +990,15 @@ function initVoiceConfirmationAssistant() {
 
   if (btnVoiceConfirmNo) {
     btnVoiceConfirmNo.addEventListener('click', () => {
+      if (window.speechSynthesis) window.speechSynthesis.cancel();
       confirmVoiceRequest(false);
     });
   }
 
   window.addEventListener('click', (e) => {
     if (e.target === voiceModal) {
-      closeVoiceModal();
+      if (window.speechSynthesis) window.speechSynthesis.cancel();
+      closeVoiceModal(true);
     }
   });
 }
@@ -714,6 +1048,13 @@ function speakUtteranceWithLocale(text, locale, onEndCallback = null) {
   window.speechSynthesis.speak(utterance);
 }
 
+function getActiveVoiceLocale() {
+  const appLang = (typeof getLang === 'function' ? getLang() : localStorage.getItem('agewell_lang')) || 'en';
+  if (appLang === 'mr') return 'mr-IN';
+  if (appLang === 'hi') return 'hi-IN';
+  return 'en-US';
+}
+
 async function openVoiceModal() {
   const voiceModal = document.getElementById('voiceModal');
   if (voiceModal) voiceModal.style.display = 'flex';
@@ -721,26 +1062,22 @@ async function openVoiceModal() {
   isVoiceModalOpen = true;
   resetVoiceModalState();
   
-  // Sync voiceLangSelect with currently selected app language
-  const appLang = getLang();
-  const voiceLangSelect = document.getElementById('voiceLangSelect');
-  if (voiceLangSelect) {
-    if (appLang === 'hi') {
-      voiceLangSelect.value = 'hi-IN';
-    } else if (appLang === 'mr') {
-      voiceLangSelect.value = 'mr-IN';
-    } else {
-      voiceLangSelect.value = 'en-IN';
-    }
-  }
-
-  const selectedLang = voiceLangSelect?.value || 'en-IN';
+  const selectedLang = getActiveVoiceLocale();
 
   const promptText = 
-    selectedLang === 'hi-IN' ? "कृपया अपना अनुरोध बोलें, हम सुन रहे हैं।" : 
-    selectedLang === 'mr-IN' ? "कृपया आपली विनंती बोला, आम्ही ऐकत आहोत।" : 
+    selectedLang.startsWith('mr') ? "कृपया आपली मदत विनंती सांगा, आम्ही ऐकत आहोत." : 
+    selectedLang.startsWith('hi') ? "कृपया अपना सहायता अनुरोध बोलें, हम सुन रहे हैं।" : 
     "Please speak out your request, we are listening.";
   
+  const stepStatus = document.getElementById('voiceStepStatus');
+  const subStatus = document.getElementById('voiceSubStatus');
+  if (stepStatus) {
+    stepStatus.textContent = selectedLang.startsWith('mr') ? '🎙️ आपली विनंती बोला...' : selectedLang.startsWith('hi') ? '🎙️ अपना अनुरोध बोलें...' : '🎙️ Speak your request now...';
+  }
+  if (subStatus) {
+    subStatus.textContent = selectedLang.startsWith('mr') ? 'कृपया आपल्याला काय मदत हवी आहे ते सांगा.' : selectedLang.startsWith('hi') ? 'आपको क्या मदद चाहिए, कृपया बताएं।' : 'Listening to what you need help with.';
+  }
+
   speakUtteranceWithLocale(promptText, selectedLang, () => {
     if (isVoiceModalOpen) startRecordingAndSpeechRecognition();
   });
@@ -769,26 +1106,26 @@ async function openVoiceModalForFormRequest() {
   
   // Clear any voice assistant state
   currentTranscript = '';
-  const selectedLang = document.getElementById('voiceLangSelect')?.value || 'en-IN';
+  const selectedLang = getActiveVoiceLocale();
   
   const transcriptBox = document.getElementById('voiceTranscriptBox');
   if (transcriptBox) {
-    transcriptBox.innerHTML = selectedLang === 'hi-IN' ? '<em style="color: #666;">आवाज संदेश रिकॉर्ड किया गया है</em>' :
-                               selectedLang === 'mr-IN' ? '<em style="color: #666;">आवाज संदेश रेकॉर्ड केला आहे</em>' :
+    transcriptBox.innerHTML = selectedLang.startsWith('hi') ? '<em style="color: #666;">आवाज संदेश रिकॉर्ड किया गया है</em>' :
+                               selectedLang.startsWith('mr') ? '<em style="color: #666;">आवाज संदेश रेकॉर्ड केला आहे</em>' :
                                '<em style="color: #666;">Voice message has been recorded</em>';
   }
 
   // Go directly to confirmation
   const readbackPhrase = 
-    selectedLang === 'hi-IN' ? `मैंने आपका अनुरोध रिकॉर्ड किया। क्या मुझे यह अनुरोध भेजना चाहिए?` :
-    selectedLang === 'mr-IN' ? `मी तुमची विनंती रेकॉर्ड केली. मी ही विनंती पाठवू का?` :
+    selectedLang.startsWith('hi') ? `मैंने आपका अनुरोध रिकॉर्ड किया। क्या मुझे यह अनुरोध भेजना चाहिए?` :
+    selectedLang.startsWith('mr') ? `मी तुमची विनंती रेकॉर्ड केली. मी ही विनंती पाठवू का?` :
     `I recorded your request. Should I send this request?`;
 
   const readoutText = document.getElementById('voiceReadoutText');
   if (readoutText) {
     readoutText.textContent = 
-      selectedLang === 'hi-IN' ? `🔊 "क्या मुझे यह अनुरोध भेजना चाहिए?"` :
-      selectedLang === 'mr-IN' ? `🔊 "मी ही विनंती पाठवू का?"` :
+      selectedLang.startsWith('hi') ? `🔊 "क्या मुझे यह अनुरोध भेजना चाहिए?"` :
+      selectedLang.startsWith('mr') ? `🔊 "मी ही विनंती पाठवू का?"` :
       `🔊 "Should I send this request?"`;
   }
 
@@ -797,8 +1134,8 @@ async function openVoiceModalForFormRequest() {
 
   const stepStatus = document.getElementById('voiceStepStatus');
   const subStatus = document.getElementById('voiceSubStatus');
-  if (stepStatus) stepStatus.textContent = selectedLang === 'hi-IN' ? '🔊 आपका अनुरोध पुष्टि के लिए पूछा जा रहा है...' : selectedLang === 'mr-IN' ? '🔊 तुमची विनंती पुष्टीकरणासाठी विचारत आहे...' : '🔊 Asking confirmation...';
-  if (subStatus) subStatus.textContent = selectedLang === 'hi-IN' ? 'कृपया पुष्टि करने के लिए ध्यान से सुनें।' : selectedLang === 'mr-IN' ? 'कृपया पुष्टी करण्यासाठी काळजीपूर्वक ऐका.' : 'Please listen carefully to confirm.';
+  if (stepStatus) stepStatus.textContent = selectedLang.startsWith('hi') ? '🔊 आपका अनुरोध पुष्टि के लिए पूछा जा रहा है...' : selectedLang.startsWith('mr') ? '🔊 तुमची विनंती पुष्टीकरणासाठी विचारत आहे...' : '🔊 Asking confirmation...';
+  if (subStatus) subStatus.textContent = selectedLang.startsWith('hi') ? 'कृपया पुष्टि करने के लिए ध्यान से सुनें।' : selectedLang.startsWith('mr') ? 'कृपया पुष्टी करण्यासाठी काळजीपूर्वक ऐका.' : 'Please listen carefully to confirm.';
 
   speakUtteranceWithLocale(readbackPhrase, selectedLang, () => {
     listenForVoiceConfirmation();
@@ -822,19 +1159,20 @@ function resetVoiceModalState() {
   if (stepStatus) stepStatus.textContent = t('sd_voice_status_listening');
   if (subStatus) subStatus.textContent = t('sd_voice_sub_listening');
   
-  const listenMsg = getLang() === 'hi' ? 'आपकी आवाज़ सुनी जा रही है...' : getLang() === 'mr' ? 'तुमचा आवाज ऐकला जात आहे...' : 'Listening to your voice...';
+  const appLang = (typeof getLang === 'function' ? getLang() : localStorage.getItem('agewell_lang')) || 'en';
+  const listenMsg = appLang === 'hi' ? 'आपकी आवाज़ सुनी जा रही है...' : appLang === 'mr' ? 'तुमचा आवाज ऐकला जात आहे...' : 'Listening to your voice...';
   if (transcriptBox) transcriptBox.innerHTML = `<em style="color: #999;">${listenMsg}</em>`;
   if (confirmArea) confirmArea.style.display = 'none';
   if (confidenceBadge) confidenceBadge.style.display = 'none';
   if (pulse) {
-    pulse.style.background = 'linear-gradient(135deg, #1976d2, #0288d1)';
-    pulse.textContent = '🎙️';
+    pulse.className = "w-20 h-20 mx-auto rounded-full bg-brand-600 text-white flex items-center justify-center shadow-lg shadow-brand-500/30 mb-3 transition-all animate-pulse";
+    pulse.innerHTML = `<svg class="w-9 h-9 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15a3 3 0 01-3-3V4.5a3 3 0 116 0V12a3 3 0 01-3 3z" /></svg>`;
   }
 }
 
 async function startRecordingAndSpeechRecognition() {
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  const selectedLang = document.getElementById('voiceLangSelect')?.value || 'en-IN';
+  const selectedLang = getActiveVoiceLocale();
 
   try {
     voiceAudioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -901,7 +1239,7 @@ async function startRecordingAndSpeechRecognition() {
     showTabPopup(
       t('popup_mic_required_title'),
       t('popup_mic_required_msg2'),
-      '🎙️',
+      '⚠️',
       '#e65100'
     );
     closeVoiceModal();
@@ -910,6 +1248,9 @@ async function startRecordingAndSpeechRecognition() {
 
 
 function stopSpeechAndAudioRecording() {
+  if (window.speechSynthesis) {
+    window.speechSynthesis.cancel();
+  }
   if (voiceRecognition) {
     try { voiceRecognition.stop(); } catch (e) {}
     voiceRecognition = null;
@@ -929,10 +1270,10 @@ function stopSpeechAndAudioRecording() {
 
 function finishRecordingAndReadback() {
   stopSpeechAndAudioRecording();
-  const selectedLang = document.getElementById('voiceLangSelect')?.value || 'en-IN';
+  const selectedLang = getActiveVoiceLocale();
 
   if (!currentTranscript || currentTranscript.trim().length === 0) {
-    currentTranscript = selectedLang === 'hi-IN' ? 'आवाज द्वारा दर्ज सहायता अनुरोध' : selectedLang === 'mr-IN' ? 'आवाज द्वारे नोंदवलेली मदत विनंती' : 'Help request recorded via voice';
+    currentTranscript = selectedLang.startsWith('hi') ? 'आवाज द्वारा दर्ज सहायता अनुरोध' : selectedLang.startsWith('mr') ? 'आवाज द्वारे नोंदवलेली मदत विनंती' : 'Help request recorded via voice';
   }
 
   const cleanTranscript = currentTranscript.trim();
@@ -952,17 +1293,17 @@ function finishRecordingAndReadback() {
   const subStatus = document.getElementById('voiceSubStatus');
   const pulse = document.getElementById('voiceMicPulse');
   
-  if (stepStatus) stepStatus.textContent = selectedLang === 'hi-IN' ? '🔊 आपका अनुरोध पढ़कर सुनाया जा रहा है...' : selectedLang === 'mr-IN' ? '🔊 तुमची विनंती वाचून दाखवत आहे...' : '🔊 Reading your request back...';
-  if (subStatus) subStatus.textContent = selectedLang === 'hi-IN' ? 'कृपया पुष्टि करने के लिए ध्यान से सुनें।' : selectedLang === 'mr-IN' ? 'कृपया पुष्टी करण्यासाठी काळजीपूर्वक ऐका.' : 'Please listen carefully to confirm.';
+  if (stepStatus) stepStatus.textContent = selectedLang.startsWith('hi') ? 'आपका अनुरोध पढ़कर सुनाया जा रहा है...' : selectedLang.startsWith('mr') ? 'तुमची विनंती वाचून दाखवत आहे...' : 'Reading your request back...';
+  if (subStatus) subStatus.textContent = selectedLang.startsWith('hi') ? 'कृपया पुष्टि करने के लिए ध्यान से सुनें।' : selectedLang.startsWith('mr') ? 'कृपया पुष्टी करण्यासाठी काळजीपूर्वक ऐका.' : 'Please listen carefully to confirm.';
   if (pulse) {
-    pulse.style.background = 'linear-gradient(135deg, #43a047, #2e7d32)';
-    pulse.textContent = '🔊';
+    pulse.className = "w-20 h-20 mx-auto rounded-full bg-emerald-600 text-white flex items-center justify-center shadow-lg shadow-emerald-500/30 mb-3 transition-all animate-pulse";
+    pulse.innerHTML = `<svg class="w-9 h-9 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19.114 5.636a9 9 0 010 12.728M16.463 8.288a5.25 5.25 0 010 7.424M6.75 8.25l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.396C2.806 8.757 3.63 8.25 4.51 8.25H6.75z" /></svg>`;
   }
 
   // TTS Readback
   const readbackPhrase = 
-    selectedLang === 'hi-IN' ? `मैंने आपका अनुरोध रिकॉर्ड किया: ${cleanTranscript}। क्या मुझे यह अनुरोध भेजना चाहिए?` :
-    selectedLang === 'mr-IN' ? `मी तुमची विनंती रेकॉर्ड केली: ${cleanTranscript}। मी ही विनंती पाठवू का?` :
+    selectedLang.startsWith('hi') ? `मैंने आपका अनुरोध रिकॉर्ड किया: ${cleanTranscript}। क्या मुझे यह अनुरोध भेजना चाहिए?` :
+    selectedLang.startsWith('mr') ? `मी तुमची विनंती रेकॉर्ड केली: ${cleanTranscript}। मी ही विनंती पाठवू का?` :
     `I recorded your request: ${cleanTranscript}. Should I send this request?`;
 
   const confirmArea = document.getElementById('voiceConfirmationArea');
@@ -978,13 +1319,13 @@ function listenForVoiceConfirmation() {
   const stepStatus = document.getElementById('voiceStepStatus');
   const subStatus = document.getElementById('voiceSubStatus');
   const pulse = document.getElementById('voiceMicPulse');
-  const selectedLang = document.getElementById('voiceLangSelect')?.value || 'en-IN';
+  const selectedLang = getActiveVoiceLocale();
 
-  if (stepStatus) stepStatus.textContent = selectedLang === 'hi-IN' ? '🎙️ "हाँ" या "नहीं" बोलें...' : selectedLang === 'mr-IN' ? '🎙️ "हो" किंवा "नाही" बोला...' : '🎙️ Listening for "Yes" or "No"...';
-  if (subStatus) subStatus.textContent = selectedLang === 'hi-IN' ? 'भेजने के लिए "हाँ" या रद्द करने के लिए "नहीं" कहें।' : selectedLang === 'mr-IN' ? 'पाठवण्यासाठी "हो" किंवा रद्द करण्यासाठी "नाही" म्हणा.' : 'Say "Yes" to send or "No" to discard.';
+  if (stepStatus) stepStatus.textContent = selectedLang.startsWith('hi') ? '"हाँ" या "नहीं" बोलें...' : selectedLang.startsWith('mr') ? '"हो" किंवा "नाही" बोला...' : 'Listening for "Yes" or "No"...';
+  if (subStatus) subStatus.textContent = selectedLang.startsWith('hi') ? 'भेजने के लिए "हाँ" या रद्द करने के लिए "नहीं" कहें।' : selectedLang.startsWith('mr') ? 'पाठवण्यासाठी "हो" किंवा रद्द करण्यासाठी "नाही" म्हणा.' : 'Say "Yes" to send or "No" to discard.';
   if (pulse) {
-    pulse.style.background = 'linear-gradient(135deg, #e65100, #f57f17)';
-    pulse.textContent = '👂';
+    pulse.className = "w-20 h-20 mx-auto rounded-full bg-amber-500 text-white flex items-center justify-center shadow-lg shadow-amber-500/30 mb-3 transition-all animate-pulse";
+    pulse.innerHTML = `<svg class="w-9 h-9 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15a3 3 0 01-3-3V4.5a3 3 0 116 0V12a3 3 0 01-3 3z" /></svg>`;
   }
 
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -1034,14 +1375,16 @@ function listenForVoiceConfirmation() {
 }
 
 async function confirmVoiceRequest(shouldSend) {
-  if (window.speechSynthesis) window.speechSynthesis.cancel();
+  if (window.speechSynthesis) {
+    window.speechSynthesis.cancel();
+  }
   stopSpeechAndAudioRecording();
-  const selectedLang = document.getElementById('voiceLangSelect')?.value || 'en-IN';
+  const selectedLang = getActiveVoiceLocale();
 
   if (!shouldSend) {
-    const cancelMsg = selectedLang === 'hi-IN' ? 'आपका आवाज अनुरोध रद्द कर दिया गया है।' : selectedLang === 'mr-IN' ? 'तुमची आवाज विनंती रद्द करण्यात आली आहे.' : 'Your voice request has been cancelled and discarded.';
     closeVoiceModal(true);
-    const rejectTitle = selectedLang === 'hi-IN' ? 'अनुरोध अस्वीकृत / रद्द' : selectedLang === 'mr-IN' ? 'विनंती नाकारली / रद्द' : 'Request Rejected / Discarded';
+    const cancelMsg = selectedLang.startsWith('hi') ? 'आपका आवाज अनुरोध रद्द कर दिया गया है।' : selectedLang.startsWith('mr') ? 'तुमची आवाज विनंती रद्द करण्यात आली आहे.' : 'Your voice request has been cancelled and discarded.';
+    const rejectTitle = selectedLang.startsWith('hi') ? 'अनुरोध अस्वीकृत / रद्द' : selectedLang.startsWith('mr') ? 'विनंती नाकारली / रद्द' : 'Request Rejected / Discarded';
     showTabPopup(
       rejectTitle,
       cancelMsg,
@@ -1053,12 +1396,11 @@ async function confirmVoiceRequest(shouldSend) {
 
   const stepStatus = document.getElementById('voiceStepStatus');
   const subStatus = document.getElementById('voiceSubStatus');
-  if (stepStatus) stepStatus.textContent = selectedLang === 'hi-IN' ? '⏳ अनुरोध भेजा जा रहा है...' : selectedLang === 'mr-IN' ? '⏳ विनंती पाठवली जात आहे...' : '⏳ Submitting request...';
-  if (subStatus) subStatus.textContent = selectedLang === 'hi-IN' ? 'कृपया एक क्षण प्रतीक्षा करें।' : selectedLang === 'mr-IN' ? 'कृपया क्षणभर थांबा.' : 'Please wait a moment.';
+  if (stepStatus) stepStatus.textContent = selectedLang.startsWith('hi') ? 'अनुरोध भेजा जा रहा है...' : selectedLang.startsWith('mr') ? 'विनंती पाठवली जात आहे...' : 'Submitting request...';
+  if (subStatus) subStatus.textContent = selectedLang.startsWith('hi') ? 'कृपया एक क्षण प्रतीक्षा करें।' : selectedLang.startsWith('mr') ? 'कृपया क्षणभर थांबा.' : 'Please wait a moment.';
 
-  const sendMsg = selectedLang === 'hi-IN' ? 'आपका अनुरोध भेजा जा रहा है।' : selectedLang === 'mr-IN' ? 'तुमची विनंती आता पाठवत आहे.' : 'Sending your request now.';
+  const sendMsg = selectedLang.startsWith('hi') ? 'आपका अनुरोध भेजा जा रहा है।' : selectedLang.startsWith('mr') ? 'तुमची विनंती आता पाठवत आहे.' : 'Sending your request now.';
   speakUtteranceWithLocale(sendMsg, selectedLang);
-
 
   if (isFormRequestSubmission) {
     const res = await apiCall('/requests', 'POST', formRequestDataToSubmit);
@@ -1075,7 +1417,7 @@ async function confirmVoiceRequest(shouldSend) {
         '✅',
         '#2e7d32'
       );
-      const successVoice = selectedLang === 'hi-IN' ? 'आपका अनुरोध सफलतापूर्वक जमा कर दिया गया है।' : selectedLang === 'mr-IN' ? 'तुमची विनंती यशस्वीरित्या सबमिट केली आहे.' : 'Your request has been submitted successfully.';
+      const successVoice = selectedLang.startsWith('hi') ? 'आपका अनुरोध सफलतापूर्वक जमा कर दिया गया है। पास के स्वयंसेवकों को सूचित किया जाएगा।' : selectedLang.startsWith('mr') ? 'तुमची विनंती यशस्वीरित्या सबमिट केली आहे. जवळील स्वयंसेवकांना सूचित केले जाईल.' : 'Your request has been submitted successfully. Volunteers nearby will be notified.';
       speakUtteranceWithLocale(successVoice, selectedLang);
       loadRequests();
     } else {
@@ -1085,7 +1427,7 @@ async function confirmVoiceRequest(shouldSend) {
         '❌',
         '#c62828'
       );
-      const failVoice = selectedLang === 'hi-IN' ? 'आपका अनुरोध सबमिट करने में विफल रहा।' : selectedLang === 'mr-IN' ? 'तुमची विनंती सबमिट करण्यात अयशस्वी झाली.' : 'Your request submission failed.';
+      const failVoice = selectedLang.startsWith('hi') ? 'आपका अनुरोध सबमिट करने में विफल रहा।' : selectedLang.startsWith('mr') ? 'तुमची विनंती सबमिट करण्यात अयशस्वी झाली.' : 'Your request submission failed.';
       speakUtteranceWithLocale(failVoice, selectedLang);
     }
     return;
@@ -1165,7 +1507,7 @@ async function confirmVoiceRequest(shouldSend) {
         '⚠️',
         '#f57f17'
       );
-      const lowConfVoice = selectedLang === 'hi-IN' ? 'कम आत्मविश्वास के कारण, आपके देखभालकर्ता को सत्यापित करने के लिए सूचित किया गया है।' : selectedLang === 'mr-IN' ? 'कमी विश्वासार्हतेमुळे, तुमच्या काळजीवाहूला पडताळणीसाठी सूचित केले आहे.' : 'Because AI confidence was low, your caregiver has been notified to verify your request.';
+      const lowConfVoice = selectedLang.startsWith('hi') ? 'कम आत्मविश्वास के कारण, आपके देखभालकर्ता को सत्यापित करने के लिए सूचित किया गया है।' : selectedLang.startsWith('mr') ? 'कमी विश्वासार्हतेमुळे, तुमच्या काळजीवाहूला पडताळणीसाठी सूचित केले आहे.' : 'Because AI confidence was low, your caregiver has been notified to verify your request.';
       speakUtteranceWithLocale(lowConfVoice, selectedLang);
     } else {
       showTabPopup(
@@ -1174,7 +1516,7 @@ async function confirmVoiceRequest(shouldSend) {
         '✅',
         '#2e7d32'
       );
-      const successVoice = selectedLang === 'hi-IN' ? 'आपका अनुरोध सफलतापूर्वक जमा कर दिया गया है।' : selectedLang === 'mr-IN' ? 'तुमची विनंती यशस्वीरित्या सबमिट केली आहे.' : 'Your request has been submitted successfully.';
+      const successVoice = selectedLang.startsWith('hi') ? 'आपका आवाज अनुरोध सफलतापूर्वक सत्यापित और जमा कर दिया गया है। पास के स्वयंसेवकों को सूचित किया जाएगा।' : selectedLang.startsWith('mr') ? 'तुमची आवाज विनंती यशस्वीरित्या सबमिट केली आहे. जवळील स्वयंसेवकांना सूचित केले जाईल.' : 'Your voice request has been confirmed and submitted successfully! Volunteers nearby will be notified.';
       speakUtteranceWithLocale(successVoice, selectedLang);
     }
     loadRequests();
@@ -1185,24 +1527,66 @@ async function confirmVoiceRequest(shouldSend) {
       '❌',
       '#c62828'
     );
-    const failVoice = selectedLang === 'hi-IN' ? 'आपका अनुरोध सबमिट करने में विफल रहा।' : selectedLang === 'mr-IN' ? 'तुमची विनंती सबमिट करण्यात अयशस्वी झाली.' : 'Your request submission failed.';
+    const failVoice = selectedLang.startsWith('hi') ? 'आपका अनुरोध सबमिट करने में विफल रहा।' : selectedLang.startsWith('mr') ? 'तुमची विनंती सबमिट करण्यात अयशस्वी झाली.' : 'Your request submission failed.';
     speakUtteranceWithLocale(failVoice, selectedLang);
   }
 }
 
-function showTabPopup(title, message, icon = '🎉', borderColor = '#2e7d32') {
+function getSvgForPopup(iconType) {
+  if (iconType === '🔕' || iconType === 'bell-off') {
+    return {
+      svg: `<svg class="w-8 h-8 text-rose-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0M3 3l18 18" /></svg>`,
+      bg: 'bg-rose-50 border-rose-200/80 text-rose-600'
+    };
+  }
+  if (iconType === '🎉' || iconType === '✅' || iconType === 'success') {
+    return {
+      svg: `<svg class="w-8 h-8 text-emerald-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>`,
+      bg: 'bg-emerald-50 border-emerald-200/80 text-emerald-600'
+    };
+  }
+  if (iconType === '❌' || iconType === 'error') {
+    return {
+      svg: `<svg class="w-8 h-8 text-rose-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>`,
+      bg: 'bg-rose-50 border-rose-200/80 text-rose-600'
+    };
+  }
+  if (iconType === '⚠️' || iconType === 'warning') {
+    return {
+      svg: `<svg class="w-8 h-8 text-amber-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>`,
+      bg: 'bg-amber-50 border-amber-200/80 text-amber-600'
+    };
+  }
+  if (iconType === '❓' || iconType === 'question') {
+    return {
+      svg: `<svg class="w-8 h-8 text-amber-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z" /></svg>`,
+      bg: 'bg-amber-50 border-amber-200/80 text-amber-600'
+    };
+  }
+  return {
+    svg: `<svg class="w-8 h-8 text-brand-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" /></svg>`,
+    bg: 'bg-brand-50 border-brand-200/80 text-brand-600'
+  };
+}
+
+function showTabPopup(title, message, icon = '🎉', borderColor = '#026bc9') {
   const modal = document.getElementById('tabPopupModal');
   const titleEl = document.getElementById('tabPopupTitle');
   const msgEl = document.getElementById('tabPopupMessage');
   const iconEl = document.getElementById('tabPopupIcon');
+  const iconBadge = document.getElementById('tabPopupIconBadge');
   const closeBtn = document.getElementById('btnTabPopupClose');
-  const modalContent = modal ? modal.querySelector('.modal-content') : null;
 
   if (titleEl) titleEl.textContent = title;
   if (msgEl) msgEl.textContent = message;
-  if (iconEl) iconEl.textContent = icon;
-  if (titleEl) titleEl.style.color = borderColor;
-  if (modalContent) modalContent.style.borderColor = borderColor;
+
+  const iconConfig = getSvgForPopup(icon);
+  if (iconEl) {
+    iconEl.innerHTML = iconConfig.svg;
+  }
+  if (iconBadge) {
+    iconBadge.className = `w-16 h-16 rounded-2xl flex items-center justify-center shadow-xs border ${iconConfig.bg}`;
+  }
 
   if (modal) {
     modal.style.display = 'flex';
@@ -1220,12 +1604,20 @@ function showTabConfirm(title, message, onConfirm, icon = '❓') {
   const titleEl = document.getElementById('tabConfirmTitle');
   const msgEl = document.getElementById('tabConfirmMessage');
   const iconEl = document.getElementById('tabConfirmIcon');
+  const iconBadge = document.getElementById('tabConfirmIconBadge');
   const yesBtn = document.getElementById('btnTabConfirmYes');
   const noBtn = document.getElementById('btnTabConfirmNo');
 
   if (titleEl) titleEl.textContent = title;
   if (msgEl) msgEl.textContent = message;
-  if (iconEl) iconEl.textContent = icon;
+
+  const iconConfig = getSvgForPopup(icon);
+  if (iconEl) {
+    iconEl.innerHTML = iconConfig.svg;
+  }
+  if (iconBadge) {
+    iconBadge.className = `w-16 h-16 rounded-2xl flex items-center justify-center shadow-xs border ${iconConfig.bg}`;
+  }
 
   if (modal) {
     modal.style.display = 'flex';
@@ -1241,7 +1633,7 @@ function showTabConfirm(title, message, onConfirm, icon = '❓') {
   if (noBtn) {
     noBtn.onclick = () => {
       if (modal) modal.style.display = 'none';
-      showTabPopup(t('popup_aborted_title'), t('popup_aborted_msg'), 'ℹ️', '#1565c0');
+      showTabPopup(t('popup_aborted_title'), t('popup_aborted_msg'), 'ℹ️', '#026bc9');
     };
   }
 }

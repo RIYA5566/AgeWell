@@ -70,6 +70,10 @@ exports.registerUser = async (req, res) => {
       role,
       phone,
       address,
+      dob,
+      age,
+      gender,
+      idDocType,
       emergencyContact,
       skills,
       linkedSeniorEmail,
@@ -90,10 +94,41 @@ exports.registerUser = async (req, res) => {
     const userData = { name, email, password, role, phone, address, language: language || 'en' };
 
     if (role === 'senior') {
+      let seniorAge = Number(age);
+      if (dob) {
+        const birthDate = new Date(dob);
+        const today = new Date();
+        let calculatedAge = today.getFullYear() - birthDate.getFullYear();
+        const monthDiff = today.getMonth() - birthDate.getMonth();
+        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+          calculatedAge--;
+        }
+        seniorAge = calculatedAge;
+        userData.dob = dob;
+      }
+      if (!seniorAge || isNaN(seniorAge) || seniorAge < 60) {
+        return res.status(400).json({
+          success: false,
+          message: 'Senior Citizen registration requires age 60 or above.'
+        });
+      }
       if (!emergencyContact) {
         return res.status(400).json({ success: false, message: 'Emergency contact is required for Senior Citizens' });
       }
+      userData.age = seniorAge;
       userData.emergencyContact = emergencyContact;
+      userData.idDocType = idDocType || 'Aadhaar Card';
+      userData.isSeniorVerified = true;
+
+      if (req.files && req.files.seniorIdCard && req.files.seniorIdCard[0]) {
+        userData.seniorIdCard = `/uploads/kyc/${req.files.seniorIdCard[0].filename}`;
+      } else if (req.files && req.files.govtIdCard && req.files.govtIdCard[0]) {
+        userData.seniorIdCard = `/uploads/kyc/${req.files.govtIdCard[0].filename}`;
+      }
+
+      if (gender) {
+        userData.gender = gender;
+      }
     } else if (role === 'volunteer') {
       userData.skills = Array.isArray(skills) ? skills : (skills ? skills.split(',').map(s => s.trim()) : []);
       userData.aadhaarNumber = aadhaarNumber || '';

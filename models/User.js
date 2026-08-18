@@ -38,6 +38,31 @@ const userSchema = new mongoose.Schema({
   },
 
   // ─── Senior Citizen fields ────────────────────────────────────────────────
+  dob: {
+    type: String, // YYYY-MM-DD
+    default: ''
+  },
+  age: {
+    type: Number,
+    default: null
+  },
+  gender: {
+    type: String,
+    enum: ['Male', 'Female', 'Other', ''],
+    default: ''
+  },
+  idDocType: {
+    type: String,
+    default: 'Aadhaar Card'
+  },
+  seniorIdCard: {
+    type: String,
+    default: ''
+  },
+  isSeniorVerified: {
+    type: Boolean,
+    default: true
+  },
   emergencyContact: {
     type: String,
     required: function () { return this.role === 'senior'; }

@@ -33,7 +33,8 @@ const uploadKyc = multer({
 
 const kycFields = uploadKyc.fields([
   { name: 'govtIdCard', maxCount: 1 },
-  { name: 'selfiePhoto', maxCount: 1 }
+  { name: 'selfiePhoto', maxCount: 1 },
+  { name: 'seniorIdCard', maxCount: 1 }
 ]);
 
 router.post('/register', kycFields, registerUser);
