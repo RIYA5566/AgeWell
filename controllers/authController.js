@@ -152,12 +152,16 @@ exports.registerUser = async (req, res) => {
       }
     } else if (role === 'family') {
       // Family members must link to an existing Senior Citizen by email
-      if (!linkedSeniorEmail) {
-        return res.status(400).json({ success: false, message: 'Please provide the Senior Citizen\'s email to link your account' });
+      const seniorEmail = (linkedSeniorEmail || '').trim().toLowerCase();
+      if (!seniorEmail) {
+        return res.status(400).json({ success: false, message: 'Please provide the Senior Citizen\'s registered email address to link your account.' });
       }
-      const linkedSenior = await User.findOne({ email: linkedSeniorEmail.toLowerCase(), role: 'senior' });
+      const linkedSenior = await User.findOne({ email: seniorEmail, role: 'senior' });
       if (!linkedSenior) {
-        return res.status(404).json({ success: false, message: `No Senior Citizen account found for email: ${linkedSeniorEmail}. Please ask your senior to register first.` });
+        return res.status(404).json({
+          success: false,
+          message: `No registered Senior Citizen found with email: "${seniorEmail}". Please ask your senior to register their AgeWell account first.`
+        });
       }
       userData.linkedSenior = linkedSenior._id;
       userData.relationship = relationship || 'Family Member';
@@ -342,5 +346,41 @@ exports.updateLanguage = async (req, res) => {
     res.status(200).json({ success: true, language: user.language });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Server error updating language' });
+  }
+};
+
+// @desc    Check if a Senior Citizen exists with given email (live lookup for family registration)
+// @route   GET /api/auth/check-senior?email=...
+// @access  Public
+exports.checkSeniorCitizen = async (req, res) => {
+  try {
+    const { email } = req.query;
+    if (!email) {
+      return res.status(400).json({ success: false, message: 'Please provide an email to check' });
+    }
+
+    const senior = await User.findOne({ email: email.trim().toLowerCase(), role: 'senior' }).select('name email age address');
+    if (!senior) {
+      return res.status(404).json({
+        success: false,
+        found: false,
+        message: `No registered Senior Citizen found with email "${email}". Please ensure your senior has created an account first.`
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      found: true,
+      senior: {
+        id: senior._id,
+        name: senior.name,
+        email: senior.email,
+        age: senior.age
+      },
+      message: `Verified Senior: ${senior.name}${senior.age ? ` (${senior.age}y)` : ''}`
+    });
+  } catch (error) {
+    console.error('Check Senior Error:', error);
+    res.status(500).json({ success: false, message: 'Server error checking senior citizen account' });
   }
 };

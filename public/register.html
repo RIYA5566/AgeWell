@@ -422,13 +422,10 @@
             <!-- Calculated Age Status / Verification Badge -->
             <div id="seniorAgeStatus" class="hidden">
               <div id="seniorVerifiedBadge" class="p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between gap-2 shadow-2xs">
-                <div class="flex items-center gap-2">
-                  <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                  <span class="text-xs font-extrabold text-emerald-900">🟢 Senior Citizen Verified — Age 60+</span>
-                </div>
+                <span class="text-xs font-extrabold text-emerald-900">Senior Citizen Verified — Age 60+</span>
                 <span id="calculatedAgeDisplay" class="text-xs font-extrabold text-emerald-800 bg-white px-2.5 py-0.5 rounded-lg border border-emerald-200"></span>
               </div>
-              <p id="ageError" class="text-xs font-bold text-rose-600 bg-rose-50 border border-rose-200 rounded-xl p-3 mt-1.5 leading-tight hidden">⚠️ Age must be 60 or above to register as a Senior Citizen.</p>
+              <p id="ageError" class="text-xs font-bold text-rose-600 bg-rose-50 border border-rose-200 rounded-xl p-3 mt-1.5 leading-tight hidden">Age must be 60 or above to register as a Senior Citizen.</p>
             </div>
 
             <!-- Optional Senior Govt ID Verification Document -->
@@ -563,7 +560,7 @@
                 <button type="button" id="btnSendPhoneOtp" class="px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-all" data-i18n="btn_send_otp">Send OTP</button>
                 <button type="button" id="btnVerifyPhoneOtp" class="px-3.5 py-2.5 bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs rounded-xl transition-all" data-i18n="btn_verify_otp">Verify OTP</button>
               </div>
-              <div id="phoneOtpStatus" class="text-xs font-bold text-rose-600" data-i18n="phone_not_verified">❌ Phone Not Verified (Click Send OTP)</div>
+              <div id="phoneOtpStatus" class="text-xs font-bold text-rose-600" data-i18n="phone_not_verified">Phone Not Verified (Click Send OTP)</div>
             </div>
 
             <!-- Email OTP Verification -->
@@ -579,7 +576,7 @@
                 <button type="button" id="btnSendEmailOtp" class="px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-all" data-i18n="btn_send_otp">Send OTP</button>
                 <button type="button" id="btnVerifyEmailOtp" class="px-3.5 py-2.5 bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs rounded-xl transition-all" data-i18n="btn_verify_otp">Verify OTP</button>
               </div>
-              <div id="emailOtpStatus" class="text-xs font-bold text-rose-600" data-i18n="email_not_verified">❌ Email Not Verified (Click Send OTP)</div>
+              <div id="emailOtpStatus" class="text-xs font-bold text-rose-600" data-i18n="email_not_verified">Email Not Verified (Click Send OTP)</div>
             </div>
 
             <!-- Govt ID Upload -->
@@ -665,6 +662,7 @@
                 class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-brand-600 focus:outline-none focus:ring-0 transition-all font-medium bg-white text-sm" 
                 placeholder="Enter the senior's email (e.g. avdhut@gmail.com)"
               >
+              <div id="seniorLinkStatus" class="text-xs font-semibold mt-1.5 hidden flex items-center gap-1.5 p-2 rounded-xl border transition-all"></div>
               <p class="text-[11px] text-slate-500 font-medium">This links your account to your senior. They must already be registered.</p>
             </div>
             <div class="space-y-1.5">
@@ -702,11 +700,9 @@
     </div>
   </main>
 
-  <!-- Footer -->
-  <footer class="bg-white border-t border-slate-200 text-slate-400 py-6 px-6 text-center text-xs sm:text-sm font-semibold mt-auto">
-    <div class="max-w-7xl mx-auto">
-      <p data-i18n="footer_text">&copy; 2026 AgeWell Platform. Designed with care for Senior Citizens, Volunteers, and Admins.</p>
-    </div>
+  <!-- Global Footer -->
+  <footer class="max-w-7xl mx-auto px-6 py-8 mt-auto border-t border-slate-200/80 w-full text-center">
+    <p class="text-xs font-semibold text-slate-400" data-i18n="footer_text">&copy; 2026 AgeWell Platform. Designed with care for Senior Citizens, Volunteers, and Administrators.</p>
   </footer>
 
   <!-- Scripts -->

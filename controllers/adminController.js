@@ -50,7 +50,10 @@ exports.getAdminStats = async (req, res) => {
 // @access  Private (Admin only)
 exports.getAllUsers = async (req, res) => {
   try {
-    const users = await User.find().select('-password').sort({ createdAt: -1 });
+    const users = await User.find()
+      .select('-password')
+      .populate('linkedSenior', 'name email phone age address')
+      .sort({ createdAt: -1 });
 
     res.status(200).json({
       success: true,

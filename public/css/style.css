@@ -3,22 +3,22 @@
 @import url('https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&display=swap');
 
 :root {
-  /* Color Palette (Calm Green & White) */
-  --color-primary-dark: #1b5e20;     /* Deep forest green for text, primary actions */
-  --color-primary: #2e7d32;          /* Emerald green for normal buttons/borders */
-  --color-primary-light: #c8e6c9;    /* Light mint for secondary panels/cards */
-  --color-bg-light: #e8f5e9;         /* Warm soft mint for page background */
+  /* Color Palette (AgeWell Brand Blue & Slate Theme) */
+  --color-primary-dark: #0b3d70;     /* Deep navy brand blue */
+  --color-primary: #026bc9;          /* AgeWell primary blue */
+  --color-primary-light: #e0effe;    /* Soft brand blue tint */
+  --color-bg-light: #f8fafc;         /* Clean slate background */
   --color-white: #ffffff;
-  --color-gray-dark: #212121;        /* High-contrast text color */
-  --color-gray-light: #f5f5f5;
-  --color-emergency: #d32f2f;        /* Pulsing red for SOS */
-  --color-emergency-hover: #b71c1c;
-  --color-success: #2e7d32;
-  --color-warning: #f57f17;
+  --color-gray-dark: #0f172a;        /* High-contrast slate 900 */
+  --color-gray-light: #f1f5f9;
+  --color-emergency: #e11d48;        /* Rose / emergency red */
+  --color-emergency-hover: #be123c;
+  --color-success: #026bc9;
+  --color-warning: #f59e0b;
 
   /* Sizing Variables controlled by user */
   --base-font-size: 18px;            /* Large by default for seniors */
-  --border-radius: 12px;
+  --border-radius: 14px;
   --focus-outline-width: 4px;
 }
 
@@ -772,14 +772,15 @@ table {
 }
 
 th, td {
-  padding: 16px;
-  border-bottom: 2px solid var(--color-primary-light);
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--color-primary-light);
 }
 
 th {
-  background-color: var(--color-primary-dark);
+  background: linear-gradient(135deg, #0b3d70 0%, #026bc9 100%);
   color: var(--color-white);
   font-weight: 700;
+  letter-spacing: 0.04em;
 }
 
 tr:hover {

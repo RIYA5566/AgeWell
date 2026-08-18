@@ -170,8 +170,8 @@
             <!-- Header section inside sidebar card -->
             <div class="flex items-start justify-between gap-3 mb-4">
               <div class="flex items-center gap-3">
-                <div class="w-12 h-12 bg-brand-50 rounded-xl border border-brand-100 flex items-center justify-center text-brand-600 text-xl font-bold shadow-sm">
-                  👤
+                <div class="w-12 h-12 bg-brand-50 rounded-xl border border-brand-100 flex items-center justify-center text-brand-600 shadow-sm">
+                  <svg class="w-6 h-6 text-brand-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"/></svg>
                 </div>
                 <div>
                   <h1 id="welcomeTitle" class="text-lg font-extrabold text-slate-900 tracking-tight">Welcome, Volunteer!</h1>
@@ -182,7 +182,8 @@
             
             <div class="mt-2">
               <button id="btnViewTrustStatus" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-brand-50 hover:bg-brand-100 text-brand-700 border border-brand-200 transition-all cursor-pointer shadow-xs focus:outline-none" style="display: none;">
-                🛡️ Verification Status
+                <svg class="w-3.5 h-3.5 text-brand-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"/></svg>
+                Verification Status
               </button>
             </div>
 
@@ -190,21 +191,24 @@
             <div class="space-y-3 border-t border-slate-100 pt-4 mt-4">
               <div class="flex items-center justify-between">
                 <span class="text-xs font-extrabold text-slate-400 uppercase tracking-wider">Overall Rating</span>
-                <span id="simpleOverallBadge" class="text-xs font-extrabold text-amber-700 bg-amber-50 border border-amber-200 px-3 py-1 rounded-full">⭐ 0.0 Rating</span>
+                <span id="simpleOverallBadge" class="inline-flex items-center gap-1 text-xs font-extrabold text-amber-700 bg-amber-50 border border-amber-200 px-3 py-1 rounded-full">
+                  <svg class="w-3.5 h-3.5 text-amber-500 fill-amber-400" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                  0.0 Rating
+                </span>
               </div>
               
               <!-- Metrics grid -->
               <div class="grid grid-cols-3 gap-2 text-center pt-2">
                 <div class="bg-slate-50 rounded-xl p-2 border border-slate-200/60 shadow-xs">
-                  <div id="simpleCost" class="text-xs font-extrabold text-slate-800">💰 0/5</div>
+                  <div id="simpleCost" class="text-xs font-extrabold text-slate-800">0 / 5</div>
                   <div class="text-[9px] text-slate-400 font-bold uppercase mt-0.5">Cost</div>
                 </div>
                 <div class="bg-slate-50 rounded-xl p-2 border border-slate-200/60 shadow-xs">
-                  <div id="simpleSpeed" class="text-xs font-extrabold text-slate-800">⏱️ 0/5</div>
+                  <div id="simpleSpeed" class="text-xs font-extrabold text-slate-800">0 / 5</div>
                   <div class="text-[9px] text-slate-400 font-bold uppercase mt-0.5">Speed</div>
                 </div>
                 <div class="bg-slate-50 rounded-xl p-2 border border-slate-200/60 shadow-xs">
-                  <div id="simpleComm" class="text-xs font-extrabold text-slate-800">📞 0/5</div>
+                  <div id="simpleComm" class="text-xs font-extrabold text-slate-800">0 / 5</div>
                   <div class="text-[9px] text-slate-400 font-bold uppercase mt-0.5">Comm</div>
                 </div>
               </div>
@@ -212,12 +216,12 @@
               <!-- Recommendations and counts -->
               <div class="flex flex-col gap-2 pt-2 text-xs text-slate-600 font-semibold">
                 <div class="flex items-center gap-2">
-                  <span>👍</span>
+                  <svg class="w-3.5 h-3.5 text-brand-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6.633 10.5c.806 0 1.533-.446 2.031-1.08a9.041 9.041 0 012.861-2.4c.723-.384 1.35-.956 1.653-1.715a4.498 4.498 0 00.322-1.672V3a.75.75 0 01.75-.75A2.25 2.25 0 0116.5 4.5c0 1.152-.26 2.243-.723 3.218-.266.558.107 1.282.725 1.282h3.126c1.026 0 1.945.694 2.054 1.715.045.422.068.85.068 1.285a11.95 11.95 0 01-2.649 7.521c-.388.482-.987.729-1.605.729H14.25c-.483 0-.964-.078-1.423-.23l-3.114-1.038a4.5 4.5 0 00-1.423-.23H7.5"/></svg>
                   <span id="simpleRecommend">0% recommend</span>
                 </div>
                 <div class="flex items-center justify-between text-xs text-slate-400 pt-2 border-t border-slate-100/50">
-                  <span id="simpleTasks" class="font-bold">✓ 0 tasks</span>
-                  <span id="simpleReviews" class="font-bold">💬 0 reviews</span>
+                  <span id="simpleTasks" class="font-bold">0 tasks</span>
+                  <span id="simpleReviews" class="font-bold">0 reviews</span>
                 </div>
               </div>
             </div>
@@ -233,7 +237,9 @@
             <!-- Header row -->
             <div class="flex items-center justify-between mb-4 gap-2 flex-wrap">
               <div class="flex items-center gap-2">
-                <span class="text-xl">💰</span>
+                <div class="w-6 h-6 rounded-lg bg-amber-400/20 flex items-center justify-center text-amber-300">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a2.25 2.25 0 00-2.25-2.25H15a3 3 0 11-6 0H5.25A2.25 2.25 0 003 12m18 0v6a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 18v-6m18 0V9M3 12V9m18 0a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 9m18 0V6a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 6v3"/></svg>
+                </div>
                 <h2 class="text-sm font-extrabold tracking-tight uppercase text-slate-300" data-i18n="vd_wallet_title">Earnings Wallet</h2>
               </div>
               <span id="walletLastUpdated" class="text-[10px] text-slate-400 font-semibold italic">Updating...</span>
@@ -261,10 +267,12 @@
             <!-- Action Buttons -->
             <div class="flex gap-2">
               <button id="btnViewEarnings" onclick="openEarningsModal()" class="flex-1 py-2.5 px-3 bg-white/10 hover:bg-white/15 border border-white/20 text-white text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 focus:outline-none">
-                <span data-i18n="vd_view_earnings">📊 View Stats</span>
+                <svg class="w-3.5 h-3.5 text-slate-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z"/></svg>
+                <span data-i18n="vd_view_earnings">View Stats</span>
               </button>
               <button id="btnWithdrawEarnings" onclick="openWithdrawPanel()" class="flex-1 py-2.5 px-3 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 border-none text-slate-950 text-xs font-extrabold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-md shadow-amber-500/10 focus:outline-none">
-                <span data-i18n="vd_withdraw">🏦 Withdraw</span>
+                <svg class="w-3.5 h-3.5 text-slate-900" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.5M4.5 21V10.5"/></svg>
+                <span data-i18n="vd_withdraw">Withdraw</span>
               </button>
             </div>
           </div>
@@ -274,7 +282,8 @@
         <div id="kycStatusCard" class="bg-white rounded-2xl border border-slate-200/80 shadow-premium p-6">
           <div class="mb-4">
             <h2 class="text-sm font-extrabold tracking-tight uppercase text-slate-900 mb-1 flex items-center gap-2" data-i18n="vd_kyc_card_title">
-              🛡️ Verification Status
+              <svg class="w-4 h-4 text-brand-600" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"/></svg>
+              Verification Status
             </h2>
             <p id="kycStatusSubtitle" class="text-xs text-slate-500 font-medium leading-relaxed" data-i18n="vd_kyc_card_subtitle">
               Required clearances to accept home requests.
@@ -284,16 +293,16 @@
           <!-- Trust Badges -->
           <div class="flex flex-col gap-2.5" id="kycBadgesContainer">
             <span id="badgeGovtId" class="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-bold bg-amber-50 text-amber-700 border border-amber-100">
-              📄 Govt ID: Pending
+              Govt ID: Pending
             </span>
             <span id="badgePhone" class="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-100">
-              📞 Phone: Verified
+              Phone: Verified
             </span>
             <span id="badgeEmail" class="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-100">
-              📧 Email: Verified
+              Email: Verified
             </span>
             <span id="badgePolice" class="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-bold bg-amber-50 text-amber-700 border border-amber-100">
-              👮 Police Check: Pending
+              Police Check: Pending
             </span>
           </div>
 
@@ -305,7 +314,8 @@
           <!-- Submit KYC Button -->
           <div class="mt-4">
             <button id="btnOpenKycModal" class="w-full py-3 px-4 bg-brand-600 hover:bg-brand-700 text-white text-sm font-bold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 border-none shadow-sm focus:outline-none" style="display: none;">
-              <span data-i18n="vd_btn_kyc_submit">📤 Submit KYC Documents</span>
+              <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/></svg>
+              <span data-i18n="vd_btn_kyc_submit">Submit KYC Documents</span>
             </button>
           </div>
         </div>
@@ -320,14 +330,15 @@
           <div class="flex justify-between items-start gap-4 mb-4 flex-wrap">
             <div>
               <h2 class="text-base font-extrabold text-slate-900 flex items-center gap-2" data-i18n="vd_status_notifications">
-                📢 Task Assignment Notifications
+                <svg class="w-4.5 h-4.5 text-brand-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"/></svg>
+                Task Assignment Notifications
               </h2>
               <p class="text-xs text-slate-500 font-semibold mt-1">
                 Updates regarding help requests where you submitted a quote:
               </p>
             </div>
             <button id="btnClearAllNotifications" class="px-4 py-2 text-xs font-extrabold bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 focus:outline-none text-slate-700" onclick="clearAllTaskNotifications()">
-              🧹 Clear All
+              Clear All
             </button>
           </div>
           <div id="notificationsList" class="space-y-4">
@@ -340,16 +351,16 @@
           <!-- Tabs Navigation Header -->
           <div class="flex flex-wrap border-b border-slate-100 bg-slate-50/50 p-2 gap-1.5" role="tablist" aria-label="Volunteer Portal Tasks">
             <button id="tabBtnPending" onclick="switchTaskTab('pending')" class="flex-1 min-w-[130px] py-3 px-4 rounded-xl font-bold text-xs text-center transition-all flex items-center justify-center gap-1.5 border-none cursor-pointer focus:outline-none bg-white text-brand-600 shadow-sm" role="tab" aria-selected="true">
-              🔍 Browse Requests <span id="countPending" class="bg-brand-600 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full">0</span>
+              Browse Requests <span id="countPending" class="bg-brand-600 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full">0</span>
             </button>
             <button id="tabBtnActive" onclick="switchTaskTab('active')" class="flex-1 min-w-[130px] py-3 px-4 rounded-xl font-bold text-xs text-center transition-all flex items-center justify-center gap-1.5 border-none cursor-pointer focus:outline-none text-slate-600 hover:bg-slate-100/50" role="tab" aria-selected="false">
-              🤝 Active Commitments <span id="countActive" class="bg-slate-200 text-slate-500 text-[10px] font-extrabold px-2 py-0.5 rounded-full">0</span>
+              Active Commitments <span id="countActive" class="bg-slate-200 text-slate-500 text-[10px] font-extrabold px-2 py-0.5 rounded-full">0</span>
             </button>
             <button id="tabBtnAwaiting" onclick="switchTaskTab('awaiting')" class="flex-1 min-w-[130px] py-3 px-4 rounded-xl font-bold text-xs text-center transition-all flex items-center justify-center gap-1.5 border-none cursor-pointer focus:outline-none text-slate-600 hover:bg-slate-100/50" role="tab" aria-selected="false">
-              ⏳ Awaiting Approval <span id="countAwaiting" class="bg-slate-200 text-slate-500 text-[10px] font-extrabold px-2 py-0.5 rounded-full">0</span>
+              Awaiting Approval <span id="countAwaiting" class="bg-slate-200 text-slate-500 text-[10px] font-extrabold px-2 py-0.5 rounded-full">0</span>
             </button>
             <button id="tabBtnHistory" onclick="switchTaskTab('history')" class="flex-1 min-w-[130px] py-3 px-4 rounded-xl font-bold text-xs text-center transition-all flex items-center justify-center gap-1.5 border-none cursor-pointer focus:outline-none text-slate-600 hover:bg-slate-100/50" role="tab" aria-selected="false">
-              📜 History <span id="countHistory" class="bg-slate-200 text-slate-500 text-[10px] font-extrabold px-2 py-0.5 rounded-full">0</span>
+              History <span id="countHistory" class="bg-slate-200 text-slate-500 text-[10px] font-extrabold px-2 py-0.5 rounded-full">0</span>
             </button>
           </div>
 
@@ -360,7 +371,7 @@
             <div id="tabPanePending" class="tab-pane" style="display: block;">
               <div class="mb-4">
                 <h3 class="text-sm font-extrabold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-                  🔍 Help Requests Seeking Volunteers
+                  Help Requests Seeking Volunteers
                 </h3>
                 <p class="text-xs text-slate-400 font-medium mt-1">Browse requests from senior citizens in your area and quote your fee to volunteer.</p>
               </div>
@@ -373,7 +384,7 @@
             <div id="tabPaneActive" class="tab-pane" style="display: none;">
               <div class="mb-4">
                 <h3 class="text-sm font-extrabold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-                  🤝 My Active Commitments (Tasks in Progress)
+                  My Active Commitments (Tasks in Progress)
                 </h3>
                 <p class="text-xs text-slate-400 font-medium mt-1">Manage tasks that you have committed to or are undergoing verification.</p>
               </div>
@@ -386,7 +397,7 @@
             <div id="tabPaneAwaiting" class="tab-pane" style="display: none;">
               <div class="mb-4">
                 <h3 class="text-sm font-extrabold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-                  ⏳ Awaiting Family Approval
+                  Awaiting Family Approval
                 </h3>
                 <p class="text-xs text-slate-400 font-medium mt-1">Requests you accepted. The family is reviewing your profile and clearance status.</p>
               </div>
@@ -399,7 +410,7 @@
             <div id="tabPaneHistory" class="tab-pane" style="display: none;">
               <div class="mb-4">
                 <h3 class="text-sm font-extrabold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-                  📜 My Service History (Completed Tasks)
+                  My Service History (Completed Tasks)
                 </h3>
                 <p class="text-xs text-slate-400 font-medium mt-1">Review your past successfully completed tasks, ratings, and caregiver reviews.</p>
               </div>
@@ -419,11 +430,6 @@
     <!-- EARNINGS HISTORY MODAL                                             -->
     <!-- ═══════════════════════════════════════════════════════════════════ -->
     <div id="earningsModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="earningsModalTitle" style="display: none;">
-      <!--
-        Fix: modal-content keeps its CSS overflow-y:auto (max-height:90vh).
-        We do NOT set overflow:hidden on it — that was clipping inner tab pane scrollbars.
-        The rounded top corners are handled by border-radius on the header div itself.
-      -->
       <div class="modal-content" style="max-width: 680px; padding: 0; border-radius: 20px; overflow-y: auto;">
 
         <!-- Sticky top block: header + summary strip + tabs (never scrolls) -->
@@ -431,7 +437,7 @@
 
           <!-- Modal Header -->
           <div style="background: linear-gradient(135deg, #026bc9, #0c87eb); padding: 1.4rem 1.8rem; display: flex; align-items: center; justify-content: space-between;">
-            <h3 id="earningsModalTitle" style="margin: 0; color: #ffffff; font-size: 1.3rem; font-weight: 800; display: flex; align-items: center; gap: 8px;">💰 Earnings History</h3>
+            <h3 id="earningsModalTitle" style="margin: 0; color: #ffffff; font-size: 1.3rem; font-weight: 800; display: flex; align-items: center; gap: 8px;">Earnings History</h3>
             <button onclick="closeEarningsModal()" class="modal-close" style="color: #ffffff; font-size: 1.8rem; border: none; background: none; cursor: pointer; line-height: 1;" aria-label="Close">&times;</button>
           </div>
 
@@ -453,9 +459,9 @@
 
           <!-- Tab Navigation -->
           <div style="display: flex; border-bottom: 2px solid #f0f7ff; background: #ffffff;">
-            <button id="tabTransactions" onclick="switchEarningsTab('transactions')" style="flex: 1; padding: 12px; font-size: 0.95rem; font-weight: 700; border: none; background: none; color: #026bc9; border-bottom: 3px solid #026bc9; cursor: pointer;">📋 Transactions</button>
-            <button id="tabMonthly" onclick="switchEarningsTab('monthly')" style="flex: 1; padding: 12px; font-size: 0.95rem; font-weight: 700; border: none; background: none; color: #888; border-bottom: 3px solid transparent; cursor: pointer;">📅 This Month</button>
-            <button id="tabWithdraw" onclick="switchEarningsTab('withdraw')" style="flex: 1; padding: 12px; font-size: 0.95rem; font-weight: 700; border: none; background: none; color: #888; border-bottom: 3px solid transparent; cursor: pointer;">🏦 Withdraw</button>
+            <button id="tabTransactions" onclick="switchEarningsTab('transactions')" style="flex: 1; padding: 12px; font-size: 0.95rem; font-weight: 700; border: none; background: none; color: #026bc9; border-bottom: 3px solid #026bc9; cursor: pointer;">Transactions</button>
+            <button id="tabMonthly" onclick="switchEarningsTab('monthly')" style="flex: 1; padding: 12px; font-size: 0.95rem; font-weight: 700; border: none; background: none; color: #888; border-bottom: 3px solid transparent; cursor: pointer;">This Month</button>
+            <button id="tabWithdraw" onclick="switchEarningsTab('withdraw')" style="flex: 1; padding: 12px; font-size: 0.95rem; font-weight: 700; border: none; background: none; color: #888; border-bottom: 3px solid transparent; cursor: pointer;">Withdraw</button>
           </div>
 
         </div><!-- end sticky top block -->
@@ -466,7 +472,6 @@
             <!-- Populated by JS -->
           </div>
           <div id="noTransactionsMsg" style="display: none; text-align: center; padding: 2.5rem; color: #888;">
-            <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">📭</div>
             <p style="font-weight: 600;">No earnings yet. Complete tasks to start earning!</p>
           </div>
         </div>
@@ -500,13 +505,12 @@
               <div id="withdrawAvailableAmount" style="font-size: 2.4rem; font-weight: 900; color: #074887;">₹0</div>
             </div>
             <div style="background: #fff8e1; border: 1.5px solid #ffe082; border-radius: 10px; padding: 1rem 1.2rem; margin-bottom: 1.2rem; display: flex; align-items: center; gap: 12px;">
-              <span style="font-size: 1.4rem;">🏦</span>
               <div>
                 <div style="font-size: 0.8rem; color: #888; font-weight: 600;">Bank Account (Simulated)</div>
                 <div style="font-size: 1.1rem; font-weight: 800; color: #333; letter-spacing: 2px;">XXXX XXXX 4821</div>
               </div>
             </div>
-            <p style="font-size: 0.85rem; color: #888; text-align: center; margin-bottom: 1rem;">⚡ Estimated arrival: 2–3 business days</p>
+            <p style="font-size: 0.85rem; color: #888; text-align: center; margin-bottom: 1rem;">Estimated arrival: 2–3 business days</p>
             <button id="btnConfirmWithdraw" onclick="confirmWithdrawal()" style="
               width: 100%; padding: 14px; font-size: 1.05rem; font-weight: 800;
               background: linear-gradient(135deg, #026bc9, #0c87eb);
@@ -514,13 +518,15 @@
               transition: opacity 0.2s; box-shadow: 0 4px 14px rgba(2, 107, 201, 0.25);
             "
             onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
-              🏦 Withdraw ₹0
+              Withdraw ₹0
             </button>
           </div>
 
           <!-- Withdrawal success state -->
           <div id="withdrawSuccessState" style="display: none; text-align: center;">
-            <div style="font-size: 4rem; margin-bottom: 0.6rem; animation: bounce 0.6s ease;">🎉</div>
+            <div class="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto mb-3">
+              <svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
+            </div>
             <h3 style="color: #0355a3; font-size: 1.4rem; font-weight: 800; margin-bottom: 0.4rem;">Withdrawal Successful!</h3>
             <div style="background: #f0f7ff; border: 2px dashed #b9dbfe; border-radius: 14px; padding: 1.4rem; margin: 1rem 0;">
               <div style="font-size: 0.85rem; color: #555; font-weight: 600; margin-bottom: 4px;">Amount Withdrawn</div>
@@ -535,7 +541,7 @@
               padding: 12px 28px; background: #0c87eb; color: #fff;
               border: none; border-radius: 12px; font-size: 1rem;
               font-weight: 700; cursor: pointer;
-            ">Done ✓</button>
+            ">Done</button>
           </div>
         </div>
 
@@ -544,7 +550,6 @@
 
     <!-- Completion Modal -->
     <div id="completionModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-
       <div class="modal-content">
         <div class="modal-header">
           <h3 id="modalTitle">Mark Request as Completed</h3>
@@ -563,13 +568,13 @@
           </div>
 
           <div class="form-group" style="margin-top: 1rem;">
-            <label for="receiptPhoto">📸 Upload Receipt or Delivery Photo Proof:</label>
+            <label for="receiptPhoto">Upload Receipt or Delivery Photo Proof:</label>
             <input 
               type="file" 
               id="receiptPhoto" 
               name="receiptPhoto" 
               class="form-control" 
-              accept="image/*"
+              accept="image/*" 
               multiple
             >
             <small style="color: #666; display: block; margin-top: 4px;">Upload photos of delivery item or store receipt (multiple photos supported).</small>
@@ -579,7 +584,7 @@
           <div class="modal-footer">
             <button type="button" id="btnCancelComplete" class="btn btn-secondary">Cancel</button>
             <button type="submit" class="btn btn-primary" style="background-color: var(--color-primary-dark);">
-              💾 Save & Complete
+              Save &amp; Complete
             </button>
           </div>
         </form>
@@ -590,7 +595,7 @@
     <div id="acceptQuoteModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="quoteModalTitle" style="display: none;">
       <div class="modal-content" style="max-width: 550px;">
         <div class="modal-header">
-          <h3 id="quoteModalTitle" style="color: var(--color-primary-dark); font-size: 1.4rem;">🤝 Quote Service Charge &amp; Commit to Help</h3>
+          <h3 id="quoteModalTitle" style="color: var(--color-primary-dark); font-size: 1.4rem;">Quote Service Charge &amp; Commit to Help</h3>
           <button id="quoteModalClose" class="modal-close" aria-label="Close">&times;</button>
         </div>
 
@@ -602,14 +607,14 @@
           <!-- Caregiver Shopping Preference Banner -->
           <div id="quoteModalPrefContainer" style="display: none; margin-bottom: 1.2rem; padding: 12px 16px; background: #fff3e0; border-left: 5px solid #e65100; border-radius: 10px;">
             <p style="color: #e65100; font-weight: bold; font-size: 1rem; margin-bottom: 4px;">
-              🛒 Caregiver Shopping Preference:
+              Caregiver Shopping Preference:
             </p>
             <p id="quoteModalPrefText" style="color: #bf360c; font-size: 1.05rem; font-weight: 700; margin: 0;"></p>
           </div>
 
           <div class="form-group">
             <label for="quoteServiceFee" style="font-weight: bold; color: var(--color-primary-dark); font-size: 1.05rem;">
-              💰 Service Fee Quote (₹): <span style="color: #c62828;">*</span>
+              Service Fee Quote (₹): <span style="color: #c62828;">*</span>
             </label>
             <input 
               type="number" 
@@ -629,7 +634,7 @@
           <!-- Purchase & Receipt Charges Disclaimer -->
           <div style="background-color: #e8f5e9; border: 2px solid var(--color-primary); border-radius: 12px; padding: 1rem; margin-bottom: 1.2rem;">
             <p style="color: var(--color-primary-dark); font-weight: bold; font-size: 1rem; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
-              🧾 Purchase &amp; Bill Charges Note:
+              Purchase &amp; Bill Charges Note:
             </p>
             <p style="color: #2e7d32; font-size: 0.92rem; margin: 0; line-height: 1.4;">
               <strong>Extra charges for item purchases (groceries, medicines, bill payments) will be added separately according to the receipt/bill uploaded upon task completion.</strong>
@@ -637,7 +642,7 @@
           </div>
 
           <div class="form-group">
-            <label for="quoteVolunteerNotes">📝 Message for Family Caregiver &amp; Senior (Optional):</label>
+            <label for="quoteVolunteerNotes">Message for Family Caregiver &amp; Senior (Optional):</label>
             <textarea 
               id="quoteVolunteerNotes" 
               class="form-textarea" 
@@ -649,7 +654,7 @@
           <div class="modal-footer" style="display: flex; gap: 10px; margin-top: 1rem;">
             <button type="button" id="btnCancelQuote" class="btn btn-secondary" style="flex: 1;">Cancel</button>
             <button type="submit" class="btn btn-primary" style="flex: 2; background-color: var(--color-primary-dark); font-size: 1.05rem;">
-              🤝 Submit Quote &amp; Commit to Help
+              Submit Quote &amp; Commit to Help
             </button>
           </div>
         </form>
@@ -660,7 +665,7 @@
     <div id="imageLightboxModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="lightboxTitle" style="display: none; z-index: 10050; background: rgba(0, 0, 0, 0.85);">
       <div class="modal-content" style="max-width: 850px; text-align: center; background: #ffffff; padding: 1.5rem; border-radius: 16px; position: relative;">
         <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 15px;">
-          <h3 id="lightboxTitle" style="color: var(--color-primary-dark); margin: 0;">📸 Receipt / Delivery Photo Proof</h3>
+          <h3 id="lightboxTitle" style="color: var(--color-primary-dark); margin: 0;">Receipt / Delivery Photo Proof</h3>
           <button id="lightboxClose" class="modal-close" style="font-size: 2rem; border: none; background: none; cursor: pointer;">&times;</button>
         </div>
         <div style="position: relative; max-height: 70vh; overflow: hidden; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px; padding: 5px; background: #222; display: flex; align-items: center; justify-content: center; min-height: 250px;">
@@ -673,17 +678,17 @@
 
           <!-- Lightbox Prev Arrow (Shown ONLY if > 1 photo) -->
           <button type="button" id="btnLightboxPrev" style="display: none; position: absolute; top: 50%; left: 12px; transform: translateY(-50%); background: rgba(0,0,0,0.65); color: #ffffff; border: none; border-radius: 50%; width: 44px; height: 44px; font-size: 1.4rem; font-weight: bold; cursor: pointer; z-index: 5;">
-            ◀
+            &larr;
           </button>
 
           <!-- Lightbox Next Arrow (Shown ONLY if > 1 photo) -->
           <button type="button" id="btnLightboxNext" style="display: none; position: absolute; top: 50%; right: 12px; transform: translateY(-50%); background: rgba(0,0,0,0.65); color: #ffffff; border: none; border-radius: 50%; width: 44px; height: 44px; font-size: 1.4rem; font-weight: bold; cursor: pointer; z-index: 5;">
-            ▶
+            &rarr;
           </button>
         </div>
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
           <a id="lightboxDirectLink" href="" target="_blank" class="btn btn-secondary" style="padding: 10px 18px; font-size: 0.95rem;">
-            🔗 Open Image Directly in New Tab
+            Open Image Directly in New Tab
           </a>
           <button type="button" id="btnCloseLightbox" class="btn btn-primary" style="padding: 10px 24px; font-size: 1rem;">
             Close Preview
@@ -696,30 +701,30 @@
     <div id="kycModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="kycModalTitle" style="display: none;">
       <div class="modal-content" style="max-width: 550px;">
         <div class="modal-header">
-          <h3 id="kycModalTitle" style="color: var(--color-primary-dark); font-size: 1.4rem;" data-i18n="vd_kyc_modal_title">📄 Submit Verification Documents</h3>
+          <h3 id="kycModalTitle" style="color: var(--color-primary-dark); font-size: 1.4rem;" data-i18n="vd_kyc_modal_title">Submit Verification Documents</h3>
           <button id="kycModalClose" class="modal-close" aria-label="Close">&times;</button>
         </div>
 
         <form id="kycForm" novalidate>
           <div class="form-group">
-            <label for="modalAadhaarNumber" data-i18n="label_aadhaar">🪪 Aadhaar / National ID Number</label>
+            <label for="modalAadhaarNumber" data-i18n="label_aadhaar">Aadhaar / National ID Number</label>
             <input type="text" id="modalAadhaarNumber" class="form-input" placeholder="e.g. 1234 5678 9012" data-i18n="placeholder_aadhaar" required>
           </div>
 
           <div class="form-group">
-            <label for="modalGovtIdCard" data-i18n="label_upload_govt_id">📄 Government Photo ID (Aadhaar / Voter ID / Passport)</label>
+            <label for="modalGovtIdCard" data-i18n="label_upload_govt_id">Government Photo ID (Aadhaar / Voter ID / Passport)</label>
             <input type="file" id="modalGovtIdCard" class="form-control" accept="image/*,.pdf" required>
           </div>
 
           <div class="form-group">
-            <label for="modalSelfiePhoto" data-i18n="label_upload_selfie">📸 Live Selfie / Profile Photo</label>
+            <label for="modalSelfiePhoto" data-i18n="label_upload_selfie">Live Selfie / Profile Photo</label>
             <input type="file" id="modalSelfiePhoto" class="form-control" accept="image/*" required>
           </div>
 
           <div class="modal-footer" style="display: flex; gap: 10px; margin-top: 1.2rem;">
             <button type="button" id="btnCancelKyc" class="btn btn-secondary" style="flex: 1;" data-i18n="btn_cancel">Cancel</button>
             <button type="submit" class="btn btn-primary" style="flex: 2; background-color: var(--color-primary-dark);" data-i18n="vd_submit_clearance">
-              💾 Submit for Admin &amp; Police Clearance
+              Submit for Admin &amp; Police Clearance
             </button>
           </div>
         </form>
@@ -732,7 +737,7 @@
         <!-- Modal Header -->
         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #f0f7ff; padding-bottom: 1rem; margin-bottom: 1.2rem;">
           <h2 style="margin: 0; color: #0355a3; font-size: 1.35rem; display: flex; align-items: center; gap: 8px;">
-            💰 Submit Purchase Cost &amp; Bill Proof
+            Submit Purchase Cost &amp; Bill Proof
           </h2>
           <button type="button" onclick="closePurchaseCostModal()" style="background: none; border: none; font-size: 1.6rem; cursor: pointer; color: #666; line-height: 1;">&times;</button>
         </div>
@@ -744,7 +749,7 @@
           <!-- Step 1: Actual Purchase Cost -->
           <div style="margin-bottom: 1.2rem;">
             <label for="purchaseCostInput" style="display: block; font-weight: 700; color: #074887; margin-bottom: 6px; font-size: 1rem;">
-              💵 Actual Purchase Cost (in ₹) <span style="color: #c62828;">*</span>
+              Actual Purchase Cost (in ₹) <span style="color: #c62828;">*</span>
             </label>
             <input type="number" id="purchaseCostInput" min="0" step="1" required placeholder="e.g. 450" style="width: 100%; padding: 12px 14px; font-size: 1.1rem; border: 2px solid #b9dbfe; border-radius: 10px; box-sizing: border-box; outline: none;" oninput="togglePurchaseProofRequired(this.value)">
           </div>
@@ -752,7 +757,7 @@
           <!-- Step 2: Bill / Cart Photo Proof Upload -->
           <div style="margin-bottom: 1.2rem;">
             <label for="purchaseProofFile" style="display: block; font-weight: 700; color: #074887; margin-bottom: 6px; font-size: 1rem;">
-              📸 Bill Photo Proof / Cart Screenshot <span id="purchaseProofRequiredStar" style="color: #c62828;">*</span><span id="purchaseProofOptionalNote" style="color: #0c87eb; font-weight: 600; font-size: 0.9rem;"></span>
+              Bill Photo Proof / Cart Screenshot <span id="purchaseProofRequiredStar" style="color: #c62828;">*</span><span id="purchaseProofOptionalNote" style="color: #0c87eb; font-weight: 600; font-size: 0.9rem;"></span>
             </label>
             <input type="file" id="purchaseProofFile" accept="image/*" multiple required style="width: 100%; padding: 10px; font-size: 0.95rem; border: 2px dashed #b9dbfe; border-radius: 10px; background: #f0f7ff; cursor: pointer;" onchange="previewPurchaseProofImage(this)">
             <div id="purchaseProofPreview" style="margin-top: 10px; display: none; text-align: center;">
@@ -763,7 +768,7 @@
           <!-- Step 3: Optional Notes -->
           <div style="margin-bottom: 1.5rem;">
             <label for="purchaseNotesInput" style="display: block; font-weight: 700; color: #074887; margin-bottom: 6px; font-size: 1rem;">
-              📝 Additional Notes / Items Breakdown (Optional)
+              Additional Notes / Items Breakdown (Optional)
             </label>
             <textarea id="purchaseNotesInput" rows="3" placeholder="e.g. Crocin 5 tablets (₹450), Dettol soap (₹50)" style="width: 100%; padding: 10px 14px; font-size: 1rem; border: 2px solid #b9dbfe; border-radius: 10px; box-sizing: border-box; resize: vertical;"></textarea>
           </div>
@@ -774,7 +779,7 @@
               Cancel
             </button>
             <button type="submit" id="btnSubmitPurchaseCost" class="btn btn-primary" style="padding: 10px 22px; font-size: 1rem; border-radius: 10px; background-color: #0c87eb; font-weight: 700;">
-              🚀 Submit Purchase Cost &amp; Proof
+              Submit Purchase Cost &amp; Proof
             </button>
           </div>
         </form>
@@ -786,7 +791,9 @@
       <div class="modal-content" style="max-width: 480px; text-align: center; background: linear-gradient(135deg, #ffffff 0%, #f0f7ff 100%); border: 3px solid #b9dbfe; border-radius: 20px; padding: 2rem; box-shadow: 0 10px 30px rgba(2, 107, 201, 0.15); position: relative; margin: auto;">
         <button type="button" onclick="closeTipEarnedModal()" class="modal-close" aria-label="Close" style="position: absolute; top: 12px; right: 16px; font-size: 1.5rem; border: none; background: none; cursor: pointer; color: #888;">&times;</button>
         
-        <div style="font-size: 3.5rem; margin-bottom: 0.5rem; animation: bounce 1s infinite alternate;">🎉 🎁 ✨</div>
+        <div class="w-14 h-14 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center mx-auto mb-3 shadow-sm">
+          <svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        </div>
         <h2 id="tipModalTitle" style="color: #0355a3; margin-bottom: 0.5rem; font-size: 1.6rem; font-weight: 800;">Special Tip Received!</h2>
         <p style="color: #444; font-size: 1.05rem; margin-bottom: 1.2rem; line-height: 1.4;">
           The Caregiver awarded you an extra bonus tip for your exceptional service on task <strong id="tipTaskTitle" style="color: #026bc9;">"Task"</strong>!
@@ -797,20 +804,18 @@
           <div id="tipModalBreakdown" style="font-size: 0.88rem; color: #888;">Base Service Fee: ₹0 | Total Earned: ₹0</div>
         </div>
         <p style="color: #0c87eb; font-weight: 700; font-size: 0.95rem; margin-bottom: 1.5rem;">
-          💖 Thank you for making senior care compassionate &amp; reliable!
+          Thank you for making senior care compassionate &amp; reliable.
         </p>
         <button type="button" class="btn btn-primary" onclick="closeTipEarnedModal()" style="width: 100%; padding: 14px; font-size: 1.1rem; border-radius: 12px; background: linear-gradient(135deg, #0c87eb 0%, #026bc9 100%); font-weight: 700; border: none; cursor: pointer; color: #ffffff !important;">
-          Awesome! Close
+          Close
         </button>
       </div>
     </div>
   </main>
 
-  <!-- Footer -->
-  <footer class="bg-white border-t border-slate-200 text-slate-400 py-6 px-6 text-center text-xs sm:text-sm font-semibold mt-auto">
-    <div class="max-w-7xl mx-auto">
-      <p data-i18n="footer_text">&copy; 2026 AgeWell Platform. Designed with care for Senior Citizens, Volunteers, and Admins.</p>
-    </div>
+  <!-- Global Footer -->
+  <footer class="max-w-7xl mx-auto px-6 py-8 mt-auto border-t border-slate-200/80 w-full text-center">
+    <p class="text-xs font-semibold text-slate-400" data-i18n="footer_text">&copy; 2026 AgeWell Platform. Designed with care for Senior Citizens, Volunteers, and Administrators.</p>
   </footer>
 
   <!-- Scripts -->

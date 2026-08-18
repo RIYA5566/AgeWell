@@ -136,6 +136,52 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     });
 
+    // Live Senior Check for Family Caregiver Registration
+    const linkedSeniorEmailInput = document.getElementById('linkedSeniorEmail');
+    const seniorLinkStatus = document.getElementById('seniorLinkStatus');
+    let seniorCheckTimeout = null;
+
+    if (linkedSeniorEmailInput && seniorLinkStatus) {
+      const checkSenior = async () => {
+        const email = linkedSeniorEmailInput.value.trim();
+        if (!email || !email.includes('@')) {
+          seniorLinkStatus.classList.add('hidden');
+          linkedSeniorEmailInput.classList.remove('!border-brand-600', '!border-rose-500', '!bg-rose-50/40', '!bg-brand-50/40');
+          return;
+        }
+
+        try {
+          const res = await apiCall(`/auth/check-senior?email=${encodeURIComponent(email)}`, 'GET');
+          seniorLinkStatus.classList.remove('hidden');
+          if (res.ok && res.data.success && res.data.found) {
+            seniorLinkStatus.className = 'text-xs font-bold mt-1.5 flex items-center gap-1.5 p-2.5 rounded-xl border bg-brand-50 border-brand-200 text-brand-800 animate-in fade-in duration-200';
+            seniorLinkStatus.innerHTML = `
+              <svg class="w-4 h-4 text-brand-600 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
+              <span>Verified Senior Account: <strong>${escapeHTML(res.data.senior.name)}</strong> (${res.data.senior.age ? `${res.data.senior.age}y` : 'Age 60+'})</span>
+            `;
+            linkedSeniorEmailInput.classList.remove('!border-rose-500', '!bg-rose-50/40');
+            linkedSeniorEmailInput.classList.add('!border-brand-600', '!bg-brand-50/30');
+          } else {
+            seniorLinkStatus.className = 'text-xs font-bold mt-1.5 flex items-center gap-1.5 p-2.5 rounded-xl border bg-rose-50 border-rose-200 text-rose-800 animate-in fade-in duration-200';
+            seniorLinkStatus.innerHTML = `
+              <svg class="w-4 h-4 text-rose-600 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+              <span>${escapeHTML(res.data?.message || 'No registered Senior Citizen found with this email.')}</span>
+            `;
+            linkedSeniorEmailInput.classList.remove('!border-brand-600', '!bg-brand-50/30');
+            linkedSeniorEmailInput.classList.add('!border-rose-500', '!bg-rose-50/40');
+          }
+        } catch (err) {
+          console.error("Senior check error:", err);
+        }
+      };
+
+      linkedSeniorEmailInput.addEventListener('input', () => {
+        clearTimeout(seniorCheckTimeout);
+        seniorCheckTimeout = setTimeout(checkSenior, 400);
+      });
+      linkedSeniorEmailInput.addEventListener('blur', checkSenior);
+    }
+
     // OTP Simulation Handlers for Volunteer KYC
     let isPhoneVerifiedState = false;
     let isEmailVerifiedState = false;
@@ -154,8 +200,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         if (phoneOtpInput) phoneOtpInput.value = '123456';
         if (phoneOtpStatus) {
-          phoneOtpStatus.style.color = '#e65100';
-          phoneOtpStatus.textContent = '📩 OTP sent (123456). Click Verify OTP.';
+          phoneOtpStatus.style.color = '#026bc9';
+          phoneOtpStatus.textContent = 'OTP sent (123456). Click Verify OTP.';
         }
       });
     }
@@ -165,8 +211,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (phoneOtpInput && phoneOtpInput.value.trim() === '123456') {
           isPhoneVerifiedState = true;
           if (phoneOtpStatus) {
-            phoneOtpStatus.style.color = '#2e7d32';
-            phoneOtpStatus.textContent = '✅ Phone Number Verified via OTP!';
+            phoneOtpStatus.style.color = '#047857';
+            phoneOtpStatus.textContent = 'Phone Number Verified via OTP';
           }
         } else {
           alert('Please enter valid OTP: 123456');
@@ -188,8 +234,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         if (emailOtpInput) emailOtpInput.value = '654321';
         if (emailOtpStatus) {
-          emailOtpStatus.style.color = '#0288d1';
-          emailOtpStatus.textContent = '📩 OTP sent (654321). Click Verify OTP.';
+          emailOtpStatus.style.color = '#026bc9';
+          emailOtpStatus.textContent = 'OTP sent (654321). Click Verify OTP.';
         }
       });
     }
@@ -199,8 +245,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (emailOtpInput && emailOtpInput.value.trim() === '654321') {
           isEmailVerifiedState = true;
           if (emailOtpStatus) {
-            emailOtpStatus.style.color = '#2e7d32';
-            emailOtpStatus.textContent = '✅ Email Address Verified via OTP!';
+            emailOtpStatus.style.color = '#047857';
+            emailOtpStatus.textContent = 'Email Address Verified via OTP';
           }
         } else {
           alert('Please enter valid OTP: 654321');
@@ -277,10 +323,13 @@ document.addEventListener('DOMContentLoaded', () => {
           const ageVal = parseInt(ageEl?.value, 10);
           if (!ageVal || isNaN(ageVal) || ageVal < 60) {
             const errorMsg = window.t ? window.t('error_senior_underage') : 'Age must be 60 or above to register as a Senior Citizen.';
-            alertArea.innerHTML = `<div class="p-4 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl text-sm font-bold flex items-center gap-2"><span>⚠️</span> <span>${errorMsg}</span></div>`;
+            alertArea.innerHTML = `<div class="p-4 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl text-sm font-bold flex items-center gap-2">
+              <svg class="w-4 h-4 text-rose-600 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+              <span>${errorMsg}</span>
+            </div>`;
             const ageErr = document.getElementById('ageError');
             if (ageErr) {
-              ageErr.textContent = '⚠️ ' + errorMsg;
+              ageErr.textContent = errorMsg;
               ageErr.classList.remove('hidden');
             }
             if (ageEl) {

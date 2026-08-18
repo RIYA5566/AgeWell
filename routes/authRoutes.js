@@ -3,7 +3,7 @@ const router = express.Router();
 const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
-const { registerUser, loginUser, logoutUser, getMe, submitKYC, getVolunteerStats, updateLanguage } = require('../controllers/authController');
+const { registerUser, loginUser, logoutUser, getMe, submitKYC, getVolunteerStats, updateLanguage, checkSeniorCitizen } = require('../controllers/authController');
 const { protect } = require('../middleware/authMiddleware');
 
 // Multer config for KYC Uploads
@@ -41,6 +41,7 @@ router.post('/register', kycFields, registerUser);
 router.post('/login', loginUser);
 router.post('/logout', logoutUser);
 router.get('/me', protect, getMe);
+router.get('/check-senior', checkSeniorCitizen);
 router.post('/kyc', protect, kycFields, submitKYC);
 router.get('/volunteer-stats/:id', protect, getVolunteerStats);
 router.patch('/language', protect, updateLanguage);

@@ -115,7 +115,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       const res = await apiCall('/auth/kyc', 'POST', formData);
       if (res.ok && res.data && res.data.user) {
-        showToast('📄 KYC Documents submitted! Admin & Police clearance is now pending review.', 'success');
+        showToast('KYC Documents submitted! Admin & Police clearance is now pending review.', 'success');
         currentVolunteerUser = res.data.user;
         localStorage.setItem('user', JSON.stringify(resDataUser(res.data.user)));
         renderKycStatus(res.data.user);
@@ -158,7 +158,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (res.ok && res.data.success) {
         closeCompletionModal();
         if (typeof showToast === 'function') {
-          showToast(res.data.message || '✅ Request completed successfully!', 'success');
+          showToast(res.data.message || 'Request completed successfully!', 'success');
         } else {
           alert(res.data.message || 'Request completed successfully!');
         }
@@ -207,7 +207,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (res.ok && res.data && res.data.success) {
         closeQuoteModal();
         if (typeof showToast === 'function') {
-          showToast('🤝 Service fee quote submitted! Task is now sent to the family caregiver for approval.', 'success');
+          showToast('Service fee quote submitted! Task is now sent to the family caregiver for approval.', 'success');
         } else {
           alert('Service fee quote submitted!');
         }
@@ -242,10 +242,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (kycStatusCard) {
         if (kycStatusCard.style.display === 'none' || !kycStatusCard.style.display) {
           kycStatusCard.style.display = 'block';
-          btnViewTrustStatus.textContent = '🛡️ Hide Verification Status';
+          btnViewTrustStatus.textContent = 'Hide Verification Status';
         } else {
           kycStatusCard.style.display = 'none';
-          btnViewTrustStatus.textContent = '🛡️ Verification Status: Verified ✅';
+          btnViewTrustStatus.textContent = 'Verification Status: Verified';
         }
       }
     });
@@ -291,22 +291,22 @@ function renderKycStatus(user) {
   const hasAcknowledged = localStorage.getItem(acknowledgedKey) === 'true';
 
   if (badgePhone) {
-    badgePhone.innerHTML = user.isPhoneVerified ? '📞 Phone: Verified' : '📞 Phone: Unverified';
+    badgePhone.innerHTML = user.isPhoneVerified ? 'Phone: Verified' : 'Phone: Unverified';
     badgePhone.style.background = user.isPhoneVerified ? '#e8f5e9' : '#ffebee';
     badgePhone.style.color = user.isPhoneVerified ? '#2e7d32' : '#c62828';
   }
   if (badgeEmail) {
-    badgeEmail.innerHTML = user.isEmailVerified ? '📧 Email: Verified' : '📧 Email: Unverified';
+    badgeEmail.innerHTML = user.isEmailVerified ? 'Email: Verified' : 'Email: Unverified';
     badgeEmail.style.background = user.isEmailVerified ? '#e8f5e9' : '#ffebee';
     badgeEmail.style.color = user.isEmailVerified ? '#2e7d32' : '#c62828';
   }
   if (badgeGovtId) {
-    badgeGovtId.innerHTML = isIdVerified ? '📄 Govt ID: Verified' : (user.govtIdCard ? '📄 Govt ID: Submitted (Pending)' : '📄 Govt ID: Not Uploaded');
+    badgeGovtId.innerHTML = isIdVerified ? 'Govt ID: Verified' : (user.govtIdCard ? 'Govt ID: Submitted (Pending)' : 'Govt ID: Not Uploaded');
     badgeGovtId.style.background = isIdVerified ? '#e8f5e9' : (user.govtIdCard ? '#e3f2fd' : '#ffebee');
     badgeGovtId.style.color = isIdVerified ? '#2e7d32' : (user.govtIdCard ? '#0d47a1' : '#c62828');
   }
   if (badgePolice) {
-    badgePolice.innerHTML = isPoliceVerified ? '👮 Police Check: Verified' : '👮 Police Check: Pending Admin Clearance';
+    badgePolice.innerHTML = isPoliceVerified ? 'Police Check: Verified' : 'Police Check: Pending Admin Clearance';
     badgePolice.style.background = isPoliceVerified ? '#e8f5e9' : '#fff3e0';
     badgePolice.style.color = isPoliceVerified ? '#2e7d32' : '#e65100';
   }
@@ -324,12 +324,12 @@ function renderKycStatus(user) {
         kycAlertBanner.innerHTML = `
           <div style="display: flex; flex-direction: column; gap: 12px;">
             <div>
-              <strong style="font-size: 1.1rem; color: #1b5e20;">🎉 Multi-Level Verification Complete!</strong><br>
+              <strong style="font-size: 1.1rem; color: #1b5e20;">Multi-Level Verification Complete!</strong><br>
               <span style="color: #2e7d32; font-size: 0.98rem;">Your Government ID, Phone, Email, and Police Clearance have all been verified by Admin. You are now officially authorized to render services to Senior Citizens.</span>
             </div>
             <div>
               <button id="btnProceedToService" class="btn btn-primary" style="background-color: #2e7d32; font-size: 1.05rem; padding: 12px 24px; cursor: pointer; border-radius: 8px; font-weight: bold; border: none; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: inline-flex; align-items: center; gap: 8px;">
-                🚀 Proceed to Render Service &rarr;
+                Proceed to Render Service &rarr;
               </button>
             </div>
           </div>
@@ -345,7 +345,7 @@ function renderKycStatus(user) {
               if (volunteerTaskGrid) volunteerTaskGrid.style.display = 'grid';
               if (btnViewTrustStatus) btnViewTrustStatus.style.display = 'inline-block';
               if (typeof showToast === 'function') {
-                showToast('🚀 Welcome! You can now browse available help requests.', 'success');
+                showToast('Welcome! You can now browse available help requests.', 'success');
               }
             };
           }
@@ -367,27 +367,27 @@ function renderKycStatus(user) {
       if (status === 'pending') {
         kycAlertBanner.style.borderLeftColor = '#0288d1';
         kycAlertBanner.style.background = '#e3f2fd';
-        kycAlertBanner.innerHTML = `<strong>⏳ KYC &amp; Police Clearance Under Review.</strong> Your Govt ID and Selfie documents are submitted. Admin is conducting background &amp; police clearance. Your task portal will unlock once approved by Admin.`;
+        kycAlertBanner.innerHTML = `<strong>KYC &amp; Police Clearance Under Review.</strong> Your Govt ID and Selfie documents are submitted. Admin is conducting background &amp; police clearance. Your task portal will unlock once approved by Admin.`;
         if (btnOpenKycModal) {
           btnOpenKycModal.style.display = 'inline-block';
-          btnOpenKycModal.textContent = '🔄 Update KYC Documents';
+          btnOpenKycModal.textContent = 'Update KYC Documents';
         }
       } else if (status === 'rejected') {
         kycAlertBanner.style.borderLeftColor = '#c62828';
         kycAlertBanner.style.background = '#ffebee';
         const reason = user.verificationRejectionReason ? `<br><em>Reason: ${escapeHTML(user.verificationRejectionReason)}</em>` : '';
-        kycAlertBanner.innerHTML = `<strong>❌ Verification Rejected.</strong> Please re-upload your Government ID and Selfie photo to unlock your task portal.${reason}`;
+        kycAlertBanner.innerHTML = `<strong>Verification Rejected.</strong> Please re-upload your Government ID and Selfie photo to unlock your task portal.${reason}`;
         if (btnOpenKycModal) {
           btnOpenKycModal.style.display = 'inline-block';
-          btnOpenKycModal.textContent = '📤 Re-submit KYC Documents';
+          btnOpenKycModal.textContent = 'Re-submit KYC Documents';
         }
       } else {
         kycAlertBanner.style.borderLeftColor = '#f57f17';
         kycAlertBanner.style.background = '#fff8e1';
-        kycAlertBanner.innerHTML = `<strong>⚠️ Verification Required!</strong> A simple login is not enough. You must upload your Govt ID and Selfie for Admin &amp; Police Clearance before accessing help requests.`;
+        kycAlertBanner.innerHTML = `<strong>Verification Required:</strong> You must upload your Govt ID and Selfie for Admin &amp; Police Clearance before accessing help requests.`;
         if (btnOpenKycModal) {
           btnOpenKycModal.style.display = 'inline-block';
-          btnOpenKycModal.textContent = '📤 Submit KYC Documents Now';
+          btnOpenKycModal.textContent = 'Submit KYC Documents Now';
         }
       }
     }
@@ -398,7 +398,7 @@ function renderKycStatus(user) {
 function acceptHelpRequest(id, title, pref = '') {
   const user = JSON.parse(localStorage.getItem('user'));
   if (user && user.verificationStatus !== 'verified') {
-    showToast('🛡️ Verification Clearance Required: You must complete KYC document submission and receive Admin & Police clearance before accepting requests.', 'error');
+    showToast('Verification Clearance Required: You must complete KYC document submission and receive Admin & Police clearance before accepting requests.', 'error');
     const kycModal = document.getElementById('kycModal');
     if (kycModal) kycModal.style.display = 'flex';
     return;
@@ -550,17 +550,17 @@ async function loadVolunteerRequests(silent = false) {
             return `
               <div class="request-card" style="border-left: 5px solid #c62828; background: #ffffff; margin-bottom: 1rem;">
                 <div class="request-card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
-                  <div class="request-title" style="color: #c62828;">📋 ${escapeHTML(req.title)}</div>
+                  <div class="request-title" style="color: #c62828;">${escapeHTML(req.title)}</div>
                   <div style="display: flex; align-items: center; gap: 8px;">
-                    <span class="badge" style="background: #c62828; color: #fff;">❌ Cancelled</span>
+                    <span class="badge" style="background: #c62828; color: #fff;">Cancelled</span>
                     <button type="button" class="btn btn-secondary" onclick="dismissTaskNotification('${req._id}')" style="padding: 4px 10px; font-size: 0.85rem; border-radius: 6px; cursor: pointer; border: 1.5px solid #ccc; background: #f9f9f9; color: #333; min-height: 32px; display: inline-flex; align-items: center; justify-content: center; gap: 4px; font-weight: bold;" title="Dismiss this notification">
-                      ✕ Dismiss
+                      Dismiss
                     </button>
                   </div>
                 </div>
                 <div style="margin-top: 10px; padding: 12px 16px; background-color: #ffebee; border: 2px solid #c62828; border-radius: 10px;">
                   <p style="color: #c62828; font-weight: bold; font-size: 1.02rem; margin-bottom: 4px;">
-                    📢 The senior has cancelled this request.
+                    The senior has cancelled this request.
                   </p>
                   <p style="color: #c62828; font-size: 0.93rem; margin: 0;">
                     Help is no longer required. Thank you so much for your support to <strong>${seniorName}</strong>!
@@ -572,17 +572,17 @@ async function loadVolunteerRequests(silent = false) {
           return `
             <div class="request-card" style="border-left: 5px solid #2e7d32; background: #ffffff; margin-bottom: 1rem;">
               <div class="request-card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
-                <div class="request-title" style="color: #1b5e20;">📋 ${escapeHTML(req.title)}</div>
+                <div class="request-title" style="color: #1b5e20;">${escapeHTML(req.title)}</div>
                 <div style="display: flex; align-items: center; gap: 8px;">
-                  <span class="badge" style="background: #2e7d32; color: #fff;">ℹ️ Task Assigned</span>
+                  <span class="badge" style="background: #2e7d32; color: #fff;">Task Assigned</span>
                   <button type="button" class="btn btn-secondary" onclick="dismissTaskNotification('${req._id}')" style="padding: 4px 10px; font-size: 0.85rem; border-radius: 6px; cursor: pointer; border: 1.5px solid #ccc; background: #f9f9f9; color: #333; min-height: 32px; display: inline-flex; align-items: center; justify-content: center; gap: 4px; font-weight: bold;" title="Dismiss this notification">
-                    ✕ Dismiss
+                    Dismiss
                   </button>
                 </div>
               </div>
               <div style="margin-top: 10px; padding: 12px 16px; background-color: #e8f5e9; border: 2px solid #2e7d32; border-radius: 10px;">
                 <p style="color: #1b5e20; font-weight: bold; font-size: 1.02rem; margin-bottom: 4px;">
-                  📢 The caregiver has assigned this task to another volunteer.
+                  The caregiver has assigned this task to another volunteer.
                 </p>
                 <p style="color: #2e7d32; font-size: 0.93rem; margin: 0;">
                   Thank you so much for offering your voluntary support to <strong>${seniorName}</strong>! You can browse and quote on other open requests below.
@@ -600,7 +600,6 @@ async function loadVolunteerRequests(silent = false) {
       if (pendingRequests.length === 0) {
         pendingList.innerHTML = `
           <div class="col-span-full py-12 px-6 bg-white rounded-2xl text-center border-2 border-dashed border-slate-200">
-            <div class="text-3xl mb-2">🔍</div>
             <p class="text-slate-800 font-extrabold text-sm" data-i18n="vd_no_pending">No pending help requests at this time.</p>
             <p class="text-xs text-slate-400 font-medium mt-1">Check back later to support Senior Citizens in need!</p>
           </div>`;
@@ -608,7 +607,7 @@ async function loadVolunteerRequests(silent = false) {
         pendingList.innerHTML = pendingRequests.map(req => {
           let urgencyClass = req.urgency === 'high' ? 'urgency-high' : req.urgency === 'emergency' ? 'urgency-emergency' : '';
           let urgencyLabel = req.urgency === 'emergency' ? 'SOS EMERGENCY' : req.urgency === 'high' ? 'High Priority' : 'Normal';
-          let audioHtml = req.audioFile ? `<div class="request-audio-player mt-3 bg-slate-50 border border-slate-100 p-2.5 rounded-xl text-xs"><label class="block font-bold text-slate-600 mb-1">🎙️ Senior's Voice Message:</label><audio class="w-full h-8" controls src="${req.audioFile}"></audio></div>` : '';
+          let audioHtml = req.audioFile ? `<div class="request-audio-player mt-3 bg-slate-50 border border-slate-100 p-2.5 rounded-xl text-xs"><label class="block font-bold text-slate-600 mb-1">Senior's Voice Message:</label><audio class="w-full h-8" controls src="${req.audioFile}"></audio></div>` : '';
 
           let existingQuoteBadge = '';
           let myQuote = null;
@@ -623,18 +622,18 @@ async function loadVolunteerRequests(silent = false) {
             const feeStr = (myQuote.serviceFee !== undefined && myQuote.serviceFee > 0) ? `₹${myQuote.serviceFee}` : '₹0 (Free)';
             existingQuoteBadge = `
               <div class="mt-3 p-3 bg-emerald-50 border border-emerald-100 rounded-xl text-xs text-emerald-800 leading-normal font-semibold">
-                ✅ <strong>You submitted a quote: ${feeStr}</strong> (Awaiting Caregiver Selection). You can update your quote below!
+                <strong>You submitted a quote: ${feeStr}</strong> (Awaiting Caregiver Selection). You can update your quote below!
               </div>`;
           } else if (otherQuote) {
             const feeStr = (otherQuote.serviceFee !== undefined && otherQuote.serviceFee > 0) ? `₹${otherQuote.serviceFee}` : '₹0 (Free)';
             const countStr = req.volunteerQuotes.length > 1 ? ` (${req.volunteerQuotes.length} quotes submitted)` : '';
             existingQuoteBadge = `
               <div class="mt-3 p-3 bg-brand-50 border border-brand-100 rounded-xl text-xs text-brand-800 leading-normal font-semibold">
-                ℹ️ A volunteer quoted <strong>${feeStr}</strong>${countStr} (Awaiting Caregiver Selection). You can also submit your quote!
+                A volunteer quoted <strong>${feeStr}</strong>${countStr} (Awaiting Caregiver Selection). You can also submit your quote!
               </div>`;
           }
 
-          const btnText = myQuote ? '✏️ Update Your Quote' : '🤝 Volunteer to Help';
+          const btnText = myQuote ? 'Update Your Quote' : 'Volunteer to Help';
 
           return `
             <div class="bg-white rounded-2xl border ${req.urgency === 'emergency' ? 'border-red-200 bg-red-50/5' : 'border-slate-200/80'} shadow-sm hover:shadow-premium hover:-translate-y-0.5 transition-all duration-200 p-5 flex flex-col justify-between">
@@ -655,7 +654,7 @@ async function loadVolunteerRequests(silent = false) {
                 
                 <!-- Caregiver Shopping Preference -->
                 <div class="rounded-xl p-3 bg-amber-50/50 border border-amber-100 mb-3">
-                  <div class="text-[9px] font-extrabold text-amber-800 uppercase tracking-wider">🛒 Caregiver Shopping Preference</div>
+                  <div class="text-[9px] font-extrabold text-amber-800 uppercase tracking-wider">Caregiver Shopping Preference</div>
                   <div class="text-xs font-bold text-amber-900 mt-0.5">
                     ${escapeHTML((req.shoppingPreference && req.shoppingPreference.trim()) ? req.shoppingPreference.trim() : 'No Preference')}
                   </div>
@@ -681,7 +680,6 @@ async function loadVolunteerRequests(silent = false) {
       if (awaitingRequests.length === 0) {
         awaitingList.innerHTML = `
           <div class="col-span-full py-12 px-6 bg-white rounded-2xl text-center border-2 border-dashed border-slate-200">
-            <div class="text-3xl mb-2">⏳</div>
             <p class="text-slate-800 font-extrabold text-sm" data-i18n="vd_no_awaiting">No tasks currently awaiting family approval.</p>
             <p class="text-xs text-slate-400 font-medium mt-1">When you commit to help, the family reviews your profile here.</p>
           </div>`;
@@ -693,7 +691,7 @@ async function loadVolunteerRequests(silent = false) {
                 <div class="flex justify-between items-start gap-3 flex-wrap mb-3">
                   <h4 class="text-sm font-extrabold text-slate-900 tracking-tight leading-tight flex-1">${escapeHTML(req.title)}</h4>
                   <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-extrabold tracking-wider uppercase bg-amber-100 text-amber-700">
-                    ⏳ Awaiting Approval
+                    Awaiting Approval
                   </span>
                 </div>
                 
@@ -701,7 +699,7 @@ async function loadVolunteerRequests(silent = false) {
                 
                 <!-- Caregiver Shopping Preference -->
                 <div class="rounded-xl p-3 bg-amber-50/50 border border-amber-100 mb-3">
-                  <div class="text-[9px] font-extrabold text-amber-800 uppercase tracking-wider">🛒 Caregiver Shopping Preference</div>
+                  <div class="text-[9px] font-extrabold text-amber-800 uppercase tracking-wider">Caregiver Shopping Preference</div>
                   <div class="text-xs font-bold text-amber-900 mt-0.5">
                     ${escapeHTML((req.shoppingPreference && req.shoppingPreference.trim()) ? req.shoppingPreference.trim() : 'No Preference')}
                   </div>
@@ -722,7 +720,6 @@ async function loadVolunteerRequests(silent = false) {
       if (activeRequests.length === 0) {
         activeList.innerHTML = `
           <div class="col-span-full py-12 px-6 bg-white rounded-2xl text-center border-2 border-dashed border-slate-200">
-            <div class="text-3xl mb-2">🤝</div>
             <p class="text-slate-800 font-extrabold text-sm" data-i18n="vd_no_active">You have no active help commitments right now.</p>
             <p class="text-xs text-slate-400 font-medium mt-1">Browse open requests and quote your fee to start helping!</p>
           </div>`;
@@ -752,13 +749,13 @@ async function loadVolunteerRequests(silent = false) {
             rejectionWarningBox = `
               <div class="mt-3 p-3.5 bg-red-55/10 border-l-4 border-red-500 rounded-xl text-xs text-red-800 leading-normal font-semibold">
                 <p class="text-red-750 font-bold mb-1">
-                  ⚠️ Delivery Verification Rejected by Caregiver
+                  Delivery Verification Rejected by Caregiver
                 </p>
                 <p class="text-red-700 font-medium">
                   <strong>Reason:</strong> "${escapeHTML(req.verificationRejectionReason || 'Caregiver requested updated receipt or delivery photo proof.')}"
                 </p>
                 <p class="text-slate-500 font-normal mt-1 leading-normal">
-                  Please check the reason, re-upload the updated receipt or delivery photo proof below, and re-apply for verification.
+                  Please re-upload a clear bill receipt photo or delivery proof and re-apply completion.
                 </p>
               </div>`;
           }
@@ -767,7 +764,7 @@ async function loadVolunteerRequests(silent = false) {
             rejectionWarningBox += `
               <div class="mt-3 p-3.5 bg-amber-55/10 border-l-4 border-amber-500 rounded-xl text-xs text-amber-800 leading-normal font-semibold">
                 <p class="text-amber-750 font-bold mb-1">
-                  ⚠️ Caregiver Requested Revision on Purchase Cost
+                  Caregiver Requested Revision on Purchase Cost
                 </p>
                 <p class="text-amber-700 font-medium">
                   <strong>Caregiver Note:</strong> "${escapeHTML(req.purchaseRejectionReason)}"
@@ -784,13 +781,11 @@ async function loadVolunteerRequests(silent = false) {
           if (req.status === 'accepted') {
             stepBoxHtml = `
               <div class="mt-3 p-3.5 bg-blue-50 border-l-4 border-blue-500 rounded-xl text-xs text-blue-800 leading-normal font-semibold">
-                💡 <strong>Step 1 of 2: Submit Purchase Cost &amp; Price Proof</strong><br/><br/>
-                Check the store price for the items needed. Then click below to submit the <strong>actual purchase cost</strong> along with a price tag photo or cart screenshot.<br/><br/>
-                <span class="text-[10px] text-blue-600 font-bold block mt-1 leading-normal">📌 The caregiver will fund the purchase amount + your service charge. Once funded, proceed to buy and deliver.</span>
+                <strong>Next Step:</strong> Review items requested, order/purchase from recommended platforms or store, then submit the actual store receipt cost.
               </div>`;
             actionBtnHtml = `
               <button class="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-extrabold rounded-xl transition-all cursor-pointer shadow-xs border-none focus:outline-none flex items-center gap-1.5" onclick="openPurchaseCostModal('${req._id}')">
-                💰 Submit Purchase Cost
+                Submit Purchase Cost
               </button>`;
           } else if (req.status === 'purchase_cost_submitted') {
             let proofImages = req.purchaseProofDocs && req.purchaseProofDocs.length > 0 
@@ -800,40 +795,39 @@ async function loadVolunteerRequests(silent = false) {
 
             stepBoxHtml = `
               <div class="mt-3 p-3.5 bg-amber-50 border-l-4 border-amber-500 rounded-xl text-xs text-amber-800 leading-normal font-semibold">
-                💳 <strong>Purchase Cost (₹${req.actualPurchaseCost || 0}) &amp; Proof Submitted</strong><br/>
-                ⏳ Awaiting Caregiver Payment Approval &amp; Escrow Funding.
+                <strong>Purchase Cost Submitted: ₹${req.actualPurchaseCost || 0}</strong><br/>
+                Awaiting Caregiver Escrow Payment. Once caregiver deposits funds, proceed with delivery.
                 ${proofSlider}
               </div>`;
             actionBtnHtml = `
-              <div class="inline-flex items-center justify-center px-4 py-2 bg-amber-50 text-amber-700 border border-amber-250 rounded-xl text-xs font-bold cursor-default select-none">
-                ⏳ Awaiting Caregiver Escrow
+              <div class="inline-flex items-center justify-center px-4 py-2 bg-amber-50 text-amber-750 border border-amber-250 rounded-xl text-xs font-bold cursor-default select-none">
+                Escrow Funding Pending
               </div>`;
           } else if (req.status === 'purchase_funded' || req.status === 'in_progress') {
             stepBoxHtml = `
               <div class="mt-3 p-3.5 bg-emerald-50 border-l-4 border-emerald-500 rounded-xl text-xs text-emerald-800 leading-normal font-semibold">
-                ✅ <strong>Step 2 of 2: Purchase Funded — Buy Items &amp; Upload Receipt</strong><br/><br/>
-                <strong>₹${req.actualPurchaseCost || 0}</strong> has been released by the caregiver. Go buy the items and deliver them to the senior citizen.<br/><br/>
-                <span class="text-[10px] text-emerald-600 font-bold block mt-1 leading-normal">📌 After delivery, click below to upload the final store cash receipt / delivery proof. The caregiver will verify it and release your service charge of <strong>₹${myQuotedFee > 0 ? myQuotedFee : 0}</strong>.</span>
+                <strong>Escrow Funded: ₹${req.actualPurchaseCost || 0} Deposited</strong><br/>
+                Items paid by caregiver. Deliver the items to the senior, collect confirmation, and upload final proof!
               </div>`;
             actionBtnHtml = `
               <button class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold rounded-xl transition-all cursor-pointer shadow-xs border-none focus:outline-none flex items-center gap-1.5" onclick="openCompletionModal('${req._id}')">
-                🧾 Upload Proof &amp; Complete
+                Upload Proof &amp; Complete
               </button>`;
           } else if (req.status === 'awaiting_verification') {
             stepBoxHtml = `
               <div class="mt-3 p-3.5 bg-purple-50 border-l-4 border-purple-500 rounded-xl text-xs text-purple-800 leading-normal font-semibold">
-                🧾 <strong>Store Cash Receipt Uploaded</strong><br/>
-                ⏳ Awaiting Caregiver Final Verification &amp; Volunteer Service Charge (₹${myQuotedFee > 0 ? myQuotedFee : 150}) Escrow Release.
-                ${req.finalReceiptDoc || req.completionProof ? `<div class="mt-2"><a href="${req.finalReceiptDoc || req.completionProof}" target="_blank" onclick="event.stopPropagation(); openImageLightbox('${req.finalReceiptDoc || req.completionProof}'); return false;" class="text-purple-700 font-bold hover:underline">🔍 View Uploaded Receipt Photo</a></div>` : ''}
+                <strong>Store Cash Receipt Uploaded</strong><br/>
+                Awaiting Caregiver Final Verification &amp; Volunteer Service Charge (₹${myQuotedFee > 0 ? myQuotedFee : 150}) Escrow Release.
+                ${req.finalReceiptDoc || req.completionProof ? `<div class="mt-2"><a href="${req.finalReceiptDoc || req.completionProof}" target="_blank" onclick="event.stopPropagation(); openImageLightbox('${req.finalReceiptDoc || req.completionProof}'); return false;" class="text-purple-700 font-bold hover:underline">View Uploaded Receipt Photo</a></div>` : ''}
               </div>`;
             actionBtnHtml = `
               <div class="inline-flex items-center justify-center px-4 py-2 bg-purple-50 text-purple-750 border border-purple-250 rounded-xl text-xs font-bold cursor-default select-none">
-                ⏳ Verification Pending
+                Verification Pending
               </div>`;
           } else {
             actionBtnHtml = `
               <button class="px-4 py-2.5 text-white text-xs font-extrabold rounded-xl transition-all cursor-pointer shadow-xs border-none focus:outline-none" onclick="openCompletionModal('${req._id}')" style="background-color: ${isRejected ? '#c62828' : 'var(--color-primary-dark)'};">
-                ${isRejected ? '📸 Re-upload & Re-apply' : '✅ Complete & Upload Proof'}
+                ${isRejected ? 'Re-upload & Re-apply' : 'Complete & Upload Proof'}
               </button>`;
           }
 
@@ -844,7 +838,7 @@ async function loadVolunteerRequests(silent = false) {
                   <div>
                     <h4 class="text-sm font-extrabold text-slate-900 tracking-tight leading-tight">${escapeHTML(req.title)}</h4>
                     <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-100 mt-1">
-                      💰 Quoted Fee: ₹${myQuotedFee > 0 ? myQuotedFee : '0 (Free)'}
+                      Quoted Fee: ₹${myQuotedFee > 0 ? myQuotedFee : '0 (Free)'}
                     </span>
                   </div>
                   <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-extrabold tracking-wider uppercase bg-brand-50 text-brand-700">
@@ -856,7 +850,7 @@ async function loadVolunteerRequests(silent = false) {
 
                 <!-- Caregiver Shopping Preference -->
                 <div class="rounded-xl p-3 bg-amber-50/50 border border-amber-100 mb-3">
-                  <div class="text-[9px] font-extrabold text-amber-800 uppercase tracking-wider">🛒 Caregiver Shopping Preference</div>
+                  <div class="text-[9px] font-extrabold text-amber-800 uppercase tracking-wider">Caregiver Shopping Preference</div>
                   <div class="text-xs font-bold text-amber-900 mt-0.5">
                     ${escapeHTML((req.shoppingPreference && req.shoppingPreference.trim()) ? req.shoppingPreference.trim() : 'No Preference')}
                   </div>
@@ -890,13 +884,12 @@ async function loadVolunteerRequests(silent = false) {
       if (completedRequests.length === 0) {
         historyList.innerHTML = `
           <div class="col-span-full py-12 px-6 bg-white rounded-2xl text-center border-2 border-dashed border-slate-200">
-            <div class="text-3xl mb-2">📜</div>
             <p class="text-slate-800 font-extrabold text-sm" data-i18n="vd_no_history">No completed requests logged yet.</p>
             <p class="text-xs text-slate-400 font-medium mt-1">Your verified completions will appear here.</p>
           </div>`;
       } else {
         historyList.innerHTML = completedRequests.map(req => {
-          let audioHtml = req.audioFile ? `<div class="request-audio-player mt-3 bg-slate-50 border border-slate-100 p-2.5 rounded-xl text-xs"><label class="block font-bold text-slate-600 mb-1">🎙️ Senior's Voice Message:</label><audio class="w-full h-8" controls src="${req.audioFile}"></audio></div>` : '';
+          let audioHtml = req.audioFile ? `<div class="request-audio-player mt-3 bg-slate-50 border border-slate-100 p-2.5 rounded-xl text-xs"><label class="block font-bold text-slate-600 mb-1">Senior's Voice Message:</label><audio class="w-full h-8" controls src="${req.audioFile}"></audio></div>` : '';
           
           const serviceFeeEarned = Number((req.serviceFee !== undefined && req.serviceFee !== null)
             ? req.serviceFee
@@ -916,11 +909,11 @@ async function loadVolunteerRequests(silent = false) {
             <div class="mt-3 p-3 bg-emerald-50 border border-emerald-100 rounded-xl">
               <div class="flex justify-between items-center flex-wrap gap-2">
                 <span class="text-xs font-bold text-emerald-800">
-                  💰 Total Amount Earned: <strong class="text-sm font-extrabold">₹${totalEarned}</strong>
+                  Total Amount Earned: <strong class="text-sm font-extrabold">₹${totalEarned}</strong>
                 </span>
                 ${tipEarned > 0 ? `
                   <button type="button" onclick="showTipEarnedModal('${escapeHTML(req.title)}', ${tipEarned}, ${serviceFeeEarned})" class="bg-amber-100 text-amber-850 hover:bg-amber-150 border border-amber-200 px-3 py-1 rounded-full font-extrabold text-[10px] cursor-pointer transition-all shadow-xs focus:outline-none flex items-center gap-1">
-                    🎁 Special Tip: ₹${tipEarned} ✨
+                    Special Tip: ₹${tipEarned}
                   </button>
                 ` : ''}
               </div>
@@ -932,8 +925,8 @@ async function loadVolunteerRequests(silent = false) {
           let proofHtml = req.completionProof ? `
             <div class="mt-3 background-white p-3 rounded-xl border border-slate-200/60 shadow-xs">
               <div class="flex justify-between items-center mb-2 flex-wrap gap-2">
-                <label class="font-extrabold text-slate-800 text-[10px] uppercase tracking-wider">📸 Receipt / Proof:</label>
-                <button type="button" onclick="openImageLightbox('${escapeHTML(req.completionProof)}')" class="px-2.5 py-1 text-[10px] font-bold bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-lg cursor-pointer transition-all">🔍 View Full Photo</button>
+                <label class="font-extrabold text-slate-800 text-[10px] uppercase tracking-wider">Receipt / Proof:</label>
+                <button type="button" onclick="openImageLightbox('${escapeHTML(req.completionProof)}')" class="px-2.5 py-1 text-[10px] font-bold bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-lg cursor-pointer transition-all">View Full Photo</button>
               </div>
               <img src="${escapeHTML(req.completionProof)}" alt="Receipt Photo Proof" onclick="openImageLightbox('${escapeHTML(req.completionProof)}')" class="max-w-full max-h-[120px] rounded-lg mt-1 block object-contain cursor-pointer mx-auto border border-slate-150">
             </div>` : '<div class="mt-2 text-[10px] text-slate-400 font-semibold">No receipt/delivery photo attached.</div>';
@@ -943,14 +936,14 @@ async function loadVolunteerRequests(silent = false) {
           let rejectionReasonAlert = '';
 
           if (req.completionVerified === 'verified') {
-            verifyBadge = `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-extrabold tracking-wider uppercase bg-emerald-100 text-emerald-700">✅ Verified</span>`;
+            verifyBadge = `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-extrabold tracking-wider uppercase bg-emerald-100 text-emerald-700">Verified</span>`;
           } else if (req.completionVerified === 'rejected') {
-            verifyBadge = `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-extrabold tracking-wider uppercase bg-red-100 text-red-700">❌ Rejected</span>`;
+            verifyBadge = `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-extrabold tracking-wider uppercase bg-red-100 text-red-700">Rejected</span>`;
             
             rejectionReasonAlert = `
               <div class="mt-3 p-3 bg-red-50/50 border border-red-200 rounded-xl text-xs text-red-800 leading-normal font-semibold">
                 <p class="text-red-750 font-bold mb-1">
-                  ⚠️ Verification Rejected by Caregiver
+                  Verification Rejected by Caregiver
                 </p>
                 <p class="text-red-700 font-medium">
                   <strong>Reason:</strong> "${escapeHTML(req.verificationRejectionReason || 'Caregiver requested updated receipt or delivery photo proof.')}"
@@ -959,12 +952,12 @@ async function loadVolunteerRequests(silent = false) {
 
             reapplyButtonHtml = `
               <button class="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-[10px] font-extrabold rounded-lg transition-all cursor-pointer shadow-xs border-none focus:outline-none" onclick="openCompletionModal('${req._id}')">
-                📸 Re-apply
+                Re-apply
               </button>`;
           } else if (req.requiresSeniorVoiceCall) {
-            verifyBadge = `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-extrabold tracking-wider uppercase bg-blue-100 text-blue-700">📞 Voice Call Sent</span>`;
+            verifyBadge = `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-extrabold tracking-wider uppercase bg-blue-100 text-blue-700">Voice Call Sent</span>`;
           } else {
-            verifyBadge = `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-extrabold tracking-wider uppercase bg-amber-100 text-amber-700">⏳ Pending Verification</span>`;
+            verifyBadge = `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-extrabold tracking-wider uppercase bg-amber-100 text-amber-700">Pending Verification</span>`;
           }
 
           return `
@@ -979,7 +972,7 @@ async function loadVolunteerRequests(silent = false) {
               ${req.description ? `<div class="request-description">${escapeHTML(req.description)}</div>` : ''}
               ${req.shoppingPreference ? `
                 <div style="margin-top: 8px; margin-bottom: 12px; padding: 10px 14px; background: #fff3e0; border-left: 4px solid #e65100; border-radius: 8px; font-size: 0.98rem; color: #e65100; font-weight: 600;">
-                  🛒 <strong>Caregiver Shopping Preference:</strong> ${escapeHTML(req.shoppingPreference)}
+                  <strong>Caregiver Shopping Preference:</strong> ${escapeHTML(req.shoppingPreference)}
                 </div>` : ''}
               ${audioHtml}
               ${proofHtml}
@@ -995,15 +988,15 @@ async function loadVolunteerRequests(silent = false) {
               ${req.feedback ? `
                 <div style="margin-top: 10px; padding: 10px 14px; background: #fffdf5; border: 1.5px solid #fde68a; border-radius: 10px; box-shadow: 0 2px 6px rgba(245,158,11,0.08);">
                   <div style="font-weight: 700; color: #b45309; font-size: 0.95rem; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
-                    ⭐ Caregiver Feedback &amp; Rating Review:
+                    Caregiver Feedback &amp; Rating Review:
                   </div>
                   <div style="font-size: 0.88rem; color: #444; display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 4px;">
-                    <span>💰 Cost Utilization: <strong style="color: #b45309;">${req.feedback.costUtilization}/5</strong></span>
-                    <span>⏱️ Speed: <strong style="color: #b45309;">${req.feedback.speedTimeliness}/5</strong></span>
-                    <span>📞 Communication: <strong style="color: #b45309;">${req.feedback.communication}/5</strong></span>
-                    <span>👍 Choose Again: <strong style="color: #2e7d32;">${escapeHTML(req.feedback.chooseAgain)}</strong></span>
+                    <span>Cost Utilization: <strong style="color: #b45309;">${req.feedback.costUtilization}/5</strong></span>
+                    <span>Speed: <strong style="color: #b45309;">${req.feedback.speedTimeliness}/5</strong></span>
+                    <span>Communication: <strong style="color: #b45309;">${req.feedback.communication}/5</strong></span>
+                    <span>Choose Again: <strong style="color: #2e7d32;">${escapeHTML(req.feedback.chooseAgain)}</strong></span>
                   </div>
-                  ${req.feedback.additionalFeedback ? `<p style="margin: 4px 0 0 0; font-size: 0.88rem; color: #333; font-style: italic; background: #ffffff; padding: 6px 10px; border-radius: 6px; border-left: 3px solid #fde68a;">💬 "${escapeHTML(req.feedback.additionalFeedback)}"</p>` : ''}
+                  ${req.feedback.additionalFeedback ? `<p style="margin: 4px 0 0 0; font-size: 0.88rem; color: #333; font-style: italic; background: #ffffff; padding: 6px 10px; border-radius: 6px; border-left: 3px solid #fde68a;">"${escapeHTML(req.feedback.additionalFeedback)}"</p>` : ''}
                 </div>` : ''}
               ${reapplyButtonHtml}
             </div>`;
@@ -1054,43 +1047,43 @@ function renderPlatformHelperHtml(req) {
 
     if (text.includes('crocin') || text.includes('medicine') || text.includes('tablet') || text.includes('dolo') || text.includes('syrup')) {
       platforms = [
-        { name: 'Apollo 24|7', icon: '🏥', url: `https://www.apollo247.com/search-medicines/${enc}`, color: '#005b9f', searchQuery: query },
-        { name: 'PharmEasy', icon: '💊', url: `https://pharmeasy.in/search/all?name=${enc}`, color: '#10847e', searchQuery: query },
-        { name: 'Tata 1mg', icon: '🧪', url: `https://www.1mg.com/search/all?name=${enc}`, color: '#ff6f61', searchQuery: query },
-        { name: 'NetMeds', icon: '🩹', url: `https://www.netmeds.com/catalogsearch/result?q=${enc}`, color: '#24aeb1', searchQuery: query }
+        { name: 'Apollo 24|7', url: `https://www.apollo247.com/search-medicines/${enc}`, color: '#005b9f', searchQuery: query },
+        { name: 'PharmEasy', url: `https://pharmeasy.in/search/all?name=${enc}`, color: '#10847e', searchQuery: query },
+        { name: 'Tata 1mg', url: `https://www.1mg.com/search/all?name=${enc}`, color: '#ff6f61', searchQuery: query },
+        { name: 'NetMeds', url: `https://www.netmeds.com/catalogsearch/result?q=${enc}`, color: '#24aeb1', searchQuery: query }
       ];
     } else if (text.includes('pizza') || text.includes('burger') || text.includes('biryani') || text.includes('paratha') || text.includes('food')) {
       platforms = [
-        { name: 'Swiggy', icon: '🍕', url: `https://www.swiggy.com/search?query=${enc}`, color: '#fc8019', searchQuery: query },
-        { name: 'Zomato', icon: '🔴', url: `https://www.zomato.com/search?q=${enc}`, color: '#cb202d', searchQuery: query },
-        { name: 'EatSure', icon: '🍲', url: `https://www.eatsure.com/`, color: '#ff4f00', searchQuery: query }
+        { name: 'Swiggy', url: `https://www.swiggy.com/search?query=${enc}`, color: '#fc8019', searchQuery: query },
+        { name: 'Zomato', url: `https://www.zomato.com/search?q=${enc}`, color: '#cb202d', searchQuery: query },
+        { name: 'EatSure', url: `https://www.eatsure.com/`, color: '#ff4f00', searchQuery: query }
       ];
     } else if (text.includes('cab') || text.includes('taxi') || text.includes('uber') || text.includes('ola') || text.includes('ride')) {
       platforms = [
-        { name: 'Uber', icon: '🚕', url: `https://m.uber.com/`, color: '#000000', searchQuery: query },
-        { name: 'Ola', icon: '🚖', url: `https://book.olacabs.com/`, color: '#2bb673', searchQuery: query },
-        { name: 'Rapido', icon: '🛵', url: `https://www.rapido.bike/`, color: '#f9a825', searchQuery: query }
+        { name: 'Uber', url: `https://m.uber.com/`, color: '#000000', searchQuery: query },
+        { name: 'Ola', url: `https://book.olacabs.com/`, color: '#2bb673', searchQuery: query },
+        { name: 'Rapido', url: `https://www.rapido.bike/`, color: '#f9a825', searchQuery: query }
       ];
     } else if (text.includes('bill') || text.includes('electricity') || text.includes('recharge') || text.includes('pay')) {
       platforms = [
-        { name: 'Google Pay', icon: '💳', url: `https://pay.google.com/`, color: '#1a73e8', searchQuery: query },
-        { name: 'PhonePe', icon: '🟣', url: `https://www.phonepe.com/`, color: '#5f259f', searchQuery: query },
-        { name: 'Paytm', icon: '📲', url: `https://paytm.com/`, color: '#00b9f1', searchQuery: query },
-        { name: 'BHIM', icon: '🇮🇳', url: `https://www.bhimupi.org.in/`, color: '#003975', searchQuery: query }
+        { name: 'Google Pay', url: `https://pay.google.com/`, color: '#1a73e8', searchQuery: query },
+        { name: 'PhonePe', url: `https://www.phonepe.com/`, color: '#5f259f', searchQuery: query },
+        { name: 'Paytm', url: `https://paytm.com/`, color: '#00b9f1', searchQuery: query },
+        { name: 'BHIM', url: `https://www.bhimupi.org.in/`, color: '#003975', searchQuery: query }
       ];
     } else if (text.includes('doctor') || text.includes('appointment') || text.includes('hospital') || text.includes('clinic')) {
       platforms = [
-        { name: 'Practo', icon: '👨‍⚕️', url: `https://www.practo.com/search?q=${enc}`, color: '#28328c', searchQuery: query },
-        { name: 'Apollo 24|7', icon: '🏥', url: `https://www.apollo247.com/specialties`, color: '#005b9f', searchQuery: query },
-        { name: 'MediBuddy', icon: '🩺', url: `https://www.medibuddy.in/`, color: '#1a73e8', searchQuery: query }
+        { name: 'Practo', url: `https://www.practo.com/search?q=${enc}`, color: '#28328c', searchQuery: query },
+        { name: 'Apollo 24|7', url: `https://www.apollo247.com/specialties`, color: '#005b9f', searchQuery: query },
+        { name: 'MediBuddy', url: `https://www.medibuddy.in/`, color: '#1a73e8', searchQuery: query }
       ];
     } else {
       platforms = [
-        { name: 'Blinkit', icon: '⚡', url: `https://blinkit.com/s/?q=${enc}`, color: '#f5c518', searchQuery: query },
-        { name: 'Instamart', icon: '🛒', url: `https://www.swiggy.com/instamart/search?custom_back=true&query=${enc}`, color: '#fc8019', searchQuery: query },
-        { name: 'Zepto', icon: '💜', url: `https://www.zeptonow.com/search?q=${enc}`, color: '#7b1fa2', searchQuery: query },
-        { name: 'BigBasket', icon: '🧺', url: `https://www.bigbasket.com/ps/?q=${enc}`, color: '#689f38', searchQuery: query },
-        { name: 'Amazon Fresh', icon: '🥬', url: `https://www.amazon.in/s?k=${enc}`, color: '#232f3e', searchQuery: query }
+        { name: 'Blinkit', url: `https://blinkit.com/s/?q=${enc}`, color: '#f5c518', searchQuery: query },
+        { name: 'Instamart', url: `https://www.swiggy.com/instamart/search?custom_back=true&query=${enc}`, color: '#fc8019', searchQuery: query },
+        { name: 'Zepto', url: `https://www.zeptonow.com/search?q=${enc}`, color: '#7b1fa2', searchQuery: query },
+        { name: 'BigBasket', url: `https://www.bigbasket.com/ps/?q=${enc}`, color: '#689f38', searchQuery: query },
+        { name: 'Amazon Fresh', url: `https://www.amazon.in/s?k=${enc}`, color: '#232f3e', searchQuery: query }
       ];
     }
   }
@@ -1108,7 +1101,6 @@ function renderPlatformHelperHtml(req) {
         onclick="openPlatformWithPreFill('${escapeHTML(p.url)}', '${escapeHTML(q)}', '${escapeHTML(p.name)}')"
         title="Open ${escapeHTML(p.name)} pre-filled search for '${escapeHTML(q)}'"
       >
-        <span>${p.icon || '🚀'}</span>
         <span>${escapeHTML(p.name)}</span>
         <span style="font-size:0.75rem; color:#888; font-weight:normal;">↗</span>
       </button>`;
@@ -1117,8 +1109,8 @@ function renderPlatformHelperHtml(req) {
   return `
     <div class="ai-platform-recommendation-box">
       <div class="ai-platform-header">
-        <span class="ai-platform-title">🤖 AI Suggested Ordering Platforms</span>
-        ${queryLabel ? `<span class="platform-items-pill">🔍 Items: "${queryLabel}"</span>` : ''}
+        <span class="ai-platform-title">AI Suggested Ordering Platforms</span>
+        ${queryLabel ? `<span class="platform-items-pill">Items: "${queryLabel}"</span>` : ''}
       </div>
       <div class="platform-chips-grid">
         ${chipsHtml}
@@ -1304,19 +1296,19 @@ async function renderRatingProfileCard(user) {
 
   if (simpleOverallBadge) {
     if (stats.reviewsCount > 0) {
-      simpleOverallBadge.textContent = `⭐ ${stats.overallRating.toFixed(1)} Rating`;
+      simpleOverallBadge.textContent = `${stats.overallRating.toFixed(1)} Rating`;
     } else if (stats.tasksCompleted > 0) {
-      simpleOverallBadge.textContent = `⭐ 0.0 (No reviews yet)`;
+      simpleOverallBadge.textContent = `0.0 (No reviews yet)`;
     } else {
-      simpleOverallBadge.textContent = `⭐ 0.0 Rating`;
+      simpleOverallBadge.textContent = `0.0 Rating`;
     }
   }
-  if (simpleCost) simpleCost.textContent = `💰 ${stats.costUtilization > 0 ? stats.costUtilization.toFixed(1) : '0'}/5`;
-  if (simpleSpeed) simpleSpeed.textContent = `⏱️ ${stats.speedTimeliness > 0 ? stats.speedTimeliness.toFixed(1) : '0'}/5`;
-  if (simpleComm) simpleComm.textContent = `📞 ${stats.communication > 0 ? stats.communication.toFixed(1) : '0'}/5`;
-  if (simpleRecommend) simpleRecommend.textContent = `👍 ${stats.recommendationRate}% recommend`;
-  if (simpleTasks) simpleTasks.textContent = `✓ ${stats.tasksCompleted} tasks`;
-  if (simpleReviews) simpleReviews.textContent = `💬 ${stats.reviewsCount} review${stats.reviewsCount === 1 ? '' : 's'}`;
+  if (simpleCost) simpleCost.textContent = `${stats.costUtilization > 0 ? stats.costUtilization.toFixed(1) : '0'}/5`;
+  if (simpleSpeed) simpleSpeed.textContent = `${stats.speedTimeliness > 0 ? stats.speedTimeliness.toFixed(1) : '0'}/5`;
+  if (simpleComm) simpleComm.textContent = `${stats.communication > 0 ? stats.communication.toFixed(1) : '0'}/5`;
+  if (simpleRecommend) simpleRecommend.textContent = `${stats.recommendationRate}% recommend`;
+  if (simpleTasks) simpleTasks.textContent = `${stats.tasksCompleted} tasks`;
+  if (simpleReviews) simpleReviews.textContent = `${stats.reviewsCount} review${stats.reviewsCount === 1 ? '' : 's'}`;
 }
 
 // Open Modal Tab for Submitting Purchase Cost & Bill Proof (Step 4 & 5)
@@ -1433,13 +1425,13 @@ async function handlePurchaseCostSubmit(e) {
 
   if (btnSubmit) {
     btnSubmit.disabled = true;
-    btnSubmit.textContent = '⏳ Submitting...';
+    btnSubmit.textContent = 'Submitting...';
   }
 
   try {
     const res = await apiCall(`/requests/${requestId}/submit-purchase-cost`, 'PUT', formData);
     if (res.ok && res.data.success) {
-      showToast('✅ Actual purchase cost & bill proof submitted! Waiting for caregiver escrow payment.', 'success');
+      showToast('Actual purchase cost & bill proof submitted! Waiting for caregiver escrow payment.', 'success');
       closePurchaseCostModal();
       loadVolunteerRequests();
     } else {
@@ -1451,7 +1443,7 @@ async function handlePurchaseCostSubmit(e) {
   } finally {
     if (btnSubmit) {
       btnSubmit.disabled = false;
-      btnSubmit.textContent = '🚀 Submit Purchase Cost & Proof';
+      btnSubmit.textContent = 'Submit Purchase Cost & Proof';
     }
   }
 }
@@ -1485,11 +1477,11 @@ function renderProofSliderHtml(reqId, rawImages) {
       </div>
 
       <button type="button" onclick="event.stopPropagation(); navigateProofSlider('${reqId}', -1)" style="position: absolute; top: 50%; left: 8px; transform: translateY(-50%); background: rgba(0,0,0,0.6); color: #ffffff; border: none; border-radius: 50%; width: 40px; height: 40px; font-size: 1.3rem; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 3; box-shadow: 0 2px 8px rgba(0,0,0,0.3); transition: all 0.15s ease;" onmouseover="this.style.background='rgba(0,0,0,0.9)'; this.style.transform='translateY(-50%) scale(1.1)'" onmouseleave="this.style.background='rgba(0,0,0,0.6)'; this.style.transform='translateY(-50%) scale(1)'">
-        ◀
+        &lsaquo;
       </button>
 
       <button type="button" onclick="event.stopPropagation(); navigateProofSlider('${reqId}', 1)" style="position: absolute; top: 50%; right: 8px; transform: translateY(-50%); background: rgba(0,0,0,0.6); color: #ffffff; border: none; border-radius: 50%; width: 40px; height: 40px; font-size: 1.3rem; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 3; box-shadow: 0 2px 8px rgba(0,0,0,0.3); transition: all 0.15s ease;" onmouseover="this.style.background='rgba(0,0,0,0.9)'; this.style.transform='translateY(-50%) scale(1.1)'" onmouseleave="this.style.background='rgba(0,0,0,0.6)'; this.style.transform='translateY(-50%) scale(1)'">
-        ▶
+        &rsaquo;
       </button>
     </div>`;
 }
@@ -1592,7 +1584,7 @@ async function loadVolunteerEarnings(silent = false) {
 
     // Update withdraw button label
     const withdrawBtn = document.getElementById('btnConfirmWithdraw');
-    if (withdrawBtn) withdrawBtn.textContent = `🏦 Withdraw ₹${wallet.available.toLocaleString('en-IN')}`;
+    if (withdrawBtn) withdrawBtn.textContent = `Withdraw ₹${wallet.available.toLocaleString('en-IN')}`;
 
     const withdrawAvailEl = document.getElementById('withdrawAvailableAmount');
     if (withdrawAvailEl) withdrawAvailEl.textContent = `₹${wallet.available.toLocaleString('en-IN')}`;
@@ -1671,7 +1663,7 @@ function populateEarningsModal() {
   const wdAvail = document.getElementById('withdrawAvailableAmount');
   const wdBtn   = document.getElementById('btnConfirmWithdraw');
   if (wdAvail) wdAvail.textContent = `₹${wallet.available.toLocaleString('en-IN')}`;
-  if (wdBtn)   wdBtn.textContent   = `🏦 Withdraw ₹${wallet.available.toLocaleString('en-IN')}`;
+  if (wdBtn)   wdBtn.textContent   = `Withdraw ₹${wallet.available.toLocaleString('en-IN')}`;
 
   // ─ Monthly stats ─
   const mTasks = document.getElementById('monthlyTasksCompleted');
@@ -1712,7 +1704,7 @@ function populateEarningsModal() {
     const s = statusStyles[tx.status] || statusStyles.PENDING;
 
     // Type badge
-    const typeLabel = tx.type === 'TIP' ? '🎁 Tip' : '💼 Service';
+    const typeLabel = tx.type === 'TIP' ? 'Tip' : 'Service';
     const typeColor = tx.type === 'TIP' ? '#e65100' : '#1b5e20';
 
     const item = document.createElement('div');
@@ -1726,11 +1718,11 @@ function populateEarningsModal() {
     item.onmouseout  = () => { item.style.boxShadow = 'none'; };
 
     item.innerHTML = `
-      <div style="width: 42px; height: 42px; background: #e8f5e9; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0;">
-        ${tx.categoryIcon || '⭐'}
+      <div style="width: 42px; height: 42px; background: #e8f5e9; color: #1b5e20; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0;">
+        <svg style="width: 20px; height: 20px;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
       </div>
       <div style="flex: 1; min-width: 0;">
-        <div style="font-weight: 700; color: #222; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${tx.taskTitle || 'Help Request'}</div>
+        <div style="font-weight: 700; color: #222; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHTML(tx.taskTitle || 'Help Request')}</div>
         <div style="font-size: 0.8rem; color: #888; margin-top: 2px;">${dateStr} &nbsp;&bull;&nbsp; <span style="color: ${typeColor}; font-weight: 600;">${typeLabel}</span></div>
       </div>
       <div style="text-align: right; flex-shrink: 0;">
@@ -1778,12 +1770,12 @@ async function confirmWithdrawal() {
       await loadVolunteerEarnings(true);
       populateEarningsModal();
 
-      showToast(`✅ Withdrawal of ₹${withdrawal.amount} initiated! TX: ${withdrawal.transactionId}`, 'success');
+      showToast(`Withdrawal of ₹${withdrawal.amount} initiated! TX: ${withdrawal.transactionId}`, 'success');
     } else {
       showToast(res.data?.message || 'Withdrawal failed. Please try again.', 'error');
       if (btn) {
         btn.disabled = false;
-        btn.textContent = `🏦 Withdraw ₹${available.toLocaleString('en-IN')}`;
+        btn.textContent = `Withdraw ₹${available.toLocaleString('en-IN')}`;
       }
     }
   } catch (err) {
@@ -1791,7 +1783,7 @@ async function confirmWithdrawal() {
     showToast('Network error during withdrawal.', 'error');
     if (btn) {
       btn.disabled = false;
-      btn.textContent = `🏦 Withdraw ₹${available.toLocaleString('en-IN')}`;
+      btn.textContent = `Withdraw ₹${available.toLocaleString('en-IN')}`;
     }
   }
 }
