@@ -74,10 +74,38 @@
       --base-font-size: 18px;
     }
 
+    /* Accessible & Professional Focus Styles */
     *:focus-visible {
-      outline: 4px solid #026bc9 !important;
-      outline-offset: 4px !important;
+      outline: 2px solid rgba(2, 107, 201, 0.4) !important;
+      outline-offset: 2px !important;
     }
+
+    /* Sleek, Modern Input Focus Ring (Crisp border + subtle thin 3px blur ring) */
+    input, textarea, select {
+      transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+    }
+
+    input:focus, textarea:focus, select:focus {
+      outline: none !important;
+      border-color: #026bc9 !important;
+      box-shadow: 0 0 0 3px rgba(2, 107, 201, 0.12) !important;
+    }
+
+    input:focus-visible, textarea:focus-visible, select:focus-visible {
+      outline: none !important;
+      border-color: #026bc9 !important;
+      box-shadow: 0 0 0 3px rgba(2, 107, 201, 0.14) !important;
+    }
+
+    button:focus {
+      outline: none;
+    }
+
+    button:focus-visible {
+      outline: 2px solid rgba(2, 107, 201, 0.4) !important;
+      outline-offset: 2px !important;
+    }
+
     html {
       font-size: var(--base-font-size, 18px);
       scroll-behavior: smooth;
@@ -98,7 +126,7 @@
     }
     .skip-link:focus {
       top: 0;
-      outline: 4px solid #f57f17;
+      outline: 2px solid #f57f17;
     }
     .bg-gradient-mesh {
       background-color: #f8fafc;
@@ -112,22 +140,28 @@
     .lang-choice {
       flex: 1;
       min-width: 110px;
-      border: 3px solid #e2e8f0; /* slate-200 */
+      border: 1.5px solid #e2e8f0; /* sleek 1.5px border */
       border-radius: 12px;
       padding: 12px;
       text-align: center;
       cursor: pointer;
-      transition: all 0.2s;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
       background: #ffffff;
-      font-weight: bold;
+      font-weight: 700;
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: 4px;
     }
+    .lang-choice:hover {
+      background-color: #f8fafc;
+      border-color: #cbd5e1;
+    }
     .lang-choice.selected {
       border-color: #026bc9; /* brand-600 */
       background-color: #f0f7ff; /* brand-50 */
+      color: #026bc9;
+      box-shadow: 0 1px 2px rgba(2, 107, 201, 0.12);
     }
 
     .gender-choice {
@@ -166,23 +200,25 @@
 
     .role-card {
       position: relative;
-      border: 3px solid #e2e8f0; /* slate-200 */
+      border: 1.5px solid #e2e8f0; /* sleek 1.5px border */
       border-radius: 16px;
       padding: 20px;
       text-align: center;
       cursor: pointer;
-      transition: all 0.2s;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
       background: #ffffff;
       box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
     }
     .role-card:hover {
       background-color: #f8fafc; /* slate-50 */
       box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+      border-color: #cbd5e1;
     }
     .role-card.selected {
       border-color: #026bc9; /* brand-600 */
       background-color: #f0f7ff; /* brand-50 */
       font-weight: 700;
+      box-shadow: 0 0 0 3px rgba(2, 107, 201, 0.12);
     }
     .role-card input[type="radio"] {
       position: absolute;
@@ -706,6 +742,6 @@
   </footer>
 
   <!-- Scripts -->
-  <script src="/js/auth.js"></script>
+  <script src="/js/auth.js?v=324"></script>
 </body>
 </html>

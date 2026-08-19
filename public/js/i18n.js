@@ -157,7 +157,7 @@ const translations = {
     sd_voice_lang: "Voice Language:",
 
     // Volunteer Dashboard
-    vd_welcome: "Welcome, {name}!",
+    vd_welcome: "Welcome back, {name}!",
     vd_wallet_title: "My Earnings Wallet",
     vd_wallet_total: "Total Earned",
     vd_wallet_available: "Available",
@@ -181,7 +181,7 @@ const translations = {
     vd_status_history: "My Service History (Completed Tasks)",
 
     // Family Dashboard
-    fd_welcome: "Welcome, Caregiver {name}!",
+    fd_welcome: "Welcome back, {name}!",
     fd_linked_senior: "Linked Senior Citizen: {name}",
     fd_pending_approval: "⏳ Caregiver Approvals Pending Your Consent",
     fd_pending_approval_desc: "Volunteers have accepted your senior's help requests. Please review their profiles and check ID/Police badges to authorize their visit.",

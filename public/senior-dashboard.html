@@ -11,8 +11,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="/css/style.css">
-  <script src="/js/i18n.js"></script>
+  <link rel="stylesheet" href="/css/style.css?v=322">
+  <script src="/js/i18n.js?v=304"></script>
 
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -74,9 +74,36 @@
       --base-font-size: 18px;
     }
 
+    /* Accessible & Professional Focus Styles */
     *:focus-visible {
-      outline: 4px solid #026bc9 !important;
-      outline-offset: 4px !important;
+      outline: 2px solid rgba(2, 107, 201, 0.4) !important;
+      outline-offset: 2px !important;
+    }
+
+    /* Sleek, Modern Input Focus Ring (Crisp border + subtle thin 3px blur ring) */
+    input, textarea, select {
+      transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+    }
+
+    input:focus, textarea:focus, select:focus {
+      outline: none !important;
+      border-color: #026bc9 !important;
+      box-shadow: 0 0 0 3px rgba(2, 107, 201, 0.12) !important;
+    }
+
+    input:focus-visible, textarea:focus-visible, select:focus-visible {
+      outline: none !important;
+      border-color: #026bc9 !important;
+      box-shadow: 0 0 0 3px rgba(2, 107, 201, 0.14) !important;
+    }
+
+    button:focus {
+      outline: none;
+    }
+
+    button:focus-visible {
+      outline: 2px solid rgba(2, 107, 201, 0.4) !important;
+      outline-offset: 2px !important;
     }
     html {
       font-size: var(--base-font-size, 18px);
@@ -549,7 +576,9 @@
           <h3 id="modalTitle" data-i18n="sd_modal_title" style="display: flex; align-items: center; gap: 10px; color: #026bc9;">
             <span>📝</span> Raise a Help Request
           </h3>
-          <button id="modalClose" class="modal-close" aria-label="Close Modal">&times;</button>
+          <button id="modalClose" class="modal-close w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-700 flex items-center justify-center transition-all border-none cursor-pointer p-0 flex-shrink-0 active:scale-95" aria-label="Close Modal">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
         </div>
  
         <div id="modalAlertArea" aria-live="polite"></div>
@@ -563,28 +592,52 @@
             </label>
             <div class="category-selector" role="group" aria-label="Support Categories">
               <button type="button" class="category-option-btn" data-category="Grocery Shopping">
-                <span class="category-icon" aria-hidden="true">🛒</span>
-                <span data-i18n="skill_grocery">Groceries</span>
+                <span class="category-icon-badge bg-amber-50 text-amber-600 border border-amber-200/80" aria-hidden="true">
+                  <svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
+                  </svg>
+                </span>
+                <span class="category-label" data-i18n="skill_grocery">Grocery Shopping</span>
               </button>
               <button type="button" class="category-option-btn" data-category="Medical Escort">
-                <span class="category-icon" aria-hidden="true">🏥</span>
-                <span data-i18n="skill_medical">Doctor Visit</span>
+                <span class="category-icon-badge bg-rose-50 text-rose-600 border border-rose-200/80" aria-hidden="true">
+                  <svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15M4.5 19.5h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15A2.25 2.25 0 002.25 6.75v10.5A2.25 2.25 0 004.5 19.5z" />
+                  </svg>
+                </span>
+                <span class="category-label" data-i18n="skill_medical">Medical Escort</span>
               </button>
               <button type="button" class="category-option-btn" data-category="Tech Support">
-                <span class="category-icon" aria-hidden="true">📱</span>
-                <span data-i18n="skill_tech">Tech Help</span>
+                <span class="category-icon-badge bg-blue-50 text-blue-600 border border-blue-200/80" aria-hidden="true">
+                  <svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3" />
+                  </svg>
+                </span>
+                <span class="category-label" data-i18n="skill_tech">Tech Support</span>
               </button>
               <button type="button" class="category-option-btn" data-category="Housekeeping">
-                <span class="category-icon" aria-hidden="true">🧹</span>
-                <span data-i18n="skill_housekeeping">Housework</span>
+                <span class="category-icon-badge bg-teal-50 text-teal-600 border border-teal-200/80" aria-hidden="true">
+                  <svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 21v-4.875c0-.621.504-1.125 1.125-1.125h5.25c.621 0 1.125.504 1.125 1.125V21m0 0h4.5V3.545M12.75 21h7.5V10.75M2.25 21h1.5m18 0h-18M2.25 9l4.5-1.636M18.75 3l-1.5.545m0 6.205l3 1.091m-16.5-3.273L12 3l5.25 2.545" />
+                  </svg>
+                </span>
+                <span class="category-label" data-i18n="skill_housekeeping">Housekeeping</span>
               </button>
               <button type="button" class="category-option-btn" data-category="Companionship">
-                <span class="category-icon" aria-hidden="true">💬</span>
-                <span data-i18n="skill_companionship">Companionship</span>
+                <span class="category-icon-badge bg-purple-50 text-purple-600 border border-purple-200/80" aria-hidden="true">
+                  <svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
+                  </svg>
+                </span>
+                <span class="category-label" data-i18n="skill_companionship">Companionship</span>
               </button>
               <button type="button" class="category-option-btn" data-category="Other">
-                <span class="category-icon" aria-hidden="true">❓</span>
-                <span data-i18n="skill_other">Other Task</span>
+                <span class="category-icon-badge bg-slate-100 text-slate-700 border border-slate-200/80" aria-hidden="true">
+                  <svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z" />
+                  </svg>
+                </span>
+                <span class="category-label" data-i18n="skill_other">Other Assistance</span>
               </button>
             </div>
           </div>
@@ -634,12 +687,18 @@
 
             <div class="audio-recorder-panel" id="audioRecorderPanel">
               <div class="audio-recorder-controls">
-                <button type="button" id="btnStartRecording" class="btn-record" aria-label="Start recording voice message" title="Start Recording">
-                  🎙️ <span data-i18n="btn_start_record">Record</span>
+                <button type="button" id="btnStartRecording" class="btn-record inline-flex items-center gap-2" aria-label="Start recording voice message" title="Start Recording">
+                  <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15a3 3 0 01-3-3V4.5a3 3 0 116 0v7.5a3 3 0 01-3 3z" />
+                  </svg>
+                  <span data-i18n="btn_start_record">Record</span>
                 </button>
 
-                <button type="button" id="btnStopRecording" class="btn-record btn-stop-record" aria-label="Stop recording" title="Stop Recording" style="display:none;">
-                  ⏹️ <span>Stop</span>
+                <button type="button" id="btnStopRecording" class="btn-record btn-stop-record inline-flex items-center gap-2" aria-label="Stop recording" title="Stop Recording" style="display:none;">
+                  <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                    <rect x="6" y="6" width="12" height="12" rx="2" />
+                  </svg>
+                  <span>Stop</span>
                 </button>
                 <div id="recordingIndicator" class="recording-indicator" style="display:none;">
                   <div class="recording-dot"></div>
@@ -660,14 +719,24 @@
               <!-- Playback Preview -->
               <div id="audioPreview" class="audio-preview" style="display:none;">
                 <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
-                  <span style="font-size:1.5rem;">🔊</span>
+                  <div class="w-9 h-9 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center border border-brand-200">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M19.114 5.636a9 9 0 010 12.728M16.463 8.288a5.25 5.25 0 010 7.424M6.75 8.25l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.22-1.625.322-2.396C2.806 8.757 3.63 8.25 4.51 8.25h2.24z" />
+                    </svg>
+                  </div>
                   <audio id="audioPlayback" controls style="flex:1; min-width:180px;"></audio>
-                  <button type="button" id="btnClearRecording" class="btn btn-outline-danger" style="padding:8px 14px; font-size:0.9rem; min-height:40px;">
-                    🗑️ Remove
+                  <button type="button" id="btnClearRecording" class="btn btn-outline-danger inline-flex items-center gap-1.5" style="padding:8px 14px; font-size:0.9rem; min-height:40px;">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                    </svg>
+                    Remove
                   </button>
                 </div>
-                <p style="font-size:0.85rem; color:#026bc9; margin-top:6px; font-weight:600;">
-                  ✅ Voice message recorded. It will be sent to the volunteer and your caregiver.
+                <p style="font-size:0.85rem; color:#026bc9; margin-top:6px; font-weight:600; display:flex; align-items:center; gap:6px;">
+                  <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  Voice message recorded. It will be sent to the volunteer and your caregiver.
                 </p>
               </div>
             </div>
@@ -709,7 +778,9 @@
               Voice Request Assistant
             </h3>
           </div>
-          <button id="voiceModalClose" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-700 flex items-center justify-center transition-all cursor-pointer text-lg font-bold" aria-label="Close Modal">&times;</button>
+          <button id="voiceModalClose" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-700 flex items-center justify-center transition-all border-none cursor-pointer p-0 flex-shrink-0 active:scale-95" aria-label="Close Modal">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
         </div>
 
         <!-- Pulse Mic Area -->
@@ -858,7 +929,7 @@
   </div>
 
   <!-- Scripts -->
-  <script src="/js/api.js?v=260"></script>
-  <script src="/js/senior.js?v=260"></script>
+  <script src="/js/api.js?v=304"></script>
+  <script src="/js/senior.js?v=304"></script>
 </body>
 </html>

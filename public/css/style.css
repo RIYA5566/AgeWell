@@ -19,7 +19,7 @@
   /* Sizing Variables controlled by user */
   --base-font-size: 18px;            /* Large by default for seniors */
   --border-radius: 14px;
-  --focus-outline-width: 4px;
+  --focus-outline-width: 2px;
 }
 
 * {
@@ -55,13 +55,39 @@ body {
 
 .skip-link:focus {
   top: 0;
-  outline: var(--focus-outline-width) solid var(--color-warning);
+  outline: 2px solid var(--color-warning);
 }
 
-/* Accessible Focus Styles */
+/* Accessible & Professional Focus Styles */
 *:focus-visible {
-  outline: var(--focus-outline-width) solid var(--color-primary-dark) !important;
-  outline-offset: 4px !important;
+  outline: 2px solid rgba(2, 107, 201, 0.4) !important;
+  outline-offset: 2px !important;
+}
+
+/* Sleek, Modern Input Focus Ring (Crisp border + subtle thin 3px blur ring) */
+input, textarea, select {
+  transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+}
+
+input:focus, textarea:focus, select:focus {
+  outline: none !important;
+  border-color: #026bc9 !important;
+  box-shadow: 0 0 0 3px rgba(2, 107, 201, 0.12) !important;
+}
+
+input:focus-visible, textarea:focus-visible, select:focus-visible {
+  outline: none !important;
+  border-color: #026bc9 !important;
+  box-shadow: 0 0 0 3px rgba(2, 107, 201, 0.14) !important;
+}
+
+button:focus {
+  outline: none;
+}
+
+button:focus-visible {
+  outline: 2px solid rgba(2, 107, 201, 0.4) !important;
+  outline-offset: 2px !important;
 }
 
 /* Header & Navigation */
@@ -577,35 +603,67 @@ main {
 .category-selector {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 15px;
+  gap: 14px;
   margin-bottom: 1.5rem;
 }
 
 .category-option-btn {
-  background-color: var(--color-white);
-  border: 3px solid var(--color-primary-light);
-  border-radius: var(--border-radius);
-  padding: 20px 15px;
-  font-size: 1.2rem;
+  background-color: #ffffff;
+  border: 2px solid #e2e8f0;
+  border-radius: 1.25rem;
+  padding: 1.25rem 1rem;
+  font-size: 1.05rem;
   font-weight: 700;
-  color: var(--color-primary-dark);
+  color: #1e293b;
   cursor: pointer;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
-  transition: all 0.2s;
-  min-height: 100px;
+  justify-content: center;
+  gap: 10px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  min-height: 115px;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04);
 }
 
 .category-option-btn:hover {
-  background-color: var(--color-bg-light);
-  border-color: var(--color-primary);
+  background-color: #f8fafc;
+  border-color: #93c5fd;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px -4px rgba(2, 107, 201, 0.12);
 }
 
 .category-option-btn.selected {
-  background-color: var(--color-primary-light);
-  border-color: var(--color-primary-dark);
+  background-color: #eff6ff;
+  border-color: #026bc9;
+  box-shadow: 0 0 0 3px rgba(2, 107, 201, 0.2), 0 4px 12px -2px rgba(2, 107, 201, 0.15);
+  color: #026bc9;
+}
+
+.category-icon-badge {
+  width: 52px;
+  height: 52px;
+  border-radius: 1rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.category-option-btn:hover .category-icon-badge {
+  transform: scale(1.08);
+}
+
+.category-option-btn.selected .category-icon-badge {
+  transform: scale(1.08);
+}
+
+.category-label {
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.25;
+  text-align: center;
 }
 
 .category-icon {

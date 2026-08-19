@@ -5,13 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="AgeWell Family/Caregiver Portal — Review and approve volunteers for your loved one.">
   <title>Family Caregiver Portal - AgeWell</title>
+  
   <!-- Google Fonts: Plus Jakarta Sans for high-end modern layout -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="/css/style.css">
-  <script src="/js/i18n.js"></script>
+  <link rel="stylesheet" href="/css/style.css?v=322">
+  <script src="/js/i18n.js?v=303"></script>
 
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -30,11 +31,11 @@
               300: '#7cc0fd',
               400: '#36a2fa',
               500: '#0c87eb',
-              600: '#026bc9',
+              600: '#026bc9', /* Primary Blue */
               700: '#0355a3',
               800: '#074887',
               900: '#0b3d70',
-              950: '#082547',
+              950: '#082547', /* Deep Trust Navy */
             },
             slate: {
               50: '#f8fafc',
@@ -52,38 +53,103 @@
           boxShadow: {
             premium: '0 10px 30px -10px rgba(15, 23, 42, 0.04)',
             cardHover: '0 20px 40px -15px rgba(2, 107, 201, 0.08)',
-            modal: '0 25px 50px -12px rgba(15, 23, 42, 0.15)'
+            modal: '0 25px 50px -12px rgba(15, 23, 42, 0.18)'
           }
         }
       }
     }
   </script>
+
+  <!-- Scoped Styles matching Professional Theme -->
   <style>
-    /* Family portal specific styles */
-    .notification-badge {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      background-color: var(--color-emergency);
-      color: white;
-      font-weight: 800;
-      font-size: 1rem;
-      border-radius: 50%;
-      width: 36px;
-      height: 36px;
-      margin-left: 10px;
-      animation: pulse-sos 2s infinite;
-      flex-shrink: 0;
+    :root {
+      --color-primary-dark: #026bc9;     /* brand-600 */
+      --color-primary: #0c87eb;          /* brand-500 */
+      --color-primary-light: #b9dbfe;    /* brand-200 */
+      --color-bg-light: #f8fafc;         /* slate-50 */
+      --color-white: #ffffff;
+      --color-gray-dark: #0f172a;        /* slate-900 */
+      --color-gray-light: #f1f5f9;       /* slate-100 */
+      --color-emergency: #e11d48;
+      --border-radius: 16px;
+      --base-font-size: 18px;
     }
 
+    /* Accessible & Professional Focus Styles */
+    *:focus-visible {
+      outline: 2px solid rgba(2, 107, 201, 0.4) !important;
+      outline-offset: 2px !important;
+    }
+
+    /* Sleek, Modern Input Focus Ring (Crisp border + subtle thin 3px blur ring) */
+    input, textarea, select {
+      transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+    }
+
+    input:focus, textarea:focus, select:focus {
+      outline: none !important;
+      border-color: #026bc9 !important;
+      box-shadow: 0 0 0 3px rgba(2, 107, 201, 0.12) !important;
+    }
+
+    input:focus-visible, textarea:focus-visible, select:focus-visible {
+      outline: none !important;
+      border-color: #026bc9 !important;
+      box-shadow: 0 0 0 3px rgba(2, 107, 201, 0.14) !important;
+    }
+
+    button:focus {
+      outline: none;
+    }
+
+    button:focus-visible {
+      outline: 2px solid rgba(2, 107, 201, 0.4) !important;
+      outline-offset: 2px !important;
+    }
+    html {
+      font-size: var(--base-font-size, 18px);
+      scroll-behavior: smooth;
+    }
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    .skip-link {
+      position: absolute;
+      top: -100px;
+      left: 0;
+      background: #026bc9;
+      color: white;
+      padding: 1rem;
+      z-index: 100;
+      font-weight: bold;
+      transition: top 0.2s;
+    }
+    .skip-link:focus {
+      top: 0;
+      outline: 4px solid #f59e0b;
+    }
+    .bg-gradient-mesh {
+      background-color: #f8fafc;
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(224, 239, 254, 0.5) 0px, transparent 50%),
+        radial-gradient(at 100% 0%, rgba(241, 245, 249, 0.6) 0px, transparent 50%),
+        radial-gradient(at 50% 100%, rgba(219, 234, 254, 0.3) 0px, transparent 50%);
+    }
+
+    /* Modern Card Styles for Dynamically Injected Content */
     .approval-card {
-      border: 4px solid #f57f17;
-      border-radius: var(--border-radius);
-      background: linear-gradient(135deg, #fff8e1, #ffffff);
-      padding: 1.8rem;
-      margin-bottom: 1.5rem;
-      box-shadow: 0 4px 16px rgba(245, 127, 23, 0.15);
+      border: 1px solid #e2e8f0;
+      border-radius: 20px;
+      background: #ffffff;
+      padding: 1.5rem;
+      margin-bottom: 1.25rem;
+      box-shadow: 0 4px 20px -4px rgba(15, 23, 42, 0.05);
+      transition: all 0.2s ease-in-out;
       animation: fadeInUp 0.3s ease-out both;
+    }
+    .approval-card:hover {
+      border-color: #cbd5e1;
+      box-shadow: 0 10px 30px -8px rgba(2, 107, 201, 0.09);
     }
 
     .approval-card-header {
@@ -91,137 +157,95 @@
       justify-content: space-between;
       align-items: flex-start;
       flex-wrap: wrap;
-      gap: 12px;
-      margin-bottom: 1.2rem;
-      border-bottom: 2px solid #ffe082;
-      padding-bottom: 1rem;
+      gap: 10px;
+      margin-bottom: 1rem;
+      border-bottom: 1px solid #f1f5f9;
+      padding-bottom: 0.85rem;
     }
 
     .volunteer-profile-card {
       display: flex;
       align-items: flex-start;
-      gap: 1.5rem;
-      background: var(--color-white);
-      border: 3px solid var(--color-primary-light);
-      border-radius: var(--border-radius);
-      padding: 1.2rem;
+      gap: 1.25rem;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 16px;
+      padding: 1.25rem;
       margin: 1rem 0;
     }
 
     .volunteer-avatar {
-      width: 72px;
-      height: 72px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, var(--color-primary-dark), #43a047);
+      width: 54px;
+      height: 54px;
+      border-radius: 16px;
+      background: linear-gradient(135deg, #026bc9, #0c87eb);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 2.2rem;
+      color: #ffffff;
       flex-shrink: 0;
+      box-shadow: 0 4px 12px rgba(2, 107, 201, 0.2);
     }
 
     .volunteer-info h4 {
-      color: var(--color-primary-dark);
-      font-size: 1.3rem;
+      color: #0f172a;
+      font-size: 1.1rem;
       font-weight: 700;
     }
 
     .volunteer-info p {
-      font-size: 0.95rem;
-      color: #555;
-      margin-top: 4px;
+      font-size: 0.9rem;
+      color: #64748b;
+      margin-top: 2px;
     }
 
     .volunteer-skills {
       display: flex;
       flex-wrap: wrap;
-      gap: 8px;
-      margin-top: 10px;
+      gap: 6px;
+      margin-top: 8px;
     }
 
     .skill-tag {
-      background: var(--color-primary-light);
-      color: var(--color-primary-dark);
-      border-radius: 20px;
-      padding: 4px 12px;
-      font-size: 0.9rem;
+      background: #f0f7ff;
+      color: #026bc9;
+      border: 1px solid #b9dbfe;
+      border-radius: 10px;
+      padding: 3px 10px;
+      font-size: 0.82rem;
       font-weight: 600;
     }
 
-    .approval-actions {
-      display: flex;
-      gap: 1rem;
-      flex-wrap: wrap;
-      margin-top: 1.5rem;
-    }
-
-    .btn-approve {
-      background: var(--color-primary);
-      color: white;
-      border: none;
-      flex: 1;
-      min-width: 160px;
-    }
-
-    .btn-approve:hover {
-      background: var(--color-primary-dark);
-    }
-
-    .btn-reject {
-      background: var(--color-emergency);
-      color: #ffffff !important;
-      border: 3px solid var(--color-emergency);
-      flex: 1;
-      min-width: 160px;
-      font-weight: 700;
-    }
-
-    .btn-reject:hover {
-      background: #b71c1c;
-      color: #ffffff !important;
-    }
-
-    .senior-info-banner {
-      background: linear-gradient(135deg, #e8f5e9, #f1f8e9);
-      border: 3px solid var(--color-primary-light);
-      border-radius: var(--border-radius);
-      padding: 1.5rem;
-      margin-bottom: 2rem;
-      display: flex;
+    .notification-badge {
+      display: inline-flex;
       align-items: center;
-      gap: 1.5rem;
-    }
-
-    .senior-avatar {
-      font-size: 3rem;
+      justify-content: center;
+      background-color: #026bc9;
+      color: white;
+      font-weight: 800;
+      font-size: 0.78rem;
+      border-radius: 9999px;
+      padding: 2px 9px;
+      margin-left: 6px;
+      animation: pulse-sos 2s infinite;
       flex-shrink: 0;
-    }
-
-    .senior-meta h3 {
-      color: var(--color-primary-dark);
-      font-size: 1.4rem;
-      font-weight: 700;
-    }
-
-    .senior-meta p {
-      font-size: 0.95rem;
-      color: #555;
-      margin-top: 4px;
     }
 
     .poll-indicator {
       display: flex;
       align-items: center;
       gap: 8px;
-      font-size: 0.9rem;
-      color: #666;
-      margin-top: 1rem;
+      font-size: 0.85rem;
+      color: #64748b;
+      margin-top: 1.25rem;
+      padding-top: 0.75rem;
+      border-top: 1px solid #f1f5f9;
     }
 
     .poll-dot {
-      width: 10px;
-      height: 10px;
-      background: var(--color-primary);
+      width: 8px;
+      height: 8px;
+      background: #026bc9;
       border-radius: 50%;
       animation: pulse-dot 2s infinite;
     }
@@ -231,92 +255,130 @@
       50% { opacity: 0.4; transform: scale(0.8); }
     }
 
-    .request-timeline {
-      display: flex;
-      gap: 8px;
+    /* Modal Backdrop and Wrapper */
+    .modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      z-index: 9999;
       align-items: center;
-      margin-top: 8px;
-      flex-wrap: wrap;
+      justify-content: center;
+      padding: 1rem;
+      overflow-y: auto;
     }
 
-    .timeline-step {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 0.9rem;
-    }
-
-    .timeline-step.done {
-      color: var(--color-primary-dark);
-      font-weight: 600;
-    }
-
-    .timeline-step.active {
-      color: #e65100;
-      font-weight: 700;
-    }
-
-    .timeline-step.future {
-      color: #bbb;
-    }
-
-    .timeline-arrow {
-      color: #bbb;
-      font-size: 1rem;
-    }
-
-    /* Rejection modal */
-    .rejection-reason-area {
+    .modal-content {
+      background: #ffffff;
+      border-radius: 24px;
+      box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.25);
+      border: 1px solid #f1f5f9;
       width: 100%;
-      padding: 12px 16px;
-      font-family: inherit;
-      font-size: 1rem;
-      border: 3px solid var(--color-primary-light);
-      border-radius: var(--border-radius);
-      min-height: 100px;
-      resize: vertical;
+      max-width: 580px;
+      margin: auto;
+      overflow: hidden;
+      animation: modalPop 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
     }
 
-    .rejection-reason-area:focus {
-      border-color: var(--color-emergency);
+    @keyframes modalPop {
+      0% { opacity: 0; transform: scale(0.96) translateY(8px); }
+      100% { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    .modal-close {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #64748b;
+      background: #f1f5f9;
+      border: none;
+      cursor: pointer;
+      font-size: 1.25rem;
+      transition: all 0.2s;
+    }
+    .modal-close:hover {
+      background: #e2e8f0;
+      color: #0f172a;
+    }
+
+    /* Badges */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: capitalize;
+    }
+    .badge-urgency-emergency {
+      background: #ffe4e6;
+      color: #be123c;
+      border: 1px solid #fecdd3;
+    }
+    .badge-urgency-high {
+      background: #fff7ed;
+      color: #c2410c;
+      border: 1px solid #ffedd5;
+    }
+    .badge-urgency {
+      background: #f1f5f9;
+      color: #475569;
+      border: 1px solid #e2e8f0;
+    }
+    .badge-pending {
+      background: #e0f2fe;
+      color: #0369a1;
+      border: 1px solid #bae6fd;
+    }
+    .badge-accepted {
+      background: #dcfce7;
+      color: #15803d;
+      border: 1px solid #bbf7d0;
     }
   </style>
 </head>
-<body>
+<body class="bg-gradient-mesh text-[#0f172a] min-h-screen flex flex-col transition-colors duration-200 font-sans selection:bg-brand-500 selection:text-white">
   <!-- Accessibility Skip-Link -->
   <a href="#mainContent" class="skip-link">Skip to main content</a>
 
-  <!-- Global Header / Navbar (Sticky & Stable) -->
-  <nav class="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-premium py-3.5 px-6 transition-all">
+  <!-- Global Header / Navbar (Sticky & Glassmorphism) -->
+  <nav class="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-premium py-3.5 px-4 sm:px-6 transition-all">
     <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
       <!-- Logo and Subtitle -->
-      <div class="flex items-center gap-3">
+      <div class="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-start">
         <a href="/" class="flex items-center gap-3 group">
           <div class="w-10 h-10 bg-brand-50 rounded-xl flex items-center justify-center border border-brand-100 shadow-sm group-hover:bg-brand-100 transition-colors">
-            <svg class="w-7 h-7 text-brand-600" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <svg class="w-6 h-6 text-brand-600" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
             </svg>
           </div>
           <div>
             <span class="font-sans text-xl font-extrabold text-slate-900 tracking-tight" data-i18n="hero_title">AgeWell</span>
-            <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mt-0.5" data-i18n="nav_subtitle">Senior Citizen Assistance Platform</span>
+            <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mt-0.5" data-i18n="nav_subtitle">Family &amp; Caregiver Portal</span>
           </div>
         </a>
       </div>
 
       <!-- Text Sizing and Accessibility Panel -->
-      <div class="accessibility-panel flex flex-wrap items-center gap-3 bg-slate-50 rounded-xl p-1.5 border border-slate-200/60 text-sm" role="region" aria-label="Accessibility Sizing Controls">
+      <div class="accessibility-panel flex flex-wrap items-center gap-2.5 bg-slate-50 rounded-xl p-1.5 border border-slate-200/60 text-sm" role="region" aria-label="Accessibility Sizing Controls">
         <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider px-1.5" data-i18n="nav_text_size">Text Size</span>
         <button id="btnTextDecrease" class="bg-white hover:bg-slate-100 text-slate-700 font-bold w-8 h-8 rounded-lg border border-slate-200 transition-all flex items-center justify-center text-xs active:scale-95 shadow-xs" aria-label="Make text smaller">-A</button>
         <button id="btnTextReset" class="bg-white hover:bg-slate-100 text-slate-700 font-semibold px-2.5 h-8 rounded-lg border border-slate-200 transition-all flex items-center justify-center text-xs active:scale-95 shadow-xs" aria-label="Reset text size to normal" data-i18n="nav_reset">Reset</button>
         <button id="btnTextIncrease" class="bg-white hover:bg-slate-100 text-slate-700 font-bold w-8 h-8 rounded-lg border border-slate-200 transition-all flex items-center justify-center text-xs active:scale-95 shadow-xs" aria-label="Make text larger">+A</button>
-        <span id="fontSizeIndicator" class="bg-brand-600 text-white font-bold px-2 py-1 rounded-lg text-xs shadow-xs ml-1">18px</span>
+        <span id="fontSizeIndicator" class="bg-brand-600 text-white font-bold px-2 py-1 rounded-lg text-xs shadow-xs ml-0.5">18px</span>
       </div>
 
       <!-- User Nav info and Logout -->
       <div class="flex items-center gap-3 sm:gap-4">
         <div class="flex items-center gap-2 bg-brand-50 border border-brand-200/80 rounded-xl px-3.5 py-1.5">
-          <span class="text-sm font-extrabold text-brand-900" id="navUserName">Hello, Family Member</span>
+          <span class="text-sm font-extrabold text-brand-900" id="navUserName">Hello, Caregiver</span>
         </div>
         <button id="btnLogout" class="px-4 py-2 text-brand-700 font-bold text-sm bg-brand-50 hover:bg-brand-100 border border-brand-200 rounded-xl transition-all active:scale-95 shadow-xs flex items-center gap-1.5">
           <svg class="w-4 h-4 text-brand-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -328,90 +390,319 @@
     </div>
   </nav>
 
-  <!-- Main Content -->
-  <main id="mainContent">
-    <!-- Welcome Bar -->
-    <div class="dashboard-welcome" style="background: linear-gradient(90deg, #880e4f, #c2185b);">
-      <div class="welcome-icon" aria-hidden="true">❤️</div>
-      <div>
-        <h1 id="welcomeTitle" data-i18n="fd_portal_title">Family Caregiver Portal</h1>
-        <p id="welcomeSubtitle" data-i18n="fd_welcome_subtitle">Review and approve volunteers before they assist your loved one.</p>
-      </div>
-    </div>
+  <!-- Main Content Area -->
+  <main id="mainContent" class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 pt-0 pb-8">
+    
+    <!-- Top Welcome Greeting Bar -->
+    <section class="bg-gradient-to-r from-brand-900 via-brand-700 to-brand-600 rounded-3xl p-6 sm:p-7 text-white shadow-premium relative overflow-hidden flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 -mt-[2mm] mb-5 sm:mb-6" id="welcomeBar" aria-label="Welcome Banner">
+      <!-- Decorative background blur circles -->
+      <div class="absolute -top-16 -right-16 w-48 h-48 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
+      <div class="absolute -bottom-16 -left-16 w-48 h-48 bg-brand-400/20 rounded-full blur-2xl pointer-events-none"></div>
 
-    <!-- Senior Info Banner -->
-    <div class="senior-info-banner" id="seniorInfoBanner" style="display: none;">
-      <div class="senior-avatar" aria-hidden="true">👵</div>
-      <div class="senior-meta">
-        <h3 id="linkedSeniorName">Loading...</h3>
-        <p id="linkedSeniorPhone"></p>
-        <p id="linkedSeniorAddress"></p>
-      </div>
-    </div>
-
-    <!-- SECTION 1: Senior Help Requests & Fulfillment Decisions -->
-    <div class="dashboard-card" style="margin-bottom: 2rem; border-color: #e65100;" id="seniorRequestsSection">
-      <h2 style="color: #e65100;">
-        <span data-i18n="fd_requests_section_title">📋 Senior Help Requests &amp; Fulfillment Decisions</span>
-        <span class="notification-badge" id="seniorReqBadge" style="display: none; background-color: #e65100;">0</span>
-      </h2>
-      <p style="margin-bottom: 1.5rem; color: #555;" data-i18n="fd_requests_section_desc">
-        New help requests submitted by your senior citizen appear here. Choose whether to fulfill them yourself, allot them to community volunteers, or reject them.
-      </p>
-      <div id="seniorRequestsList">
-        <div class="loading-wrapper">
-          <div class="spinner"></div>
-          <span>Loading...</span>
+      <div class="flex items-center gap-4 relative z-10">
+        <div class="w-14 h-14 sm:w-16 sm:h-16 bg-white/15 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/20 shadow-inner flex-shrink-0 text-white">
+          <svg class="w-8 h-8 sm:w-9 sm:h-9 text-white" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+          </svg>
         </div>
-      </div>
-    </div>
-
-    <!-- SECTION 2: Volunteer Approvals & Quoted Fees -->
-    <div class="dashboard-card" style="margin-bottom: 2rem; border-color: #1565c0;" id="approvalSection">
-      <h2 style="color: #1565c0;">
-        <span data-i18n="fd_volunteer_approvals_title">⏳ Volunteer Approvals &amp; Quoted Fees</span>
-        <span class="notification-badge" id="approvalBadge" style="display: none; background-color: #1565c0;">0</span>
-      </h2>
-      <p style="margin-bottom: 1.5rem; color: #555;" data-i18n="fd_volunteer_approvals_desc">
-        Volunteers who have stepped up to help your senior and quoted their service charge appear here for your review and approval.
-      </p>
-      <div id="approvalList">
-        <div class="loading-wrapper">
-          <div class="spinner"></div>
-          <span>Loading...</span>
+        <div>
+          <h1 id="welcomeTitle" class="text-xl sm:text-2xl font-extrabold tracking-tight">Welcome back!</h1>
+          <p id="welcomeSubtitle" class="text-brand-100 text-xs sm:text-sm font-medium mt-0.5">
+            Your personal portal for daily assistance, verified local volunteers, and caregiver care.
+          </p>
         </div>
       </div>
 
-      <!-- Auto-refresh indicator -->
-      <div class="poll-indicator">
-        <div class="poll-dot"></div>
-        <span data-i18n="fd_auto_refresh_desc">This page auto-refreshes every 30 seconds to check for new requests and volunteer quotes.</span>
-      </div>
-    </div>
-
-    <!-- SECTION 1.5: Completion Verification Queue (Receipt & Delivery Proof) -->
-    <div class="dashboard-card" style="margin-bottom: 2rem; border-color: var(--color-primary-dark);" id="completionVerificationSection">
-      <h2 style="color: var(--color-primary-dark);">
-        <span data-i18n="fd_proof_verifications_title">📸 Delivery & Receipt Proof Verifications</span>
-        <span class="notification-badge" id="completionBadge" style="display: none; background-color: var(--color-primary-dark);">0</span>
-      </h2>
-      <p style="margin-bottom: 1.5rem; color: #555;" data-i18n="fd_proof_verifications_desc">
-        Volunteers who completed tasks have uploaded delivery photos or receipts. Verify that the delivery was completed accurately for your loved one.
-      </p>
-      <div id="completionVerificationList">
-        <div style="text-align: center; color: #666; padding: 1rem;">No completion verification requests at this time.</div>
-      </div>
-    </div>
-
-    <!-- SECTION 2: All Requests History -->
-    <div class="dashboard-card">
-      <h2><span data-i18n="fd_completed_history">📜 Complete Service History</span></h2>
-      <p style="margin-bottom: 1.5rem; color: #555;" data-i18n="fd_history_desc">Full history of requests raised, their current status, and outcomes.</p>
-      <div id="allRequestsList" class="request-list">
-        <div class="loading-wrapper">
-          <div class="spinner"></div>
-          <span>Loading...</span>
+      <div class="flex flex-wrap items-center gap-2 relative z-10 self-stretch sm:self-auto justify-end">
+        <div class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/20 backdrop-blur-md rounded-xl border border-emerald-400/40 text-xs font-bold text-emerald-100 shadow-sm">
+          <span>Family Guardian Verified</span>
         </div>
+        <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-white/10 backdrop-blur-md rounded-xl border border-white/20 text-xs font-bold text-white">
+          <svg class="w-3.5 h-3.5 text-emerald-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+          </svg>
+          <span>24/7 Safety Active</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Main Modular Grid Layout: Left Column (Linked Senior & Caregiver Center) + Right Column (Workflows & Lists) -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+      
+      <!-- ========================================== -->
+      <!-- LEFT COLUMN: Linked Loved One & Caregiver Hub (Col 1) - Sticky on Desktop -->
+      <!-- ========================================== -->
+      <aside class="space-y-6 lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto lg:pr-1 custom-scrollbar" aria-label="Caregiver Oversight and Senior Profile">
+        
+        <!-- 1. Linked Loved One Profile Card -->
+        <div id="seniorInfoBanner" class="bg-white rounded-3xl border border-slate-200/80 shadow-premium p-5 sm:p-6 space-y-4 relative overflow-hidden" style="display: none;">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div class="flex items-center gap-2">
+              <span class="text-[10px] font-extrabold uppercase tracking-wider text-brand-700 bg-brand-50 px-2.5 py-0.5 rounded-full border border-brand-200">
+                Linked Loved One
+              </span>
+            </div>
+            <span class="inline-flex items-center gap-1.5 text-[10px] font-extrabold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              Active Care
+            </span>
+          </div>
+
+          <div class="flex items-start gap-4">
+            <div class="w-14 h-14 bg-brand-50 border border-brand-200/80 rounded-2xl flex items-center justify-center text-brand-600 shadow-2xs flex-shrink-0">
+              <svg class="w-7 h-7 text-brand-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+              </svg>
+            </div>
+            <div class="min-w-0 flex-1">
+              <h3 id="linkedSeniorName" class="text-base sm:text-lg font-extrabold text-slate-900 leading-snug truncate">
+                Loading...
+              </h3>
+              <p id="linkedSeniorPhone" class="text-xs text-slate-600 font-semibold mt-1 flex items-center gap-1"></p>
+              <p id="linkedSeniorAddress" class="text-xs text-slate-500 font-medium mt-0.5 leading-tight line-clamp-2"></p>
+            </div>
+          </div>
+
+          <!-- Quick Action Buttons for Loved One -->
+          <div class="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100">
+            <a id="btnCallSenior" href="tel:" class="py-2 px-3 bg-brand-50 hover:bg-brand-100 text-brand-700 border border-brand-200/80 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-2xs active:scale-95">
+              <svg class="w-3.5 h-3.5 text-brand-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z" />
+              </svg>
+              <span>Call Senior</span>
+            </a>
+            <button type="button" onclick="loadFamilyDashboard()" class="py-2 px-3 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-2xs active:scale-95">
+              <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+              </svg>
+              <span>Refresh Feed</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 2. Caregiver Responsibility & Oversight Policy Card -->
+        <div class="bg-white rounded-3xl border border-slate-200/80 shadow-premium p-5 sm:p-6 space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div class="flex items-center gap-2">
+              <div class="w-7 h-7 rounded-lg bg-emerald-50 border border-emerald-200/60 flex items-center justify-center text-emerald-600 shadow-2xs">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+                </svg>
+              </div>
+              <h2 class="text-sm font-extrabold text-slate-900 tracking-tight">Caregiver Shield</h2>
+            </div>
+            <span class="text-[10px] font-extrabold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full uppercase tracking-wider">
+              Protected
+            </span>
+          </div>
+
+          <div class="space-y-3 text-xs text-slate-600">
+            <div class="flex items-start gap-2.5">
+              <span class="text-emerald-600 font-bold text-sm">✓</span>
+              <span><strong>Volunteer Vetting:</strong> All volunteers submit government ID and background police clearances.</span>
+            </div>
+            <div class="flex items-start gap-2.5">
+              <span class="text-brand-600 font-bold text-sm">✓</span>
+              <span><strong>Pre-Approval Gate:</strong> You approve task allotments, purchase budgets, and quotes before work starts.</span>
+            </div>
+            <div class="flex items-start gap-2.5">
+              <span class="text-purple-600 font-bold text-sm">✓</span>
+              <span><strong>Proof Verification:</strong> Service charges and purchase costs are only released after reviewing photo receipts.</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. National Senior Helpline Quick Tile -->
+        <div class="bg-amber-50/70 border border-amber-200/80 rounded-3xl p-4 sm:p-5 flex items-center justify-between gap-3 shadow-premium">
+          <div class="space-y-0.5">
+            <span class="text-[10px] font-extrabold text-amber-800 uppercase tracking-wider block">National Elder Helpline</span>
+            <span class="text-sm font-extrabold text-slate-900 block">Toll-Free 14567</span>
+            <span class="text-[11px] text-slate-500 block">Government 24/7 Elder Support</span>
+          </div>
+          <a href="tel:14567" class="px-3.5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-extrabold rounded-xl text-xs flex items-center gap-1.5 shadow-2xs transition-all active:scale-95" aria-label="Call National Senior Helpline">
+            <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z" />
+            </svg>
+            <span>Call</span>
+          </a>
+        </div>
+
+      </aside>
+
+      <!-- ========================================== -->
+      <!-- RIGHT COLUMN: Metrics Hub & Workflow Modules (Col 2 & 3) -->
+      <!-- ========================================== -->
+      <div class="lg:col-span-2 space-y-6">
+
+        <!-- 1. Stats Metric Tiles Overview (Modular 3-Col strip) -->
+        <div class="grid grid-cols-3 gap-3 sm:gap-4" aria-label="Caregiver Overview Metrics">
+          
+          <!-- Action Needed Tile -->
+          <div class="bg-white rounded-3xl border border-slate-200/80 hover:border-amber-300 p-4 sm:p-5 shadow-premium hover:shadow-cardHover transition-all flex items-center gap-3.5 sm:gap-4 group">
+            <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-amber-50 border border-amber-200/70 text-amber-600 flex items-center justify-center flex-shrink-0 shadow-2xs group-hover:scale-105 group-hover:bg-amber-500 group-hover:text-white transition-all">
+              <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+              </svg>
+            </div>
+            <div>
+              <span class="text-xl sm:text-2xl font-extrabold text-amber-600 block leading-tight tracking-tight" id="statActionNeededCount">0</span>
+              <span class="text-[10px] sm:text-[11px] font-extrabold text-amber-700/80 uppercase tracking-wider block mt-0.5">Action Needed</span>
+            </div>
+          </div>
+
+          <!-- Active Care / In-Progress Tasks Tile -->
+          <div class="bg-white rounded-3xl border border-slate-200/80 hover:border-brand-300 p-4 sm:p-5 shadow-premium hover:shadow-cardHover transition-all flex items-center gap-3.5 sm:gap-4 group">
+            <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-brand-50 border border-brand-200/70 text-brand-600 flex items-center justify-center flex-shrink-0 shadow-2xs group-hover:scale-105 group-hover:bg-brand-600 group-hover:text-white transition-all">
+              <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div>
+              <span class="text-xl sm:text-2xl font-extrabold text-brand-700 block leading-tight tracking-tight" id="statActiveCount">0</span>
+              <span class="text-[10px] sm:text-[11px] font-extrabold text-slate-400 uppercase tracking-wider block mt-0.5">In Progress</span>
+            </div>
+          </div>
+
+          <!-- Completed Care History Tile -->
+          <div class="bg-white rounded-3xl border border-slate-200/80 hover:border-emerald-300 p-4 sm:p-5 shadow-premium hover:shadow-cardHover transition-all flex items-center gap-3.5 sm:gap-4 group">
+            <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-emerald-50 border border-emerald-200/70 text-emerald-600 flex items-center justify-center flex-shrink-0 shadow-2xs group-hover:scale-105 group-hover:bg-emerald-600 group-hover:text-white transition-all">
+              <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div>
+              <span class="text-xl sm:text-2xl font-extrabold text-emerald-600 block leading-tight tracking-tight" id="statCompletedCount">0</span>
+              <span class="text-[10px] sm:text-[11px] font-extrabold text-emerald-700/80 uppercase tracking-wider block mt-0.5">Completed</span>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- SECTION 1: Senior Help Requests & Fulfillment Decisions -->
+        <section id="seniorRequestsSection" class="bg-white rounded-3xl border border-slate-200/80 shadow-premium p-5 sm:p-7 hover:border-brand-200 transition-all duration-200 relative overflow-hidden">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-4 mb-4">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-amber-50 border border-amber-200/70 flex items-center justify-center text-amber-600 shadow-2xs">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
+              </div>
+              <div>
+                <div class="flex items-center gap-2">
+                  <h2 class="text-base sm:text-lg font-extrabold text-slate-900 tracking-tight" data-i18n="fd_requests_section_title">
+                    Senior Help Requests &amp; Fulfillment Decisions
+                  </h2>
+                  <span id="seniorReqBadge" class="notification-badge" style="display: none; background-color: #f59e0b;">0</span>
+                </div>
+                <p class="text-xs sm:text-sm text-slate-500 font-medium mt-0.5" data-i18n="fd_requests_section_desc">
+                  New help requests submitted by your senior citizen. Choose whether to fulfill them yourself, allot them to community volunteers, or reject them.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div id="seniorRequestsList" class="space-y-4">
+            <div class="loading-wrapper py-8 text-center text-slate-400 font-medium">
+              <div class="spinner mx-auto mb-2"></div>
+              <span>Loading senior requests...</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- SECTION 2: Volunteer Approvals & Quoted Fees -->
+        <section id="approvalSection" class="bg-white rounded-3xl border border-slate-200/80 shadow-premium p-5 sm:p-7 hover:border-brand-200 transition-all duration-200 relative overflow-hidden">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-4 mb-4">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-brand-50 border border-brand-200/70 flex items-center justify-center text-brand-600 shadow-2xs">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div>
+                <div class="flex items-center gap-2">
+                  <h2 class="text-base sm:text-lg font-extrabold text-slate-900 tracking-tight" data-i18n="fd_volunteer_approvals_title">
+                    Volunteer Approvals &amp; Quoted Fees
+                  </h2>
+                  <span id="approvalBadge" class="notification-badge" style="display: none; background-color: #026bc9;">0</span>
+                </div>
+                <p class="text-xs sm:text-sm text-slate-500 font-medium mt-0.5" data-i18n="fd_volunteer_approvals_desc">
+                  Volunteers who have stepped up to help your senior and quoted their service charge appear here for your review and approval.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div id="approvalList" class="space-y-4">
+            <div class="loading-wrapper py-8 text-center text-slate-400 font-medium">
+              <div class="spinner mx-auto mb-2"></div>
+              <span>Loading volunteer quotes...</span>
+            </div>
+          </div>
+
+          <!-- Auto-refresh indicator -->
+          <div class="poll-indicator">
+            <div class="poll-dot"></div>
+            <span data-i18n="fd_auto_refresh_desc">This page auto-refreshes every 30 seconds to check for new requests and volunteer quotes.</span>
+          </div>
+        </section>
+
+        <!-- SECTION 3: Completion Verification Queue (Receipt & Delivery Proof) -->
+        <section id="completionVerificationSection" class="bg-white rounded-3xl border border-slate-200/80 shadow-premium p-5 sm:p-7 hover:border-brand-200 transition-all duration-200 relative overflow-hidden">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-4 mb-4">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-purple-50 border border-purple-200/70 flex items-center justify-center text-purple-600 shadow-2xs">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z" />
+                </svg>
+              </div>
+              <div>
+                <div class="flex items-center gap-2">
+                  <h2 class="text-base sm:text-lg font-extrabold text-slate-900 tracking-tight" data-i18n="fd_proof_verifications_title">
+                    Delivery &amp; Receipt Proof Verifications
+                  </h2>
+                  <span id="completionBadge" class="notification-badge" style="display: none; background-color: #7c3aed;">0</span>
+                </div>
+                <p class="text-xs sm:text-sm text-slate-500 font-medium mt-0.5" data-i18n="fd_proof_verifications_desc">
+                  Volunteers who completed tasks have uploaded delivery photos or receipts. Verify that the delivery was completed accurately for your loved one.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div id="completionVerificationList" class="space-y-4">
+            <div class="text-center text-slate-500 py-6 text-sm">No completion verification requests at this time.</div>
+          </div>
+        </section>
+
+        <!-- SECTION 4: All Requests History -->
+        <section class="bg-white rounded-3xl border border-slate-200/80 shadow-premium p-5 sm:p-7 hover:border-brand-200 transition-all duration-200 relative overflow-hidden">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-4 mb-4">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-700 shadow-2xs">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
+                </svg>
+              </div>
+              <div>
+                <h2 class="text-base sm:text-lg font-extrabold text-slate-900 tracking-tight" data-i18n="fd_completed_history">
+                  Complete Service History
+                </h2>
+                <p class="text-xs sm:text-sm text-slate-500 font-medium mt-0.5" data-i18n="fd_history_desc">
+                  Full history of requests raised, their current status, and outcomes.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div id="allRequestsList" class="request-list space-y-4">
+            <div class="loading-wrapper py-8 text-center text-slate-400 font-medium">
+              <div class="spinner mx-auto mb-2"></div>
+              <span>Loading service history...</span>
+            </div>
+          </div>
+        </section>
+
       </div>
     </div>
 
@@ -419,52 +710,57 @@
 
   <!-- Rejection Modal -->
   <div id="rejectModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="rejectModalTitle">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h3 id="rejectModalTitle" data-i18n="fd_reject_modal_title">Reject Request</h3>
-        <button id="rejectModalClose" class="modal-close" aria-label="Close">&times;</button>
+    <div class="modal-content p-6 sm:p-7">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+        <h3 id="rejectModalTitle" class="text-lg font-extrabold text-slate-900" data-i18n="fd_reject_modal_title">Reject Request</h3>
+        <button id="rejectModalClose" class="modal-close w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-700 flex items-center justify-center transition-all border-none cursor-pointer p-0 flex-shrink-0 active:scale-95" aria-label="Close">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
       </div>
-      <p style="margin-bottom: 1.5rem; color: #555; font-size: 1rem; font-weight: 500;" data-i18n="fd_reject_modal_desc">
+      <p class="text-slate-600 text-sm font-medium mb-6" data-i18n="fd_reject_modal_desc">
         Do you want to reject this request?
       </p>
-      <div class="modal-footer">
-        <button type="button" id="btnCancelReject" class="btn btn-secondary" data-i18n="btn_cancel">Cancel</button>
-        <button type="button" id="btnConfirmReject" class="btn" style="background-color: var(--color-emergency); color: #ffffff !important; font-weight: 700;" data-i18n="btn_confirm_rejection">
-          ❌ Confirm Rejection
+      <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+        <button type="button" id="btnCancelReject" class="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-700 font-bold text-sm hover:bg-slate-50 transition-all active:scale-95" data-i18n="btn_cancel">Cancel</button>
+        <button type="button" id="btnConfirmReject" class="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-sm shadow-sm transition-all active:scale-95" data-i18n="btn_confirm_rejection">
+          Confirm Rejection
         </button>
       </div>
     </div>
   </div>
 
-  <div id="imageLightboxModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="lightboxTitle" style="display: none; z-index: 10050; background: rgba(0, 0, 0, 0.85);">
-    <div class="modal-content" style="max-width: 850px; text-align: center; background: #ffffff; padding: 1.5rem; border-radius: 16px; position: relative;">
-      <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 15px;">
-        <h3 id="lightboxTitle" style="color: var(--color-primary-dark); margin: 0;" data-i18n="fd_lightbox_title">📸 Receipt / Delivery Photo Proof</h3>
-        <button id="lightboxClose" class="modal-close" style="font-size: 2rem; border: none; background: none; cursor: pointer;">&times;</button>
+  <!-- Full Resolution Photo Proof Lightbox Modal -->
+  <div id="imageLightboxModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="lightboxTitle" style="display: none; z-index: 10050; background: rgba(15, 23, 42, 0.85);">
+    <div class="modal-content max-w-4xl p-6 relative bg-white rounded-3xl">
+      <div class="flex justify-between items-center border-b border-slate-100 pb-3 mb-4">
+        <h3 id="lightboxTitle" class="text-base sm:text-lg font-extrabold text-slate-900" data-i18n="fd_lightbox_title">Receipt &amp; Delivery Verification Proof</h3>
+        <button id="lightboxClose" class="modal-close w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-700 flex items-center justify-center transition-all border-none cursor-pointer p-0 flex-shrink-0 active:scale-95" aria-label="Close">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
       </div>
-      <div style="position: relative; max-height: 70vh; overflow: hidden; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px; padding: 5px; background: #222; display: flex; align-items: center; justify-content: center; min-height: 250px;">
-        <img id="lightboxImage" src="" alt="Full Resolution Receipt Proof" style="max-width: 100%; max-height: 68vh; height: auto; display: block; margin: 0 auto; border-radius: 6px; object-fit: contain;">
+      <div class="relative max-h-[70vh] overflow-hidden mb-4 border border-slate-200 rounded-2xl p-2 bg-slate-950 flex items-center justify-center min-h-[260px]">
+        <img id="lightboxImage" src="" alt="Full Resolution Receipt Proof" class="max-w-full max-h-[66vh] h-auto block mx-auto rounded-xl object-contain">
         
-        <!-- Lightbox Counter Badge (Shown ONLY if > 1 photo) -->
-        <div id="lightboxCounter" style="display: none; position: absolute; top: 12px; right: 12px; background: rgba(0,0,0,0.8); color: #fff; font-weight: 800; font-size: 0.9rem; padding: 4px 14px; border-radius: 16px;">
+        <!-- Lightbox Counter Badge -->
+        <div id="lightboxCounter" class="hidden absolute top-3 right-3 bg-black/80 text-white font-bold text-xs px-3 py-1.5 rounded-full">
           1 / 1
         </div>
 
-        <!-- Lightbox Prev Arrow (Shown ONLY if > 1 photo) -->
-        <button type="button" id="btnLightboxPrev" style="display: none; position: absolute; top: 50%; left: 12px; transform: translateY(-50%); background: rgba(0,0,0,0.65); color: #ffffff; border: none; border-radius: 50%; width: 44px; height: 44px; font-size: 1.4rem; font-weight: bold; cursor: pointer; z-index: 5;">
-          ◀
+        <!-- Lightbox Prev Arrow -->
+        <button type="button" id="btnLightboxPrev" class="hidden absolute top-1/2 left-3 -translate-y-1/2 bg-black/60 hover:bg-black/80 text-white w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold transition-all z-10">
+          &#9664;
         </button>
 
-        <!-- Lightbox Next Arrow (Shown ONLY if > 1 photo) -->
-        <button type="button" id="btnLightboxNext" style="display: none; position: absolute; top: 50%; right: 12px; transform: translateY(-50%); background: rgba(0,0,0,0.65); color: #ffffff; border: none; border-radius: 50%; width: 44px; height: 44px; font-size: 1.4rem; font-weight: bold; cursor: pointer; z-index: 5;">
-          ▶
+        <!-- Lightbox Next Arrow -->
+        <button type="button" id="btnLightboxNext" class="hidden absolute top-1/2 right-3 -translate-y-1/2 bg-black/60 hover:bg-black/80 text-white w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold transition-all z-10">
+          &#9654;
         </button>
       </div>
-      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-        <a id="lightboxDirectLink" href="" target="_blank" class="btn btn-secondary" style="padding: 10px 18px; font-size: 0.95rem;" data-i18n="btn_open_image_new_tab">
-          🔗 Open Image Directly in New Tab
+      <div class="flex justify-between items-center flex-wrap gap-3 pt-2">
+        <a id="lightboxDirectLink" href="" target="_blank" class="px-4 py-2 text-xs sm:text-sm font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-all" data-i18n="btn_open_image_new_tab">
+          Open Image in New Tab
         </a>
-        <button type="button" id="btnCloseLightbox" class="btn btn-primary" style="padding: 10px 24px; font-size: 1rem;" data-i18n="btn_close_preview">
+        <button type="button" id="btnCloseLightbox" class="px-5 py-2 text-xs sm:text-sm font-bold bg-brand-600 hover:bg-brand-700 text-white rounded-xl transition-all shadow-xs" data-i18n="btn_close_preview">
           Close Preview
         </button>
       </div>
@@ -473,54 +769,56 @@
 
   <!-- Caregiver Shopping Preference & Allotment Modal -->
   <div id="shoppingPrefModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="shoppingPrefModalTitle" style="display: none; z-index: 10050;">
-    <div class="modal-content" style="max-width: 540px; padding: 1.8rem; border-radius: 16px; background: #ffffff;">
-      <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--color-primary-light); padding-bottom: 12px; margin-bottom: 1rem;">
-        <h3 id="shoppingPrefModalTitle" style="color: var(--color-primary-dark); margin: 0; font-size: 1.35rem; display: flex; align-items: center; gap: 8px;" data-i18n="fd_pref_modal_title">
-          🛒 Specify Caregiver Preferences
+    <div class="modal-content max-w-lg p-6 sm:p-7 max-h-[90vh] overflow-y-auto">
+      <div class="flex justify-between items-center border-b border-slate-100 pb-3 mb-4">
+        <h3 id="shoppingPrefModalTitle" class="text-lg font-extrabold text-slate-900 flex items-center gap-2" data-i18n="fd_pref_modal_title">
+          Specify Caregiver Preferences
         </h3>
-        <button id="shoppingPrefModalClose" class="modal-close" aria-label="Close Modal" style="font-size: 1.8rem; border: none; background: none; cursor: pointer;">&times;</button>
+        <button id="shoppingPrefModalClose" class="modal-close w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-700 flex items-center justify-center transition-all border-none cursor-pointer p-0 flex-shrink-0 active:scale-95" aria-label="Close Modal">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
       </div>
 
-      <p id="shoppingPrefModalSubtitle" style="margin-bottom: 1.2rem; color: #444; font-size: 1.05rem; font-weight: 600;" data-i18n="fd_pref_modal_subtitle">
-        Shopping Preference (Select all options that apply):
+      <p id="shoppingPrefModalSubtitle" class="text-slate-600 text-sm font-semibold mb-4" data-i18n="fd_pref_modal_subtitle">
+        Specify shopping preferences (select all that apply) before allotting this task to community volunteers:
       </p>
 
       <form id="shoppingPrefForm" onsubmit="return false;">
-        <div class="pref-options-container" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 1.2rem;">
-          <label class="pref-checkbox-label" style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; border: 2px solid #e0e0e0; border-radius: 10px; cursor: pointer; transition: all 0.2s; font-size: 1.05rem; font-weight: 600; color: #333; background: #fafafa;">
-            <input type="checkbox" name="shoppingPrefCheck" value="Lowest Cost" style="width: 20px; height: 20px; accent-color: var(--color-primary);">
-            <span data-i18n="fd_pref_lowest_cost">🏷️ Lowest Cost</span>
+        <div class="space-y-2.5 mb-5">
+          <label class="flex items-center gap-3 p-3.5 border border-slate-200 rounded-2xl cursor-pointer hover:bg-brand-50/50 hover:border-brand-300 transition-all text-sm font-bold text-slate-800">
+            <input type="checkbox" name="shoppingPrefCheck" value="Lowest Cost" class="w-5 h-5 rounded text-brand-600 focus:ring-brand-500">
+            <span data-i18n="fd_pref_lowest_cost">Lowest Cost</span>
           </label>
 
-          <label class="pref-checkbox-label" style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; border: 2px solid #e0e0e0; border-radius: 10px; cursor: pointer; transition: all 0.2s; font-size: 1.05rem; font-weight: 600; color: #333; background: #fafafa;">
-            <input type="checkbox" name="shoppingPrefCheck" value="Nearby Shop" style="width: 20px; height: 20px; accent-color: var(--color-primary);">
-            <span data-i18n="fd_pref_nearby_shop">📍 Nearby Shop</span>
+          <label class="flex items-center gap-3 p-3.5 border border-slate-200 rounded-2xl cursor-pointer hover:bg-brand-50/50 hover:border-brand-300 transition-all text-sm font-bold text-slate-800">
+            <input type="checkbox" name="shoppingPrefCheck" value="Nearby Shop" class="w-5 h-5 rounded text-brand-600 focus:ring-brand-500">
+            <span data-i18n="fd_pref_nearby_shop">Nearby Shop</span>
           </label>
 
-          <label class="pref-checkbox-label" style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; border: 2px solid #e0e0e0; border-radius: 10px; cursor: pointer; transition: all 0.2s; font-size: 1.05rem; font-weight: 600; color: #333; background: #fafafa;">
-            <input type="checkbox" name="shoppingPrefCheck" value="Premium Brands" style="width: 20px; height: 20px; accent-color: var(--color-primary);">
-            <span data-i18n="fd_pref_premium_brands">💎 Premium Brands</span>
+          <label class="flex items-center gap-3 p-3.5 border border-slate-200 rounded-2xl cursor-pointer hover:bg-brand-50/50 hover:border-brand-300 transition-all text-sm font-bold text-slate-800">
+            <input type="checkbox" name="shoppingPrefCheck" value="Premium Brands" class="w-5 h-5 rounded text-brand-600 focus:ring-brand-500">
+            <span data-i18n="fd_pref_premium_brands">Premium Brands</span>
           </label>
 
-          <label class="pref-checkbox-label" style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; border: 2px solid #e0e0e0; border-radius: 10px; cursor: pointer; transition: all 0.2s; font-size: 1.05rem; font-weight: 600; color: #333; background: #fafafa;">
-            <input type="checkbox" name="shoppingPrefCheck" value="Fastest Purchase" style="width: 20px; height: 20px; accent-color: var(--color-primary);">
-            <span data-i18n="fd_pref_fastest_purchase">⚡ Fastest Purchase</span>
+          <label class="flex items-center gap-3 p-3.5 border border-slate-200 rounded-2xl cursor-pointer hover:bg-brand-50/50 hover:border-brand-300 transition-all text-sm font-bold text-slate-800">
+            <input type="checkbox" name="shoppingPrefCheck" value="Fastest Purchase" class="w-5 h-5 rounded text-brand-600 focus:ring-brand-500">
+            <span data-i18n="fd_pref_fastest_purchase">Fastest Purchase</span>
           </label>
 
-          <label class="pref-checkbox-label" style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; border: 2px solid #e0e0e0; border-radius: 10px; cursor: pointer; transition: all 0.2s; font-size: 1.05rem; font-weight: 600; color: #333; background: #fafafa;">
-            <input type="checkbox" name="shoppingPrefCheck" value="No Preference" id="checkNoPref" checked style="width: 20px; height: 20px; accent-color: var(--color-primary);">
-            <span data-i18n="fd_pref_no_pref">⚖️ No Preference</span>
+          <label class="flex items-center gap-3 p-3.5 border border-slate-200 rounded-2xl cursor-pointer hover:bg-brand-50/50 hover:border-brand-300 transition-all text-sm font-bold text-slate-800">
+            <input type="checkbox" name="shoppingPrefCheck" value="No Preference" id="checkNoPref" checked class="w-5 h-5 rounded text-brand-600 focus:ring-brand-500">
+            <span data-i18n="fd_pref_no_pref">No Preference</span>
           </label>
 
-          <label class="pref-checkbox-label" style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; border: 2px solid #e0e0e0; border-radius: 10px; cursor: pointer; transition: all 0.2s; font-size: 1.05rem; font-weight: 600; color: #333; background: #fafafa;">
-            <input type="checkbox" name="shoppingPrefCheck" value="Other" id="checkOtherPref" style="width: 20px; height: 20px; accent-color: var(--color-primary);">
-            <span data-i18n="fd_pref_other">✏️ Other (type it)</span>
+          <label class="flex items-center gap-3 p-3.5 border border-slate-200 rounded-2xl cursor-pointer hover:bg-brand-50/50 hover:border-brand-300 transition-all text-sm font-bold text-slate-800">
+            <input type="checkbox" name="shoppingPrefCheck" value="Other" id="checkOtherPref" class="w-5 h-5 rounded text-brand-600 focus:ring-brand-500">
+            <span data-i18n="fd_pref_other">Other (type it)</span>
           </label>
         </div>
 
         <!-- Custom 'Other' text input field -->
-        <div id="otherPrefTextContainer" style="display: none; margin-bottom: 1.5rem;">
-          <label for="inputCustomOtherPref" style="display: block; font-weight: 700; color: var(--color-primary-dark); margin-bottom: 6px; font-size: 0.95rem;" data-i18n="fd_pref_type_other">
+        <div id="otherPrefTextContainer" class="hidden mb-5">
+          <label for="inputCustomOtherPref" class="block font-bold text-brand-900 mb-1.5 text-xs uppercase tracking-wider" data-i18n="fd_pref_type_other">
             Type Other Preference:
           </label>
           <input
@@ -529,16 +827,18 @@
             placeholder="e.g. Organic items only, buy from local dairy, etc."
             data-i18n="placeholder_pref_other"
             maxlength="100"
-            style="width: 100%; padding: 12px 14px; font-size: 1rem; border: 3px solid var(--color-primary-light); border-radius: 10px; font-family: inherit;"
+            class="w-full px-4 py-2.5 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-brand-500 font-sans"
           >
         </div>
 
-        <div class="modal-footer" style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 1.5rem; border-top: 1px solid #eee; padding-top: 1rem;">
-          <button type="button" id="btnCancelShoppingPref" class="btn btn-secondary" style="padding: 10px 20px; font-size: 1rem;" data-i18n="btn_cancel">
+        <!-- Action Buttons Footer -->
+        <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+          <button type="button" id="btnCancelShoppingPref" class="px-4 py-2.5 rounded-2xl border border-slate-200 text-slate-700 font-bold text-sm hover:bg-slate-50 transition-all active:scale-95 cursor-pointer" data-i18n="btn_cancel">
             Cancel
           </button>
-          <button type="button" id="btnConfirmShoppingPref" class="btn btn-primary" style="padding: 12px 24px; font-size: 1.05rem; font-weight: 700;" data-i18n="btn_allot_task">
-            🤝 Allot Task to Volunteer
+          <button type="button" id="btnConfirmShoppingPref" class="px-6 py-2.5 rounded-2xl bg-gradient-to-r from-brand-600 to-brand-700 hover:from-brand-700 hover:to-brand-800 text-white font-extrabold text-sm shadow-md shadow-brand-500/20 transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer border-none" data-i18n="btn_submit_pref">
+            <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
+            <span>Submit Preferences</span>
           </button>
         </div>
       </form>
@@ -547,29 +847,31 @@
 
   <!-- Select Volunteer Confirmation Modal -->
   <div id="selectVolunteerConfirmModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="selectVolunteerConfirmTitle" style="display: none; z-index: 10050;">
-    <div class="modal-content" style="max-width: 520px; padding: 1.8rem; border-radius: 16px; background: #ffffff;">
-      <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--color-primary-light); padding-bottom: 12px; margin-bottom: 1rem;">
-        <h3 id="selectVolunteerConfirmTitle" style="color: #1565c0; margin: 0; font-size: 1.35rem; display: flex; align-items: center; gap: 8px;" data-i18n="fd_confirm_vol_title">
-          🤝 Confirm Volunteer Selection
+    <div class="modal-content max-w-lg p-6 sm:p-7">
+      <div class="flex justify-between items-center border-b border-slate-100 pb-3 mb-4">
+        <h3 id="selectVolunteerConfirmTitle" class="text-lg font-extrabold text-slate-900 flex items-center gap-2" data-i18n="fd_confirm_vol_title">
+          Confirm Volunteer Selection
         </h3>
-        <button id="selectVolunteerConfirmClose" class="modal-close" aria-label="Close Modal" style="font-size: 1.8rem; border: none; background: none; cursor: pointer;">&times;</button>
+        <button id="selectVolunteerConfirmClose" class="modal-close w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-700 flex items-center justify-center transition-all border-none cursor-pointer p-0 flex-shrink-0 active:scale-95" aria-label="Close Modal">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
       </div>
 
-      <div style="padding: 10px 0;">
-        <p id="selectVolunteerConfirmBody" style="font-size: 1.05rem; color: #333; line-height: 1.5; margin-bottom: 1rem;" data-i18n="fd_confirm_vol_body">
+      <div class="py-2 space-y-4">
+        <p id="selectVolunteerConfirmBody" class="text-slate-700 text-sm leading-relaxed" data-i18n="fd_confirm_vol_body">
           Are you sure you want to select and approve this volunteer to fulfill the request?
         </p>
-        <div style="padding: 12px 16px; background: #e3f2fd; border-left: 4px solid #1976d2; border-radius: 8px; font-size: 0.95rem; color: #0d47a1;" data-i18n="fd_confirm_vol_note">
-          🔒 Once approved, the task will be assigned exclusively to this volunteer, and other volunteers will be notified.
+        <div class="p-4 bg-brand-50/70 border border-brand-200 rounded-2xl text-xs text-brand-900 font-medium" data-i18n="fd_confirm_vol_note">
+          Once approved, the task will be assigned exclusively to this volunteer, and other volunteers will be notified.
         </div>
       </div>
 
-      <div class="modal-footer" style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 1.5rem; border-top: 1px solid #eee; padding-top: 1rem;">
-        <button type="button" id="btnCancelSelectVolunteer" class="btn btn-secondary" style="padding: 10px 20px; font-size: 1rem;" data-i18n="btn_cancel">
+      <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 mt-4">
+        <button type="button" id="btnCancelSelectVolunteer" class="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-700 font-bold text-sm hover:bg-slate-50 transition-all active:scale-95" data-i18n="btn_cancel">
           Cancel
         </button>
-        <button type="button" id="btnConfirmSelectVolunteer" class="btn btn-primary" style="padding: 12px 24px; font-size: 1.05rem; font-weight: 700; background-color: #1565c0;" data-i18n="btn_confirm_assign">
-          ✅ Confirm &amp; Assign Volunteer
+        <button type="button" id="btnConfirmSelectVolunteer" class="px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold text-sm shadow-sm transition-all active:scale-95" data-i18n="btn_confirm_assign">
+          Confirm &amp; Assign Volunteer
         </button>
       </div>
     </div>
@@ -577,20 +879,22 @@
 
   <!-- Volunteer Profile & Verification Modal -->
   <div id="volunteerProfileModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="volunteerProfileTitle" style="display: none; z-index: 10040;">
-    <div class="modal-content" style="max-width: 680px; width: 92%; padding: 1.8rem; border-radius: 16px;">
-      <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--color-primary-light); padding-bottom: 12px; margin-bottom: 15px;">
-        <h3 id="volunteerProfileTitle" style="color: var(--color-primary-dark); margin: 0; font-size: 1.35rem; display: flex; align-items: center; gap: 8px;" data-i18n="fd_vol_profile_title">
-          👤 Volunteer Profile &amp; Verification Badges
+    <div class="modal-content max-w-2xl p-6 sm:p-7">
+      <div class="flex justify-between items-center border-b border-slate-100 pb-3 mb-4">
+        <h3 id="volunteerProfileTitle" class="text-lg font-extrabold text-slate-900 flex items-center gap-2" data-i18n="fd_vol_profile_title">
+          Volunteer Profile &amp; Verification Badges
         </h3>
-        <button id="volunteerProfileClose" class="modal-close" aria-label="Close Modal" style="font-size: 1.8rem; border: none; background: none; cursor: pointer;">&times;</button>
+        <button id="volunteerProfileClose" class="modal-close w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-700 flex items-center justify-center transition-all border-none cursor-pointer p-0 flex-shrink-0 active:scale-95" aria-label="Close Modal">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
       </div>
       
-      <div id="volunteerProfileDetails" style="padding: 5px 0;">
+      <div id="volunteerProfileDetails" class="py-2">
         <!-- Populated dynamically via JS -->
       </div>
 
-      <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 1.2rem; border-top: 1px solid #eee; padding-top: 12px;">
-        <button type="button" id="btnCloseVolunteerProfile" class="btn btn-secondary" style="padding: 10px 22px; font-size: 1rem;">
+      <div class="flex justify-end pt-4 border-t border-slate-100 mt-4">
+        <button type="button" id="btnCloseVolunteerProfile" class="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-700 font-bold text-sm hover:bg-slate-50 transition-all active:scale-95">
           Close Profile
         </button>
       </div>
@@ -599,168 +903,171 @@
 
   <!-- Custom Modal Tab: Request Purchase Cost Revision / Send Bargain Note -->
   <div id="rejectRevisionModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="rejectRevisionModalTitle" style="display: none; z-index: 10060;">
-    <div class="modal-content" style="max-width: 520px; width: 92%; padding: 1.6rem; border-radius: 16px; background: #ffffff;">
-      <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #ffe0b2; padding-bottom: 12px; margin-bottom: 1rem;">
-        <h3 id="rejectRevisionModalTitle" style="color: #c62828; margin: 0; font-size: 1.3rem; display: flex; align-items: center; gap: 8px;" data-i18n="fd_revision_modal_title">
-          ❌ Request Revision &amp; Bargain Note
+    <div class="modal-content max-w-lg p-6 sm:p-7">
+      <div class="flex justify-between items-center border-b border-slate-100 pb-3 mb-4">
+        <h3 id="rejectRevisionModalTitle" class="text-lg font-extrabold text-rose-600 flex items-center gap-2" data-i18n="fd_revision_modal_title">
+          Request Revision &amp; Notes
         </h3>
-        <button id="rejectRevisionModalClose" onclick="closeRejectRevisionModal()" class="modal-close" aria-label="Close Modal" style="font-size: 1.8rem; border: none; background: none; cursor: pointer; color: #666;">&times;</button>
+        <button id="rejectRevisionModalClose" onclick="closeRejectRevisionModal()" class="modal-close w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-700 flex items-center justify-center transition-all border-none cursor-pointer p-0 flex-shrink-0 active:scale-95" aria-label="Close Modal">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
       </div>
 
       <input type="hidden" id="rejectRevisionRequestId" value="">
 
-      <p id="rejectRevisionModalSubtitle" style="color: #444; font-size: 0.98rem; line-height: 1.4; margin-bottom: 1rem;">
+      <p id="rejectRevisionModalSubtitle" class="text-slate-600 text-sm font-medium mb-4">
         Please type your feedback or instructions for the volunteer:
       </p>
 
-      <div class="form-group" style="margin-bottom: 1.2rem;">
-        <label for="revisionNoteInput" style="font-weight: 700; color: #333; font-size: 0.95rem; margin-bottom: 6px; display: block;" data-i18n="fd_revision_note_label">📝 Revision Feedback Note:</label>
+      <div class="space-y-2 mb-5">
+        <label for="revisionNoteInput" class="block font-bold text-slate-800 text-xs uppercase tracking-wider" data-i18n="fd_revision_note_label">Revision Feedback Note:</label>
         <textarea 
           id="revisionNoteInput" 
           rows="4" 
-          style="width: 100%; padding: 10px 12px; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 0.95rem; font-family: inherit; resize: vertical;" 
+          class="w-full px-4 py-3 text-sm border border-slate-200 rounded-2xl focus:ring-2 focus:ring-rose-500 focus:border-rose-500 font-sans"
           data-i18n="placeholder_revision_note"
           placeholder="Type here..."
         ></textarea>
       </div>
 
-      <div class="modal-footer" style="display: flex; gap: 10px; justify-content: flex-end; border-top: 1px solid #eee; padding-top: 1rem;">
-        <button type="button" onclick="closeRejectRevisionModal()" class="btn btn-secondary" style="padding: 10px 18px; font-size: 0.95rem;" data-i18n="btn_cancel">
+      <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+        <button type="button" onclick="closeRejectRevisionModal()" class="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-700 font-bold text-sm hover:bg-slate-50 transition-all active:scale-95" data-i18n="btn_cancel">
           Cancel
         </button>
-        <button type="button" onclick="submitPurchaseCostRevision()" class="btn btn-reject" style="background-color: #c62828; color: #ffffff !important; padding: 10px 20px; font-size: 0.98rem; font-weight: 700; cursor: pointer; border-radius: 8px; border: none;" data-i18n="btn_send_revision_request">
-          ✉️ Send Revision Request &amp; Note
+        <button type="button" onclick="submitPurchaseCostRevision()" class="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-sm shadow-sm transition-all active:scale-95" data-i18n="btn_send_revision_request">
+          Send Revision Request
         </button>
       </div>
     </div>
   </div>
 
   <!-- Modal: Transfer Additional Tip to Volunteer -->
-  <div id="askTipModal" class="modal-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.65); z-index: 9999; align-items: center; justify-content: center;">
-    <div class="modal-content" style="background: #ffffff; border-radius: 18px; width: 95%; max-width: 520px; padding: 1.8rem; box-shadow: 0 12px 40px rgba(0,0,0,0.3); border: 2px solid #a5d6a7; text-align: center; position: relative;">
-      <div style="font-size: 3rem; margin-bottom: 6px;">🎁</div>
-      <h3 style="color: #1b5e20; margin: 0 0 8px 0; font-size: 1.4rem; font-weight: 800;" data-i18n="fd_add_tip_title">Add an Additional Tip for Volunteer?</h3>
-      <p style="color: #555; font-size: 0.98rem; margin-bottom: 1.2rem; line-height: 1.4;" data-i18n="fd_add_tip_desc">
+  <div id="askTipModal" class="modal" style="display: none; z-index: 10070;">
+    <div class="modal-content max-w-md p-6 sm:p-8 text-center">
+      <div class="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-2xl border border-emerald-200 mx-auto flex items-center justify-center mb-4 shadow-sm">
+        <svg class="w-7 h-7 text-emerald-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M21 11.25v8.25a1.5 1.5 0 01-1.5 1.5H4.5a1.5 1.5 0 01-1.5-1.5v-8.25M12 4.875A2.625 2.625 0 109.375 7.5H12m0-2.625V7.5m0-2.625A2.625 2.625 0 1114.625 7.5H12m0 0V21m-8.625-9.75h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
+        </svg>
+      </div>
+      <h3 class="text-xl font-extrabold text-slate-900 mb-1" data-i18n="fd_add_tip_title">Add an Additional Tip for Volunteer</h3>
+      <p class="text-slate-500 text-xs sm:text-sm font-medium mb-6" data-i18n="fd_add_tip_desc">
         Would you like to transfer an additional tip to thank the volunteer for their dedicated service?
       </p>
 
       <!-- Preset Tip Buttons -->
-      <div style="display: flex; gap: 10px; justify-content: center; margin-bottom: 1rem; flex-wrap: wrap;">
-        <button type="button" class="btn-tip-preset" onclick="selectTipPreset(20, this)" style="padding: 8px 18px; font-size: 1rem; font-weight: 700; border: 2px solid #a5d6a7; border-radius: 20px; background: #e8f5e9; color: #2e7d32; cursor: pointer;">₹20</button>
-        <button type="button" class="btn-tip-preset active" onclick="selectTipPreset(50, this)" style="padding: 8px 18px; font-size: 1rem; font-weight: 700; border: 2px solid #2e7d32; border-radius: 20px; background: #2e7d32; color: #ffffff; cursor: pointer;">₹50</button>
-        <button type="button" class="btn-tip-preset" onclick="selectTipPreset(100, this)" style="padding: 8px 18px; font-size: 1rem; font-weight: 700; border: 2px solid #a5d6a7; border-radius: 20px; background: #e8f5e9; color: #2e7d32; cursor: pointer;">₹100</button>
+      <div class="flex items-center justify-center gap-2.5 mb-5 flex-wrap">
+        <button type="button" class="btn-tip-preset px-4 py-2 text-sm font-extrabold rounded-2xl border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-all cursor-pointer" onclick="selectTipPreset(20, this)">₹20</button>
+        <button type="button" class="btn-tip-preset active px-4 py-2 text-sm font-extrabold rounded-2xl border border-emerald-600 bg-emerald-600 text-white shadow-sm transition-all cursor-pointer" onclick="selectTipPreset(50, this)">₹50</button>
+        <button type="button" class="btn-tip-preset px-4 py-2 text-sm font-extrabold rounded-2xl border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-all cursor-pointer" onclick="selectTipPreset(100, this)">₹100</button>
       </div>
 
       <!-- Custom Tip Amount -->
-      <div style="margin-bottom: 1.4rem;">
-        <label for="customTipInput" style="display: block; font-size: 0.88rem; color: #666; margin-bottom: 4px;" data-i18n="fd_custom_tip_label">Or enter custom tip amount (₹):</label>
-        <input type="number" id="customTipInput" value="50" min="5" step="5" style="width: 140px; padding: 8px 12px; font-size: 1.15rem; text-align: center; border: 2px solid #a5d6a7; border-radius: 10px; font-weight: 800; color: #1b5e20; outline: none;" oninput="onCustomTipInput(this.value)">
+      <div class="mb-6">
+        <label for="customTipInput" class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2" data-i18n="fd_custom_tip_label">Or enter custom tip amount (₹):</label>
+        <input type="number" id="customTipInput" value="50" min="5" step="5" class="w-32 px-4 py-2 text-center text-xl font-extrabold text-emerald-700 border-2 border-emerald-200 rounded-2xl focus:ring-2 focus:ring-emerald-500 outline-none mx-auto block" oninput="onCustomTipInput(this.value)">
       </div>
 
-      <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
-        <button type="button" onclick="confirmTipAndRedirect()" style="background-color: #2e7d32; color: #ffffff !important; padding: 12px 20px; font-size: 1rem; font-weight: 700; border: none; border-radius: 10px; cursor: pointer; flex: 1; min-width: 180px; box-shadow: 0 4px 12px rgba(46,125,50,0.25);" data-i18n="btn_pay_tip_continue">
-          💳 Yes, Pay Tip &amp; Continue
+      <div class="flex flex-col sm:flex-row gap-3 justify-center">
+        <button type="button" onclick="confirmTipAndRedirect()" class="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold rounded-2xl transition-all shadow-sm active:scale-95 text-sm" data-i18n="btn_pay_tip_continue">
+          Pay Tip &amp; Continue
         </button>
-        <button type="button" onclick="skipTipAndAskRatings()" style="background-color: #616161; color: #ffffff !important; padding: 12px 20px; font-size: 1rem; font-weight: 700; border: none; border-radius: 10px; cursor: pointer; flex: 1; min-width: 180px;" data-i18n="btn_skip_tip">
-          ⏩ Skip Tip
+        <button type="button" onclick="skipTipAndAskRatings()" class="w-full py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-2xl transition-all active:scale-95 text-sm" data-i18n="btn_skip_tip">
+          Skip Tip
         </button>
       </div>
     </div>
   </div>
 
   <!-- Volunteer Feedback Modal -->
-  <div id="feedbackModal" class="modal-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 2000; align-items: center; justify-content: center;">
-    <div class="modal-content feedback-modal-card" style="max-width: 680px; width: 95%; background: #ffffff; border-radius: 20px; padding: 2rem; border: 2px solid var(--color-primary-light); box-shadow: 0 15px 50px rgba(0, 0, 0, 0.2); max-height: 90vh; overflow-y: auto;">
-      <div class="feedback-header" style="text-align: center; margin-bottom: 1.5rem; border-bottom: 2px dashed #e0e0e0; padding-bottom: 1rem;">
-        <div class="feedback-badge" style="display: inline-block; background: #e8f5e9; color: #2e7d32; padding: 4px 14px; border-radius: 20px; font-weight: 700; font-size: 0.85rem; margin-bottom: 0.5rem; border: 1px solid #c8e6c9;" data-i18n="fd_feedback_badge">🌟 Volunteer Feedback &amp; Review</div>
-        <h2 style="font-size: 1.5rem; color: var(--color-primary-dark); margin-bottom: 0.3rem;" data-i18n="fd_feedback_header">Rate Volunteer <span id="feedbackVolunteerName" style="color: var(--color-primary-dark);">Assigned Volunteer</span></h2>
-        <p style="color: #666; font-size: 0.92rem;" data-i18n="fd_feedback_subtitle">Your receipt verification &amp; service charge release are complete! Please rate the volunteer to help us maintain service excellence.</p>
+  <div id="feedbackModal" class="modal" style="display: none; z-index: 10080;">
+    <div class="modal-content max-w-2xl p-6 sm:p-8 max-h-[90vh] overflow-y-auto">
+      <div class="text-center border-b border-slate-100 pb-5 mb-5">
+        <span class="inline-flex items-center gap-1 px-3 py-1 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-full font-bold text-xs uppercase tracking-wider mb-2" data-i18n="fd_feedback_badge">
+          Volunteer Feedback &amp; Review
+        </span>
+        <h2 class="text-xl font-extrabold text-slate-900" data-i18n="fd_feedback_header">
+          Rate Volunteer <span id="feedbackVolunteerName" class="text-brand-600">Assigned Volunteer</span>
+        </h2>
+        <p class="text-xs sm:text-sm text-slate-500 font-medium mt-1" data-i18n="fd_feedback_subtitle">
+          Your receipt verification and service charge release are complete. Please rate the volunteer to help maintain service excellence.
+        </p>
       </div>
 
-      <form id="feedbackForm" onsubmit="handleFeedbackSubmit(event)">
-        <div class="feedback-table-container" style="overflow-x: auto; margin-bottom: 1rem;">
-          <table class="feedback-table" style="width: 100%; border-collapse: separate; border-spacing: 0 6px; font-size: 0.95rem;">
-            <thead>
+      <form id="feedbackForm" onsubmit="handleFeedbackSubmit(event)" class="space-y-4">
+        <div class="overflow-x-auto border border-slate-100 rounded-2xl">
+          <table class="w-full text-left text-sm">
+            <thead class="bg-slate-50 text-[11px] font-extrabold text-slate-500 uppercase tracking-wider border-b border-slate-200/60">
               <tr>
-                <th style="width: 55%; background: #f4f6f8; text-align: left; padding: 10px 14px; font-size: 0.85rem; text-transform: uppercase; color: #444; font-weight: 700; border-bottom: 2px solid #e0e0e0;" data-i18n="fd_feedback_metric">Metric</th>
-                <th style="width: 45%; background: #f4f6f8; text-align: left; padding: 10px 14px; font-size: 0.85rem; text-transform: uppercase; color: #444; font-weight: 700; border-bottom: 2px solid #e0e0e0;" data-i18n="fd_feedback_rating">Rating</th>
+                <th class="p-3.5" data-i18n="fd_feedback_metric">Metric</th>
+                <th class="p-3.5" data-i18n="fd_feedback_rating">Rating</th>
               </tr>
             </thead>
-            <tbody>
-              <!-- 💰 Cost Utilization -->
-              <tr style="background: #fafafa;">
-                <td style="padding: 12px 14px; border-top: 1px solid #eee; border-bottom: 1px solid #eee;">
-                  <div class="metric-cell" style="display: flex; align-items: center; gap: 10px;">
-                    <span class="metric-icon" style="font-size: 1.4rem;">💰</span>
-                    <div>
-                      <strong data-i18n="fd_feedback_cost_utilization">Cost Utilization</strong>
-                      <span class="metric-sub" style="display: block; font-size: 0.78rem; color: #777;" data-i18n="fd_feedback_cost_utilization_sub">Fairness &amp; budget management</span>
-                    </div>
+            <tbody class="divide-y divide-slate-100">
+              <!-- Cost Utilization -->
+              <tr class="hover:bg-slate-50/50 transition-colors">
+                <td class="p-3.5">
+                  <div>
+                    <strong class="block text-slate-900" data-i18n="fd_feedback_cost_utilization">Cost Utilization</strong>
+                    <span class="text-[11px] text-slate-500" data-i18n="fd_feedback_cost_utilization_sub">Fairness and budget management</span>
                   </div>
                 </td>
-                <td style="padding: 12px 14px; border-top: 1px solid #eee; border-bottom: 1px solid #eee;">
-                  <div class="star-rating-wrapper" style="display: inline-flex; align-items: center; gap: 10px;">
-                    <div class="star-rating" data-metric="costUtilization" onmouseleave="resetStarRating('costUtilization')" style="display: inline-flex; gap: 4px; cursor: pointer; font-size: 1.6rem; user-select: none;">
-                      <span class="star" data-val="1" onclick="setStarRating('costUtilization', 1)" onmouseenter="hoverStarRating('costUtilization', 1)" style="color: #d1d5db; transition: color 0.15s ease;">★</span>
-                      <span class="star" data-val="2" onclick="setStarRating('costUtilization', 2)" onmouseenter="hoverStarRating('costUtilization', 2)" style="color: #d1d5db; transition: color 0.15s ease;">★</span>
-                      <span class="star" data-val="3" onclick="setStarRating('costUtilization', 3)" onmouseenter="hoverStarRating('costUtilization', 3)" style="color: #d1d5db; transition: color 0.15s ease;">★</span>
-                      <span class="star" data-val="4" onclick="setStarRating('costUtilization', 4)" onmouseenter="hoverStarRating('costUtilization', 4)" style="color: #d1d5db; transition: color 0.15s ease;">★</span>
-                      <span class="star" data-val="5" onclick="setStarRating('costUtilization', 5)" onmouseenter="hoverStarRating('costUtilization', 5)" style="color: #d1d5db; transition: color 0.15s ease;">★</span>
+                <td class="p-3.5">
+                  <div class="inline-flex items-center gap-3">
+                    <div class="star-rating inline-flex gap-1 cursor-pointer text-2xl select-none" data-metric="costUtilization" onmouseleave="resetStarRating('costUtilization')">
+                      <span class="star text-slate-300 hover:text-amber-400 transition-colors" data-val="1" onclick="setStarRating('costUtilization', 1)" onmouseenter="hoverStarRating('costUtilization', 1)">★</span>
+                      <span class="star text-slate-300 hover:text-amber-400 transition-colors" data-val="2" onclick="setStarRating('costUtilization', 2)" onmouseenter="hoverStarRating('costUtilization', 2)">★</span>
+                      <span class="star text-slate-300 hover:text-amber-400 transition-colors" data-val="3" onclick="setStarRating('costUtilization', 3)" onmouseenter="hoverStarRating('costUtilization', 3)">★</span>
+                      <span class="star text-slate-300 hover:text-amber-400 transition-colors" data-val="4" onclick="setStarRating('costUtilization', 4)" onmouseenter="hoverStarRating('costUtilization', 4)">★</span>
+                      <span class="star text-slate-300 hover:text-amber-400 transition-colors" data-val="5" onclick="setStarRating('costUtilization', 5)" onmouseenter="hoverStarRating('costUtilization', 5)">★</span>
                       <input type="hidden" id="costUtilizationVal" value="0">
                     </div>
-                    <span class="star-score-badge unrated" id="costUtilizationText" style="font-size: 0.85rem; font-weight: 700; color: #6b7280; background: #f3f4f6; padding: 4px 10px; border-radius: 12px; border: 1px solid #e5e7eb; min-width: 90px; text-align: center;" data-i18n="fd_feedback_select_rating">Select Rating</span>
+                    <span class="star-score-badge text-xs font-bold text-slate-500 bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-xl min-w-[90px] text-center" id="costUtilizationText" data-i18n="fd_feedback_select_rating">Select Rating</span>
                   </div>
                 </td>
               </tr>
 
-              <!-- ⏱️ Speed & Timeliness -->
-              <tr style="background: #fafafa;">
-                <td style="padding: 12px 14px; border-top: 1px solid #eee; border-bottom: 1px solid #eee;">
-                  <div class="metric-cell" style="display: flex; align-items: center; gap: 10px;">
-                    <span class="metric-icon" style="font-size: 1.4rem;">⏱️</span>
-                    <div>
-                      <strong data-i18n="fd_feedback_speed_timeliness">Speed &amp; Timeliness</strong>
-                      <span class="metric-sub" style="display: block; font-size: 0.78rem; color: #777;" data-i18n="fd_feedback_speed_timeliness_sub">Punctuality &amp; execution speed</span>
-                    </div>
+              <!-- Speed & Timeliness -->
+              <tr class="hover:bg-slate-50/50 transition-colors">
+                <td class="p-3.5">
+                  <div>
+                    <strong class="block text-slate-900" data-i18n="fd_feedback_speed_timeliness">Speed &amp; Timeliness</strong>
+                    <span class="text-[11px] text-slate-500" data-i18n="fd_feedback_speed_timeliness_sub">Punctuality and execution speed</span>
                   </div>
                 </td>
-                <td style="padding: 12px 14px; border-top: 1px solid #eee; border-bottom: 1px solid #eee;">
-                  <div class="star-rating-wrapper" style="display: inline-flex; align-items: center; gap: 10px;">
-                    <div class="star-rating" data-metric="speedTimeliness" onmouseleave="resetStarRating('speedTimeliness')" style="display: inline-flex; gap: 4px; cursor: pointer; font-size: 1.6rem; user-select: none;">
-                      <span class="star" data-val="1" onclick="setStarRating('speedTimeliness', 1)" onmouseenter="hoverStarRating('speedTimeliness', 1)" style="color: #d1d5db; transition: color 0.15s ease;">★</span>
-                      <span class="star" data-val="2" onclick="setStarRating('speedTimeliness', 2)" onmouseenter="hoverStarRating('speedTimeliness', 2)" style="color: #d1d5db; transition: color 0.15s ease;">★</span>
-                      <span class="star" data-val="3" onclick="setStarRating('speedTimeliness', 3)" onmouseenter="hoverStarRating('speedTimeliness', 3)" style="color: #d1d5db; transition: color 0.15s ease;">★</span>
-                      <span class="star" data-val="4" onclick="setStarRating('speedTimeliness', 4)" onmouseenter="hoverStarRating('speedTimeliness', 4)" style="color: #d1d5db; transition: color 0.15s ease;">★</span>
-                      <span class="star" data-val="5" onclick="setStarRating('speedTimeliness', 5)" onmouseenter="hoverStarRating('speedTimeliness', 5)" style="color: #d1d5db; transition: color 0.15s ease;">★</span>
+                <td class="p-3.5">
+                  <div class="inline-flex items-center gap-3">
+                    <div class="star-rating inline-flex gap-1 cursor-pointer text-2xl select-none" data-metric="speedTimeliness" onmouseleave="resetStarRating('speedTimeliness')">
+                      <span class="star text-slate-300 hover:text-amber-400 transition-colors" data-val="1" onclick="setStarRating('speedTimeliness', 1)" onmouseenter="hoverStarRating('speedTimeliness', 1)">★</span>
+                      <span class="star text-slate-300 hover:text-amber-400 transition-colors" data-val="2" onclick="setStarRating('speedTimeliness', 2)" onmouseenter="hoverStarRating('speedTimeliness', 2)">★</span>
+                      <span class="star text-slate-300 hover:text-amber-400 transition-colors" data-val="3" onclick="setStarRating('speedTimeliness', 3)" onmouseenter="hoverStarRating('speedTimeliness', 3)">★</span>
+                      <span class="star text-slate-300 hover:text-amber-400 transition-colors" data-val="4" onclick="setStarRating('speedTimeliness', 4)" onmouseenter="hoverStarRating('speedTimeliness', 4)">★</span>
+                      <span class="star text-slate-300 hover:text-amber-400 transition-colors" data-val="5" onclick="setStarRating('speedTimeliness', 5)" onmouseenter="hoverStarRating('speedTimeliness', 5)">★</span>
                       <input type="hidden" id="speedTimelinessVal" value="0">
                     </div>
-                    <span class="star-score-badge unrated" id="speedTimelinessText" style="font-size: 0.85rem; font-weight: 700; color: #6b7280; background: #f3f4f6; padding: 4px 10px; border-radius: 12px; border: 1px solid #e5e7eb; min-width: 90px; text-align: center;" data-i18n="fd_feedback_select_rating">Select Rating</span>
+                    <span class="star-score-badge text-xs font-bold text-slate-500 bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-xl min-w-[90px] text-center" id="speedTimelinessText" data-i18n="fd_feedback_select_rating">Select Rating</span>
                   </div>
                 </td>
               </tr>
 
-              <!-- 📋 Task Completion -->
-              <tr style="background: #fafafa;">
-                <td style="padding: 12px 14px; border-top: 1px solid #eee; border-bottom: 1px solid #eee;">
-                  <div class="metric-cell" style="display: flex; align-items: center; gap: 10px;">
-                    <span class="metric-icon" style="font-size: 1.4rem;">📋</span>
-                    <div>
-                      <strong data-i18n="fd_feedback_task_completion">Task Completion</strong>
-                      <span class="metric-sub" style="display: block; font-size: 0.78rem; color: #777;" data-i18n="fd_feedback_task_completion_sub">Full completion of requested items</span>
-                    </div>
+              <!-- Task Completion -->
+              <tr class="hover:bg-slate-50/50 transition-colors">
+                <td class="p-3.5">
+                  <div>
+                    <strong class="block text-slate-900" data-i18n="fd_feedback_task_completion">Task Completion</strong>
+                    <span class="text-[11px] text-slate-500" data-i18n="fd_feedback_task_completion_sub">Full completion of requested items</span>
                   </div>
                 </td>
-                <td style="padding: 12px 14px; border-top: 1px solid #eee; border-bottom: 1px solid #eee;">
-                  <div class="pill-group" id="taskCompletionGroup" style="display: inline-flex; gap: 6px; flex-wrap: wrap;">
-                    <label class="pill-option active" onclick="selectPill(this, 'taskCompletion', 'Completely')" style="padding: 7px 16px; border-radius: 20px; font-size: 0.88rem; font-weight: 600; border: 2px solid #2e7d32; background: #2e7d32; color: #ffffff; cursor: pointer;">
+                <td class="p-3.5">
+                  <div class="inline-flex gap-2 flex-wrap" id="taskCompletionGroup">
+                    <label class="pill-option active px-3.5 py-1.5 rounded-full text-xs font-bold border-2 border-emerald-600 bg-emerald-600 text-white cursor-pointer transition-all" onclick="selectPill(this, 'taskCompletion', 'Completely')">
                       <input type="radio" name="taskCompletion" value="Completely" checked hidden>
                       <span data-i18n="fd_feedback_completely">Completely</span>
                     </label>
-                    <label class="pill-option" onclick="selectPill(this, 'taskCompletion', 'Partially')" style="padding: 7px 16px; border-radius: 20px; font-size: 0.88rem; font-weight: 600; border: 2px solid #d1d5db; background: #f9fafb; color: #4b5563; cursor: pointer;">
+                    <label class="pill-option px-3.5 py-1.5 rounded-full text-xs font-bold border-2 border-slate-200 bg-white text-slate-700 cursor-pointer transition-all hover:bg-slate-50" onclick="selectPill(this, 'taskCompletion', 'Partially')">
                       <input type="radio" name="taskCompletion" value="Partially" hidden>
                       <span data-i18n="fd_feedback_partially">Partially</span>
                     </label>
-                    <label class="pill-option" onclick="selectPill(this, 'taskCompletion', 'No')" style="padding: 7px 16px; border-radius: 20px; font-size: 0.88rem; font-weight: 600; border: 2px solid #d1d5db; background: #f9fafb; color: #4b5563; cursor: pointer;">
+                    <label class="pill-option px-3.5 py-1.5 rounded-full text-xs font-bold border-2 border-slate-200 bg-white text-slate-700 cursor-pointer transition-all hover:bg-slate-50" onclick="selectPill(this, 'taskCompletion', 'No')">
                       <input type="radio" name="taskCompletion" value="No" hidden>
                       <span data-i18n="fd_feedback_no">No</span>
                     </label>
@@ -768,54 +1075,48 @@
                 </td>
               </tr>
 
-              <!-- 📞 Communication -->
-              <tr style="background: #fafafa;">
-                <td style="padding: 12px 14px; border-top: 1px solid #eee; border-bottom: 1px solid #eee;">
-                  <div class="metric-cell" style="display: flex; align-items: center; gap: 10px;">
-                    <span class="metric-icon" style="font-size: 1.4rem;">📞</span>
-                    <div>
-                      <strong data-i18n="fd_feedback_communication">Communication</strong>
-                      <span class="metric-sub" style="display: block; font-size: 0.78rem; color: #777;" data-i18n="fd_feedback_communication_sub">Politeness &amp; responsiveness</span>
-                    </div>
+              <!-- Communication -->
+              <tr class="hover:bg-slate-50/50 transition-colors">
+                <td class="p-3.5">
+                  <div>
+                    <strong class="block text-slate-900" data-i18n="fd_feedback_communication">Communication</strong>
+                    <span class="text-[11px] text-slate-500" data-i18n="fd_feedback_communication_sub">Politeness and responsiveness</span>
                   </div>
                 </td>
-                <td style="padding: 12px 14px; border-top: 1px solid #eee; border-bottom: 1px solid #eee;">
-                  <div class="star-rating-wrapper" style="display: inline-flex; align-items: center; gap: 10px;">
-                    <div class="star-rating" data-metric="communication" onmouseleave="resetStarRating('communication')" style="display: inline-flex; gap: 4px; cursor: pointer; font-size: 1.6rem; user-select: none;">
-                      <span class="star" data-val="1" onclick="setStarRating('communication', 1)" onmouseenter="hoverStarRating('communication', 1)" style="color: #d1d5db; transition: color 0.15s ease;">★</span>
-                      <span class="star" data-val="2" onclick="setStarRating('communication', 2)" onmouseenter="hoverStarRating('communication', 2)" style="color: #d1d5db; transition: color 0.15s ease;">★</span>
-                      <span class="star" data-val="3" onclick="setStarRating('communication', 3)" onmouseenter="hoverStarRating('communication', 3)" style="color: #d1d5db; transition: color 0.15s ease;">★</span>
-                      <span class="star" data-val="4" onclick="setStarRating('communication', 4)" onmouseenter="hoverStarRating('communication', 4)" style="color: #d1d5db; transition: color 0.15s ease;">★</span>
-                      <span class="star" data-val="5" onclick="setStarRating('communication', 5)" onmouseenter="hoverStarRating('communication', 5)" style="color: #d1d5db; transition: color 0.15s ease;">★</span>
+                <td class="p-3.5">
+                  <div class="inline-flex items-center gap-3">
+                    <div class="star-rating inline-flex gap-1 cursor-pointer text-2xl select-none" data-metric="communication" onmouseleave="resetStarRating('communication')">
+                      <span class="star text-slate-300 hover:text-amber-400 transition-colors" data-val="1" onclick="setStarRating('communication', 1)" onmouseenter="hoverStarRating('communication', 1)">★</span>
+                      <span class="star text-slate-300 hover:text-amber-400 transition-colors" data-val="2" onclick="setStarRating('communication', 2)" onmouseenter="hoverStarRating('communication', 2)">★</span>
+                      <span class="star text-slate-300 hover:text-amber-400 transition-colors" data-val="3" onclick="setStarRating('communication', 3)" onmouseenter="hoverStarRating('communication', 3)">★</span>
+                      <span class="star text-slate-300 hover:text-amber-400 transition-colors" data-val="4" onclick="setStarRating('communication', 4)" onmouseenter="hoverStarRating('communication', 4)">★</span>
+                      <span class="star text-slate-300 hover:text-amber-400 transition-colors" data-val="5" onclick="setStarRating('communication', 5)" onmouseenter="hoverStarRating('communication', 5)">★</span>
                       <input type="hidden" id="communicationVal" value="0">
                     </div>
-                    <span class="star-score-badge unrated" id="communicationText" style="font-size: 0.85rem; font-weight: 700; color: #6b7280; background: #f3f4f6; padding: 4px 10px; border-radius: 12px; border: 1px solid #e5e7eb; min-width: 90px; text-align: center;" data-i18n="fd_feedback_select_rating">Select Rating</span>
+                    <span class="star-score-badge text-xs font-bold text-slate-500 bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-xl min-w-[90px] text-center" id="communicationText" data-i18n="fd_feedback_select_rating">Select Rating</span>
                   </div>
                 </td>
               </tr>
 
-              <!-- 👍 Would you choose this volunteer again? -->
-              <tr style="background: #fafafa;">
-                <td style="padding: 12px 14px; border-top: 1px solid #eee; border-bottom: 1px solid #eee;">
-                  <div class="metric-cell" style="display: flex; align-items: center; gap: 10px;">
-                    <span class="metric-icon" style="font-size: 1.4rem;">👍</span>
-                    <div>
-                      <strong data-i18n="fd_feedback_choose_again">Would you choose this volunteer again?</strong>
-                      <span class="metric-sub" style="display: block; font-size: 0.78rem; color: #777;" data-i18n="fd_feedback_choose_again_sub">Overall trust &amp; recommendation</span>
-                    </div>
+              <!-- Would you choose this volunteer again? -->
+              <tr class="hover:bg-slate-50/50 transition-colors">
+                <td class="p-3.5">
+                  <div>
+                    <strong class="block text-slate-900" data-i18n="fd_feedback_choose_again">Would you choose this volunteer again?</strong>
+                    <span class="text-[11px] text-slate-500" data-i18n="fd_feedback_choose_again_sub">Overall trust and recommendation</span>
                   </div>
                 </td>
-                <td style="padding: 12px 14px; border-top: 1px solid #eee; border-bottom: 1px solid #eee;">
-                  <div class="pill-group" id="chooseAgainGroup" style="display: inline-flex; gap: 6px; flex-wrap: wrap;">
-                    <label class="pill-option active" onclick="selectPill(this, 'chooseAgain', 'Yes')" style="padding: 7px 16px; border-radius: 20px; font-size: 0.88rem; font-weight: 600; border: 2px solid #2e7d32; background: #2e7d32; color: #ffffff; cursor: pointer;">
+                <td class="p-3.5">
+                  <div class="inline-flex gap-2 flex-wrap" id="chooseAgainGroup">
+                    <label class="pill-option active px-3.5 py-1.5 rounded-full text-xs font-bold border-2 border-emerald-600 bg-emerald-600 text-white cursor-pointer transition-all" onclick="selectPill(this, 'chooseAgain', 'Yes')">
                       <input type="radio" name="chooseAgain" value="Yes" checked hidden>
                       <span data-i18n="fd_feedback_yes">Yes</span>
                     </label>
-                    <label class="pill-option" onclick="selectPill(this, 'chooseAgain', 'Maybe')" style="padding: 7px 16px; border-radius: 20px; font-size: 0.88rem; font-weight: 600; border: 2px solid #d1d5db; background: #f9fafb; color: #4b5563; cursor: pointer;">
+                    <label class="pill-option px-3.5 py-1.5 rounded-full text-xs font-bold border-2 border-slate-200 bg-white text-slate-700 cursor-pointer transition-all hover:bg-slate-50" onclick="selectPill(this, 'chooseAgain', 'Maybe')">
                       <input type="radio" name="chooseAgain" value="Maybe" hidden>
                       <span data-i18n="fd_feedback_maybe">Maybe</span>
                     </label>
-                    <label class="pill-option" onclick="selectPill(this, 'chooseAgain', 'No')" style="padding: 7px 16px; border-radius: 20px; font-size: 0.88rem; font-weight: 600; border: 2px solid #d1d5db; background: #f9fafb; color: #4b5563; cursor: pointer;">
+                    <label class="pill-option px-3.5 py-1.5 rounded-full text-xs font-bold border-2 border-slate-200 bg-white text-slate-700 cursor-pointer transition-all hover:bg-slate-50" onclick="selectPill(this, 'chooseAgain', 'No')">
                       <input type="radio" name="chooseAgain" value="No" hidden>
                       <span data-i18n="fd_feedback_no">No</span>
                     </label>
@@ -827,14 +1128,14 @@
         </div>
 
         <!-- Additional Feedback -->
-        <div class="additional-feedback-box" style="margin-top: 1.2rem;">
-          <label for="additionalFeedback" style="display: block; font-weight: 700; color: #333; margin-bottom: 0.4rem; font-size: 0.95rem;" data-i18n="fd_feedback_additional">Additional feedback (optional)</label>
-          <textarea id="additionalFeedback" rows="3" style="width: 100%; border: 2px solid #e0e0e0; border-radius: 12px; padding: 12px 14px; font-size: 0.95rem; outline: none; font-family: inherit; box-sizing: border-box;" data-i18n="placeholder_feedback_additional" placeholder="Share any extra thoughts, appreciation, or suggestions for the volunteer..."></textarea>
+        <div class="pt-2">
+          <label for="additionalFeedback" class="block font-bold text-slate-800 text-xs uppercase tracking-wider mb-2" data-i18n="fd_feedback_additional">Additional feedback (optional)</label>
+          <textarea id="additionalFeedback" rows="3" class="w-full px-4 py-3 text-sm border border-slate-200 rounded-2xl focus:ring-2 focus:ring-brand-500 focus:border-brand-500 font-sans" data-i18n="placeholder_feedback_additional" placeholder="Share any extra thoughts, appreciation, or suggestions for the volunteer..."></textarea>
         </div>
 
-        <div class="feedback-actions" style="display: flex; gap: 12px; margin-top: 1.5rem; justify-content: flex-end;">
-          <button type="button" class="btn-skip" onclick="skipFeedbackAndGoHome()" style="background: #f3f4f6; border: 2px solid #e5e7eb; color: #4b5563; font-weight: 600; padding: 10px 18px; border-radius: 10px; cursor: pointer;" data-i18n="btn_skip_close">Skip &amp; Close</button>
-          <button type="submit" id="btnSubmitFeedback" class="btn-submit-feedback" style="background: #2e7d32; color: #ffffff; border: none; font-weight: 700; padding: 12px 24px; border-radius: 10px; cursor: pointer; box-shadow: 0 4px 12px rgba(46,125,50,0.25);" data-i18n="btn_submit_rating_finish">⭐ Submit Rating &amp; Finish ➔</button>
+        <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+          <button type="button" class="btn-skip px-4 py-2.5 rounded-xl border border-slate-200 text-slate-700 font-bold text-sm hover:bg-slate-50 transition-all active:scale-95" onclick="skipFeedbackAndGoHome()" data-i18n="btn_skip_close">Skip &amp; Close</button>
+          <button type="submit" id="btnSubmitFeedback" class="btn-submit-feedback px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-sm transition-all active:scale-95" data-i18n="btn_submit_rating_finish">Submit Rating &amp; Finish</button>
         </div>
       </form>
     </div>
@@ -846,7 +1147,7 @@
   </footer>
 
   <!-- Scripts -->
-  <script src="/js/api.js?v=270"></script>
-  <script src="/js/family.js?v=270"></script>
+  <script src="/js/api.js?v=321"></script>
+  <script src="/js/family.js?v=321"></script>
 </body>
 </html>

@@ -68,9 +68,36 @@
 
   <!-- Modern Styling Overrides -->
   <style>
+    /* Accessible & Professional Focus Styles */
     *:focus-visible {
-      outline: 4px solid #026bc9 !important;
-      outline-offset: 4px !important;
+      outline: 2px solid rgba(2, 107, 201, 0.4) !important;
+      outline-offset: 2px !important;
+    }
+
+    /* Sleek, Modern Input Focus Ring (Crisp border + subtle thin 3px blur ring) */
+    input, textarea, select {
+      transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+    }
+
+    input:focus, textarea:focus, select:focus {
+      outline: none !important;
+      border-color: #026bc9 !important;
+      box-shadow: 0 0 0 3px rgba(2, 107, 201, 0.12) !important;
+    }
+
+    input:focus-visible, textarea:focus-visible, select:focus-visible {
+      outline: none !important;
+      border-color: #026bc9 !important;
+      box-shadow: 0 0 0 3px rgba(2, 107, 201, 0.14) !important;
+    }
+
+    button:focus {
+      outline: none;
+    }
+
+    button:focus-visible {
+      outline: 2px solid rgba(2, 107, 201, 0.4) !important;
+      outline-offset: 2px !important;
     }
     html {
       font-size: var(--base-font-size, 18px);

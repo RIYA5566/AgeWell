@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="AgeWell Volunteer Portal — Accept senior care requests, quote service charges, coordinate assistance, and log verified completions.">
   <title>Volunteer Dashboard - AgeWell</title>
   
   <!-- Google Fonts: Plus Jakarta Sans for high-end modern layout -->
@@ -10,8 +11,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="/css/style.css">
-  <script src="/js/i18n.js"></script>
+  <link rel="stylesheet" href="/css/style.css?v=322">
+  <script src="/js/i18n.js?v=306"></script>
 
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -52,30 +53,58 @@
           boxShadow: {
             premium: '0 10px 30px -10px rgba(15, 23, 42, 0.04)',
             cardHover: '0 20px 40px -15px rgba(2, 107, 201, 0.08)',
-            modal: '0 25px 50px -12px rgba(15, 23, 42, 0.15)'
+            modal: '0 25px 50px -12px rgba(15, 23, 42, 0.18)'
           }
         }
       }
     }
   </script>
 
-  <!-- Override style variables to match the brand blue palette -->
+  <!-- Scoped Styles matching Caregiver & Senior Unified Theme -->
   <style>
     :root {
       --color-primary-dark: #026bc9;     /* brand-600 */
       --color-primary: #0c87eb;          /* brand-500 */
       --color-primary-light: #b9dbfe;    /* brand-200 */
-      --color-bg-light: #f0f7ff;         /* brand-50 */
+      --color-bg-light: #f8fafc;         /* slate-50 */
       --color-white: #ffffff;
       --color-gray-dark: #0f172a;        /* slate-900 */
       --color-gray-light: #f1f5f9;       /* slate-100 */
-      --border-radius: 12px;
+      --color-emergency: #e11d48;
+      --border-radius: 16px;
       --base-font-size: 18px;
     }
 
+    /* Accessible & Professional Focus Styles */
     *:focus-visible {
-      outline: 4px solid #026bc9 !important;
-      outline-offset: 4px !important;
+      outline: 2px solid rgba(2, 107, 201, 0.4) !important;
+      outline-offset: 2px !important;
+    }
+
+    /* Sleek, Modern Input Focus Ring (Crisp border + subtle thin 3px blur ring) */
+    input, textarea, select {
+      transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+    }
+
+    input:focus, textarea:focus, select:focus {
+      outline: none !important;
+      border-color: #026bc9 !important;
+      box-shadow: 0 0 0 3px rgba(2, 107, 201, 0.12) !important;
+    }
+
+    input:focus-visible, textarea:focus-visible, select:focus-visible {
+      outline: none !important;
+      border-color: #026bc9 !important;
+      box-shadow: 0 0 0 3px rgba(2, 107, 201, 0.14) !important;
+    }
+
+    button:focus {
+      outline: none;
+    }
+
+    button:focus-visible {
+      outline: 2px solid rgba(2, 107, 201, 0.4) !important;
+      outline-offset: 2px !important;
     }
     html {
       font-size: var(--base-font-size, 18px);
@@ -97,7 +126,7 @@
     }
     .skip-link:focus {
       top: 0;
-      outline: 4px solid #f57f17;
+      outline: 4px solid #026bc9;
     }
     .bg-gradient-mesh {
       background-color: #f8fafc;
@@ -106,172 +135,439 @@
         radial-gradient(at 100% 0%, rgba(241, 245, 249, 0.6) 0px, transparent 50%),
         radial-gradient(at 50% 100%, rgba(219, 234, 254, 0.3) 0px, transparent 50%);
     }
+
+    /* Blinking pulse animation for active count notifications */
+    @keyframes badge-blink-glow {
+      0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(2, 107, 201, 0.7);
+      }
+      50% {
+        opacity: 0.85;
+        transform: scale(1.1);
+        box-shadow: 0 0 0 7px rgba(2, 107, 201, 0);
+      }
+    }
+    .badge-blink-active {
+      animation: badge-blink-glow 1.5s infinite ease-in-out;
+    }
+
+    /* Modal Backdrop & Animation */
+    .modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.65);
+      backdrop-filter: blur(8px);
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      padding: 1rem;
+    }
+    .modal-content {
+      background: #ffffff;
+      border-radius: 28px;
+      border: 1px solid rgba(226, 232, 240, 0.9);
+      box-shadow: 0 25px 60px -15px rgba(15, 23, 42, 0.35);
+      width: 100%;
+      max-width: 600px;
+      padding: 2rem;
+      position: relative;
+      animation: modalFadeIn 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes modalFadeIn {
+      from { opacity: 0; transform: scale(0.96) translateY(8px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
   </style>
 </head>
 <body class="bg-gradient-mesh text-[#0f172a] min-h-full flex flex-col transition-colors duration-200">
   <a href="#mainContent" class="skip-link">Skip to main content</a>
 
   <!-- Global Header / Navbar -->
-  <nav class="bg-white border-b border-slate-200/80 shadow-premium sticky top-0 z-40 py-4 px-6">
-    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
+  <nav class="bg-white border-b border-slate-200/80 shadow-premium sticky top-0 z-40 py-3.5 px-4 sm:px-6">
+    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-3 sm:gap-4">
       <!-- Logo and Subtitle -->
       <div class="flex items-center gap-3">
-        <a href="/" class="flex items-center gap-3">
-          <div class="w-10 h-10 bg-brand-50 rounded-xl flex items-center justify-center border border-brand-100 shadow-sm">
-            <svg class="w-7 h-7 text-brand-600" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+        <a href="/" class="flex items-center gap-3 group">
+          <div class="w-10 h-10 bg-brand-50 group-hover:bg-brand-100 rounded-2xl flex items-center justify-center border border-brand-200/70 shadow-xs transition-colors">
+            <svg class="w-6 h-6 text-brand-600" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
             </svg>
           </div>
           <div>
             <span class="font-sans text-xl font-extrabold text-slate-900 tracking-tight" data-i18n="hero_title">AgeWell</span>
-            <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mt-0.5" data-i18n="nav_subtitle">Senior Citizen Assistance Platform</span>
+            <span class="block text-[10px] font-bold text-brand-700 uppercase tracking-wider leading-none mt-0.5" data-i18n="nav_subtitle">Volunteer Assistance Portal</span>
           </div>
         </a>
       </div>
 
       <!-- Text Sizing and Accessibility Panel (Auto-injected language switcher is attached here) -->
-      <div class="accessibility-panel flex flex-wrap items-center gap-3 bg-slate-50 rounded-xl p-1.5 border border-slate-200/60 text-sm" role="region" aria-label="Accessibility Sizing Controls">
+      <div class="accessibility-panel flex flex-wrap items-center gap-2 bg-slate-50 rounded-2xl p-1.5 border border-slate-200/70 text-xs" role="region" aria-label="Accessibility Sizing Controls">
         <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider px-1.5" data-i18n="nav_text_size">Text Size</span>
-        <button id="btnTextDecrease" class="bg-white hover:bg-slate-100 text-slate-700 font-bold w-8 h-8 rounded-lg border border-slate-200 transition-all flex items-center justify-center text-xs active:scale-95 shadow-xs" aria-label="Make text smaller">-A</button>
-        <button id="btnTextReset" class="bg-white hover:bg-slate-100 text-slate-700 font-semibold px-2.5 h-8 rounded-lg border border-slate-200 transition-all flex items-center justify-center text-xs active:scale-95 shadow-xs" aria-label="Reset text size to normal" data-i18n="nav_reset">Reset</button>
-        <button id="btnTextIncrease" class="bg-white hover:bg-slate-100 text-slate-700 font-bold w-8 h-8 rounded-lg border border-slate-200 transition-all flex items-center justify-center text-xs active:scale-95 shadow-xs" aria-label="Make text larger">+A</button>
-        <span id="fontSizeIndicator" class="bg-brand-600 text-white font-bold px-2 py-1 rounded-lg text-xs shadow-xs ml-1">18px</span>
+        <button id="btnTextDecrease" class="bg-white hover:bg-slate-100 text-slate-700 font-bold w-8 h-8 rounded-xl border border-slate-200 transition-all flex items-center justify-center text-xs active:scale-95 shadow-xs" aria-label="Make text smaller">-A</button>
+        <button id="btnTextReset" class="bg-white hover:bg-slate-100 text-slate-700 font-semibold px-2.5 h-8 rounded-xl border border-slate-200 transition-all flex items-center justify-center text-xs active:scale-95 shadow-xs" aria-label="Reset text size to normal" data-i18n="nav_reset">Reset</button>
+        <button id="btnTextIncrease" class="bg-white hover:bg-slate-100 text-slate-700 font-bold w-8 h-8 rounded-xl border border-slate-200 transition-all flex items-center justify-center text-xs active:scale-95 shadow-xs" aria-label="Make text larger">+A</button>
+        <span id="fontSizeIndicator" class="bg-brand-600 text-white font-bold px-2 py-1 rounded-lg text-[11px] shadow-xs ml-0.5">18px</span>
       </div>
 
       <!-- User Nav info and Logout -->
-      <div class="flex items-center gap-3 sm:gap-4">
-        <div class="flex items-center gap-2 bg-brand-50 border border-brand-200/80 rounded-xl px-3.5 py-1.5">
-          <span class="text-sm font-extrabold text-brand-900" id="navUserName">Hello, Volunteer</span>
+      <div class="flex items-center gap-3">
+        <div class="flex items-center gap-2 bg-brand-50 border border-brand-200/80 rounded-2xl px-3.5 py-1.5">
+          <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+          <span class="text-xs sm:text-sm font-extrabold text-brand-900" id="navUserName">Hello, Volunteer</span>
         </div>
-        <button id="btnLogout" class="px-4 py-2 text-brand-700 font-bold text-sm bg-brand-50 hover:bg-brand-100 border border-brand-200 rounded-xl transition-all active:scale-95 shadow-xs flex items-center gap-1.5">
+        <button id="btnLogout" class="px-3.5 py-1.5 text-brand-700 font-bold text-xs sm:text-sm bg-brand-50 hover:bg-brand-100 border border-brand-200/80 rounded-2xl transition-all active:scale-95 shadow-xs flex items-center gap-1.5">
           <svg class="w-4 h-4 text-brand-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
           </svg>
-          Log Out
+          <span data-i18n="nav_logout">Log Out</span>
         </button>
       </div>
     </div>
   </nav>
 
   <!-- Main Content -->
-  <main id="mainContent">
-    <!-- Outer Grid Layout: 3 Columns on desktop, 1 on mobile/tablet -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+  <main id="mainContent" class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 pt-0 pb-8">
+    
+    <!-- Top Welcome Greeting Hero Bar -->
+    <section class="bg-gradient-to-r from-brand-900 via-brand-700 to-brand-600 rounded-3xl p-6 sm:p-7 text-white shadow-premium relative overflow-hidden flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 -mt-[2mm] mb-6" id="welcomeBar" aria-label="Welcome Banner">
+      <!-- Decorative background blur circles -->
+      <div class="absolute -top-16 -right-16 w-48 h-48 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
+      <div class="absolute -bottom-16 -left-16 w-48 h-48 bg-brand-400/20 rounded-full blur-2xl pointer-events-none"></div>
+
+      <div class="flex items-center gap-4 relative z-10">
+        <div class="w-14 h-14 sm:w-16 sm:h-16 bg-white/15 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/20 shadow-inner flex-shrink-0 text-white">
+          <svg class="w-8 h-8 sm:w-9 sm:h-9 text-white" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+          </svg>
+        </div>
+        <div>
+          <h1 id="welcomeTitle" class="text-xl sm:text-2xl font-extrabold tracking-tight">Welcome back, Volunteer!</h1>
+          <p id="welcomeSubtitle" class="text-brand-100 text-xs sm:text-sm font-medium mt-0.5" data-i18n="vd_welcome_subtitle">
+            Your personal portal to accept elder care requests, submit quotes, and provide verified assistance.
+          </p>
+        </div>
+      </div>
       
-      <!-- LEFT COLUMN: Profile, Wallet & Trust Status (col-span-1) -->
-      <div class="space-y-6">
+      <div class="flex flex-wrap items-center gap-2 relative z-10 self-stretch sm:self-auto justify-end">
+        <div id="welcomeVerificationPill" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/20 backdrop-blur-md rounded-xl border border-emerald-400/40 text-xs font-bold text-emerald-100 shadow-xs">
+          <svg class="w-3.5 h-3.5 text-emerald-300" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
+          <span id="welcomeVerificationText">Community Volunteer — Verified</span>
+        </div>
+        <div class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/10 backdrop-blur-md rounded-xl border border-white/20 text-xs font-bold text-white shadow-xs">
+          <svg class="w-3.5 h-3.5 text-emerald-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+          </svg>
+          <span>24/7 Safety Active</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!-- UNVERIFIED STATE: MULTI-LEVEL TRUST & VERIFICATION SPOTLIGHT        -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <section id="unverifiedTrustContainer" class="w-full max-w-4xl mx-auto my-4 space-y-6" style="display: none;">
+      <!-- Hero Notice Card -->
+      <div class="bg-white rounded-3xl border border-slate-200/90 shadow-premium p-6 sm:p-8 relative overflow-hidden text-center sm:text-left">
+        <div class="h-2 bg-gradient-to-r from-amber-400 via-brand-500 to-emerald-500 -mx-6 sm:-mx-8 -mt-6 sm:-mt-8 mb-6"></div>
         
-        <!-- Volunteer Profile Card (Refactored Welcome & Ratings) -->
-        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-premium p-6 relative overflow-hidden">
-          <!-- Background decoration -->
-          <div class="absolute -top-12 -right-12 w-24 h-24 bg-brand-50 rounded-full opacity-60"></div>
-          
-          <div class="relative">
-            <!-- Header section inside sidebar card -->
-            <div class="flex items-start justify-between gap-3 mb-4">
-              <div class="flex items-center gap-3">
-                <div class="w-12 h-12 bg-brand-50 rounded-xl border border-brand-100 flex items-center justify-center text-brand-600 shadow-sm">
-                  <svg class="w-6 h-6 text-brand-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"/></svg>
-                </div>
-                <div>
-                  <h1 id="welcomeTitle" class="text-lg font-extrabold text-slate-900 tracking-tight">Welcome, Volunteer!</h1>
-                  <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mt-0.5">Volunteer Profile</span>
-                </div>
-              </div>
+        <div class="flex flex-col sm:flex-row items-center sm:items-start gap-5">
+          <div class="w-16 h-16 rounded-3xl bg-amber-500/10 border border-amber-500/20 text-amber-600 flex items-center justify-center flex-shrink-0 shadow-xs">
+            <svg class="w-8 h-8 text-amber-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"/></svg>
+          </div>
+          <div class="space-y-2 flex-1">
+            <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold bg-amber-50 text-amber-900 border border-amber-200">
+              <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+              <span>Account Clearance Pending</span>
             </div>
-            
-            <div class="mt-2">
-              <button id="btnViewTrustStatus" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-brand-50 hover:bg-brand-100 text-brand-700 border border-brand-200 transition-all cursor-pointer shadow-xs focus:outline-none" style="display: none;">
-                <svg class="w-3.5 h-3.5 text-brand-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"/></svg>
-                Verification Status
-              </button>
-            </div>
-
-            <!-- Vertical Stats / Ratings list -->
-            <div class="space-y-3 border-t border-slate-100 pt-4 mt-4">
-              <div class="flex items-center justify-between">
-                <span class="text-xs font-extrabold text-slate-400 uppercase tracking-wider">Overall Rating</span>
-                <span id="simpleOverallBadge" class="inline-flex items-center gap-1 text-xs font-extrabold text-amber-700 bg-amber-50 border border-amber-200 px-3 py-1 rounded-full">
-                  <svg class="w-3.5 h-3.5 text-amber-500 fill-amber-400" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
-                  0.0 Rating
-                </span>
-              </div>
-              
-              <!-- Metrics grid -->
-              <div class="grid grid-cols-3 gap-2 text-center pt-2">
-                <div class="bg-slate-50 rounded-xl p-2 border border-slate-200/60 shadow-xs">
-                  <div id="simpleCost" class="text-xs font-extrabold text-slate-800">0 / 5</div>
-                  <div class="text-[9px] text-slate-400 font-bold uppercase mt-0.5">Cost</div>
-                </div>
-                <div class="bg-slate-50 rounded-xl p-2 border border-slate-200/60 shadow-xs">
-                  <div id="simpleSpeed" class="text-xs font-extrabold text-slate-800">0 / 5</div>
-                  <div class="text-[9px] text-slate-400 font-bold uppercase mt-0.5">Speed</div>
-                </div>
-                <div class="bg-slate-50 rounded-xl p-2 border border-slate-200/60 shadow-xs">
-                  <div id="simpleComm" class="text-xs font-extrabold text-slate-800">0 / 5</div>
-                  <div class="text-[9px] text-slate-400 font-bold uppercase mt-0.5">Comm</div>
-                </div>
-              </div>
-
-              <!-- Recommendations and counts -->
-              <div class="flex flex-col gap-2 pt-2 text-xs text-slate-600 font-semibold">
-                <div class="flex items-center gap-2">
-                  <svg class="w-3.5 h-3.5 text-brand-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6.633 10.5c.806 0 1.533-.446 2.031-1.08a9.041 9.041 0 012.861-2.4c.723-.384 1.35-.956 1.653-1.715a4.498 4.498 0 00.322-1.672V3a.75.75 0 01.75-.75A2.25 2.25 0 0116.5 4.5c0 1.152-.26 2.243-.723 3.218-.266.558.107 1.282.725 1.282h3.126c1.026 0 1.945.694 2.054 1.715.045.422.068.85.068 1.285a11.95 11.95 0 01-2.649 7.521c-.388.482-.987.729-1.605.729H14.25c-.483 0-.964-.078-1.423-.23l-3.114-1.038a4.5 4.5 0 00-1.423-.23H7.5"/></svg>
-                  <span id="simpleRecommend">0% recommend</span>
-                </div>
-                <div class="flex items-center justify-between text-xs text-slate-400 pt-2 border-t border-slate-100/50">
-                  <span id="simpleTasks" class="font-bold">0 tasks</span>
-                  <span id="simpleReviews" class="font-bold">0 reviews</span>
-                </div>
-              </div>
-            </div>
+            <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">Multi-Level Trust &amp; Verification Required</h2>
+            <p class="text-sm text-slate-500 font-medium leading-relaxed">
+              To safeguard our senior citizens, your volunteer task portal, quotes, and wallet features will automatically unlock once the administrator reviews and approves your verification documents.
+            </p>
           </div>
         </div>
 
-        <!-- Earnings Wallet Card (Initially Hidden in JS) -->
-        <div id="earningsWalletCard" class="bg-gradient-to-br from-slate-900 via-brand-950 to-brand-800 rounded-2xl border-none shadow-xl overflow-hidden p-6 text-white" style="display: none;">
+        <!-- 4 Step Verification Status Badges -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 my-6">
+          <!-- Step 1: Govt ID -->
+          <div id="unverifiedStepGovtId" class="bg-slate-50 border border-slate-200/90 rounded-2xl p-4 flex items-center justify-between gap-3 shadow-2xs">
+            <div class="space-y-0.5">
+              <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block">Step 1: ID Document</span>
+              <strong id="unverifiedStepGovtIdText" class="text-xs font-extrabold text-slate-800 block">Pending Upload</strong>
+            </div>
+            <span id="unverifiedStepGovtIdIcon" class="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center flex-shrink-0 font-bold text-xs">⏳</span>
+          </div>
+
+          <!-- Step 2: Live Selfie Photo -->
+          <div id="unverifiedStepSelfie" class="bg-slate-50 border border-slate-200/90 rounded-2xl p-4 flex items-center justify-between gap-3 shadow-2xs">
+            <div class="space-y-0.5">
+              <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block">Step 2: Live Selfie</span>
+              <strong id="unverifiedStepSelfieText" class="text-xs font-extrabold text-slate-800 block">Pending Upload</strong>
+            </div>
+            <span id="unverifiedStepSelfieIcon" class="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center flex-shrink-0 font-bold text-xs">⏳</span>
+          </div>
+
+          <!-- Step 3: Contact Channels -->
+          <div id="unverifiedStepContact" class="bg-slate-50 border border-slate-200/90 rounded-2xl p-4 flex items-center justify-between gap-3 shadow-2xs">
+            <div class="space-y-0.5">
+              <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block">Step 3: Contact Channels</span>
+              <strong id="unverifiedStepContactText" class="text-xs font-extrabold text-emerald-700 block">Phone &amp; Email Verified</strong>
+            </div>
+            <span class="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center flex-shrink-0 font-bold text-xs">✓</span>
+          </div>
+
+          <!-- Step 4: Police Clearance -->
+          <div id="unverifiedStepPolice" class="bg-slate-50 border border-slate-200/90 rounded-2xl p-4 flex items-center justify-between gap-3 shadow-2xs">
+            <div class="space-y-0.5">
+              <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block">Step 4: Background</span>
+              <strong id="unverifiedStepPoliceText" class="text-xs font-extrabold text-amber-700 block">Admin Review</strong>
+            </div>
+            <span id="unverifiedStepPoliceIcon" class="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center flex-shrink-0 font-bold text-xs">⏳</span>
+          </div>
+        </div>
+
+        <!-- Alert Message Banner -->
+        <div id="unverifiedAlertBanner" class="p-4 rounded-2xl bg-amber-50/80 border border-amber-200/80 text-xs font-semibold text-amber-900 leading-relaxed space-y-1">
+          Loading verification review details...
+        </div>
+
+        <!-- Action Button (Submit or Update KYC) -->
+        <div class="pt-5 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-slate-100">
+          <p class="text-xs text-slate-500 font-medium">Need to upload or correct your identity documents?</p>
+          <button type="button" id="btnUnverifiedOpenKyc" class="w-full sm:w-auto px-6 py-3 bg-brand-600 hover:bg-brand-700 text-white font-extrabold text-xs sm:text-sm rounded-2xl transition-all shadow-md flex items-center justify-center gap-2 border-none cursor-pointer">
+            <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/></svg>
+            <span id="btnUnverifiedOpenKycText">Upload / Update KYC Documents</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Top Summary Metrics Grid (Sleek SaaS Stat Cards) -->
+    <section id="topMetricsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 mb-6" aria-label="Volunteer Quick Metrics">
+      <!-- 1. Available Requests -->
+      <div onclick="switchTaskTab('pending')" class="bg-white rounded-3xl border border-slate-200/90 shadow-premium hover:shadow-cardHover p-5 sm:p-6 transition-all duration-200 cursor-pointer group flex flex-col justify-between relative overflow-hidden">
+        <div>
+          <div class="flex items-center justify-between gap-3 mb-3">
+            <span class="text-xs font-extrabold text-slate-500 uppercase tracking-wider">Available Requests</span>
+            <div class="w-10 h-10 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-600 flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform flex-shrink-0">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
+            </div>
+          </div>
+          <div id="countQuickPending" class="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">0</div>
+        </div>
+        <div class="flex items-center gap-1.5 mt-3 pt-3 border-t border-slate-100">
+          <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200/70">
+            <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+            Open to Accept
+          </span>
+        </div>
+      </div>
+
+      <!-- 2. Active Commitments -->
+      <div onclick="switchTaskTab('active')" class="bg-white rounded-3xl border border-slate-200/90 shadow-premium hover:shadow-cardHover p-5 sm:p-6 transition-all duration-200 cursor-pointer group flex flex-col justify-between relative overflow-hidden">
+        <div>
+          <div class="flex items-center justify-between gap-3 mb-3">
+            <span class="text-xs font-extrabold text-slate-500 uppercase tracking-wider">In Progress Tasks</span>
+            <div class="w-10 h-10 rounded-2xl bg-brand-500/10 border border-brand-500/20 text-brand-600 flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform flex-shrink-0">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+          </div>
+          <div id="countQuickActive" class="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">0</div>
+        </div>
+        <div class="flex items-center gap-1.5 mt-3 pt-3 border-t border-slate-100">
+          <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-brand-50 text-brand-700 border border-brand-200/70">
+            <span class="w-1.5 h-1.5 rounded-full bg-brand-500"></span>
+            Active Commitments
+          </span>
+        </div>
+      </div>
+
+      <!-- 3. Completed Tasks & Rating -->
+      <div onclick="switchTaskTab('history')" class="bg-white rounded-3xl border border-slate-200/90 shadow-premium hover:shadow-cardHover p-5 sm:p-6 transition-all duration-200 cursor-pointer group flex flex-col justify-between relative overflow-hidden">
+        <div>
+          <div class="flex items-center justify-between gap-3 mb-3">
+            <span class="text-xs font-extrabold text-slate-500 uppercase tracking-wider">Service Record</span>
+            <div class="w-10 h-10 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform flex-shrink-0">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+          </div>
+          <div id="countQuickCompleted" class="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">0</div>
+        </div>
+        <div class="flex items-center gap-1.5 mt-3 pt-3 border-t border-slate-100">
+          <span id="quickOverallRatingBadge" class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200/70">
+            <svg class="w-3.5 h-3.5 text-amber-500 fill-amber-400" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+            <span id="quickRatingText">5.0 ★ Rating</span>
+          </span>
+        </div>
+      </div>
+
+      <!-- 4. Earnings Wallet -->
+      <div onclick="openEarningsModal()" class="bg-white rounded-3xl border border-slate-200/90 shadow-premium hover:shadow-cardHover p-5 sm:p-6 transition-all duration-200 cursor-pointer group flex flex-col justify-between relative overflow-hidden">
+        <div>
+          <div class="flex items-center justify-between gap-3 mb-3">
+            <span class="text-xs font-extrabold text-slate-500 uppercase tracking-wider">Wallet Balance</span>
+            <div class="w-10 h-10 rounded-2xl bg-purple-500/10 border border-purple-500/20 text-purple-600 flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform flex-shrink-0">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a2.25 2.25 0 00-2.25-2.25H15a3 3 0 11-6 0H5.25A2.25 2.25 0 003 12m18 0v6a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 18v-6m18 0V9M3 12V9m18 0a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 9m18 0V6a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 6v3"/></svg>
+            </div>
+          </div>
+          <div id="quickWalletBalance" class="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">₹0</div>
+        </div>
+        <div class="flex items-center gap-1.5 mt-3 pt-3 border-t border-slate-100">
+          <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-purple-50 text-purple-800 border border-purple-200/70 group-hover:bg-purple-100 transition-colors">
+            <span>View &amp; Payout</span>
+            <svg class="w-3 h-3 text-purple-600 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/></svg>
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Main Content Workspace (Vertical Navigation Sidebar on Left, Content Panes on Right) -->
+    <div id="volunteerWorkspaceGrid" class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+      
+      <!-- LEFT COLUMN: Vertical Navigation Menu, Profile, Wallet & KYC (col-span-1) -->
+      <div class="space-y-6">
+        
+        <!-- Vertical Tab Navigation Card -->
+        <div class="bg-white rounded-3xl border border-slate-200/90 shadow-premium p-4 sm:p-5 relative overflow-hidden" id="volunteerTaskGrid">
+          <div class="h-1.5 bg-gradient-to-r from-brand-600 via-brand-500 to-brand-700 -mx-5 -mt-5 mb-4"></div>
+          
+          <div class="mb-3 px-1">
+            <span class="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider block">Dashboard Navigation</span>
+            <span class="text-xs font-semibold text-slate-500">Select a section to view details:</span>
+          </div>
+
+          <!-- Vertical Nav Buttons List -->
+          <div class="flex flex-col gap-2.5" role="tablist" aria-label="Volunteer Vertical Navigation">
+            
+            <!-- 1. Browse Requests -->
+            <button 
+              id="tabBtnPending" 
+              onclick="switchTaskTab('pending')" 
+              class="w-full p-3.5 rounded-2xl transition-all duration-150 flex items-center justify-between gap-3 text-left cursor-pointer border-2 bg-brand-50/90 border-brand-500 shadow-xs ring-2 ring-brand-100/50" 
+              role="tab" 
+              aria-selected="true"
+            >
+              <div class="flex items-center gap-3 min-w-0">
+                <div class="w-10 h-10 rounded-2xl bg-amber-500/10 text-amber-600 border border-amber-500/20 flex items-center justify-center flex-shrink-0 shadow-2xs">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35m1.85-5.15a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                </div>
+                <div class="min-w-0">
+                  <span class="text-sm font-extrabold text-brand-950 block leading-tight truncate">Browse Requests</span>
+                  <span class="text-[11px] text-slate-500 font-medium block truncate mt-0.5">Open elder help opportunities</span>
+                </div>
+              </div>
+              <span id="countPending" class="bg-brand-600 text-white text-xs font-extrabold px-2.5 py-0.5 rounded-full shadow-2xs flex-shrink-0">0</span>
+            </button>
+
+            <!-- 2. Active Tasks -->
+            <button 
+              id="tabBtnActive" 
+              onclick="switchTaskTab('active')" 
+              class="w-full p-3.5 rounded-2xl transition-all duration-150 flex items-center justify-between gap-3 text-left cursor-pointer border bg-white hover:bg-slate-50 border-slate-200/80 shadow-2xs" 
+              role="tab" 
+              aria-selected="false"
+            >
+              <div class="flex items-center gap-3 min-w-0">
+                <div class="w-10 h-10 rounded-2xl bg-brand-500/10 text-brand-600 border border-brand-500/20 flex items-center justify-center flex-shrink-0 shadow-2xs">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+                </div>
+                <div class="min-w-0">
+                  <span class="text-sm font-bold text-slate-800 block leading-tight truncate">Active Tasks</span>
+                  <span class="text-[11px] text-slate-500 font-medium block truncate mt-0.5">In-progress commitments</span>
+                </div>
+              </div>
+              <span id="countActive" class="bg-slate-100 text-slate-400 text-xs font-bold px-2.5 py-0.5 rounded-full flex-shrink-0">0</span>
+            </button>
+
+            <!-- 3. Awaiting Approval -->
+            <button 
+              id="tabBtnAwaiting" 
+              onclick="switchTaskTab('awaiting')" 
+              class="w-full p-3.5 rounded-2xl transition-all duration-150 flex items-center justify-between gap-3 text-left cursor-pointer border bg-white hover:bg-slate-50 border-slate-200/80 shadow-2xs" 
+              role="tab" 
+              aria-selected="false"
+            >
+              <div class="flex items-center gap-3 min-w-0">
+                <div class="w-10 h-10 rounded-2xl bg-orange-500/10 text-orange-600 border border-orange-500/20 flex items-center justify-center flex-shrink-0 shadow-2xs">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                </div>
+                <div class="min-w-0">
+                  <span class="text-sm font-bold text-slate-800 block leading-tight truncate">Awaiting Approval</span>
+                  <span class="text-[11px] text-slate-500 font-medium block truncate mt-0.5">Quotes under family review</span>
+                </div>
+              </div>
+              <span id="countAwaiting" class="bg-slate-100 text-slate-400 text-xs font-bold px-2.5 py-0.5 rounded-full flex-shrink-0">0</span>
+            </button>
+
+            <!-- 4. Completed History -->
+            <button 
+              id="tabBtnHistory" 
+              onclick="switchTaskTab('history')" 
+              class="w-full p-3.5 rounded-2xl transition-all duration-150 flex items-center justify-between gap-3 text-left cursor-pointer border bg-white hover:bg-slate-50 border-slate-200/80 shadow-2xs" 
+              role="tab" 
+              aria-selected="false"
+            >
+              <div class="flex items-center gap-3 min-w-0">
+                <div class="w-10 h-10 rounded-2xl bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 flex items-center justify-center flex-shrink-0 shadow-2xs">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                </div>
+                <div class="min-w-0">
+                  <span class="text-sm font-bold text-slate-800 block leading-tight truncate">Completed History</span>
+                  <span class="text-[11px] text-slate-500 font-medium block truncate mt-0.5">Verified service &amp; ratings</span>
+                </div>
+              </div>
+              <span id="countHistory" class="bg-slate-100 text-slate-700 text-xs font-extrabold px-2.5 py-0.5 rounded-full border border-slate-200/80 flex-shrink-0">0</span>
+            </button>
+
+          </div>
+        </div>
+
+        <!-- Earnings Wallet Card -->
+        <div id="earningsWalletCard" class="bg-gradient-to-br from-slate-900 via-brand-950 to-brand-900 rounded-3xl shadow-xl overflow-hidden p-6 text-white relative" style="display: none;">
           <!-- Top accent bar -->
-          <div class="h-1 bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 -mx-6 -mt-6 mb-5"></div>
+          <div class="h-1.5 bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 -mx-6 -mt-6 mb-5"></div>
 
           <div>
             <!-- Header row -->
             <div class="flex items-center justify-between mb-4 gap-2 flex-wrap">
-              <div class="flex items-center gap-2">
-                <div class="w-6 h-6 rounded-lg bg-amber-400/20 flex items-center justify-center text-amber-300">
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a2.25 2.25 0 00-2.25-2.25H15a3 3 0 11-6 0H5.25A2.25 2.25 0 003 12m18 0v6a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 18v-6m18 0V9M3 12V9m18 0a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 9m18 0V6a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 6v3"/></svg>
+              <div class="flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-xl bg-amber-400/20 flex items-center justify-center text-amber-300">
+                  <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a2.25 2.25 0 00-2.25-2.25H15a3 3 0 11-6 0H5.25A2.25 2.25 0 003 12m18 0v6a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 18v-6m18 0V9M3 12V9m18 0a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 9m18 0V6a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 6v3"/></svg>
                 </div>
-                <h2 class="text-sm font-extrabold tracking-tight uppercase text-slate-300" data-i18n="vd_wallet_title">Earnings Wallet</h2>
+                <h2 class="text-sm font-extrabold tracking-tight uppercase text-slate-200" data-i18n="vd_wallet_title">Earnings Wallet</h2>
               </div>
-              <span id="walletLastUpdated" class="text-[10px] text-slate-400 font-semibold italic">Updating...</span>
+              <span id="walletLastUpdated" class="text-[10px] text-slate-400 font-semibold">Updating...</span>
             </div>
 
             <!-- Balance Box -->
-            <div class="bg-white/10 rounded-xl p-4 border border-white/15 backdrop-blur-xs text-center mb-4">
+            <div class="bg-white/10 rounded-2xl p-4 border border-white/15 backdrop-blur-md text-center mb-4">
               <div id="walletAvailable" class="text-3xl font-extrabold text-white tracking-tight">₹0</div>
               <div class="text-[10px] font-bold text-slate-300 uppercase tracking-widest mt-1" data-i18n="vd_wallet_available">Available Balance</div>
             </div>
 
             <div class="grid grid-cols-2 gap-3 mb-4">
               <!-- Total Earned -->
-              <div class="bg-white/5 rounded-xl p-3 text-center border border-white/10">
-                <div id="walletTotalEarned" class="text-lg font-bold text-amber-300">₹0</div>
-                <div class="text-[9px] font-bold text-slate-400 uppercase tracking-wider mt-1" data-i18n="vd_wallet_total">Total Earned</div>
+              <div class="bg-white/5 rounded-2xl p-3 text-center border border-white/10">
+                <div id="walletTotalEarned" class="text-base font-bold text-amber-300">₹0</div>
+                <div class="text-[9px] font-bold text-slate-400 uppercase tracking-wider mt-0.5" data-i18n="vd_wallet_total">Total Earned</div>
               </div>
               <!-- Pending -->
-              <div class="bg-white/5 rounded-xl p-3 text-center border border-white/10">
-                <div id="walletPending" class="text-lg font-bold text-amber-200">₹0</div>
-                <div class="text-[9px] font-bold text-slate-400 uppercase tracking-wider mt-1" data-i18n="vd_wallet_pending">Pending</div>
+              <div class="bg-white/5 rounded-2xl p-3 text-center border border-white/10">
+                <div id="walletPending" class="text-base font-bold text-amber-200">₹0</div>
+                <div class="text-[9px] font-bold text-slate-400 uppercase tracking-wider mt-0.5" data-i18n="vd_wallet_pending">Pending</div>
               </div>
             </div>
 
             <!-- Action Buttons -->
             <div class="flex gap-2">
-              <button id="btnViewEarnings" onclick="openEarningsModal()" class="flex-1 py-2.5 px-3 bg-white/10 hover:bg-white/15 border border-white/20 text-white text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 focus:outline-none">
+              <button id="btnViewEarnings" onclick="openEarningsModal()" class="flex-1 py-2.5 px-3 bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs font-bold rounded-2xl transition-all cursor-pointer flex items-center justify-center gap-1.5 focus:outline-none shadow-xs">
                 <svg class="w-3.5 h-3.5 text-slate-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z"/></svg>
                 <span data-i18n="vd_view_earnings">View Stats</span>
               </button>
-              <button id="btnWithdrawEarnings" onclick="openWithdrawPanel()" class="flex-1 py-2.5 px-3 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 border-none text-slate-950 text-xs font-extrabold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-md shadow-amber-500/10 focus:outline-none">
-                <svg class="w-3.5 h-3.5 text-slate-900" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.5M4.5 21V10.5"/></svg>
+              <button id="btnWithdrawEarnings" onclick="openWithdrawPanel()" class="flex-1 py-2.5 px-3 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 text-slate-950 text-xs font-extrabold rounded-2xl transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-md shadow-amber-500/10 focus:outline-none">
+                <svg class="w-3.5 h-3.5 text-slate-950" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.5M4.5 21V10.5"/></svg>
                 <span data-i18n="vd_withdraw">Withdraw</span>
               </button>
             </div>
@@ -279,506 +575,618 @@
         </div>
 
         <!-- Volunteer KYC & Verification Status Card -->
-        <div id="kycStatusCard" class="bg-white rounded-2xl border border-slate-200/80 shadow-premium p-6">
+        <div id="kycStatusCard" class="bg-white rounded-3xl border border-slate-200/90 shadow-premium p-6">
+          <div class="h-1.5 bg-gradient-to-r from-emerald-500 to-teal-500 -mx-6 -mt-6 mb-5"></div>
+          
           <div class="mb-4">
             <h2 class="text-sm font-extrabold tracking-tight uppercase text-slate-900 mb-1 flex items-center gap-2" data-i18n="vd_kyc_card_title">
-              <svg class="w-4 h-4 text-brand-600" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"/></svg>
+              <svg class="w-4.5 h-4.5 text-emerald-600" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"/></svg>
               Verification Status
             </h2>
             <p id="kycStatusSubtitle" class="text-xs text-slate-500 font-medium leading-relaxed" data-i18n="vd_kyc_card_subtitle">
-              Required clearances to accept home requests.
+              Required clearances to accept elder assistance requests.
             </p>
           </div>
 
-          <!-- Trust Badges -->
-          <div class="flex flex-col gap-2.5" id="kycBadgesContainer">
-            <span id="badgeGovtId" class="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-bold bg-amber-50 text-amber-700 border border-amber-100">
+          <!-- Trust Badges List -->
+          <div class="flex flex-col gap-2" id="kycBadgesContainer">
+            <span id="badgeGovtId" class="inline-flex items-center gap-2 px-3.5 py-2 rounded-2xl text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200/70 shadow-2xs">
+              <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
               Govt ID: Pending
             </span>
-            <span id="badgePhone" class="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-100">
+            <span id="badgePhone" class="inline-flex items-center gap-2 px-3.5 py-2 rounded-2xl text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/70 shadow-2xs">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
               Phone: Verified
             </span>
-            <span id="badgeEmail" class="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-100">
+            <span id="badgeEmail" class="inline-flex items-center gap-2 px-3.5 py-2 rounded-2xl text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/70 shadow-2xs">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
               Email: Verified
             </span>
-            <span id="badgePolice" class="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-bold bg-amber-50 text-amber-700 border border-amber-100">
+            <span id="badgePolice" class="inline-flex items-center gap-2 px-3.5 py-2 rounded-2xl text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200/70 shadow-2xs">
+              <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
               Police Check: Pending
             </span>
           </div>
 
           <!-- Status Banner Alert Message -->
-          <div id="kycAlertBanner" class="mt-4 p-4 rounded-xl bg-slate-50 border border-slate-100 text-xs font-medium text-slate-600 leading-relaxed">
+          <div id="kycAlertBanner" class="mt-4 p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 text-xs font-semibold text-slate-600 leading-relaxed">
             Loading verification status...
           </div>
 
           <!-- Submit KYC Button -->
           <div class="mt-4">
-            <button id="btnOpenKycModal" class="w-full py-3 px-4 bg-brand-600 hover:bg-brand-700 text-white text-sm font-bold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 border-none shadow-sm focus:outline-none" style="display: none;">
+            <button id="btnOpenKycModal" class="w-full py-3 px-4 bg-brand-600 hover:bg-brand-700 text-white text-xs sm:text-sm font-extrabold rounded-2xl transition-all cursor-pointer flex items-center justify-center gap-2 border-none shadow-xs focus:outline-none" style="display: none;">
               <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/></svg>
               <span data-i18n="vd_btn_kyc_submit">Submit KYC Documents</span>
             </button>
           </div>
         </div>
-        
+
       </div>
-      
-      <!-- RIGHT COLUMN: Tasks Action Center & Tabs (col-span-2) -->
-      <div class="lg:col-span-2 space-y-6">
+
+      <!-- RIGHT COLUMN: Active Content Panes & Tasks (col-span-2, aligned in line with left) -->
+      <div class="lg:col-span-2 flex flex-col gap-6">
         
-        <!-- Section 4: Task Assignment Notifications (Moves to top of main column for clear view) -->
-        <div id="notificationsCard" class="bg-white border border-brand-100 rounded-2xl p-6 shadow-premium relative overflow-hidden" style="display: none; border-left: 6px solid #0c87eb;">
-          <div class="flex justify-between items-start gap-4 mb-4 flex-wrap">
+        <!-- Task Assignment Notifications (Toast style header banner) -->
+        <div id="notificationsCard" class="bg-white border border-brand-200/80 rounded-3xl p-5 sm:p-6 shadow-premium relative overflow-hidden" style="display: none;">
+          <div class="h-1.5 bg-gradient-to-r from-brand-500 to-brand-600 -mx-5 sm:-mx-6 -mt-5 sm:-mt-6 mb-4"></div>
+          <div class="flex justify-between items-start gap-4 mb-3 flex-wrap">
             <div>
               <h2 class="text-base font-extrabold text-slate-900 flex items-center gap-2" data-i18n="vd_status_notifications">
-                <svg class="w-4.5 h-4.5 text-brand-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"/></svg>
+                <svg class="w-5 h-5 text-brand-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"/></svg>
                 Task Assignment Notifications
               </h2>
-              <p class="text-xs text-slate-500 font-semibold mt-1">
-                Updates regarding help requests where you submitted a quote:
+              <p class="text-xs text-slate-500 font-semibold mt-0.5">
+                Updates regarding help requests where you quoted:
               </p>
             </div>
-            <button id="btnClearAllNotifications" class="px-4 py-2 text-xs font-extrabold bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 focus:outline-none text-slate-700" onclick="clearAllTaskNotifications()">
+            <button id="btnClearAllNotifications" class="px-3.5 py-1.5 text-xs font-extrabold bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200/80 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 focus:outline-none" onclick="clearAllTaskNotifications()">
               Clear All
             </button>
           </div>
-          <div id="notificationsList" class="space-y-4">
+          <div id="notificationsList" class="space-y-3">
             <!-- Populated dynamically via JS -->
           </div>
         </div>
 
-        <!-- Modern Tabs & Task Lists Container -->
-        <div class="bg-white border border-slate-200/80 rounded-2xl shadow-premium overflow-hidden" id="volunteerTaskGrid" style="display: none;">
-          <!-- Tabs Navigation Header -->
-          <div class="flex flex-wrap border-b border-slate-100 bg-slate-50/50 p-2 gap-1.5" role="tablist" aria-label="Volunteer Portal Tasks">
-            <button id="tabBtnPending" onclick="switchTaskTab('pending')" class="flex-1 min-w-[130px] py-3 px-4 rounded-xl font-bold text-xs text-center transition-all flex items-center justify-center gap-1.5 border-none cursor-pointer focus:outline-none bg-white text-brand-600 shadow-sm" role="tab" aria-selected="true">
-              Browse Requests <span id="countPending" class="bg-brand-600 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full">0</span>
-            </button>
-            <button id="tabBtnActive" onclick="switchTaskTab('active')" class="flex-1 min-w-[130px] py-3 px-4 rounded-xl font-bold text-xs text-center transition-all flex items-center justify-center gap-1.5 border-none cursor-pointer focus:outline-none text-slate-600 hover:bg-slate-100/50" role="tab" aria-selected="false">
-              Active Commitments <span id="countActive" class="bg-slate-200 text-slate-500 text-[10px] font-extrabold px-2 py-0.5 rounded-full">0</span>
-            </button>
-            <button id="tabBtnAwaiting" onclick="switchTaskTab('awaiting')" class="flex-1 min-w-[130px] py-3 px-4 rounded-xl font-bold text-xs text-center transition-all flex items-center justify-center gap-1.5 border-none cursor-pointer focus:outline-none text-slate-600 hover:bg-slate-100/50" role="tab" aria-selected="false">
-              Awaiting Approval <span id="countAwaiting" class="bg-slate-200 text-slate-500 text-[10px] font-extrabold px-2 py-0.5 rounded-full">0</span>
-            </button>
-            <button id="tabBtnHistory" onclick="switchTaskTab('history')" class="flex-1 min-w-[130px] py-3 px-4 rounded-xl font-bold text-xs text-center transition-all flex items-center justify-center gap-1.5 border-none cursor-pointer focus:outline-none text-slate-600 hover:bg-slate-100/50" role="tab" aria-selected="false">
-              History <span id="countHistory" class="bg-slate-200 text-slate-500 text-[10px] font-extrabold px-2 py-0.5 rounded-full">0</span>
-            </button>
-          </div>
-
-          <!-- Tab Content Panes -->
-          <div class="p-6">
-            
-            <!-- Tab Pane: Available Help Requests (Browse) -->
-            <div id="tabPanePending" class="tab-pane" style="display: block;">
-              <div class="mb-4">
-                <h3 class="text-sm font-extrabold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+        <!-- Main Dynamic Content Workspace (In-line with left panel) -->
+        <div class="bg-white border border-slate-200/90 rounded-3xl shadow-premium p-5 sm:p-6 min-h-[400px]">
+          
+          <!-- Tab Pane: Available Help Requests (Browse) -->
+          <div id="tabPanePending" class="tab-pane" style="display: block;">
+            <div class="mb-5 pb-3.5 border-b border-slate-100 flex items-center justify-between">
+              <div>
+                <h3 class="text-lg font-extrabold text-slate-900 tracking-tight flex items-center gap-2.5">
+                  <span class="w-9 h-9 rounded-2xl bg-amber-500/10 text-amber-600 border border-amber-500/20 flex items-center justify-center shadow-2xs">
+                    <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35m1.85-5.15a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                  </span>
                   Help Requests Seeking Volunteers
                 </h3>
-                <p class="text-xs text-slate-400 font-medium mt-1">Browse requests from senior citizens in your area and quote your fee to volunteer.</p>
-              </div>
-              <div id="pendingList" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- Populated dynamically via JS -->
+                <p class="text-xs text-slate-500 font-medium mt-1">Browse requests from senior citizens in your area and quote your fee to volunteer.</p>
               </div>
             </div>
+            <div id="pendingList" class="space-y-5">
+              <!-- Populated dynamically via JS -->
+            </div>
+          </div>
 
-            <!-- Tab Pane: Active Commitments -->
-            <div id="tabPaneActive" class="tab-pane" style="display: none;">
-              <div class="mb-4">
-                <h3 class="text-sm font-extrabold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-                  My Active Commitments (Tasks in Progress)
+          <!-- Tab Pane: Active Commitments -->
+          <div id="tabPaneActive" class="tab-pane" style="display: none;">
+            <div class="mb-5 pb-3.5 border-b border-slate-100 flex items-center justify-between">
+              <div>
+                <h3 class="text-lg font-extrabold text-slate-900 tracking-tight flex items-center gap-2.5">
+                  <span class="w-9 h-9 rounded-2xl bg-brand-500/10 text-brand-600 border border-brand-500/20 flex items-center justify-center shadow-2xs">
+                    <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+                  </span>
+                  Active Commitments (Tasks in Progress)
                 </h3>
-                <p class="text-xs text-slate-400 font-medium mt-1">Manage tasks that you have committed to or are undergoing verification.</p>
-              </div>
-              <div id="activeList" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- Populated dynamically via JS -->
+                <p class="text-xs text-slate-500 font-medium mt-1">Manage tasks that you have committed to or are undergoing verification.</p>
               </div>
             </div>
+            <div id="activeList" class="space-y-5">
+              <!-- Populated dynamically via JS -->
+            </div>
+          </div>
 
-            <!-- Tab Pane: Awaiting Approval -->
-            <div id="tabPaneAwaiting" class="tab-pane" style="display: none;">
-              <div class="mb-4">
-                <h3 class="text-sm font-extrabold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-                  Awaiting Family Approval
+          <!-- Tab Pane: Awaiting Approval -->
+          <div id="tabPaneAwaiting" class="tab-pane" style="display: none;">
+            <div class="mb-5 pb-3.5 border-b border-slate-100 flex items-center justify-between">
+              <div>
+                <h3 class="text-lg font-extrabold text-slate-900 tracking-tight flex items-center gap-2.5">
+                  <span class="w-9 h-9 rounded-2xl bg-orange-500/10 text-orange-600 border border-orange-500/20 flex items-center justify-center shadow-2xs">
+                    <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                  </span>
+                  Awaiting Family Caregiver Approval
                 </h3>
-                <p class="text-xs text-slate-400 font-medium mt-1">Requests you accepted. The family is reviewing your profile and clearance status.</p>
-              </div>
-              <div id="awaitingList" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- Populated dynamically via JS -->
+                <p class="text-xs text-slate-500 font-medium mt-1">Requests you quoted. The senior's family is reviewing your profile and clearance status.</p>
               </div>
             </div>
+            <div id="awaitingList" class="space-y-5">
+              <!-- Populated dynamically via JS -->
+            </div>
+          </div>
 
-            <!-- Tab Pane: History -->
-            <div id="tabPaneHistory" class="tab-pane" style="display: none;">
-              <div class="mb-4">
-                <h3 class="text-sm font-extrabold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+          <!-- Tab Pane: History -->
+          <div id="tabPaneHistory" class="tab-pane" style="display: none;">
+            <div class="mb-5 pb-3.5 border-b border-slate-100 flex items-center justify-between">
+              <div>
+                <h3 class="text-lg font-extrabold text-slate-900 tracking-tight flex items-center gap-2.5">
+                  <span class="w-9 h-9 rounded-2xl bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 flex items-center justify-center shadow-2xs">
+                    <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                  </span>
                   My Service History (Completed Tasks)
                 </h3>
-                <p class="text-xs text-slate-400 font-medium mt-1">Review your past successfully completed tasks, ratings, and caregiver reviews.</p>
-              </div>
-              <div id="historyList" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- Populated dynamically via JS -->
+                <p class="text-xs text-slate-500 font-medium mt-1">Review your past successfully completed tasks, ratings, and caregiver reviews.</p>
               </div>
             </div>
+            <div id="historyList" class="space-y-5">
+              <!-- Populated dynamically via JS -->
+            </div>
+          </div>
 
+        </div> <!-- end min-h-[400px] -->
+
+      </div> <!-- end lg:col-span-2 -->
+
+    </div> <!-- end grid-cols-1 lg:grid-cols-3 -->
+
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!-- MODULAR HELPER PERFORMANCE & COMMUNITY TRUST SECTION                 -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <section id="helperPerformanceSection" class="mt-8 mb-6 w-full bg-white rounded-3xl border border-slate-200/90 shadow-premium p-6 sm:p-7 relative overflow-hidden" aria-label="Volunteer Performance Summary">
+      <!-- Subtle top accent gradient line -->
+      <div class="h-1 bg-gradient-to-r from-amber-500 via-brand-500 to-emerald-500 -mx-6 sm:-mx-7 -mt-6 sm:-mt-7 mb-6"></div>
+      
+      <!-- Tier 1: Header Module (Title, Subtitle & Trust Badges) -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-slate-100">
+        <div class="flex items-center gap-3.5">
+          <div class="w-11 h-11 bg-amber-500/10 border border-amber-500/20 rounded-2xl flex items-center justify-center text-amber-600 shadow-2xs flex-shrink-0">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z"/>
+            </svg>
+          </div>
+          <div>
+            <div class="flex items-center gap-2.5 flex-wrap">
+              <h2 id="sidebarProfileHeading" class="text-base sm:text-lg font-extrabold text-slate-900 tracking-tight">Helper Performance &amp; Trust Score</h2>
+              <button id="btnViewTrustStatus" class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200/80 transition-all cursor-pointer shadow-xs focus:outline-none" style="display: none;">
+                <svg class="w-3.5 h-3.5 text-emerald-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"/></svg>
+                Verified Clearance
+              </button>
+            </div>
+            <p class="text-xs text-slate-500 font-medium mt-0.5">Calculated from verified elder task completions and direct family caregiver feedback</p>
           </div>
         </div>
 
+        <div class="flex items-center gap-2 self-start sm:self-center flex-shrink-0">
+          <div class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-800 border border-emerald-200/80 rounded-2xl text-xs font-extrabold shadow-2xs">
+            <svg class="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6.633 10.5c.806 0 1.533-.446 2.031-1.08a9.041 9.041 0 012.861-2.4c.723-.384 1.35-.956 1.653-1.715a4.498 4.498 0 00.322-1.672V3a.75.75 0 01.75-.75A2.25 2.25 0 0116.5 4.5c0 1.152-.26 2.243-.723 3.218-.266.558.107 1.282.725 1.282h3.126c1.026 0 1.945.694 2.054 1.715.045.422.068.85.068 1.285a11.95 11.95 0 01-2.649 7.521c-.388.482-.987.729-1.605.729H14.25c-.483 0-.964-.078-1.423-.23l-3.114-1.038a4.5 4.5 0 00-1.423-.23H7.5"/></svg>
+            <span id="simpleRecommend">100% Families Recommend</span>
+          </div>
+        </div>
       </div>
-    </div>
+
+      <!-- Tier 2: 4 Modular Metric Stat Cards (Compact Size) -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 my-3.5">
+        
+        <!-- Module A: Overall Rating -->
+        <div class="bg-slate-50/80 hover:bg-slate-50 border border-slate-200/80 rounded-xl p-3 transition-all duration-200 shadow-2xs">
+          <div class="flex items-center justify-between gap-1.5 mb-1.5">
+            <span class="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">Overall Rating</span>
+            <div class="w-6 h-6 rounded-lg bg-amber-500/15 text-amber-600 flex items-center justify-center flex-shrink-0">
+              <svg class="w-3 h-3 fill-amber-400 text-amber-500" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+            </div>
+          </div>
+          <div id="simpleOverallBadge" class="flex items-baseline gap-1">
+            <span class="text-xl font-extrabold text-slate-900 tracking-tight">5.0</span>
+            <span class="text-[11px] font-bold text-slate-400">/ 5.0</span>
+          </div>
+          <span class="block text-[10px] font-medium text-slate-500 mt-0.5">Caregiver Satisfaction</span>
+        </div>
+
+        <!-- Module B: Fair Cost -->
+        <div class="bg-slate-50/80 hover:bg-slate-50 border border-slate-200/80 rounded-xl p-3 transition-all duration-200 shadow-2xs">
+          <div class="flex items-center justify-between gap-1.5 mb-1.5">
+            <span class="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">Fair Cost</span>
+            <div class="w-6 h-6 rounded-lg bg-brand-500/15 text-brand-600 flex items-center justify-center flex-shrink-0">
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+          </div>
+          <div id="simpleCost" class="flex items-baseline gap-1">
+            <span class="text-xl font-extrabold text-slate-900 tracking-tight">5.0</span>
+            <span class="text-[11px] font-bold text-slate-400">/ 5.0</span>
+          </div>
+          <span class="block text-[10px] font-medium text-slate-500 mt-0.5">Honest &amp; Reasonable Fee</span>
+        </div>
+
+        <!-- Module C: Promptness -->
+        <div class="bg-slate-50/80 hover:bg-slate-50 border border-slate-200/80 rounded-xl p-3 transition-all duration-200 shadow-2xs">
+          <div class="flex items-center justify-between gap-1.5 mb-1.5">
+            <span class="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">Promptness</span>
+            <div class="w-6 h-6 rounded-lg bg-indigo-500/15 text-indigo-600 flex items-center justify-center flex-shrink-0">
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+          </div>
+          <div id="simpleSpeed" class="flex items-baseline gap-1">
+            <span class="text-xl font-extrabold text-slate-900 tracking-tight">5.0</span>
+            <span class="text-[11px] font-bold text-slate-400">/ 5.0</span>
+          </div>
+          <span class="block text-[10px] font-medium text-slate-500 mt-0.5">On-Time Task Execution</span>
+        </div>
+
+        <!-- Module D: Kindness & Care -->
+        <div class="bg-slate-50/80 hover:bg-slate-50 border border-slate-200/80 rounded-xl p-3 transition-all duration-200 shadow-2xs">
+          <div class="flex items-center justify-between gap-1.5 mb-1.5">
+            <span class="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">Kindness &amp; Care</span>
+            <div class="w-6 h-6 rounded-lg bg-rose-500/15 text-rose-600 flex items-center justify-center flex-shrink-0">
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"/></svg>
+            </div>
+          </div>
+          <div id="simpleComm" class="flex items-baseline gap-1">
+            <span class="text-xl font-extrabold text-slate-900 tracking-tight">5.0</span>
+            <span class="text-[11px] font-bold text-slate-400">/ 5.0</span>
+          </div>
+          <span class="block text-[10px] font-medium text-slate-500 mt-0.5">Polite &amp; Respectful</span>
+        </div>
+
+      </div>
+
+      <!-- Tier 3: Bottom Activity Counters Strip -->
+      <div class="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-slate-100 text-xs font-semibold text-slate-600">
+        <div class="flex items-center gap-4 flex-wrap">
+          <div class="flex items-center gap-2">
+            <div class="w-2 h-2 rounded-full bg-emerald-500"></div>
+            <span>Tasks Completed:</span>
+            <strong id="simpleTasks" class="font-extrabold text-slate-900">0 tasks</strong>
+          </div>
+          <span class="text-slate-300 hidden sm:inline">&bull;</span>
+          <div class="flex items-center gap-2">
+            <div class="w-2 h-2 rounded-full bg-brand-500"></div>
+            <span>Verified Reviews:</span>
+            <strong id="simpleReviews" class="font-extrabold text-slate-900">0 reviews</strong>
+          </div>
+        </div>
+
+        <div class="text-[11px] text-slate-400 font-medium">
+          Updated in real-time from AgeWell caregiver ratings
+        </div>
+      </div>
+
+    </section>
 
 
     <!-- ═══════════════════════════════════════════════════════════════════ -->
-    <!-- EARNINGS HISTORY MODAL                                             -->
+    <!-- EARNINGS HISTORY & WITHDRAWAL MODAL                                 -->
     <!-- ═══════════════════════════════════════════════════════════════════ -->
     <div id="earningsModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="earningsModalTitle" style="display: none;">
-      <div class="modal-content" style="max-width: 680px; padding: 0; border-radius: 20px; overflow-y: auto;">
+      <div class="modal-content" style="max-width: 650px; padding: 0; border-radius: 28px; overflow-y: auto;">
 
-        <!-- Sticky top block: header + summary strip + tabs (never scrolls) -->
-        <div style="position: sticky; top: 0; z-index: 10; background: #fff; border-radius: 20px 20px 0 0; overflow: hidden;">
-
+        <!-- Sticky top block: header + summary strip + tabs -->
+        <div style="position: sticky; top: 0; z-index: 10; background: #fff; border-radius: 28px 28px 0 0; overflow: hidden;">
           <!-- Modal Header -->
-          <div style="background: linear-gradient(135deg, #026bc9, #0c87eb); padding: 1.4rem 1.8rem; display: flex; align-items: center; justify-content: space-between;">
-            <h3 id="earningsModalTitle" style="margin: 0; color: #ffffff; font-size: 1.3rem; font-weight: 800; display: flex; align-items: center; gap: 8px;">Earnings History</h3>
-            <button onclick="closeEarningsModal()" class="modal-close" style="color: #ffffff; font-size: 1.8rem; border: none; background: none; cursor: pointer; line-height: 1;" aria-label="Close">&times;</button>
+          <div class="bg-gradient-to-r from-brand-900 via-brand-700 to-brand-600 p-5 sm:p-6 text-white flex items-center justify-between">
+            <h3 id="earningsModalTitle" class="text-lg font-extrabold flex items-center gap-2">
+              <svg class="w-5 h-5 text-amber-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a2.25 2.25 0 00-2.25-2.25H15a3 3 0 11-6 0H5.25A2.25 2.25 0 003 12m18 0v6a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 18v-6m18 0V9M3 12V9m18 0a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 9m18 0V6a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 6v3"/></svg>
+              <span>Earnings History &amp; Payout</span>
+            </h3>
+            <button onclick="closeEarningsModal()" class="modal-close w-8 h-8 rounded-full bg-white/15 hover:bg-white/25 text-white/90 hover:text-white flex items-center justify-center transition-all border-none cursor-pointer p-0 flex-shrink-0 active:scale-95" aria-label="Close">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
           </div>
 
           <!-- Wallet Summary Strip -->
-          <div id="earningsModalSummaryStrip" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; background: #f0f7ff; border-bottom: 2px solid #b9dbfe;">
-            <div style="padding: 1rem; text-align: center; border-right: 1px solid #b9dbfe;">
-              <div id="modalTotalEarned" style="font-size: 1.5rem; font-weight: 900; color: #074887;">₹0</div>
-              <div style="font-size: 0.75rem; color: #0355a3; font-weight: 600; text-transform: uppercase; margin-top: 2px;">Total Earned</div>
+          <div id="earningsModalSummaryStrip" class="grid grid-cols-3 bg-brand-50/70 border-b border-brand-200/80 text-center">
+            <div class="p-3.5 border-r border-brand-200/80">
+              <div id="modalTotalEarned" class="text-xl font-extrabold text-brand-950">₹0</div>
+              <div class="text-[10px] text-brand-700 font-extrabold uppercase tracking-wider mt-0.5">Total Earned</div>
             </div>
-            <div style="padding: 1rem; text-align: center; border-right: 1px solid #b9dbfe;">
-              <div id="modalAvailable" style="font-size: 1.5rem; font-weight: 900; color: #026bc9;">₹0</div>
-              <div style="font-size: 0.75rem; color: #0355a3; font-weight: 600; text-transform: uppercase; margin-top: 2px;">Available</div>
+            <div class="p-3.5 border-r border-brand-200/80">
+              <div id="modalAvailable" class="text-xl font-extrabold text-brand-600">₹0</div>
+              <div class="text-[10px] text-brand-700 font-extrabold uppercase tracking-wider mt-0.5">Available</div>
             </div>
-            <div style="padding: 1rem; text-align: center;">
-              <div id="modalPending" style="font-size: 1.5rem; font-weight: 900; color: #f57f17;">₹0</div>
-              <div style="font-size: 0.75rem; color: #0355a3; font-weight: 600; text-transform: uppercase; margin-top: 2px;">Pending</div>
+            <div class="p-3.5">
+              <div id="modalPending" class="text-xl font-extrabold text-amber-700">₹0</div>
+              <div class="text-[10px] text-amber-800 font-extrabold uppercase tracking-wider mt-0.5">Pending</div>
             </div>
           </div>
 
           <!-- Tab Navigation -->
-          <div style="display: flex; border-bottom: 2px solid #f0f7ff; background: #ffffff;">
-            <button id="tabTransactions" onclick="switchEarningsTab('transactions')" style="flex: 1; padding: 12px; font-size: 0.95rem; font-weight: 700; border: none; background: none; color: #026bc9; border-bottom: 3px solid #026bc9; cursor: pointer;">Transactions</button>
-            <button id="tabMonthly" onclick="switchEarningsTab('monthly')" style="flex: 1; padding: 12px; font-size: 0.95rem; font-weight: 700; border: none; background: none; color: #888; border-bottom: 3px solid transparent; cursor: pointer;">This Month</button>
-            <button id="tabWithdraw" onclick="switchEarningsTab('withdraw')" style="flex: 1; padding: 12px; font-size: 0.95rem; font-weight: 700; border: none; background: none; color: #888; border-bottom: 3px solid transparent; cursor: pointer;">Withdraw</button>
+          <div class="flex border-b border-slate-100 bg-slate-50/60 p-1.5 gap-1">
+            <button id="tabTransactions" onclick="switchEarningsTab('transactions')" class="flex-1 py-2.5 px-3 text-xs font-extrabold rounded-xl bg-white text-brand-600 shadow-2xs border-none cursor-pointer">Transactions</button>
+            <button id="tabMonthly" onclick="switchEarningsTab('monthly')" class="flex-1 py-2.5 px-3 text-xs font-extrabold rounded-xl text-slate-500 hover:text-slate-900 border-none bg-transparent cursor-pointer">This Month</button>
+            <button id="tabWithdraw" onclick="switchEarningsTab('withdraw')" class="flex-1 py-2.5 px-3 text-xs font-extrabold rounded-xl text-slate-500 hover:text-slate-900 border-none bg-transparent cursor-pointer">Withdraw</button>
           </div>
-
-        </div><!-- end sticky top block -->
+        </div>
 
         <!-- Tab: Transactions -->
-        <div id="tabPaneTransactions" style="overflow-y: auto; padding: 1rem 1.4rem; min-height: 180px;">
-          <div id="transactionsList" style="display: flex; flex-direction: column; gap: 10px;">
+        <div id="tabPaneTransactions" class="p-5 min-h-[200px] max-h-[50vh] overflow-y-auto">
+          <div id="transactionsList" class="space-y-3">
             <!-- Populated by JS -->
           </div>
-          <div id="noTransactionsMsg" style="display: none; text-align: center; padding: 2.5rem; color: #888;">
-            <p style="font-weight: 600;">No earnings yet. Complete tasks to start earning!</p>
+          <div id="noTransactionsMsg" style="display: none;" class="text-center py-10 text-slate-400">
+            <p class="text-xs font-bold">No earnings logged yet. Complete tasks to start earning!</p>
           </div>
         </div>
 
         <!-- Tab: This Month -->
-        <div id="tabPaneMonthly" style="display: none; padding: 1.4rem; min-height: 180px; overflow-y: auto;">
-          <div id="monthlyStatsContainer" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 1.2rem;">
-            <div style="background: #f0f7ff; border: 2px solid #b9dbfe; border-radius: 14px; padding: 1.2rem; text-align: center;">
-              <div id="monthlyTasksCompleted" style="font-size: 2rem; font-weight: 900; color: #074887;">0</div>
-              <div style="font-size: 0.78rem; color: #0355a3; font-weight: 600; margin-top: 4px;">Tasks Completed</div>
+        <div id="tabPaneMonthly" style="display: none;" class="p-6 min-h-[200px] max-h-[50vh] overflow-y-auto">
+          <div id="monthlyStatsContainer" class="grid grid-cols-3 gap-3 mb-4">
+            <div class="bg-slate-50 border border-slate-200/80 rounded-2xl p-3.5 text-center">
+              <div id="monthlyTasksCompleted" class="text-2xl font-extrabold text-slate-900">0</div>
+              <div class="text-[10px] text-slate-500 font-extrabold uppercase tracking-wider mt-0.5">Tasks Done</div>
             </div>
-            <div style="background: #f0f7ff; border: 2px solid #b9dbfe; border-radius: 14px; padding: 1.2rem; text-align: center;">
-              <div id="monthlyTotalEarned" style="font-size: 2rem; font-weight: 900; color: #074887;">₹0</div>
-              <div style="font-size: 0.78rem; color: #0355a3; font-weight: 600; margin-top: 4px;">Total Earned</div>
+            <div class="bg-slate-50 border border-slate-200/80 rounded-2xl p-3.5 text-center">
+              <div id="monthlyTotalEarned" class="text-2xl font-extrabold text-emerald-700">₹0</div>
+              <div class="text-[10px] text-slate-500 font-extrabold uppercase tracking-wider mt-0.5">Total Earned</div>
             </div>
-            <div style="background: #f0f7ff; border: 2px solid #b9dbfe; border-radius: 14px; padding: 1.2rem; text-align: center;">
-              <div id="monthlyAvgPerTask" style="font-size: 2rem; font-weight: 900; color: #074887;">₹0</div>
-              <div style="font-size: 0.78rem; color: #0355a3; font-weight: 600; margin-top: 4px;">Avg / Task</div>
+            <div class="bg-slate-50 border border-slate-200/80 rounded-2xl p-3.5 text-center">
+              <div id="monthlyAvgPerTask" class="text-2xl font-extrabold text-brand-700">₹0</div>
+              <div class="text-[10px] text-slate-500 font-extrabold uppercase tracking-wider mt-0.5">Avg / Task</div>
             </div>
           </div>
-          <p id="monthlyPeriodLabel" style="text-align: center; color: #555; font-size: 0.9rem; font-weight: 600; margin: 0;">August 2026</p>
+          <p id="monthlyPeriodLabel" class="text-center text-slate-500 text-xs font-bold">August 2026</p>
         </div>
 
         <!-- Tab: Withdraw -->
-        <div id="tabPaneWithdraw" style="display: none; padding: 1.6rem; min-height: 180px; overflow-y: auto;">
-
+        <div id="tabPaneWithdraw" style="display: none;" class="p-6 min-h-[200px] max-h-[50vh] overflow-y-auto">
           <!-- Normal withdraw state -->
           <div id="withdrawNormalState">
-            <div style="background: #f0f7ff; border: 2px solid #b9dbfe; border-radius: 14px; padding: 1.4rem; text-align: center; margin-bottom: 1.2rem;">
-              <div style="font-size: 0.9rem; color: #555; font-weight: 600; margin-bottom: 4px;">Available Balance</div>
-              <div id="withdrawAvailableAmount" style="font-size: 2.4rem; font-weight: 900; color: #074887;">₹0</div>
+            <div class="bg-brand-50/70 border border-brand-200/80 rounded-2xl p-5 text-center mb-4">
+              <div class="text-xs font-bold text-brand-700 uppercase tracking-wider mb-1">Available for Payout</div>
+              <div id="withdrawAvailableAmount" class="text-3xl font-extrabold text-brand-900 tracking-tight">₹0</div>
             </div>
-            <div style="background: #fff8e1; border: 1.5px solid #ffe082; border-radius: 10px; padding: 1rem 1.2rem; margin-bottom: 1.2rem; display: flex; align-items: center; gap: 12px;">
+            <div class="bg-amber-50/70 border border-amber-200/80 rounded-2xl p-4 mb-4 flex items-center gap-3">
+              <div class="w-9 h-9 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center flex-shrink-0">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z"/></svg>
+              </div>
               <div>
-                <div style="font-size: 0.8rem; color: #888; font-weight: 600;">Bank Account (Simulated)</div>
-                <div style="font-size: 1.1rem; font-weight: 800; color: #333; letter-spacing: 2px;">XXXX XXXX 4821</div>
+                <div class="text-[10px] text-amber-800 font-extrabold uppercase">Linked Bank Account</div>
+                <div class="text-sm font-extrabold text-slate-900 tracking-wider">XXXX XXXX 4821</div>
               </div>
             </div>
-            <p style="font-size: 0.85rem; color: #888; text-align: center; margin-bottom: 1rem;">Estimated arrival: 2–3 business days</p>
-            <button id="btnConfirmWithdraw" onclick="confirmWithdrawal()" style="
-              width: 100%; padding: 14px; font-size: 1.05rem; font-weight: 800;
-              background: linear-gradient(135deg, #026bc9, #0c87eb);
-              color: #ffffff; border: none; border-radius: 14px; cursor: pointer;
-              transition: opacity 0.2s; box-shadow: 0 4px 14px rgba(2, 107, 201, 0.25);
-            "
-            onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
+            <p class="text-xs text-slate-400 text-center mb-4 font-semibold">Estimated direct bank deposit arrival: 2–3 business days</p>
+            <button id="btnConfirmWithdraw" onclick="confirmWithdrawal()" class="w-full py-3.5 bg-gradient-to-r from-brand-600 to-brand-700 hover:from-brand-700 hover:to-brand-800 text-white font-extrabold text-sm rounded-2xl shadow-xs transition-all cursor-pointer border-none active:scale-98">
               Withdraw ₹0
             </button>
           </div>
 
           <!-- Withdrawal success state -->
-          <div id="withdrawSuccessState" style="display: none; text-align: center;">
-            <div class="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto mb-3">
-              <svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
+          <div id="withdrawSuccessState" style="display: none;" class="text-center py-4">
+            <div class="w-14 h-14 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto mb-3">
+              <svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
             </div>
-            <h3 style="color: #0355a3; font-size: 1.4rem; font-weight: 800; margin-bottom: 0.4rem;">Withdrawal Successful!</h3>
-            <div style="background: #f0f7ff; border: 2px dashed #b9dbfe; border-radius: 14px; padding: 1.4rem; margin: 1rem 0;">
-              <div style="font-size: 0.85rem; color: #555; font-weight: 600; margin-bottom: 4px;">Amount Withdrawn</div>
-              <div id="withdrawSuccessAmount" style="font-size: 2.2rem; font-weight: 900; color: #026bc9;">₹0</div>
-              <div style="margin-top: 0.8rem; padding-top: 0.8rem; border-top: 1px solid #b9dbfe;">
-                <div style="font-size: 0.8rem; color: #888;">Transaction ID</div>
-                <div id="withdrawSuccessTxId" style="font-size: 1.05rem; font-weight: 800; color: #074887; letter-spacing: 1px; margin-top: 2px;">AW-WD-000000</div>
+            <h3 class="text-lg font-extrabold text-slate-900 mb-1">Withdrawal Successful!</h3>
+            <div class="bg-emerald-50 border border-emerald-200/80 rounded-2xl p-4 my-3 text-center">
+              <div class="text-xs text-emerald-800 font-bold uppercase">Amount Processed</div>
+              <div id="withdrawSuccessAmount" class="text-2xl font-extrabold text-emerald-700 my-1">₹0</div>
+              <div class="text-[11px] text-slate-500 pt-2 border-t border-emerald-200/60 mt-2">
+                Ref ID: <strong id="withdrawSuccessTxId" class="text-slate-900 font-extrabold">AW-WD-000000</strong>
               </div>
             </div>
-            <p style="color: #666; font-size: 0.9rem; margin-bottom: 1.2rem;">Your earnings will reach your bank account in 2–3 business days.</p>
-            <button onclick="closeEarningsModal()" style="
-              padding: 12px 28px; background: #0c87eb; color: #fff;
-              border: none; border-radius: 12px; font-size: 1rem;
-              font-weight: 700; cursor: pointer;
-            ">Done</button>
+            <p class="text-xs text-slate-500 font-medium mb-4">Your earnings will reach your bank account within 2–3 business days.</p>
+            <button onclick="closeEarningsModal()" class="px-6 py-2.5 bg-brand-600 hover:bg-brand-700 text-white rounded-2xl text-xs font-extrabold border-none cursor-pointer">Done</button>
           </div>
         </div>
 
       </div>
     </div>
 
-    <!-- Completion Modal -->
-    <div id="completionModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h3 id="modalTitle">Mark Request as Completed</h3>
-          <button id="modalClose" class="modal-close" aria-label="Close Modal">&times;</button>
-        </div>
-
-        <form id="completionForm" novalidate>
-          <div class="form-group">
-            <label for="resolutionNotes">Please add a brief description of how you helped the Senior Citizen (e.g. Grocery items delivered, remote control repaired, etc.): <span style="color: #c62828;">*</span></label>
-            <textarea 
-              id="resolutionNotes" 
-              class="form-textarea" 
-              placeholder="e.g. Successfully bought the items on list and brought them inside their home..." 
-              required
-            ></textarea>
-          </div>
-
-          <div class="form-group" style="margin-top: 1rem;">
-            <label for="receiptPhoto">Upload Receipt or Delivery Photo Proof:</label>
-            <input 
-              type="file" 
-              id="receiptPhoto" 
-              name="receiptPhoto" 
-              class="form-control" 
-              accept="image/*" 
-              multiple
-            >
-            <small style="color: #666; display: block; margin-top: 4px;">Upload photos of delivery item or store receipt (multiple photos supported).</small>
-          </div>
-
-          <!-- Footer Actions -->
-          <div class="modal-footer">
-            <button type="button" id="btnCancelComplete" class="btn btn-secondary">Cancel</button>
-            <button type="submit" class="btn btn-primary" style="background-color: var(--color-primary-dark);">
-              Save &amp; Complete
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-
-    <!-- Quote Service Charge & Commit Modal -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!-- QUOTE SERVICE CHARGE & COMMIT MODAL                                 -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
     <div id="acceptQuoteModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="quoteModalTitle" style="display: none;">
-      <div class="modal-content" style="max-width: 550px;">
-        <div class="modal-header">
-          <h3 id="quoteModalTitle" style="color: var(--color-primary-dark); font-size: 1.4rem;">Quote Service Charge &amp; Commit to Help</h3>
-          <button id="quoteModalClose" class="modal-close" aria-label="Close">&times;</button>
+      <div class="modal-content" style="max-width: 520px;">
+        <div class="flex items-start justify-between gap-3 pb-3.5 border-b border-slate-100 mb-4">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-2xl bg-brand-50 border border-brand-200/70 text-brand-600 flex items-center justify-center shadow-2xs">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+            <div>
+              <h3 id="quoteModalTitle" class="text-base font-extrabold text-slate-900 tracking-tight">Quote Service Fee &amp; Commit</h3>
+              <span class="text-[11px] text-slate-400 font-semibold block">Elder Care Assistance Commitment</span>
+            </div>
+          </div>
+          <button id="quoteModalClose" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-700 flex items-center justify-center transition-all border-none cursor-pointer p-0 flex-shrink-0 active:scale-95" aria-label="Close">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
         </div>
 
-        <form id="quoteForm">
-          <p style="color: #444; font-size: 1rem; margin-bottom: 1.2rem; line-height: 1.4;">
-            You are accepting to assist with request: <strong id="quoteRequestTitle" style="color: var(--color-primary-dark);">Help Request</strong>. Please enter your service fee quote below.
+        <form id="quoteForm" class="space-y-4">
+          <p class="text-xs text-slate-600 font-medium leading-relaxed">
+            You are offering to assist with request: <strong id="quoteRequestTitle" class="text-brand-700 font-extrabold">Help Request</strong>. Please enter your voluntary or service charge quote below:
           </p>
 
           <!-- Caregiver Shopping Preference Banner -->
-          <div id="quoteModalPrefContainer" style="display: none; margin-bottom: 1.2rem; padding: 12px 16px; background: #fff3e0; border-left: 5px solid #e65100; border-radius: 10px;">
-            <p style="color: #e65100; font-weight: bold; font-size: 1rem; margin-bottom: 4px;">
-              Caregiver Shopping Preference:
-            </p>
-            <p id="quoteModalPrefText" style="color: #bf360c; font-size: 1.05rem; font-weight: 700; margin: 0;"></p>
+          <div id="quoteModalPrefContainer" style="display: none;" class="p-3.5 bg-amber-50/80 border border-amber-200/80 rounded-2xl">
+            <div class="flex items-center gap-2 text-xs font-bold text-amber-900 mb-0.5">
+              <svg class="w-4 h-4 text-amber-600 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25c-.669 0-1.189-.578-1.119-1.243l1.263-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/></svg>
+              <span>Caregiver Shopping Preference:</span>
+            </div>
+            <p id="quoteModalPrefText" class="text-xs font-extrabold text-amber-800 pl-6"></p>
           </div>
 
-          <div class="form-group">
-            <label for="quoteServiceFee" style="font-weight: bold; color: var(--color-primary-dark); font-size: 1.05rem;">
-              Service Fee Quote (₹): <span style="color: #c62828;">*</span>
+          <div>
+            <label for="quoteServiceFee" class="block text-xs font-extrabold text-slate-900 mb-1.5">
+              Service Fee Quote (₹) <span class="text-rose-600">*</span>
             </label>
             <input 
               type="number" 
               id="quoteServiceFee" 
-              class="form-input" 
+              class="w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl text-sm font-extrabold text-slate-900 focus:border-brand-600 focus:ring-2 focus:ring-brand-100 transition-all outline-none" 
               min="0" 
               step="1" 
               placeholder="e.g. 100 (enter 0 for Voluntary / Free Service)"
-              style="font-size: 1.2rem; font-weight: bold; border-color: var(--color-primary);"
               required
             >
-            <small style="color: #666; display: block; margin-top: 6px;">
-              Enter your voluntary assistance or service charge fee (₹).
-            </small>
+            <span class="text-[11px] text-slate-400 font-medium block mt-1">
+              Enter your voluntary assistance fee (₹). Enter 0 if free.
+            </span>
           </div>
 
           <!-- Purchase & Receipt Charges Disclaimer -->
-          <div style="background-color: #e8f5e9; border: 2px solid var(--color-primary); border-radius: 12px; padding: 1rem; margin-bottom: 1.2rem;">
-            <p style="color: var(--color-primary-dark); font-weight: bold; font-size: 1rem; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
-              Purchase &amp; Bill Charges Note:
-            </p>
-            <p style="color: #2e7d32; font-size: 0.92rem; margin: 0; line-height: 1.4;">
-              <strong>Extra charges for item purchases (groceries, medicines, bill payments) will be added separately according to the receipt/bill uploaded upon task completion.</strong>
-            </p>
+          <div class="bg-emerald-50/70 border border-emerald-200/80 rounded-2xl p-3.5 text-xs text-emerald-900">
+            <strong class="font-extrabold block mb-0.5">Item Purchases &amp; Bill Reimbursal Note:</strong>
+            <span class="font-medium text-emerald-800 leading-normal">
+              Direct item purchase expenses (medicines, groceries) are reimbursed separately after uploading the store bill/receipt upon task completion.
+            </span>
           </div>
 
-          <div class="form-group">
-            <label for="quoteVolunteerNotes">Message for Family Caregiver &amp; Senior (Optional):</label>
+          <div>
+            <label for="quoteVolunteerNotes" class="block text-xs font-extrabold text-slate-900 mb-1.5">
+              Message for Caregiver &amp; Senior (Optional)
+            </label>
             <textarea 
               id="quoteVolunteerNotes" 
-              class="form-textarea" 
-              placeholder="e.g. I am nearby and can collect the medicines within 30 minutes."
-              style="min-height: 80px;"
+              class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs font-medium text-slate-900 focus:border-brand-600 focus:ring-2 focus:ring-brand-100 transition-all outline-none min-h-[70px]" 
+              placeholder="e.g. I live close by and can pick up the grocery items within 30 minutes."
             ></textarea>
           </div>
 
-          <div class="modal-footer" style="display: flex; gap: 10px; margin-top: 1rem;">
-            <button type="button" id="btnCancelQuote" class="btn btn-secondary" style="flex: 1;">Cancel</button>
-            <button type="submit" class="btn btn-primary" style="flex: 2; background-color: var(--color-primary-dark); font-size: 1.05rem;">
-              Submit Quote &amp; Commit to Help
+          <div class="flex gap-2.5 pt-2">
+            <button type="button" id="btnCancelQuote" class="flex-1 py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-extrabold rounded-2xl transition-all cursor-pointer border-none">
+              Cancel
+            </button>
+            <button type="submit" class="flex-2 py-3 px-4 bg-brand-600 hover:bg-brand-700 text-white text-xs font-extrabold rounded-2xl transition-all cursor-pointer border-none shadow-xs">
+              Submit Quote &amp; Commit
             </button>
           </div>
         </form>
       </div>
     </div>
 
-    <!-- Image Lightbox Modal for Receipt / Delivery Proofs -->
-    <div id="imageLightboxModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="lightboxTitle" style="display: none; z-index: 10050; background: rgba(0, 0, 0, 0.85);">
-      <div class="modal-content" style="max-width: 850px; text-align: center; background: #ffffff; padding: 1.5rem; border-radius: 16px; position: relative;">
-        <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 15px;">
-          <h3 id="lightboxTitle" style="color: var(--color-primary-dark); margin: 0;">Receipt / Delivery Photo Proof</h3>
-          <button id="lightboxClose" class="modal-close" style="font-size: 2rem; border: none; background: none; cursor: pointer;">&times;</button>
-        </div>
-        <div style="position: relative; max-height: 70vh; overflow: hidden; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px; padding: 5px; background: #222; display: flex; align-items: center; justify-content: center; min-height: 250px;">
-          <img id="lightboxImage" src="" alt="Full Resolution Receipt Proof" style="max-width: 100%; max-height: 68vh; height: auto; display: block; margin: 0 auto; border-radius: 6px; object-fit: contain;">
-          
-          <!-- Lightbox Counter Badge (Shown ONLY if > 1 photo) -->
-          <div id="lightboxCounter" style="display: none; position: absolute; top: 12px; right: 12px; background: rgba(0,0,0,0.8); color: #fff; font-weight: 800; font-size: 0.9rem; padding: 4px 14px; border-radius: 16px;">
-            1 / 1
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!-- COMPLETION & VERIFICATION PROOF MODAL                               -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <div id="completionModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="modal-content" style="max-width: 540px;">
+        <div class="flex items-start justify-between gap-3 pb-3.5 border-b border-slate-100 mb-4">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-2xl bg-emerald-50 border border-emerald-200/70 text-emerald-600 flex items-center justify-center shadow-2xs">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+            <div>
+              <h3 id="modalTitle" class="text-base font-extrabold text-slate-900 tracking-tight">Mark Request as Completed</h3>
+              <span class="text-[11px] text-slate-400 font-semibold block">Submit Delivery &amp; Receipt Proof</span>
+            </div>
           </div>
-
-          <!-- Lightbox Prev Arrow (Shown ONLY if > 1 photo) -->
-          <button type="button" id="btnLightboxPrev" style="display: none; position: absolute; top: 50%; left: 12px; transform: translateY(-50%); background: rgba(0,0,0,0.65); color: #ffffff; border: none; border-radius: 50%; width: 44px; height: 44px; font-size: 1.4rem; font-weight: bold; cursor: pointer; z-index: 5;">
-            &larr;
-          </button>
-
-          <!-- Lightbox Next Arrow (Shown ONLY if > 1 photo) -->
-          <button type="button" id="btnLightboxNext" style="display: none; position: absolute; top: 50%; right: 12px; transform: translateY(-50%); background: rgba(0,0,0,0.65); color: #ffffff; border: none; border-radius: 50%; width: 44px; height: 44px; font-size: 1.4rem; font-weight: bold; cursor: pointer; z-index: 5;">
-            &rarr;
+          <button id="modalClose" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-700 flex items-center justify-center transition-all border-none cursor-pointer p-0 flex-shrink-0 active:scale-95" aria-label="Close">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
           </button>
         </div>
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-          <a id="lightboxDirectLink" href="" target="_blank" class="btn btn-secondary" style="padding: 10px 18px; font-size: 0.95rem;">
-            Open Image Directly in New Tab
-          </a>
-          <button type="button" id="btnCloseLightbox" class="btn btn-primary" style="padding: 10px 24px; font-size: 1rem;">
-            Close Preview
-          </button>
-        </div>
-      </div>
-    </div>
 
-    <!-- KYC Re-submission Modal -->
-    <div id="kycModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="kycModalTitle" style="display: none;">
-      <div class="modal-content" style="max-width: 550px;">
-        <div class="modal-header">
-          <h3 id="kycModalTitle" style="color: var(--color-primary-dark); font-size: 1.4rem;" data-i18n="vd_kyc_modal_title">Submit Verification Documents</h3>
-          <button id="kycModalClose" class="modal-close" aria-label="Close">&times;</button>
-        </div>
-
-        <form id="kycForm" novalidate>
-          <div class="form-group">
-            <label for="modalAadhaarNumber" data-i18n="label_aadhaar">Aadhaar / National ID Number</label>
-            <input type="text" id="modalAadhaarNumber" class="form-input" placeholder="e.g. 1234 5678 9012" data-i18n="placeholder_aadhaar" required>
+        <form id="completionForm" novalidate class="space-y-4">
+          <div>
+            <label for="resolutionNotes" class="block text-xs font-extrabold text-slate-900 mb-1.5">
+              Description of Assistance Provided <span class="text-rose-600">*</span>
+            </label>
+            <textarea 
+              id="resolutionNotes" 
+              class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs font-medium text-slate-900 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100 transition-all outline-none min-h-[80px]" 
+              placeholder="e.g. Bought items from the supermarket and delivered them to the senior's doorstep..." 
+              required
+            ></textarea>
           </div>
 
-          <div class="form-group">
-            <label for="modalGovtIdCard" data-i18n="label_upload_govt_id">Government Photo ID (Aadhaar / Voter ID / Passport)</label>
-            <input type="file" id="modalGovtIdCard" class="form-control" accept="image/*,.pdf" required>
+          <div>
+            <label for="receiptPhoto" class="block text-xs font-extrabold text-slate-900 mb-1.5">
+              Upload Receipt / Delivery Photo Proof
+            </label>
+            <input 
+              type="file" 
+              id="receiptPhoto" 
+              name="receiptPhoto" 
+              class="w-full px-3 py-2 bg-slate-50 border border-slate-200/90 rounded-2xl text-xs text-slate-700 cursor-pointer file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-extrabold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100" 
+              accept="image/*" 
+              multiple
+            >
+            <span class="text-[11px] text-slate-400 font-medium block mt-1">Upload delivery proof or store purchase bill (multiple photos supported).</span>
           </div>
 
-          <div class="form-group">
-            <label for="modalSelfiePhoto" data-i18n="label_upload_selfie">Live Selfie / Profile Photo</label>
-            <input type="file" id="modalSelfiePhoto" class="form-control" accept="image/*" required>
-          </div>
-
-          <div class="modal-footer" style="display: flex; gap: 10px; margin-top: 1.2rem;">
-            <button type="button" id="btnCancelKyc" class="btn btn-secondary" style="flex: 1;" data-i18n="btn_cancel">Cancel</button>
-            <button type="submit" class="btn btn-primary" style="flex: 2; background-color: var(--color-primary-dark);" data-i18n="vd_submit_clearance">
-              Submit for Admin &amp; Police Clearance
+          <div class="flex gap-2.5 pt-2">
+            <button type="button" id="btnCancelComplete" class="flex-1 py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-extrabold rounded-2xl transition-all cursor-pointer border-none">
+              Cancel
+            </button>
+            <button type="submit" class="flex-2 py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold rounded-2xl transition-all cursor-pointer border-none shadow-xs">
+              Save &amp; Complete Task
             </button>
           </div>
         </form>
       </div>
     </div>
 
-    <!-- Modal: Submit Purchase Cost & Bill Photo Proof -->
-    <div id="purchaseCostModal" class="modal" style="display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.6); align-items: center; justify-content: center; z-index: 10000; padding: 1rem;">
-      <div class="modal-content" style="background: #ffffff; border-radius: 16px; width: 100%; max-width: 540px; padding: 1.8rem; box-shadow: 0 10px 30px rgba(0,0,0,0.25); border: 2px solid #b9dbfe; position: relative;">
-        <!-- Modal Header -->
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #f0f7ff; padding-bottom: 1rem; margin-bottom: 1.2rem;">
-          <h2 style="margin: 0; color: #0355a3; font-size: 1.35rem; display: flex; align-items: center; gap: 8px;">
-            Submit Purchase Cost &amp; Bill Proof
-          </h2>
-          <button type="button" onclick="closePurchaseCostModal()" style="background: none; border: none; font-size: 1.6rem; cursor: pointer; color: #666; line-height: 1;">&times;</button>
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!-- PURCHASE COST & BILL PHOTO PROOF MODAL                              -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <div id="purchaseCostModal" class="modal" style="display: none;">
+      <div class="modal-content" style="max-width: 520px;">
+        <div class="flex items-start justify-between gap-3 pb-3.5 border-b border-slate-100 mb-4">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-2xl bg-amber-50 border border-amber-200/70 text-amber-600 flex items-center justify-center shadow-2xs">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25c-.669 0-1.189-.578-1.119-1.243l1.263-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/></svg>
+            </div>
+            <div>
+              <h2 class="text-base font-extrabold text-slate-900 tracking-tight">Submit Purchase Cost &amp; Proof</h2>
+              <span class="text-[11px] text-slate-400 font-semibold block">Store Bill &amp; Item Receipt Upload</span>
+            </div>
+          </div>
+          <button type="button" onclick="closePurchaseCostModal()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-700 flex items-center justify-center transition-all border-none cursor-pointer p-0 flex-shrink-0 active:scale-95" aria-label="Close">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
         </div>
 
-        <!-- Modal Body Form -->
-        <form id="purchaseCostForm" onsubmit="handlePurchaseCostSubmit(event)">
+        <form id="purchaseCostForm" onsubmit="handlePurchaseCostSubmit(event)" class="space-y-4">
           <input type="hidden" id="purchaseCostRequestId" value="">
 
-          <!-- Step 1: Actual Purchase Cost -->
-          <div style="margin-bottom: 1.2rem;">
-            <label for="purchaseCostInput" style="display: block; font-weight: 700; color: #074887; margin-bottom: 6px; font-size: 1rem;">
-              Actual Purchase Cost (in ₹) <span style="color: #c62828;">*</span>
+          <div>
+            <label for="purchaseCostInput" class="block text-xs font-extrabold text-slate-900 mb-1.5">
+              Actual Purchase Cost (in ₹) <span class="text-rose-600">*</span>
             </label>
-            <input type="number" id="purchaseCostInput" min="0" step="1" required placeholder="e.g. 450" style="width: 100%; padding: 12px 14px; font-size: 1.1rem; border: 2px solid #b9dbfe; border-radius: 10px; box-sizing: border-box; outline: none;" oninput="togglePurchaseProofRequired(this.value)">
+            <input 
+              type="number" 
+              id="purchaseCostInput" 
+              min="0" 
+              step="1" 
+              required 
+              placeholder="e.g. 450" 
+              class="w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl text-sm font-extrabold text-slate-900 focus:border-brand-600 focus:ring-2 focus:ring-brand-100 transition-all outline-none" 
+              oninput="togglePurchaseProofRequired(this.value)"
+            >
           </div>
 
-          <!-- Step 2: Bill / Cart Photo Proof Upload -->
-          <div style="margin-bottom: 1.2rem;">
-            <label for="purchaseProofFile" style="display: block; font-weight: 700; color: #074887; margin-bottom: 6px; font-size: 1rem;">
-              Bill Photo Proof / Cart Screenshot <span id="purchaseProofRequiredStar" style="color: #c62828;">*</span><span id="purchaseProofOptionalNote" style="color: #0c87eb; font-weight: 600; font-size: 0.9rem;"></span>
+          <div>
+            <label for="purchaseProofFile" class="block text-xs font-extrabold text-slate-900 mb-1.5">
+              Bill Photo Proof / Store Receipt <span id="purchaseProofRequiredStar" class="text-rose-600">*</span><span id="purchaseProofOptionalNote" class="text-brand-600 font-semibold"></span>
             </label>
-            <input type="file" id="purchaseProofFile" accept="image/*" multiple required style="width: 100%; padding: 10px; font-size: 0.95rem; border: 2px dashed #b9dbfe; border-radius: 10px; background: #f0f7ff; cursor: pointer;" onchange="previewPurchaseProofImage(this)">
-            <div id="purchaseProofPreview" style="margin-top: 10px; display: none; text-align: center;">
-              <img id="purchaseProofPreviewImg" src="" alt="Bill Proof Preview" style="max-width: 100%; max-height: 180px; border-radius: 8px; border: 1px solid #ccc; object-fit: contain;">
+            <input 
+              type="file" 
+              id="purchaseProofFile" 
+              accept="image/*" 
+              multiple 
+              required 
+              class="w-full px-3 py-2 bg-slate-50 border border-slate-200/90 rounded-2xl text-xs text-slate-700 cursor-pointer file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-extrabold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100" 
+              onchange="previewPurchaseProofImage(this)"
+            >
+            <div id="purchaseProofPreview" style="display: none;" class="mt-3 text-center">
+              <img id="purchaseProofPreviewImg" src="" alt="Bill Proof Preview" class="max-w-full max-h-[160px] mx-auto rounded-xl border border-slate-200 object-contain shadow-2xs">
             </div>
           </div>
 
-          <!-- Step 3: Optional Notes -->
-          <div style="margin-bottom: 1.5rem;">
-            <label for="purchaseNotesInput" style="display: block; font-weight: 700; color: #074887; margin-bottom: 6px; font-size: 1rem;">
-              Additional Notes / Items Breakdown (Optional)
+          <div>
+            <label for="purchaseNotesInput" class="block text-xs font-extrabold text-slate-900 mb-1.5">
+              Items Breakdown Notes (Optional)
             </label>
-            <textarea id="purchaseNotesInput" rows="3" placeholder="e.g. Crocin 5 tablets (₹450), Dettol soap (₹50)" style="width: 100%; padding: 10px 14px; font-size: 1rem; border: 2px solid #b9dbfe; border-radius: 10px; box-sizing: border-box; resize: vertical;"></textarea>
+            <textarea 
+              id="purchaseNotesInput" 
+              rows="3" 
+              placeholder="e.g. Paracetamol 10 tabs (₹60), Rice bag 5kg (₹320)" 
+              class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs font-medium text-slate-900 focus:border-brand-600 focus:ring-2 focus:ring-brand-100 transition-all outline-none"
+            ></textarea>
           </div>
 
-          <!-- Actions -->
-          <div style="display: flex; gap: 12px; justify-content: flex-end;">
-            <button type="button" class="btn btn-secondary" onclick="closePurchaseCostModal()" style="padding: 10px 20px; font-size: 1rem; border-radius: 10px;">
+          <div class="flex gap-2.5 pt-2">
+            <button type="button" class="flex-1 py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-extrabold rounded-2xl transition-all cursor-pointer border-none" onclick="closePurchaseCostModal()">
               Cancel
             </button>
-            <button type="submit" id="btnSubmitPurchaseCost" class="btn btn-primary" style="padding: 10px 22px; font-size: 1rem; border-radius: 10px; background-color: #0c87eb; font-weight: 700;">
+            <button type="submit" id="btnSubmitPurchaseCost" class="flex-2 py-3 px-4 bg-brand-600 hover:bg-brand-700 text-white text-xs font-extrabold rounded-2xl transition-all cursor-pointer border-none shadow-xs">
               Submit Purchase Cost &amp; Proof
             </button>
           </div>
@@ -786,31 +1194,115 @@
       </div>
     </div>
 
-    <!-- Special Tip Earned Modal -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!-- SPECIAL TIP EARNED MODAL                                            -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
     <div id="tipEarnedModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="tipModalTitle" style="display: none;">
-      <div class="modal-content" style="max-width: 480px; text-align: center; background: linear-gradient(135deg, #ffffff 0%, #f0f7ff 100%); border: 3px solid #b9dbfe; border-radius: 20px; padding: 2rem; box-shadow: 0 10px 30px rgba(2, 107, 201, 0.15); position: relative; margin: auto;">
-        <button type="button" onclick="closeTipEarnedModal()" class="modal-close" aria-label="Close" style="position: absolute; top: 12px; right: 16px; font-size: 1.5rem; border: none; background: none; cursor: pointer; color: #888;">&times;</button>
+      <div class="modal-content text-center" style="max-width: 460px;">
+        <button type="button" onclick="closeTipEarnedModal()" class="modal-close w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-700 flex items-center justify-center transition-all border-none cursor-pointer p-0 flex-shrink-0 active:scale-95 absolute top-4 right-4" aria-label="Close">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
         
-        <div class="w-14 h-14 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center mx-auto mb-3 shadow-sm">
-          <svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <div class="w-16 h-16 rounded-3xl bg-amber-100 text-amber-600 flex items-center justify-center mx-auto mb-3.5 shadow-xs">
+          <svg class="w-9 h-9" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
         </div>
-        <h2 id="tipModalTitle" style="color: #0355a3; margin-bottom: 0.5rem; font-size: 1.6rem; font-weight: 800;">Special Tip Received!</h2>
-        <p style="color: #444; font-size: 1.05rem; margin-bottom: 1.2rem; line-height: 1.4;">
-          The Caregiver awarded you an extra bonus tip for your exceptional service on task <strong id="tipTaskTitle" style="color: #026bc9;">"Task"</strong>!
+        <h2 id="tipModalTitle" class="text-xl font-extrabold text-slate-900 mb-1">Special Tip Received!</h2>
+        <p class="text-xs text-slate-600 font-medium leading-relaxed mb-4">
+          The Caregiver awarded you an extra bonus tip for your service on <strong id="tipTaskTitle" class="text-brand-700">"Task"</strong>!
         </p>
-        <div style="background: #ffffff; border: 2px dashed #b9dbfe; padding: 16px; border-radius: 14px; margin-bottom: 1.5rem;">
-          <div style="font-size: 0.95rem; color: #666; font-weight: 600;">Bonus Tip Amount</div>
-          <div id="tipModalAmount" style="font-size: 2.2rem; font-weight: 900; color: #026bc9; margin: 4px 0;">+ ₹0</div>
-          <div id="tipModalBreakdown" style="font-size: 0.88rem; color: #888;">Base Service Fee: ₹0 | Total Earned: ₹0</div>
+        <div class="bg-amber-50/80 border-2 border-dashed border-amber-300 rounded-2xl p-4 mb-4">
+          <div class="text-[10px] text-amber-800 font-extrabold uppercase tracking-wider">Bonus Tip Amount</div>
+          <div id="tipModalAmount" class="text-3xl font-extrabold text-amber-600 my-0.5">+ ₹0</div>
+          <div id="tipModalBreakdown" class="text-[11px] text-slate-500 font-semibold mt-1">Base Service Fee: ₹0 | Total Earned: ₹0</div>
         </div>
-        <p style="color: #0c87eb; font-weight: 700; font-size: 0.95rem; margin-bottom: 1.5rem;">
-          Thank you for making senior care compassionate &amp; reliable.
-        </p>
-        <button type="button" class="btn btn-primary" onclick="closeTipEarnedModal()" style="width: 100%; padding: 14px; font-size: 1.1rem; border-radius: 12px; background: linear-gradient(135deg, #0c87eb 0%, #026bc9 100%); font-weight: 700; border: none; cursor: pointer; color: #ffffff !important;">
-          Close
+        <button type="button" onclick="closeTipEarnedModal()" class="w-full py-3.5 bg-gradient-to-r from-brand-600 to-brand-700 hover:from-brand-700 hover:to-brand-800 text-white font-extrabold text-sm rounded-2xl shadow-xs transition-all cursor-pointer border-none">
+          Done
         </button>
       </div>
     </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!-- KYC RE-SUBMISSION MODAL                                             -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <div id="kycModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="kycModalTitle" style="display: none;">
+      <div class="modal-content" style="max-width: 520px;">
+        <div class="flex items-start justify-between gap-3 pb-3.5 border-b border-slate-100 mb-4">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-2xl bg-brand-50 border border-brand-200/70 text-brand-600 flex items-center justify-center shadow-2xs">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"/></svg>
+            </div>
+            <div>
+              <h3 id="kycModalTitle" class="text-base font-extrabold text-slate-900 tracking-tight" data-i18n="vd_kyc_modal_title">Submit Verification Documents</h3>
+              <span class="text-[11px] text-slate-400 font-semibold block">Admin &amp; Police Background Clearance</span>
+            </div>
+          </div>
+          <button id="kycModalClose" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-700 flex items-center justify-center transition-all border-none cursor-pointer p-0 flex-shrink-0 active:scale-95" aria-label="Close">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        </div>
+
+        <form id="kycForm" novalidate class="space-y-4">
+          <div>
+            <label for="modalAadhaarNumber" class="block text-xs font-extrabold text-slate-900 mb-1.5" data-i18n="label_aadhaar">Aadhaar / National ID Number</label>
+            <input type="text" id="modalAadhaarNumber" class="w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl text-sm font-extrabold text-slate-900 focus:border-brand-600 focus:ring-2 focus:ring-brand-100 transition-all outline-none" placeholder="e.g. 1234 5678 9012" data-i18n="placeholder_aadhaar" required>
+          </div>
+
+          <div>
+            <label for="modalGovtIdCard" class="block text-xs font-extrabold text-slate-900 mb-1.5" data-i18n="label_upload_govt_id">Government Photo ID (Aadhaar / Voter ID / Passport)</label>
+            <input type="file" id="modalGovtIdCard" class="w-full px-3 py-2 bg-slate-50 border border-slate-200/90 rounded-2xl text-xs text-slate-700 cursor-pointer file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-extrabold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100" accept="image/*,.pdf" required>
+          </div>
+
+          <div>
+            <label for="modalSelfiePhoto" class="block text-xs font-extrabold text-slate-900 mb-1.5" data-i18n="label_upload_selfie">Live Selfie / Profile Photo</label>
+            <input type="file" id="modalSelfiePhoto" class="w-full px-3 py-2 bg-slate-50 border border-slate-200/90 rounded-2xl text-xs text-slate-700 cursor-pointer file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-extrabold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100" accept="image/*" required>
+          </div>
+
+          <div class="flex gap-2.5 pt-2">
+            <button type="button" id="btnCancelKyc" class="flex-1 py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-extrabold rounded-2xl transition-all cursor-pointer border-none" data-i18n="btn_cancel">Cancel</button>
+            <button type="submit" class="flex-2 py-3 px-4 bg-brand-600 hover:bg-brand-700 text-white text-xs font-extrabold rounded-2xl transition-all cursor-pointer border-none shadow-xs" data-i18n="vd_submit_clearance">
+              Submit for Clearance
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!-- IMAGE LIGHTBOX MODAL FOR PROOFS                                    -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <div id="imageLightboxModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="lightboxTitle" style="display: none; z-index: 10050;">
+      <div class="modal-content" style="max-width: 850px; padding: 1.5rem;">
+        <div class="flex justify-between items-center pb-3 border-b border-slate-100 mb-3">
+          <h3 id="lightboxTitle" class="text-base font-extrabold text-slate-900">Receipt / Delivery Photo Proof</h3>
+          <button id="lightboxClose" class="modal-close w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-700 flex items-center justify-center transition-all border-none cursor-pointer p-0 flex-shrink-0 active:scale-95" aria-label="Close">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        </div>
+        <div class="relative max-h-[70vh] overflow-hidden mb-3 border border-slate-200 rounded-2xl p-2 bg-slate-950 flex items-center justify-center min-h-[260px]">
+          <img id="lightboxImage" src="" alt="Full Resolution Receipt Proof" class="max-w-full max-h-[66vh] h-auto block mx-auto rounded-xl object-contain">
+          
+          <div id="lightboxCounter" style="display: none;" class="absolute top-3 right-3 bg-slate-900/80 backdrop-blur-md text-white font-extrabold text-xs px-3 py-1 rounded-full shadow-md">
+            1 / 1
+          </div>
+
+          <button type="button" id="btnLightboxPrev" style="display: none;" class="absolute top-1/2 left-3 -translate-y-1/2 bg-slate-900/70 hover:bg-slate-900 text-white rounded-full w-10 h-10 flex items-center justify-center font-bold text-lg cursor-pointer border-none transition-all shadow-md">
+            &larr;
+          </button>
+          <button type="button" id="btnLightboxNext" style="display: none;" class="absolute top-1/2 right-3 -translate-y-1/2 bg-slate-900/70 hover:bg-slate-900 text-white rounded-full w-10 h-10 flex items-center justify-center font-bold text-lg cursor-pointer border-none transition-all shadow-md">
+            &rarr;
+          </button>
+        </div>
+        <div class="flex justify-between items-center flex-wrap gap-2">
+          <a id="lightboxDirectLink" href="" target="_blank" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors">
+            Open Image Directly
+          </a>
+          <button type="button" id="btnCloseLightbox" class="px-5 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-bold transition-colors border-none cursor-pointer">
+            Close Preview
+          </button>
+        </div>
+      </div>
+    </div>
+
   </main>
 
   <!-- Global Footer -->
@@ -819,7 +1311,7 @@
   </footer>
 
   <!-- Scripts -->
-  <script src="/js/api.js?v=240"></script>
-  <script src="/js/volunteer.js?v=240"></script>
+  <script src="/js/api.js?v=325"></script>
+  <script src="/js/volunteer.js?v=325"></script>
 </body>
 </html>

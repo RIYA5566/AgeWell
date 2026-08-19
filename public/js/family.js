@@ -21,11 +21,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (navUserName) navUserName.textContent = `Hello, ${user.name} (${user.relationship || 'Caregiver'})`;
 
     const welcomeTitle = document.getElementById('welcomeTitle');
-    if (welcomeTitle) welcomeTitle.textContent = t('fd_welcome', { name: user.name });
+    if (welcomeTitle) welcomeTitle.textContent = `Welcome back, ${user.name}!`;
 
     const welcomeSubtitle = document.getElementById('welcomeSubtitle');
     if (welcomeSubtitle && user.relationship) {
-      welcomeSubtitle.textContent = `You are managing care as the ${user.relationship}. Review and approve volunteers below.`;
+      welcomeSubtitle.textContent = `Your personal portal for daily assistance, verified local volunteers, and caregiver care.`;
     }
   }
 
@@ -229,6 +229,18 @@ async function loadFamilyDashboard(silent = false) {
   // Update notification badge specifically for Volunteer Approvals section
   updateApprovalBadge(volunteerApprovals.length);
 
+  // Update modular overview metric cards
+  const statActionNeededEl = document.getElementById('statActionNeededCount');
+  if (statActionNeededEl) statActionNeededEl.textContent = caregiverActionNeeded.length;
+
+  const activeCount = requests.filter(r => r.status === 'accepted' || r.status === 'purchase_funded' || r.status === 'in_progress').length;
+  const statActiveEl = document.getElementById('statActiveCount');
+  if (statActiveEl) statActiveEl.textContent = activeCount;
+
+  const completedCount = requests.filter(r => r.status === 'completed' || r.status === 'verified').length;
+  const statCompletedEl = document.getElementById('statCompletedCount');
+  if (statCompletedEl) statCompletedEl.textContent = completedCount;
+
   // Update document title for total pending CAREGIVER ACTIONS only
   const totalActions = caregiverActionNeeded.length;
   if (totalActions > 0) {
@@ -306,32 +318,32 @@ async function viewVolunteerProfile(volId) {
     <!-- Header Banner with Symmetrical Ratings Badges -->
     <div style="margin-bottom: 1.2rem; background: linear-gradient(135deg, #f1f8e9, #ffffff); padding: 1.2rem; border-radius: 14px; border: 2px solid #a5d6a7; box-shadow: 0 2px 8px rgba(46,125,50,0.08);">
       <div style="display: flex; gap: 16px; align-items: flex-start;">
-        <div style="width: 58px; height: 58px; border-radius: 50%; background: linear-gradient(135deg, #1b5e20, #43a047); display: flex; align-items: center; justify-content: center; font-size: 2rem; color: #fff; flex-shrink: 0; box-shadow: 0 4px 10px rgba(46,125,50,0.2); margin-top: 2px;">
-          🙋
+        <div style="width: 54px; height: 54px; border-radius: 16px; background: linear-gradient(135deg, #1b5e20, #43a047); display: flex; align-items: center; justify-content: center; color: #fff; flex-shrink: 0; box-shadow: 0 4px 10px rgba(46,125,50,0.2); margin-top: 2px;">
+          <svg style="width: 28px; height: 28px;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"/></svg>
         </div>
         <div style="flex: 1; min-width: 0;">
           <!-- Name & Overall Rating Badge -->
           <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 8px;">
             <h3 style="margin: 0; color: #1b5e20; font-size: 1.3rem; font-weight: 700; line-height: 1.2;">${vName}</h3>
             <span style="font-weight: 700; color: #b45309; background: #fffdf5; border: 1.5px solid #fde68a; padding: 3px 12px; border-radius: 16px; font-size: 0.88rem; white-space: nowrap; box-shadow: 0 2px 5px rgba(245,158,11,0.12);">
-              ⭐ ${stats.reviewsCount > 0 ? stats.overallRating.toFixed(1) : '0.0'} ${t('fd_overall_rating')}
+              Rating: ${stats.reviewsCount > 0 ? stats.overallRating.toFixed(1) : '0.0'} / 5.0
             </span>
           </div>
 
           <!-- Symmetrical Badges Grid -->
           <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center; font-size: 0.88rem; color: #374151; margin-bottom: 8px;">
-            <span style="background: #ffffff; border: 1px solid #c8e6c9; padding: 3px 10px; border-radius: 12px; font-weight: 500;">💰 ${t('fd_feedback_cost_utilization')} <strong style="color: #2e7d32;">${stats.costUtilization > 0 ? stats.costUtilization.toFixed(1) : '0'}/5</strong></span>
-            <span style="background: #ffffff; border: 1px solid #c8e6c9; padding: 3px 10px; border-radius: 12px; font-weight: 500;">⏱️ ${t('fd_feedback_speed_timeliness')} <strong style="color: #2e7d32;">${stats.speedTimeliness > 0 ? stats.speedTimeliness.toFixed(1) : '0'}/5</strong></span>
-            <span style="background: #ffffff; border: 1px solid #c8e6c9; padding: 3px 10px; border-radius: 12px; font-weight: 500;">📞 ${t('fd_feedback_communication')} <strong style="color: #2e7d32;">${stats.communication > 0 ? stats.communication.toFixed(1) : '0'}/5</strong></span>
-            <span style="background: #ffffff; border: 1px solid #c8e6c9; padding: 3px 10px; border-radius: 12px; font-weight: 500;">👍 <strong style="color: #2e7d32;">${stats.recommendationRate}%</strong> ${t('fd_recommend')}</span>
-            <span style="background: #ffffff; border: 1px solid #c8e6c9; padding: 3px 10px; border-radius: 12px; font-weight: 500;">✓ <strong style="color: #2e7d32;">${stats.tasksCompleted}</strong> ${t('fd_tasks')}</span>
+            <span style="background: #ffffff; border: 1px solid #c8e6c9; padding: 3px 10px; border-radius: 12px; font-weight: 500;">Cost: <strong style="color: #2e7d32;">${stats.costUtilization > 0 ? stats.costUtilization.toFixed(1) : '0'}/5</strong></span>
+            <span style="background: #ffffff; border: 1px solid #c8e6c9; padding: 3px 10px; border-radius: 12px; font-weight: 500;">Speed: <strong style="color: #2e7d32;">${stats.speedTimeliness > 0 ? stats.speedTimeliness.toFixed(1) : '0'}/5</strong></span>
+            <span style="background: #ffffff; border: 1px solid #c8e6c9; padding: 3px 10px; border-radius: 12px; font-weight: 500;">Comm: <strong style="color: #2e7d32;">${stats.communication > 0 ? stats.communication.toFixed(1) : '0'}/5</strong></span>
+            <span style="background: #ffffff; border: 1px solid #c8e6c9; padding: 3px 10px; border-radius: 12px; font-weight: 500;"><strong style="color: #2e7d32;">${stats.recommendationRate}%</strong> Recommendation</span>
+            <span style="background: #ffffff; border: 1px solid #c8e6c9; padding: 3px 10px; border-radius: 12px; font-weight: 500;"><strong style="color: #2e7d32;">${stats.tasksCompleted}</strong> Tasks</span>
           </div>
 
           <!-- Verification Status & Member Date -->
           <div style="font-size: 0.86rem; color: #2e7d32; font-weight: 600; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
             <span>${isFullyVerified ? t('fd_fully_verified') : t('fd_background_clearance_pending')}</span>
             <span style="color: #a5d6a7;">•</span>
-            <span style="color: #555; font-weight: 500;">${t('fd_joined')} ${memberSince}</span>
+            <span style="color: #555; font-weight: 500;">Member since ${memberSince}</span>
           </div>
         </div>
       </div>
@@ -340,38 +352,38 @@ async function viewVolunteerProfile(volId) {
     <!-- Multi-Level Verification Clearances -->
     <div style="margin-bottom: 1.2rem; background: #ffffff; border: 2px solid #e0e0e0; border-radius: 12px; padding: 1rem;">
       <h4 style="color: #1b5e20; margin-top: 0; margin-bottom: 10px; font-size: 1.05rem; display: flex; align-items: center; gap: 6px;">
-        🛡️ ${t('fd_verification_clearances')}
+        Verification Clearances
       </h4>
       <div style="display: flex; gap: 8px; flex-wrap: wrap;">
         <span class="skill-tag" style="background: ${isIdVerified ? '#e8f5e9' : '#ffebee'}; color: ${isIdVerified ? '#2e7d32' : '#c62828'}; border: 1px solid ${isIdVerified ? '#a5d6a7' : '#ef9a9a'}; font-weight: bold; font-size: 0.88rem; padding: 6px 12px;">
-          📄 ${t('fd_govt_photo_id')} ${isIdVerified ? t('fd_govt_id_verified') : t('fd_govt_id_pending')}
+          Photo ID: ${isIdVerified ? 'Verified' : 'Pending'}
         </span>
         <span class="skill-tag" style="background: ${isPoliceVerified ? '#e8f5e9' : '#fff3e0'}; color: ${isPoliceVerified ? '#2e7d32' : '#e65100'}; border: 1px solid ${isPoliceVerified ? '#a5d6a7' : '#ffe082'}; font-weight: bold; font-size: 0.88rem; padding: 6px 12px;">
-          👮 ${t('fd_police_check_label')} ${isPoliceVerified ? t('fd_police_check_approved') : t('fd_police_check_pending')}
+          Police Check: ${isPoliceVerified ? 'Approved' : 'Pending'}
         </span>
         <span class="skill-tag" style="background: ${isPhoneVerified ? '#e8f5e9' : '#ffebee'}; color: ${isPhoneVerified ? '#2e7d32' : '#c62828'}; border: 1px solid ${isPhoneVerified ? '#a5d6a7' : '#ef9a9a'}; font-weight: bold; font-size: 0.88rem; padding: 6px 12px;">
-          📞 ${t('fd_phone')} ${isPhoneVerified ? t('fd_phone_verified') : t('fd_phone_unverified')}
+          Phone: ${isPhoneVerified ? 'Verified' : 'Unverified'}
         </span>
         <span class="skill-tag" style="background: ${isEmailVerified ? '#e8f5e9' : '#ffebee'}; color: ${isEmailVerified ? '#2e7d32' : '#c62828'}; border: 1px solid ${isEmailVerified ? '#a5d6a7' : '#ef9a9a'}; font-weight: bold; font-size: 0.88rem; padding: 6px 12px;">
-          📧 ${t('fd_email')} ${isEmailVerified ? t('fd_email_verified') : t('fd_email_unverified')}
+          Email: ${isEmailVerified ? 'Verified' : 'Unverified'}
         </span>
       </div>
     </div>
 
     <!-- Contact Details -->
     <div style="margin-bottom: 1.2rem; background: #ffffff; border: 2px solid #e0e0e0; border-radius: 12px; padding: 1rem;">
-      <h4 style="color: #1565c0; margin-top: 0; margin-bottom: 10px; font-size: 1.05rem;">${t('fd_direct_contact')}</h4>
+      <h4 style="color: #1565c0; margin-top: 0; margin-bottom: 10px; font-size: 1.05rem;">Direct Contact</h4>
       <p style="margin: 6px 0; font-size: 1rem;">
-        <strong>${t('fd_phone')}</strong> <a href="tel:${vPhone}" style="color: #1565c0; font-weight: bold; text-decoration: none;">${vPhone}</a>
+        <strong>Phone:</strong> <a href="tel:${vPhone}" style="color: #1565c0; font-weight: bold; text-decoration: none;">${vPhone}</a>
       </p>
       <p style="margin: 6px 0; font-size: 1rem;">
-        <strong>${t('fd_email')}</strong> <a href="mailto:${vEmail}" style="color: #1565c0; text-decoration: none;">${vEmail}</a>
+        <strong>Email:</strong> <a href="mailto:${vEmail}" style="color: #1565c0; text-decoration: none;">${vEmail}</a>
       </p>
     </div>
 
     <!-- Skills & Expertise -->
     <div style="background: #ffffff; border: 2px solid #e0e0e0; border-radius: 12px; padding: 1rem;">
-      <h4 style="color: #2e7d32; margin-top: 0; margin-bottom: 10px; font-size: 1.05rem;">${t('fd_vol_skills_expertise')}</h4>
+      <h4 style="color: #2e7d32; margin-top: 0; margin-bottom: 10px; font-size: 1.05rem;">Skills &amp; Expertise</h4>
       <div style="display: flex; gap: 8px; flex-wrap: wrap;">
         ${skillsHtml}
       </div>
@@ -392,12 +404,16 @@ function populateSeniorBanner(senior) {
   const phoneEl = document.getElementById('linkedSeniorPhone');
   const addressEl = document.getElementById('linkedSeniorAddress');
   const nameInlineEl = document.getElementById('seniorNameInline');
+  const btnCallSenior = document.getElementById('btnCallSenior');
 
-  if (banner) banner.style.display = 'flex';
+  if (banner) banner.style.display = 'block';
   if (nameEl) nameEl.textContent = senior.name;
-  if (phoneEl) phoneEl.textContent = `📞 ${senior.phone || 'Phone not available'}`;
-  if (addressEl) addressEl.textContent = `🏠 ${senior.address || 'Address not available'}`;
+  if (phoneEl) phoneEl.textContent = `Phone: ${senior.phone || 'Not available'}`;
+  if (addressEl) addressEl.textContent = `Address: ${senior.address || 'Not available'}`;
   if (nameInlineEl) nameInlineEl.textContent = `${senior.name}'s`;
+  if (btnCallSenior && senior.phone) {
+    btnCallSenior.href = `tel:${senior.phone}`;
+  }
 }
 
 // ──────────────────────────────────────────────────────────
@@ -462,28 +478,42 @@ function renderSeniorHelpRequests(seniorRequests) {
 
   if (seniorRequests.length === 0) {
     container.innerHTML = `
-      <div style="padding: 2rem; text-align: center; border: 3px dashed #e65100; border-radius: var(--border-radius); background: #fff8e1;">
-        <p style="font-size: 1.2rem; color: #e65100; font-weight: bold;">${t('fd_no_requests')}</p>
-        <p style="font-size: 0.95rem; color: #777; margin-top: 6px;">${t('fd_no_requests_desc')}</p>
+      <div class="bg-amber-50/50 border-2 border-dashed border-amber-200 rounded-3xl p-8 text-center space-y-2">
+        <div class="w-12 h-12 mx-auto rounded-2xl bg-amber-100/80 text-amber-700 flex items-center justify-center shadow-xs">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+        </div>
+        <p class="text-base font-extrabold text-amber-900">${t('fd_no_requests')}</p>
+        <p class="text-xs font-semibold text-slate-500 max-w-md mx-auto">${t('fd_no_requests_desc')}</p>
       </div>`;
     return;
   }
 
   container.innerHTML = seniorRequests.map(req => {
     const urgencyBadge = req.urgency === 'emergency'
-      ? `<span class="badge badge-urgency-emergency">🚨 ${translateUrgency(req.urgency)}</span>`
+      ? `<span class="inline-flex items-center gap-1.5 px-3 py-1 bg-rose-50 text-rose-700 border border-rose-200/80 rounded-full text-xs font-extrabold tracking-wide shadow-2xs">
+           <span class="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping"></span>
+           Emergency: ${translateUrgency(req.urgency)}
+         </span>`
       : req.urgency === 'high'
-        ? `<span class="badge badge-urgency-high">⚠️ ${translateUrgency(req.urgency)}</span>`
-        : `<span class="badge badge-urgency">${translateUrgency(req.urgency)}</span>`;
+        ? `<span class="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-50 text-amber-800 border border-amber-200/80 rounded-full text-xs font-extrabold tracking-wide shadow-2xs">
+             <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+             High Priority: ${translateUrgency(req.urgency)}
+           </span>`
+        : `<span class="inline-flex items-center gap-1 px-3 py-1 bg-slate-100 text-slate-700 border border-slate-200/80 rounded-full text-xs font-bold shadow-2xs">
+             ${translateUrgency(req.urgency)}
+           </span>`;
 
     let statusBadge = '';
-    let borderAccent = '#e65100';
+    let accentGradient = 'from-amber-400 to-amber-500';
     let actionAreaHtml = '';
     let footerHelpText = t('fd_action_footer_help');
 
     if (req.status === 'accepted') {
-      statusBadge = `<span class="badge badge-accepted">${t('fd_assigned_in_progress')}</span>`;
-      borderAccent = '#2e7d32';
+      statusBadge = `<span class="inline-flex items-center gap-1.5 px-3.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200/80 rounded-full text-xs font-extrabold shadow-2xs">
+        <svg class="w-3.5 h-3.5 text-emerald-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
+        ${t('fd_assigned_in_progress')}
+      </span>`;
+      accentGradient = 'from-emerald-400 to-emerald-600';
       footerHelpText = t('fd_assigned_in_progress');
 
       const vol = req.volunteer;
@@ -493,20 +523,30 @@ function renderSeniorHelpRequests(seniorRequests) {
       const volId = vol ? (typeof vol === 'object' ? (vol._id || vol.id) : vol) : '';
 
       actionAreaHtml = `
-        <div class="request-details" style="background:#f1f8e9; border: 2px solid #a5d6a7; border-left: 5px solid #2e7d32; border-radius: 10px; padding: 1rem; margin-top: 1rem; width: 100%;">
-          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-            <div>
-              <p style="margin: 0; font-size: 1.1rem; color: #1b5e20;"><strong>${t('fd_approved_volunteer')}</strong> <strong>${volName}</strong></p>
-              ${volPhone ? `<p style="margin: 4px 0 0 0; font-size: 0.95rem;">📞 ${t('fd_volunteer_contact')} <a href="tel:${volPhone}" style="color: #1b5e20; font-weight: bold;">${volPhone}</a></p>` : ''}
-              ${volEmail ? `<p style="margin: 2px 0 0 0; font-size: 0.95rem;">📧 ${t('fd_volunteer_email')} ${volEmail}</p>` : ''}
+        <div class="mt-4 p-4 rounded-2xl bg-emerald-50/60 border border-emerald-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+          <div class="space-y-0.5">
+            <div class="flex items-center gap-2">
+              <div class="w-6 h-6 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs font-bold">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"/></svg>
+              </div>
+              <span class="text-xs font-extrabold text-emerald-950">${t('fd_approved_volunteer')}: <strong class="font-extrabold text-emerald-800">${volName}</strong></span>
             </div>
-            ${volId ? `<button type="button" class="btn btn-secondary" onclick="viewVolunteerProfile('${volId}')" style="padding: 6px 14px; font-size: 0.9rem; border-radius: 18px; background: #ffffff; color: #1b5e20; border: 1.5px solid #a5d6a7; font-weight: bold; cursor: pointer;">${t('btn_view_profile')}</button>` : ''}
+            ${volPhone ? `<p class="text-xs text-slate-600 font-medium pl-8">Phone: <a href="tel:${volPhone}" class="text-emerald-700 font-bold hover:underline">${volPhone}</a></p>` : ''}
+            ${volEmail ? `<p class="text-xs text-slate-500 font-medium pl-8">Email: ${volEmail}</p>` : ''}
           </div>
+          ${volId ? `
+            <button type="button" onclick="viewVolunteerProfile('${volId}')" class="px-3.5 py-2 bg-white hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-xl text-xs font-bold shadow-2xs transition-all flex items-center gap-1.5 self-start sm:self-auto">
+              <svg class="w-3.5 h-3.5 text-emerald-700" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+              ${t('btn_view_profile')}
+            </button>` : ''}
         </div>`;
 
     } else if (req.status === 'purchase_funded') {
-      statusBadge = `<span class="badge" style="background:#e8f5e9;color:#1b5e20;border:2px solid #2e7d32;font-weight:bold;">${t('fd_purchase_funded_progress')}</span>`;
-      borderAccent = '#2e7d32';
+      statusBadge = `<span class="inline-flex items-center gap-1.5 px-3.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200/80 rounded-full text-xs font-extrabold shadow-2xs">
+        <svg class="w-3.5 h-3.5 text-emerald-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        ${t('fd_purchase_funded_progress')}
+      </span>`;
+      accentGradient = 'from-emerald-400 to-emerald-600';
       footerHelpText = t('fd_purchase_funded_progress');
 
       const vol = req.volunteer;
@@ -514,104 +554,167 @@ function renderSeniorHelpRequests(seniorRequests) {
       const volPhone = vol ? escapeHTML(vol.phone || '') : '';
 
       actionAreaHtml = `
-        <div class="request-details" style="background:#e8f5e9; border: 2px solid #a5d6a7; border-left: 5px solid #2e7d32; border-radius: 10px; padding: 1rem; margin-top: 1rem; width: 100%;">
-          <p style="margin: 0; font-size: 1.05rem; color: #1b5e20;"><strong>${t('fd_funded_purchase_cost')}</strong> <strong style="font-size: 1.2rem; color: #2e7d32;">₹${req.actualPurchaseCost || 0}</strong></p>
-          <p style="margin: 4px 0 0 0; font-size: 0.95rem;">${t('fd_assisted_by')} <strong>${volName}</strong> ${volPhone ? `(📞 <a href="tel:${volPhone}" style="color: #1b5e20; font-weight: bold;">${volPhone}</a>)` : ''}</p>
+        <div class="mt-4 p-4 rounded-2xl bg-emerald-50/60 border border-emerald-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+          <div>
+            <div class="text-xs font-bold text-emerald-950">${t('fd_funded_purchase_cost')}: <strong class="text-sm font-extrabold text-emerald-700">₹${req.actualPurchaseCost || 0}</strong></div>
+            <div class="text-xs text-slate-600 mt-0.5">${t('fd_assisted_by')} <strong>${volName}</strong> ${volPhone ? `(<a href="tel:${volPhone}" class="text-emerald-700 font-bold hover:underline">${volPhone}</a>)` : ''}</div>
+          </div>
         </div>`;
 
     } else if (req.status === 'pending' && req.familyApprovalStatus === 'approved') {
-      statusBadge = `<span class="badge badge-pending">${t('fd_seeking_help')}</span>`;
-      borderAccent = '#1565c0';
+      statusBadge = `<span class="inline-flex items-center gap-1.5 px-3.5 py-1 bg-brand-50 text-brand-700 border border-brand-200/80 rounded-full text-xs font-extrabold shadow-2xs">
+        <span class="w-2 h-2 rounded-full bg-brand-500 animate-pulse"></span>
+        ${t('fd_seeking_help')}
+      </span>`;
+      accentGradient = 'from-brand-500 to-brand-600';
       footerHelpText = t('fd_seeking_help');
       actionAreaHtml = `
-        <div class="approval-actions" style="display: flex; gap: 12px; flex-wrap: wrap; margin-top: 1.2rem;">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4 pt-4 border-t border-slate-100">
           <button
-            class="btn"
+            type="button"
             onclick="fulfillRequestSelf('${req._id}')"
-            style="background-color: #2e7d32; color: #ffffff !important; font-weight: 700; flex: 1; min-width: 180px; padding: 14px; font-size: 1.05rem;"
+            class="inline-flex items-center justify-center gap-2 px-4 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm rounded-2xl shadow-xs transition-all active:scale-95"
             aria-label="Fulfill request yourself"
           >
-            ${t('btn_fulfill_myself')}
+            <svg class="w-4 h-4 text-white flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
+            <span class="whitespace-nowrap">${t('btn_fulfill_myself')}</span>
           </button>
           <button
-            class="btn"
+            type="button"
             onclick="approveVolunteer('${req._id}')"
-            style="background-color: #1565c0; color: #ffffff !important; font-weight: 700; flex: 1; min-width: 180px; padding: 14px; font-size: 1.05rem;"
+            class="inline-flex items-center justify-center gap-2 px-4 py-3 bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs sm:text-sm rounded-2xl shadow-xs transition-all active:scale-95"
             aria-label="Update shopping preference"
           >
-            ${t('btn_preference')}
+            <svg class="w-4 h-4 text-white flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75"/></svg>
+            <span class="whitespace-nowrap">${t('btn_preference')}</span>
           </button>
           <button
-            class="btn btn-reject"
+            type="button"
             onclick="openRejectModal('${req._id}')"
-            style="background-color: #c62828; color: #ffffff !important; font-weight: 700; flex: 1; min-width: 140px; padding: 14px; font-size: 1.05rem;"
+            class="inline-flex items-center justify-center gap-2 px-4 py-3 bg-white hover:bg-rose-50 text-rose-600 border border-rose-200 hover:border-rose-300 font-bold text-xs sm:text-sm rounded-2xl shadow-xs transition-all active:scale-95"
             aria-label="Reject request"
           >
-            ${t('fd_reject_request')}
+            <svg class="w-4 h-4 text-rose-600 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+            <span class="whitespace-nowrap">${t('fd_reject_request')}</span>
           </button>
         </div>`;
 
     } else {
-      statusBadge = `<span class="badge" style="background:#ffe082;color:#e65100;font-weight:bold;">${t('fd_awaiting_decision')}</span>`;
-      borderAccent = '#e65100';
+      statusBadge = `<span class="inline-flex items-center gap-1.5 px-3.5 py-1 bg-amber-50 text-amber-800 border border-amber-200/80 rounded-full text-xs font-extrabold shadow-2xs">
+        <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+        ${t('fd_awaiting_decision')}
+      </span>`;
+      accentGradient = 'from-amber-400 to-amber-600';
       actionAreaHtml = `
-        <div class="approval-actions" style="display: flex; gap: 12px; flex-wrap: wrap; margin-top: 1.2rem;">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4 pt-4 border-t border-slate-100">
           <button
-            class="btn"
+            type="button"
             onclick="fulfillRequestSelf('${req._id}')"
-            style="background-color: #2e7d32; color: #ffffff !important; font-weight: 700; flex: 1; min-width: 180px; padding: 14px; font-size: 1.05rem;"
+            class="inline-flex items-center justify-center gap-2 px-4 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm rounded-2xl shadow-xs transition-all active:scale-95"
             aria-label="Fulfill request yourself"
           >
-            ${t('btn_fulfill_myself')}
+            <svg class="w-4 h-4 text-white flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
+            <span class="whitespace-nowrap">${t('btn_fulfill_myself')}</span>
           </button>
 
           <button
-            class="btn"
+            type="button"
             onclick="approveVolunteer('${req._id}')"
-            style="background-color: #1565c0; color: #ffffff !important; font-weight: 700; flex: 1; min-width: 180px; padding: 14px; font-size: 1.05rem;"
+            class="inline-flex items-center justify-center gap-2 px-4 py-3 bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs sm:text-sm rounded-2xl shadow-xs transition-all active:scale-95"
             aria-label="Allot to volunteers"
           >
-            ${t('btn_allot_volunteers')}
+            <svg class="w-4 h-4 text-white flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z"/></svg>
+            <span class="whitespace-nowrap">${t('btn_allot_volunteers')}</span>
           </button>
 
           <button
-            class="btn btn-reject"
+            type="button"
             onclick="openRejectModal('${req._id}')"
-            style="background-color: #c62828; color: #ffffff !important; font-weight: 700; flex: 1; min-width: 140px; padding: 14px; font-size: 1.05rem;"
+            class="inline-flex items-center justify-center gap-2 px-4 py-3 bg-white hover:bg-rose-50 text-rose-600 border border-rose-200 hover:border-rose-300 font-bold text-xs sm:text-sm rounded-2xl shadow-xs transition-all active:scale-95"
             aria-label="Reject request"
           >
-            ${t('fd_reject_request')}
+            <svg class="w-4 h-4 text-rose-600 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+            <span class="whitespace-nowrap">${t('fd_reject_request')}</span>
           </button>
         </div>`;
     }
 
     return `
-      <div class="approval-card" id="seniorCard-${req._id}" style="border-left: 5px solid ${borderAccent};">
-        <div class="approval-card-header">
-          <div>
-            <div style="font-size: 1.3rem; font-weight: 700; color: ${borderAccent};">📋 ${escapeHTML(req.title)}</div>
-            <div style="font-size: 0.95rem; color: #777; margin-top: 4px;">
-              ${t('fd_category')} <strong>${translateCategory(req.category)}</strong> · ${t('fd_raised')} ${new Date(req.createdAt).toLocaleDateString()}
+      <div class="bg-white rounded-3xl border border-slate-200/90 shadow-premium hover:shadow-cardHover p-5 sm:p-6 mb-5 transition-all relative overflow-hidden group" id="seniorCard-${req._id}">
+        <!-- Top accent gradient line -->
+        <div class="h-1.5 bg-gradient-to-r ${accentGradient} -mx-5 sm:-mx-6 -mt-5 sm:-mt-6 mb-5"></div>
+
+        <!-- Header: Title, Category & Metadata + Status Badges -->
+        <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3 pb-3.5 border-b border-slate-100 mb-4">
+          <div class="space-y-1.5 flex-1 min-w-0">
+            <h3 class="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight leading-snug group-hover:text-brand-700 transition-colors">${escapeHTML(req.title)}</h3>
+            <div class="flex items-center gap-2 text-xs font-semibold text-slate-500 flex-wrap">
+              <span class="inline-flex items-center gap-1.5 text-brand-700 font-bold bg-brand-50 border border-brand-200/60 px-2.5 py-1 rounded-xl">
+                <svg class="w-3.5 h-3.5 text-brand-600 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 005.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 009.568 3z"/></svg>
+                <span>${translateCategory(req.category)}</span>
+              </span>
+              <span class="inline-flex items-center gap-1.5 text-slate-400 font-medium pl-1">
+                <svg class="w-3.5 h-3.5 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <span>${new Date(req.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+              </span>
             </div>
           </div>
-          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <div class="flex flex-col sm:items-end items-start gap-2 flex-shrink-0 sm:ml-auto">
             ${urgencyBadge}
             ${statusBadge}
           </div>
         </div>
 
-        ${req.description ? `<p style="margin-bottom: 1.2rem; color: #444; font-size: 1.05rem;">${escapeHTML(req.description)}</p>` : ''}
-        ${req.audioFile ? `<div class="request-audio-player"><label>🎙️ Senior's Spoken Voice Message:</label><audio controls src="${req.audioFile}"></audio></div>` : ''}
-        ${req.shoppingPreference ? `
-          <div style="margin-top: 10px; margin-bottom: 12px; padding: 10px 14px; background: #e3f2fd; border-left: 4px solid #1976d2; border-radius: 8px; font-size: 0.98rem; color: #0d47a1; font-weight: 600;">
-            🛒 <strong>${t('fd_shopping_preference')}</strong> ${escapeHTML(req.shoppingPreference)}
+        <!-- Description -->
+        ${req.description && req.description !== req.title ? `
+          <div class="text-sm font-medium text-slate-700 leading-relaxed mb-4 bg-slate-50/70 rounded-2xl p-3.5 border border-slate-100">
+            ${escapeHTML(req.description)}
           </div>` : ''}
 
+        <!-- Audio Player Callout: Studio Microphone Voice Note Design -->
+        ${req.audioFile ? `
+          <div class="bg-slate-50/90 border border-slate-200/90 rounded-2xl p-4 mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 shadow-2xs">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-2xl bg-indigo-50 border border-indigo-200/70 text-indigo-600 flex items-center justify-center shadow-xs flex-shrink-0">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15a3 3 0 01-3-3V4.5a3 3 0 116 0v7.5a3 3 0 01-3 3z" />
+                </svg>
+              </div>
+              <div>
+                <div class="flex items-center gap-1.5">
+                  <span class="text-xs font-extrabold text-slate-900 tracking-tight">Senior Voice Message</span>
+                  <span class="px-1.5 py-0.5 bg-indigo-100/80 text-indigo-700 text-[10px] font-bold rounded-md uppercase tracking-wider">Voice Note</span>
+                </div>
+                <span class="text-[11px] text-slate-500 font-medium">Recorded Voice Request Attached</span>
+              </div>
+            </div>
+            <audio controls src="${req.audioFile}" class="h-10 w-full sm:w-72 max-w-full rounded-xl"></audio>
+          </div>` : ''}
+
+        <!-- Shopping Preference Callout -->
+        ${req.shoppingPreference ? `
+          <div class="bg-amber-50/70 border border-amber-200/80 rounded-2xl px-4 py-3 mb-4 flex items-center justify-between gap-3 text-xs text-amber-950 shadow-2xs">
+            <div class="flex items-center gap-2.5">
+              <div class="w-7 h-7 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center flex-shrink-0">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25c-.669 0-1.189-.578-1.119-1.243l1.263-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+                </svg>
+              </div>
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <strong class="font-extrabold text-amber-950">${t('fd_shopping_preference') || 'Shopping Preference:'}</strong>
+                <span class="text-amber-800 font-semibold">${escapeHTML(req.shoppingPreference)}</span>
+              </div>
+            </div>
+          </div>` : ''}
+
+        <!-- Action Area -->
         ${actionAreaHtml}
 
-        <p style="font-size: 0.9rem; color: #777; margin-top: 1rem; margin-bottom: 0;">
-          ${footerHelpText}
-        </p>
+        <!-- Footer Help Note -->
+        <div class="text-[11px] font-semibold text-slate-400 mt-4 pt-3 border-t border-slate-100 flex items-center gap-1.5">
+          <svg class="w-3.5 h-3.5 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z"/></svg>
+          <span>${footerHelpText}</span>
+        </div>
       </div>`;
   }).join('');
 }
@@ -625,149 +728,208 @@ function renderApprovalQueue(awaitingRequests) {
 
   if (awaitingRequests.length === 0) {
     approvalList.innerHTML = `
-      <div style="padding: 2rem; text-align: center; border: 3px dashed #1565c0; border-radius: var(--border-radius); background: #e3f2fd;">
-        <p style="font-size: 1.2rem; color: #0d47a1; font-weight: bold;">${t('fd_no_volunteers')}</p>
-        <p style="font-size: 0.95rem; color: #555; margin-top: 6px;">${t('fd_no_volunteers_desc')}</p>
+      <div class="bg-brand-50/50 border-2 border-dashed border-brand-200 rounded-3xl p-8 text-center space-y-2">
+        <div class="w-12 h-12 mx-auto rounded-2xl bg-brand-100/80 text-brand-700 flex items-center justify-center shadow-xs">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z"/></svg>
+        </div>
+        <p class="text-base font-extrabold text-brand-950">${t('fd_no_volunteers')}</p>
+        <p class="text-xs font-semibold text-slate-500 max-w-md mx-auto">${t('fd_no_volunteers_desc')}</p>
       </div>`;
     return;
   }
 
   approvalList.innerHTML = awaitingRequests.map(req => {
-    const vol = req.volunteer;
-    const volName = vol ? escapeHTML(vol.name) : 'Volunteer Assigned';
-    const volPhone = vol ? escapeHTML(vol.phone || 'Not provided') : '—';
-    const volEmail = vol ? escapeHTML(vol.email || 'Not provided') : '—';
-    const volSkills = vol && vol.skills && vol.skills.length > 0
-      ? vol.skills.map(s => `<span class="skill-tag">${escapeHTML(s)}</span>`).join('')
-      : `<span class="skill-tag" style="background:#eee; color:#888;">${t('fd_no_skills_listed')}</span>`;
-
     const urgencyBadge = req.urgency === 'emergency'
-      ? `<span class="badge badge-urgency-emergency">🚨 ${translateUrgency(req.urgency)}</span>`
+      ? `<span class="inline-flex items-center gap-1.5 px-3 py-1 bg-rose-50 text-rose-700 border border-rose-200/80 rounded-full text-xs font-extrabold tracking-wide shadow-2xs">
+           <span class="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping"></span>
+           Emergency: ${translateUrgency(req.urgency)}
+         </span>`
       : req.urgency === 'high'
-        ? `<span class="badge badge-urgency-high">⚠️ ${translateUrgency(req.urgency)}</span>`
-        : `<span class="badge badge-urgency">${translateUrgency(req.urgency)}</span>`;
+        ? `<span class="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-50 text-amber-800 border border-amber-200/80 rounded-full text-xs font-extrabold tracking-wide shadow-2xs">
+             <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+             High Priority: ${translateUrgency(req.urgency)}
+           </span>`
+        : `<span class="inline-flex items-center gap-1 px-3 py-1 bg-slate-100 text-slate-700 border border-slate-200/80 rounded-full text-xs font-bold shadow-2xs">
+             ${translateUrgency(req.urgency)}
+           </span>`;
 
     return `
-      <div class="approval-card" id="approvalCard-${req._id}" style="border-left: 5px solid #1565c0;">
-        <div class="approval-card-header">
-          <div>
-            <div style="font-size: 1.3rem; font-weight: 700; color: #1565c0;">📋 ${escapeHTML(req.title)}</div>
-            <div style="font-size: 0.95rem; color: #777; margin-top: 4px;">
-              ${t('fd_category')} <strong>${translateCategory(req.category)}</strong> · ${t('fd_raised')} ${new Date(req.createdAt).toLocaleDateString()}
+      <div class="bg-white rounded-3xl border border-slate-200/90 shadow-premium hover:shadow-cardHover p-5 sm:p-6 mb-5 transition-all relative overflow-hidden group" id="approvalCard-${req._id}">
+        <!-- Top accent gradient line -->
+        <div class="h-1 bg-gradient-to-r from-brand-600 to-brand-700 -mx-5 sm:-mx-6 -mt-5 sm:-mt-6 mb-5"></div>
+
+        <!-- Header: Title, Category & Metadata + Status Badges -->
+        <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3 pb-3.5 border-b border-slate-100 mb-4">
+          <div class="space-y-1 flex-1 min-w-0">
+            <h3 class="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight leading-snug group-hover:text-brand-700 transition-colors">${escapeHTML(req.title)}</h3>
+            <div class="flex items-center gap-2 text-xs font-semibold text-slate-500 flex-wrap">
+              <span class="inline-flex items-center gap-1.5 text-brand-700 font-bold bg-brand-50 border border-brand-200/60 px-2.5 py-0.5 rounded-lg">
+                <svg class="w-3.5 h-3.5 text-brand-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 005.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 009.568 3z"/></svg>
+                ${translateCategory(req.category)}
+              </span>
+              <span>&bull;</span>
+              <span class="inline-flex items-center gap-1 text-slate-500">
+                <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                ${new Date(req.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+              </span>
             </div>
           </div>
-          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <div class="flex flex-col sm:items-end items-start gap-2 flex-shrink-0 sm:ml-auto">
             ${urgencyBadge}
-            <span class="badge" style="background:#bbdefb;color:#0d47a1;font-weight:bold;">${t('fd_pending_approval')}</span>
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-50 text-amber-800 border border-amber-200/80 rounded-full text-xs font-extrabold shadow-2xs whitespace-nowrap">
+              <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+              ${t('fd_pending_approval')}
+            </span>
           </div>
         </div>
 
-        ${req.description ? `<p style="margin-bottom: 1.2rem; color: #444;">${escapeHTML(req.description)}</p>` : ''}
-        ${req.audioFile ? `<div class="request-audio-player"><label>🎙️ Senior's Voice Message:</label><audio controls src="${req.audioFile}"></audio></div>` : ''}
-        ${req.shoppingPreference ? `
-          <div style="margin-top: 10px; margin-bottom: 12px; padding: 10px 14px; background: #e3f2fd; border-left: 4px solid #1976d2; border-radius: 8px; font-size: 0.98rem; color: #0d47a1; font-weight: 600;">
-            🛒 <strong>${t('fd_shopping_preference')}</strong> ${escapeHTML(req.shoppingPreference)}
+        <!-- Description -->
+        ${req.description && req.description !== req.title ? `
+          <div class="text-sm font-medium text-slate-700 leading-relaxed mb-4 bg-slate-50/70 rounded-2xl p-3.5 border border-slate-100">
+            ${escapeHTML(req.description)}
           </div>` : ''}
 
-        <div style="margin-top: 1rem;">
-          <h4 style="color: #1565c0; margin-bottom: 0.5rem; font-size: 1.1rem;">
-            👥 ${t('fd_volunteers_quoted_count', { count: (req.volunteerQuotes && req.volunteerQuotes.length) ? req.volunteerQuotes.length : 1 })}
-          </h4>
+        <!-- Audio Player Callout: Studio Microphone Voice Note Design -->
+        ${req.audioFile ? `
+          <div class="bg-slate-50/90 border border-slate-200/90 rounded-2xl p-4 mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 shadow-2xs">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-2xl bg-indigo-50 border border-indigo-200/70 text-indigo-600 flex items-center justify-center shadow-xs flex-shrink-0">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15a3 3 0 01-3-3V4.5a3 3 0 116 0v7.5a3 3 0 01-3 3z" />
+                </svg>
+              </div>
+              <div>
+                <div class="flex items-center gap-1.5">
+                  <span class="text-xs font-extrabold text-slate-900 tracking-tight">Senior Voice Message</span>
+                  <span class="px-1.5 py-0.5 bg-indigo-100/80 text-indigo-700 text-[10px] font-bold rounded-md uppercase tracking-wider">Voice Note</span>
+                </div>
+                <span class="text-[11px] text-slate-500 font-medium">Recorded Voice Request Attached</span>
+              </div>
+            </div>
+            <audio controls src="${req.audioFile}" class="h-10 w-full sm:w-72 max-w-full rounded-xl"></audio>
+          </div>` : ''}
+
+        <!-- Shopping Preference Callout -->
+        ${req.shoppingPreference ? `
+          <div class="bg-amber-50/70 border border-amber-200/80 rounded-2xl px-4 py-3 mb-4 flex items-center justify-between gap-3 text-xs text-amber-950 shadow-2xs">
+            <div class="flex items-center gap-2.5">
+              <div class="w-7 h-7 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center flex-shrink-0">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25c-.669 0-1.189-.578-1.119-1.243l1.263-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+                </svg>
+              </div>
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <strong class="font-extrabold text-amber-950">${t('fd_shopping_preference') || 'Shopping Preference:'}</strong>
+                <span class="text-amber-800 font-semibold">${escapeHTML(req.shoppingPreference)}</span>
+              </div>
+            </div>
+          </div>` : ''}
+
+        <!-- Quoted Volunteers Header -->
+        <div class="mt-4 pt-4 border-t border-slate-100">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-xs font-extrabold uppercase tracking-wider text-brand-900 flex items-center gap-2">
+              <svg class="w-4 h-4 text-brand-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z"/></svg>
+              ${t('fd_volunteers_quoted_count', { count: (req.volunteerQuotes && req.volunteerQuotes.length) ? req.volunteerQuotes.length : 1 }) || 'Volunteers Quoted'}
+            </span>
+          </div>
           
-          ${(() => {
-            const quotes = (req.volunteerQuotes && req.volunteerQuotes.length > 0)
-              ? req.volunteerQuotes
-              : (req.volunteer ? [{ volunteer: req.volunteer, serviceFee: req.serviceFee || 0, volunteerNotes: req.volunteerNotes || '' }] : []);
+          <div class="space-y-3">
+            ${(() => {
+              const quotes = (req.volunteerQuotes && req.volunteerQuotes.length > 0)
+                ? req.volunteerQuotes
+                : (req.volunteer ? [{ volunteer: req.volunteer, serviceFee: req.serviceFee || 0, volunteerNotes: req.volunteerNotes || '' }] : []);
 
-            return quotes.map((q, idx) => {
-              const volObj = q.volunteer;
-              if (!volObj) return '';
-              const vId = typeof volObj === 'object' ? (volObj._id || volObj.id) : volObj;
-              const vName = typeof volObj === 'object' ? escapeHTML(volObj.name) : 'Volunteer ' + (idx + 1);
-              const vPhone = typeof volObj === 'object' ? escapeHTML(volObj.phone || 'Not provided') : '—';
-              const vEmail = typeof volObj === 'object' ? escapeHTML(volObj.email || 'Not provided') : '—';
-              const vSkills = (typeof volObj === 'object' && volObj.skills && volObj.skills.length > 0)
-                ? volObj.skills.map(s => `<span class="skill-tag">${escapeHTML(s)}</span>`).join('')
-                : `<span class="skill-tag" style="background:#eee; color:#888;">${t('fd_no_skills_listed')}</span>`;
+              return quotes.map((q, idx) => {
+                const volObj = q.volunteer;
+                if (!volObj) return '';
+                const vId = typeof volObj === 'object' ? (volObj._id || volObj.id) : volObj;
+                const vName = typeof volObj === 'object' ? escapeHTML(volObj.name) : 'Volunteer ' + (idx + 1);
+                const vPhone = typeof volObj === 'object' ? escapeHTML(volObj.phone || 'Not provided') : '—';
+                const vEmail = typeof volObj === 'object' ? escapeHTML(volObj.email || 'Not provided') : '—';
+                const vSkills = (typeof volObj === 'object' && volObj.skills && volObj.skills.length > 0)
+                  ? volObj.skills.map(s => `<span class="inline-block bg-slate-100 text-slate-700 text-[10px] font-bold px-2 py-0.5 rounded-md">${escapeHTML(s)}</span>`).join(' ')
+                  : `<span class="text-[10px] text-slate-400 font-semibold">${t('fd_no_skills_listed')}</span>`;
 
-              const feeText = (q.serviceFee !== undefined && q.serviceFee > 0) ? `₹${q.serviceFee}` : '₹0 (Voluntary / Free Service)';
-              const tasksCompleted = typeof volObj === 'object' ? (volObj.tasksCompleted || 0) : 0;
-              
-              let newVolunteerBadge = '';
-              if (tasksCompleted === 0) {
-                newVolunteerBadge = `
-                  <div style="margin-top: 10px; padding: 8px 12px; background: #fff3e0; border: 1.5px dashed #ff9800; border-radius: 8px; font-size: 0.92rem; color: #e65100; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 5px rgba(230,81,0,0.05);">
-                    🌱 <span>New Helper! Help them complete their 1st task!</span>
+                const feeText = (q.serviceFee !== undefined && q.serviceFee > 0) ? `₹${q.serviceFee}` : '₹0 (Voluntary)';
+                const tasksCompleted = typeof volObj === 'object' ? (volObj.tasksCompleted || 0) : 0;
+                
+                let newVolunteerBadge = '';
+                if (tasksCompleted === 0) {
+                  newVolunteerBadge = `
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-50 text-amber-700 border border-amber-200/80 rounded-md text-[10px] font-extrabold">
+                      New Volunteer
+                    </span>`;
+                }
+
+                return `
+                  <div class="p-4 rounded-2xl bg-slate-50/80 border border-slate-200/90 flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all hover:bg-white hover:border-brand-300 hover:shadow-xs">
+                    <!-- Left: Volunteer details -->
+                    <div class="flex items-start gap-3">
+                      <div class="w-10 h-10 rounded-xl bg-brand-100 text-brand-700 flex items-center justify-center flex-shrink-0 shadow-2xs">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"/></svg>
+                      </div>
+                      <div class="space-y-1">
+                        <div class="flex items-center gap-2 flex-wrap">
+                          <h4 class="text-sm font-extrabold text-slate-900">${vName}</h4>
+                          ${newVolunteerBadge}
+                          <button type="button" onclick="viewVolunteerProfile('${vId}')" class="px-2.5 py-0.5 bg-brand-50 hover:bg-brand-100 text-brand-700 border border-brand-200 rounded-lg text-[10px] font-bold transition-all">
+                            ${t('btn_view_profile')}
+                          </button>
+                        </div>
+                        <div class="text-xs text-slate-500 font-medium">Phone: <a href="tel:${vPhone}" class="text-brand-700 font-bold hover:underline">${vPhone}</a> &bull; Email: ${vEmail}</div>
+                        <div class="pt-0.5 flex flex-wrap gap-1">${vSkills}</div>
+                        ${q.volunteerNotes ? `<p class="text-xs text-slate-600 italic bg-white p-2 rounded-lg border border-slate-200/60 mt-1.5">"${escapeHTML(q.volunteerNotes)}"</p>` : ''}
+                      </div>
+                    </div>
+
+                    <!-- Right: Fee badge and Approval Button -->
+                    <div class="flex flex-col sm:flex-row md:flex-col items-start md:items-end justify-between gap-2.5 flex-shrink-0">
+                      <div class="px-3 py-1.5 bg-emerald-50 border border-emerald-200/80 rounded-xl text-xs font-bold text-emerald-900">
+                        ${t('fd_quoted_service_charge')} <strong class="text-sm font-extrabold text-emerald-700">${feeText}</strong>
+                      </div>
+                      <button
+                        type="button"
+                        onclick="openSelectVolunteerConfirmModal('${req._id}', '${vId}', '${escapeHTML(vName).replace(/'/g, "\\'")}', '${escapeHTML(feeText).replace(/'/g, "\\'")}', ${tasksCompleted === 0})"
+                        class="w-full md:w-auto px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs rounded-xl shadow-xs transition-all active:scale-95 flex items-center justify-center gap-1.5"
+                        aria-label="Select and approve this volunteer"
+                      >
+                        <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
+                        ${t('btn_select_approve_vol', { name: vName, fee: feeText })}
+                      </button>
+                    </div>
                   </div>`;
-              }
-
-              return `
-                <div class="volunteer-profile-card" style="background: #ffffff; border: 2px solid #1565c0; border-radius: 12px; padding: 1.2rem; margin-top: 0.8rem; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
-                  <div style="display: flex; gap: 16px; align-items: flex-start; flex-wrap: wrap;">
-                    <div class="volunteer-avatar" aria-hidden="true" style="font-size: 2rem;">🙋</div>
-                    <div class="volunteer-info" style="flex: 1; min-width: 200px;">
-                      <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 4px;">
-                        <h4 style="margin: 0; font-size: 1.25rem; color: var(--color-primary-dark);">${vName}</h4>
-                        <button type="button" class="btn btn-secondary" onclick="viewVolunteerProfile('${vId}')" style="padding: 4px 12px; font-size: 0.88rem; border-radius: 16px; background: #e3f2fd; color: #1565c0; border: 1.5px solid #90caf9; font-weight: bold; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
-                          ${t('btn_view_profile')}
-                        </button>
-                      </div>
-                      <p style="margin: 4px 0;">📞 <a href="tel:${vPhone}" style="color: var(--color-primary-dark); font-weight: bold;">${vPhone}</a></p>
-                      <p style="margin: 4px 0;">📧 ${vEmail}</p>
-                      <div class="volunteer-skills" style="margin-top: 6px;">${vSkills}</div>
-                      ${newVolunteerBadge}
-                    </div>
-
-                    <div style="flex: 1; min-width: 250px;">
-                      <div style="padding: 12px 16px; background-color: #e8f5e9; border: 3px solid #2e7d32; border-radius: 10px;">
-                        <span style="font-size: 1.15rem; font-weight: 800; color: #1b5e20;">
-                          💰 ${t('fd_quoted_service_charge')} ${feeText}
-                        </span>
-                        <p style="color: #2e7d32; font-size: 0.9rem; margin-top: 4px; margin-bottom: 0;">
-                          ${t('fd_extra_purchase_costs_help')}
-                        </p>
-                        ${q.volunteerNotes ? `<p style="color: #333; font-size: 0.92rem; margin-top: 6px; margin-bottom: 0; font-style: italic; background: #fff; padding: 6px 10px; border-radius: 6px; border-left: 3px solid #2e7d32;">💬 "${escapeHTML(q.volunteerNotes)}"</p>` : ''}
-                      </div>
-
-                      <div style="margin-top: 10px;">
-                        <button
-                          class="btn"
-                          onclick="openSelectVolunteerConfirmModal('${req._id}', '${vId}', '${escapeHTML(vName).replace(/'/g, "\\'")}', '${escapeHTML(feeText).replace(/'/g, "\\'")}', ${tasksCompleted === 0})"
-                          style="background-color: #1565c0; color: #ffffff !important; font-weight: 700; width: 100%; padding: 12px; font-size: 1.05rem;"
-                          aria-label="Select and approve this volunteer"
-                        >
-                          ${t('btn_select_approve_vol', { name: vName, fee: feeText })}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>`;
-            }).join('');
-          })()}
+              }).join('');
+            })()}
+          </div>
         </div>
 
         <!-- Additional Actions: Caregiver Decision -->
-        <div class="approval-actions" style="display: flex; gap: 12px; flex-wrap: wrap; margin-top: 1.2rem;">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mt-4 pt-4 border-t border-slate-100">
           <button
-            class="btn"
+            type="button"
             onclick="fulfillRequestSelf('${req._id}')"
-            style="background-color: #2e7d32; color: #ffffff !important; font-weight: 700; flex: 1; min-width: 180px; padding: 12px; font-size: 1rem;"
+            class="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm rounded-xl shadow-xs transition-all active:scale-95"
             aria-label="Fulfill request yourself"
           >
+            <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
             ${t('btn_fulfill_myself')}
           </button>
 
           <button
-            class="btn btn-reject"
+            type="button"
             onclick="openRejectModal('${req._id}')"
-            style="background-color: #c62828; color: #ffffff !important; font-weight: 700; flex: 1; min-width: 140px; padding: 12px; font-size: 1rem;"
+            class="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-white hover:bg-rose-50 text-rose-600 border border-rose-200 hover:border-rose-300 font-bold text-xs sm:text-sm rounded-xl shadow-xs transition-all active:scale-95"
             aria-label="Reject volunteer requests"
           >
+            <svg class="w-4 h-4 text-rose-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
             ${t('btn_reject_all_quotes')}
           </button>
         </div>
 
-        <p style="font-size: 0.9rem; color: #777; margin-top: 1rem; margin-bottom: 0;">
+        <!-- Footer Help Note -->
+        <p class="text-[11px] font-semibold text-slate-400 mt-3 pt-2 border-t border-slate-100 flex items-center gap-1.5">
+          <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z"/></svg>
           ${t('fd_select_vol_assigned_help')}
         </p>
       </div>`;
@@ -800,9 +962,12 @@ function renderCompletionVerificationQueue(pendingVerifications) {
 
   if (pendingVerifications.length === 0) {
     container.innerHTML = `
-      <div style="padding: 1.2rem; text-align: center; border: 2px dashed var(--color-primary-light); border-radius: var(--border-radius); background: #f1f8e9;">
-        <p style="color: var(--color-primary-dark); font-weight: bold;">${t('fd_no_verifications')}</p>
-        <p style="font-size: 0.95rem; margin-top: 5px;">${t('fd_no_verifications_desc')}</p>
+      <div class="bg-emerald-50/50 border-2 border-dashed border-emerald-200 rounded-3xl p-8 text-center space-y-2">
+        <div class="w-12 h-12 mx-auto rounded-2xl bg-emerald-100/80 text-emerald-700 flex items-center justify-center shadow-xs">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        </div>
+        <p class="text-base font-extrabold text-emerald-950">${t('fd_no_verifications')}</p>
+        <p class="text-xs font-semibold text-slate-500 max-w-md mx-auto">${t('fd_no_verifications_desc')}</p>
       </div>`;
     return;
   }
@@ -832,25 +997,28 @@ function renderCompletionVerificationQueue(pendingVerifications) {
 
       const isZeroPurchaseCost = Number(req.actualPurchaseCost || 0) === 0;
       const approveBtnHtml = isZeroPurchaseCost ? `
-        <button type="button" onclick="directReleaseServiceCharge('${req._id}', '${resolvedFee}', '${escapeHTML(volName).replace(/'/g, "\\'")}')" style="background-color: #2e7d32; color: #ffffff !important; padding: 12px 20px; font-size: 1.05rem; font-weight: 700; cursor: pointer; border-radius: 10px; border: none; display: flex; align-items: center; justify-content: center; text-align: center; gap: 8px; box-shadow: 0 4px 10px rgba(46,125,50,0.3); min-height: 52px; width: 340px; max-width: 95%;">
-          ✅ ${t('btn_release_service_charge', { fee: resolvedFee })}
+        <button type="button" onclick="directReleaseServiceCharge('${req._id}', '${resolvedFee}', '${escapeHTML(volName).replace(/'/g, "\\'")}')" class="w-full sm:w-auto px-5 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm rounded-xl shadow-xs transition-all active:scale-95 flex items-center justify-center gap-2">
+          <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
+          ${t('btn_release_service_charge', { fee: resolvedFee })}
         </button>` : `
-        <button type="button" onclick="approvePurchaseFunding('${req._id}', '${req.actualPurchaseCost || 0}', '${resolvedFee}', '${escapeHTML(volName).replace(/'/g, "\\'")}')" style="background-color: #2e7d32; color: #ffffff !important; padding: 12px 20px; font-size: 1.05rem; font-weight: 700; cursor: pointer; border-radius: 10px; border: none; display: flex; align-items: center; justify-content: center; text-align: center; gap: 8px; box-shadow: 0 4px 10px rgba(46,125,50,0.3); min-height: 52px; width: 320px; max-width: 90%;">
-          ✅ ${t('btn_approve_payment_release', { cost: req.actualPurchaseCost || 0 })}
+        <button type="button" onclick="approvePurchaseFunding('${req._id}', '${req.actualPurchaseCost || 0}', '${resolvedFee}', '${escapeHTML(volName).replace(/'/g, "\\'")}')" class="w-full sm:w-auto px-5 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm rounded-xl shadow-xs transition-all active:scale-95 flex items-center justify-center gap-2">
+          <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v.375c0 .621.504 1.125 1.125 1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z"/></svg>
+          ${t('btn_approve_payment_release', { cost: req.actualPurchaseCost || 0 })}
         </button>`;
 
       cardContent = `
-        <div style="margin: 12px 0; padding: 16px 18px; background: #fff8e1; border-left: 5px solid #e65100; border-radius: 12px; font-size: 1rem; color: #bf360c;">
-          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; border-bottom: 1px dashed #ffe0b2; padding-bottom: 8px;">
-            <span style="font-weight: 700; color: #e65100; font-size: 1.2rem;">💳 ${t('fd_vol_submitted_purchase_cost')} <strong style="font-size: 1.3rem; color: #d84315;">₹${req.actualPurchaseCost || 0}</strong></span>
-            ${req.purchaseNotes ? `<span style="font-size: 1rem; color: #444; font-style: italic; background: #fff3e0; padding: 4px 10px; border-radius: 6px;">${t('fd_notes')} "${escapeHTML(req.purchaseNotes)}"</span>` : ''}
+        <div class="my-3 p-4 bg-amber-50/80 border border-amber-200/80 rounded-2xl space-y-3">
+          <div class="flex items-center justify-between flex-wrap gap-2 pb-2.5 border-b border-amber-200/60">
+            <span class="text-sm font-extrabold text-amber-950">${t('fd_vol_submitted_purchase_cost') || 'Submitted Purchase Cost:'} <strong class="text-base text-amber-700">₹${req.actualPurchaseCost || 0}</strong></span>
+            ${req.purchaseNotes ? `<span class="text-xs text-slate-700 italic bg-white px-2.5 py-1 rounded-lg border border-amber-200">${t('fd_notes')}: "${escapeHTML(req.purchaseNotes)}"</span>` : ''}
           </div>
-          <div style="display: flex; gap: 16px; align-items: center; flex-wrap: wrap; margin-top: 8px;">
-            <div style="flex: 1; min-width: 280px;">${proofSlider}</div>
-            <div style="flex: 1; min-width: 240px; display: flex; flex-direction: column; gap: 16px; justify-content: center; align-items: center; padding: 0 10px;">
+          <div class="flex flex-col md:flex-row items-center gap-4">
+            <div class="w-full md:w-auto flex-1">${proofSlider}</div>
+            <div class="w-full md:w-auto flex flex-col gap-2.5 justify-center">
               ${approveBtnHtml}
-              <button type="button" onclick="openRejectRevisionModal('${req._id}', '${escapeHTML(req.title).replace(/'/g, "\\'")}', '${escapeHTML(req.category).replace(/'/g, "\\'")}')" style="background-color: #c62828; color: #ffffff !important; padding: 12px 20px; font-size: 1.05rem; font-weight: 700; cursor: pointer; border-radius: 10px; border: none; display: flex; align-items: center; justify-content: center; text-align: center; gap: 8px; box-shadow: 0 4px 10px rgba(198,40,40,0.3); min-height: 52px; width: 320px; max-width: 90%;">
-                ❌ ${t('btn_reject_request_revision')}
+              <button type="button" onclick="openRejectRevisionModal('${req._id}', '${escapeHTML(req.title).replace(/'/g, "\\'")}', '${escapeHTML(req.category).replace(/'/g, "\\'")}')" class="w-full sm:w-auto px-5 py-3 bg-white hover:bg-rose-50 text-rose-600 border border-rose-200 hover:border-rose-300 font-bold text-xs sm:text-sm rounded-xl shadow-xs transition-all active:scale-95 flex items-center justify-center gap-2">
+                <svg class="w-4 h-4 text-rose-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/></svg>
+                ${t('btn_reject_request_revision')}
               </button>
             </div>
           </div>
@@ -862,63 +1030,83 @@ function renderCompletionVerificationQueue(pendingVerifications) {
       let proofSlider = renderProofSliderHtml(req._id, finalImages);
 
       let proofHtml = proofSlider ? `
-        <div style="margin: 1rem 0; background: #ffffff; padding: 12px; border-radius: 12px; border: 2px solid var(--color-primary-light);">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-            <label style="font-weight: bold; color: var(--color-primary-dark); font-size: 1rem;">${t('fd_uploaded_proof')}</label>
-          </div>
+        <div class="my-3 p-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl">
+          <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">${t('fd_uploaded_proof')}</label>
           ${proofSlider}
-        </div>` : `<div style="margin: 10px 0; color: #888; font-style: italic;">No photo proof attached by volunteer.</div>`;
+        </div>` : `<div class="my-2 text-xs text-slate-400 italic">No photo proof attached by volunteer.</div>`;
 
       cardContent = `
-        <div style="font-size: 1rem; color: #444; margin-bottom: 10px;">
-          <strong>${t('fd_vol_completion_notes')}</strong> "${escapeHTML(req.resolutionNotes || 'Task completed & store receipt uploaded.')}"
+        <div class="text-xs text-slate-700 font-medium mb-3">
+          <strong>${t('fd_vol_completion_notes')}:</strong> "${escapeHTML(req.resolutionNotes || 'Task completed & store receipt uploaded.')}"
         </div>
         ${proofHtml}
-        <div style="margin-top: 14px; padding: 14px 16px; background: #f1f8e9; border: 2px solid #a5d6a7; border-left: 5px solid #2e7d32; border-radius: 10px; margin-bottom: 12px;">
-          <div style="font-size: 1rem; font-weight: 700; color: #1b5e20; margin-bottom: 4px;">
-            💰 ${t('fd_service_charge_release')} <strong style="font-size: 1.2rem;">₹${resolvedFee > 0 ? resolvedFee : 0}</strong>
+        <div class="p-3.5 bg-emerald-50/80 border border-emerald-200/80 rounded-2xl my-3 flex items-center justify-between flex-wrap gap-2">
+          <div>
+            <div class="text-xs font-bold text-emerald-950">${t('fd_service_charge_release')}: <strong class="text-sm font-extrabold text-emerald-700">₹${resolvedFee > 0 ? resolvedFee : 0}</strong></div>
+            <div class="text-[11px] text-emerald-700 mt-0.5">${t('fd_receipt_verify_help')}</div>
           </div>
-          <div style="font-size: 0.88rem; color: #388e3c;">${t('fd_receipt_verify_help')}</div>
         </div>
-        <div class="approval-actions" style="display: flex; gap: 12px; margin-top: 1rem; flex-wrap: wrap;">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mt-3">
           <button
-            class="btn btn-approve"
+            type="button"
             onclick="verifyTaskCompletion('${req._id}', true)"
-            style="background-color: #2e7d32; flex: 1; padding: 14px; font-size: 1.05rem; font-weight: 700; min-width: 220px;"
+            class="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm rounded-xl shadow-xs transition-all active:scale-95"
           >
-            ✅ ${t('btn_verify_receipt_release', { fee: resolvedFee > 0 ? resolvedFee : 0 })}
+            <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
+            ${t('btn_verify_receipt_release', { fee: resolvedFee > 0 ? resolvedFee : 0 })}
           </button>
           <button
-            class="btn btn-reject"
+            type="button"
             onclick="verifyTaskCompletion('${req._id}', false)"
-            style="background-color: #c62828; color: #ffffff !important; flex: 1; padding: 14px; font-size: 1.05rem; font-weight: 700; min-width: 160px;"
+            class="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-white hover:bg-rose-50 text-rose-600 border border-rose-200 hover:border-rose-300 font-bold text-xs sm:text-sm rounded-xl shadow-xs transition-all active:scale-95"
           >
+            <svg class="w-4 h-4 text-rose-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>
             ${t('btn_reject_report_issue')}
           </button>
         </div>`;
     }
 
     return `
-      <div class="approval-card" id="completionCard-${req._id}" style="border-color: var(--color-primary-dark); background: #f9fbe7; margin-bottom: 1.5rem;">
-        <div class="approval-card-header">
-          <div>
-            <span class="badge badge-urgency">${translateCategory(req.category)}</span>
-            <h3 style="color: var(--color-primary-dark); margin-top: 6px; font-size: 1.3rem;">${escapeHTML(req.title)}</h3>
+      <div class="bg-white rounded-3xl border border-slate-200/90 shadow-premium hover:shadow-cardHover p-5 sm:p-6 mb-5 transition-all relative overflow-hidden group" id="completionCard-${req._id}">
+        <!-- Top accent gradient line -->
+        <div class="h-1 bg-gradient-to-r from-emerald-500 to-emerald-600 -mx-5 sm:-mx-6 -mt-5 sm:-mt-6 mb-5"></div>
+
+        <!-- Header: Title, Category & Metadata + Status Badges -->
+        <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3 pb-3.5 border-b border-slate-100 mb-4">
+          <div class="space-y-1 flex-1 min-w-0">
+            <h3 class="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight leading-snug group-hover:text-emerald-700 transition-colors">${escapeHTML(req.title)}</h3>
+            <div class="flex items-center gap-2 text-xs font-semibold text-slate-500 flex-wrap">
+              <span class="inline-flex items-center gap-1.5 text-brand-700 font-bold bg-brand-50 border border-brand-200/60 px-2.5 py-0.5 rounded-lg">
+                <svg class="w-3.5 h-3.5 text-brand-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 005.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 009.568 3z"/></svg>
+                ${translateCategory(req.category)}
+              </span>
+            </div>
           </div>
-          <span class="badge" style="background-color: var(--color-primary-dark); color: #fff;">${t('fd_proof_verifications_title')}</span>
+          <div class="flex flex-col sm:items-end items-start gap-2 flex-shrink-0 sm:ml-auto">
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200/80 rounded-full text-xs font-extrabold shadow-2xs whitespace-nowrap">
+              <svg class="w-3.5 h-3.5 text-emerald-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              ${t('fd_proof_verifications_title')}
+            </span>
+          </div>
         </div>
 
         ${cardContent}
 
-        <div class="volunteer-profile-card" style="margin-top: 12px;">
-          <div class="volunteer-avatar">🤝</div>
-          <div class="volunteer-info" style="flex: 1;">
-            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
-              <h4 style="margin: 0;">${escapeHTML(volName)}</h4>
-              ${volId ? `<button type="button" class="btn btn-secondary" onclick="viewVolunteerProfile('${volId}')" style="padding: 4px 12px; font-size: 0.85rem; border-radius: 16px; background: #e3f2fd; color: #1565c0; border: 1.5px solid #90caf9; font-weight: bold; cursor: pointer;">${t('btn_view_profile')}</button>` : ''}
+        <!-- Volunteer Info Row -->
+        <div class="mt-4 p-3.5 rounded-2xl bg-slate-50/80 border border-slate-200/70 flex items-center justify-between flex-wrap gap-3">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-xl bg-brand-100 text-brand-700 flex items-center justify-center flex-shrink-0">
+              <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"/></svg>
             </div>
-            <p style="margin-top: 4px;">📞 ${t('fd_phone')} ${escapeHTML(volPhone)}</p>
+            <div>
+              <h4 class="text-xs font-extrabold text-slate-900">${escapeHTML(volName)}</h4>
+              <p class="text-[11px] text-slate-500 font-medium">Phone: ${escapeHTML(volPhone)}</p>
+            </div>
           </div>
+          ${volId ? `
+            <button type="button" onclick="viewVolunteerProfile('${volId}')" class="px-3 py-1.5 bg-white hover:bg-brand-50 text-brand-700 border border-brand-200 rounded-xl text-xs font-bold shadow-2xs transition-all">
+              ${t('btn_view_profile')}
+            </button>` : ''}
         </div>
       </div>`;
   }).join('');
@@ -1083,7 +1271,7 @@ window.setStarRating = function(metric, count) {
   }
   const scoreBadge = document.getElementById(`${metric}Text`);
   if (scoreBadge) {
-    scoreBadge.textContent = `${count} / 5 ⭐`;
+    scoreBadge.textContent = `${count} / 5`;
     scoreBadge.classList.remove('unrated');
   }
 };
@@ -1096,7 +1284,7 @@ window.hoverStarRating = function(metric, count) {
   }
   const scoreBadge = document.getElementById(`${metric}Text`);
   if (scoreBadge) {
-    scoreBadge.textContent = `${count} / 5 ⭐`;
+    scoreBadge.textContent = `${count} / 5`;
     scoreBadge.classList.remove('unrated');
   }
 };
@@ -1112,7 +1300,7 @@ window.resetStarRating = function(metric) {
   const scoreBadge = document.getElementById(`${metric}Text`);
   if (scoreBadge) {
     if (currentVal > 0) {
-      scoreBadge.textContent = `${currentVal} / 5 ⭐`;
+      scoreBadge.textContent = `${currentVal} / 5`;
       scoreBadge.classList.remove('unrated');
     } else {
       scoreBadge.textContent = 'Select Rating';
@@ -1187,7 +1375,7 @@ window.handleFeedbackSubmit = async function(event) {
         chooseAgain,
         additionalFeedback
       });
-      showToast('⭐ Thank you! Your rating & review have been submitted.', 'success');
+      showToast('Thank you! Your rating and review have been submitted.', 'success');
     } catch (err) {
       console.error('Error submitting volunteer feedback:', err);
     }
@@ -1197,7 +1385,7 @@ window.handleFeedbackSubmit = async function(event) {
   if (modal) modal.style.display = 'none';
   if (btnSubmit) {
     btnSubmit.disabled = false;
-    btnSubmit.textContent = '⭐ Submit Rating & Finish ➔';
+    btnSubmit.textContent = 'Submit Rating & Finish';
   }
   loadFamilyDashboard();
 };
@@ -1239,11 +1427,11 @@ function renderProofSliderHtml(reqId, rawImages) {
       </div>
 
       <button type="button" onclick="event.stopPropagation(); navigateProofSlider('${reqId}', -1)" style="position: absolute; top: 50%; left: 8px; transform: translateY(-50%); background: rgba(0,0,0,0.6); color: #ffffff; border: none; border-radius: 50%; width: 40px; height: 40px; font-size: 1.3rem; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 3; box-shadow: 0 2px 8px rgba(0,0,0,0.3); transition: all 0.15s ease;" onmouseover="this.style.background='rgba(0,0,0,0.9)'; this.style.transform='translateY(-50%) scale(1.1)'" onmouseleave="this.style.background='rgba(0,0,0,0.6)'; this.style.transform='translateY(-50%) scale(1)'">
-        ◀
+        &#9664;
       </button>
 
       <button type="button" onclick="event.stopPropagation(); navigateProofSlider('${reqId}', 1)" style="position: absolute; top: 50%; right: 8px; transform: translateY(-50%); background: rgba(0,0,0,0.6); color: #ffffff; border: none; border-radius: 50%; width: 40px; height: 40px; font-size: 1.3rem; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 3; box-shadow: 0 2px 8px rgba(0,0,0,0.3); transition: all 0.15s ease;" onmouseover="this.style.background='rgba(0,0,0,0.9)'; this.style.transform='translateY(-50%) scale(1.1)'" onmouseleave="this.style.background='rgba(0,0,0,0.6)'; this.style.transform='translateY(-50%) scale(1)'">
-        ▶
+        &#9654;
       </button>
     </div>`;
 }
@@ -1282,7 +1470,7 @@ window.directReleaseServiceCharge = async function(requestId, feeAmount, volName
     });
 
     if (res.ok && res.data.success) {
-      showToast('✅ Volunteer service charge released!', 'success');
+      showToast('Volunteer service charge released!', 'success');
       currentFeedbackRequestId = requestId;
       let resolvedVolName = volName || 'Assigned Volunteer';
       if (res.data.request && res.data.request.volunteer) {
@@ -1307,7 +1495,7 @@ window.directApprovePurchaseFunding = async function(requestId, serviceFee, volN
       transactionId: `TXN${Math.floor(10000000 + Math.random() * 90000000)}`
     });
     if (res.ok && res.data.success) {
-      showToast('✅ Purchase approved! Volunteer can now complete the task.', 'success');
+      showToast('Purchase approved! Volunteer can now complete the task.', 'success');
       loadFamilyDashboard();
     } else {
       alert(res.data?.message || 'Error approving purchase funding');
@@ -1388,7 +1576,7 @@ window.submitPurchaseCostRevision = async function() {
     });
     if (res.ok && res.data.success) {
       closeRejectRevisionModal();
-      showToast('✉️ Revision note sent to volunteer! Task returned for updated cost/proof.', 'info');
+      showToast('Revision note sent to volunteer! Task returned for updated cost/proof.', 'info');
       loadFamilyDashboard();
     } else {
       alert(res.data?.message || 'Error rejecting purchase cost');
@@ -1404,7 +1592,7 @@ async function fulfillRequestSelf(requestId) {
   const res = await apiCall(`/requests/${requestId}/family-fulfill`, 'PUT');
 
   if (res.ok && res.data.success) {
-    showToast('✅ Request marked as fulfilled by you! Your senior has been notified.', 'success');
+    showToast('Request marked as fulfilled by you! Your senior has been notified.', 'success');
     loadFamilyDashboard();
   } else {
     showToast(res.data?.message || 'Error updating request fulfillment status.', 'error');
@@ -1486,34 +1674,61 @@ function renderAllRequests(requests) {
 
   allRequestsList.innerHTML = sortedRequests.map(req => {
     let statusBadge = '';
-    let statusColor = 'var(--color-primary-dark)';
+    let accentGradient = 'from-slate-300 to-slate-400';
 
     const isFulfilledByFamily = req.status === 'fulfilled_by_family' || req.fulfilledByFamily;
 
     if (isFulfilledByFamily) {
-      statusBadge = `<span class="badge" style="background:#e8f5e9;color:#1b5e20;border:2px solid #2e7d32;font-weight:bold;">🏡 ${t('btn_fulfill_myself')}</span>`;
-      statusColor = '#2e7d32';
+      statusBadge = `<span class="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200/80 rounded-full text-xs font-extrabold shadow-2xs">
+        <svg class="w-3.5 h-3.5 text-emerald-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
+        ${t('btn_fulfill_myself')}
+      </span>`;
+      accentGradient = 'from-emerald-400 to-emerald-600';
     } else if (req.status === 'cancelled') {
-      statusBadge = `<span class="badge" style="background:#ffebee;color:#c62828;border:2px solid #b71c1c;font-weight:bold;">❌ Request Cancelled by Senior</span>`;
-      statusColor = '#c62828';
+      statusBadge = `<span class="inline-flex items-center gap-1.5 px-3 py-1 bg-rose-50 text-rose-700 border border-rose-200/80 rounded-full text-xs font-extrabold shadow-2xs">
+        Cancelled by Senior
+      </span>`;
+      accentGradient = 'from-rose-400 to-rose-600';
     } else if (req.status === 'pending') {
-      statusBadge = `<span class="badge badge-pending">🔍 ${t('fd_seeking_help')}</span>`;
+      statusBadge = `<span class="inline-flex items-center gap-1.5 px-3 py-1 bg-brand-50 text-brand-700 border border-brand-200/80 rounded-full text-xs font-extrabold shadow-2xs">
+        <span class="w-1.5 h-1.5 rounded-full bg-brand-500"></span>
+        ${t('fd_seeking_help')}
+      </span>`;
+      accentGradient = 'from-brand-500 to-brand-600';
     } else if (req.status === 'awaiting_approval') {
-      statusBadge = `<span class="badge" style="background:#ffe082;color:#e65100;">⏳ ${t('fd_awaiting_decision')}</span>`;
-      statusColor = '#e65100';
+      statusBadge = `<span class="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-50 text-amber-800 border border-amber-200/80 rounded-full text-xs font-extrabold shadow-2xs">
+        <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+        ${t('fd_awaiting_decision')}
+      </span>`;
+      accentGradient = 'from-amber-400 to-amber-600';
     } else if (req.status === 'accepted') {
-      statusBadge = `<span class="badge badge-accepted">✅ ${t('fd_assigned_in_progress')}</span>`;
+      statusBadge = `<span class="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200/80 rounded-full text-xs font-extrabold shadow-2xs">
+        <svg class="w-3.5 h-3.5 text-emerald-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
+        ${t('fd_assigned_in_progress')}
+      </span>`;
+      accentGradient = 'from-emerald-400 to-emerald-600';
     } else if (req.status === 'purchase_cost_submitted') {
-      statusBadge = `<span class="badge" style="background:#fff3e0;color:#e65100;border:1.5px solid #ffe0b2;font-weight:bold;">💳 ${t('fd_vol_submitted_purchase_cost')} (₹${req.actualPurchaseCost || 0})</span>`;
-      statusColor = '#e65100';
+      statusBadge = `<span class="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-50 text-amber-800 border border-amber-200/80 rounded-full text-xs font-extrabold shadow-2xs">
+        ${t('fd_vol_submitted_purchase_cost') || 'Submitted Cost'} (₹${req.actualPurchaseCost || 0})
+      </span>`;
+      accentGradient = 'from-amber-400 to-amber-600';
     } else if (req.status === 'purchase_funded') {
-      statusBadge = `<span class="badge" style="background:#e8f5e9;color:#1b5e20;border:1.5px solid #a5d6a7;font-weight:bold;">✅ ${t('fd_purchase_funded_progress')} (₹${req.actualPurchaseCost || 0})</span>`;
-      statusColor = '#2e7d32';
+      statusBadge = `<span class="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200/80 rounded-full text-xs font-extrabold shadow-2xs">
+        <svg class="w-3.5 h-3.5 text-emerald-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        ${t('fd_purchase_funded_progress')} (₹${req.actualPurchaseCost || 0})
+      </span>`;
+      accentGradient = 'from-emerald-400 to-emerald-600';
     } else if (req.status === 'awaiting_verification') {
-      statusBadge = `<span class="badge" style="background:#f3e5f5;color:#4a148c;border:1.5px solid #ce93d8;font-weight:bold;">🧾 ${t('fd_proof_verifications_title')}</span>`;
-      statusColor = '#7b1fa2';
+      statusBadge = `<span class="inline-flex items-center gap-1.5 px-3 py-1 bg-purple-50 text-purple-700 border border-purple-200/80 rounded-full text-xs font-extrabold shadow-2xs">
+        ${t('fd_proof_verifications_title')}
+      </span>`;
+      accentGradient = 'from-purple-400 to-purple-600';
     } else if (req.status === 'completed') {
-      statusBadge = `<span class="badge badge-completed">🏆 ${t('status_completed')}</span>`;
+      statusBadge = `<span class="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200/80 rounded-full text-xs font-extrabold shadow-2xs">
+        <svg class="w-3.5 h-3.5 text-emerald-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        ${t('status_completed')}
+      </span>`;
+      accentGradient = 'from-emerald-500 to-emerald-600';
     }
 
     // Status timeline: Submitted -> Volunteer Assigned -> Purchase Funded -> Service In Progress -> Delivered and Paid -> Completed
@@ -1524,25 +1739,25 @@ function renderAllRequests(requests) {
     const isCompleted = req.status === 'completed';
 
     const timeline = isFulfilledByFamily ? `
-      <div class="request-timeline">
-        <div class="timeline-step done">📝 ${t('status_pending')}</div>
-        <span class="timeline-arrow">→</span>
-        <div class="timeline-step done">❤️ ${t('fd_awaiting_decision')}</div>
-        <span class="timeline-arrow">→</span>
-        <div class="timeline-step done" style="color:#2e7d32; font-weight:bold;">🏡 ${t('btn_fulfill_myself')}</div>
+      <div class="request-timeline my-3">
+        <div class="timeline-step done">${t('status_pending')}</div>
+        <span class="timeline-arrow text-slate-400">&rarr;</span>
+        <div class="timeline-step done">${t('fd_awaiting_decision')}</div>
+        <span class="timeline-arrow text-slate-400">&rarr;</span>
+        <div class="timeline-step done font-bold text-emerald-700">${t('btn_fulfill_myself')}</div>
       </div>` : `
-      <div class="request-timeline">
-        <div class="timeline-step done">📝 ${t('status_pending')}</div>
-        <span class="timeline-arrow">→</span>
-        <div class="timeline-step ${isVolAssigned ? 'done' : 'future'}">🙋 ${t('fd_assigned_in_progress')}</div>
-        <span class="timeline-arrow">→</span>
-        <div class="timeline-step ${isPurchaseFunded ? 'done' : (req.status === 'purchase_cost_submitted' ? 'active' : 'future')}">💳 ${t('fd_purchase_funded_progress')}</div>
-        <span class="timeline-arrow">→</span>
-        <div class="timeline-step ${isServiceInProgress ? 'done' : 'future'}">🤝 ${t('status_approved')}</div>
-        <span class="timeline-arrow">→</span>
-        <div class="timeline-step ${isDeliveredAndPaid ? 'done' : (req.status === 'awaiting_verification' ? 'active' : 'future')}">🚚 ${t('fd_proof_verifications_title')}</div>
-        <span class="timeline-arrow">→</span>
-        <div class="timeline-step ${isCompleted ? 'done' : 'future'}">✅ ${t('status_completed')}</div>
+      <div class="request-timeline my-3">
+        <div class="timeline-step done">${t('status_pending')}</div>
+        <span class="timeline-arrow text-slate-400">&rarr;</span>
+        <div class="timeline-step ${isVolAssigned ? 'done' : 'future'}">${t('fd_assigned_in_progress')}</div>
+        <span class="timeline-arrow text-slate-400">&rarr;</span>
+        <div class="timeline-step ${isPurchaseFunded ? 'done' : (req.status === 'purchase_cost_submitted' ? 'active' : 'future')}">${t('fd_purchase_funded_progress')}</div>
+        <span class="timeline-arrow text-slate-400">&rarr;</span>
+        <div class="timeline-step ${isServiceInProgress ? 'done' : 'future'}">${t('status_approved')}</div>
+        <span class="timeline-arrow text-slate-400">&rarr;</span>
+        <div class="timeline-step ${isDeliveredAndPaid ? 'done' : (req.status === 'awaiting_verification' ? 'active' : 'future')}">${t('fd_proof_verifications_title')}</div>
+        <span class="timeline-arrow text-slate-400">&rarr;</span>
+        <div class="timeline-step ${isCompleted ? 'done' : 'future'}">${t('status_completed')}</div>
       </div>`;
 
     let volunteerInfo = '';
@@ -1550,19 +1765,18 @@ function renderAllRequests(requests) {
       const volObj = req.volunteer;
       const vName = typeof volObj === 'object' ? volObj.name : 'Volunteer';
       const vId = typeof volObj === 'object' ? (volObj._id || volObj.id) : volObj;
-      const feeLabel = (req.serviceFee !== undefined && req.serviceFee > 0) ? `₹${req.serviceFee}` : '₹0 (Voluntary / Free Service)';
+      const feeLabel = (req.serviceFee !== undefined && req.serviceFee > 0) ? `₹${req.serviceFee}` : '₹0 (Voluntary)';
 
       volunteerInfo = `
-        <div class="request-details" style="margin-top: 1rem; background: #f9f9f9; padding: 12px; border-radius: 8px; border-left: 4px solid var(--color-primary-dark);">
-          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
-            <p style="margin: 0; font-size: 1.05rem;"><strong>${t('fd_approved_volunteer')}</strong> <span style="color: var(--color-primary-dark); font-weight: bold;">${escapeHTML(vName)}</span></p>
-            ${vId ? `<button type="button" class="btn btn-secondary" onclick="viewVolunteerProfile('${vId}')" style="padding: 4px 12px; font-size: 0.85rem; border-radius: 16px; background: #ffffff; color: #1565c0; border: 1.5px solid #90caf9; font-weight: bold; cursor: pointer;">${t('btn_view_profile')}</button>` : ''}
+        <div class="mt-3 p-3.5 rounded-2xl bg-slate-50/80 border border-slate-200/70 space-y-1">
+          <div class="flex justify-between items-center flex-wrap gap-2">
+            <span class="text-xs font-bold text-slate-900">${t('fd_approved_volunteer')}: <strong class="text-brand-800">${escapeHTML(vName)}</strong></span>
+            ${vId ? `<button type="button" onclick="viewVolunteerProfile('${volId}')" class="px-2.5 py-0.5 bg-white hover:bg-brand-50 text-brand-700 border border-brand-200 rounded-lg text-[10px] font-bold transition-all">${t('btn_view_profile')}</button>` : ''}
           </div>
-          <p style="margin-top: 6px;"><strong>💰 ${t('fd_quoted_service_charge')}</strong> <span style="color: #2e7d32; font-weight: bold;">${feeLabel}</span></p>
-          ${req.status !== 'awaiting_approval' && typeof volObj === 'object' ? `<p style="margin-top: 4px;"><strong>${t('fd_volunteer_contact')}</strong> ${escapeHTML(volObj.phone || '—')}</p>` : ''}
-          ${req.volunteerNotes ? `<p style="margin-top: 4px; font-style: italic;"><strong>${t('fd_notes')}</strong> "${escapeHTML(req.volunteerNotes)}"</p>` : ''}
-          ${req.status === 'completed' && req.resolutionNotes ? `<p style="margin-top: 6px;"><strong>${t('fd_vol_completion_notes')}</strong> ${escapeHTML(req.resolutionNotes)}</p>` : ''}
-          ${req.familyReviewedBy ? `<p style="margin-top: 4px; font-size: 0.9rem; color: #666;">Reviewed by caregiver on ${new Date(req.familyReviewedAt).toLocaleDateString()}</p>` : ''}
+          <p class="text-xs text-slate-600 font-medium">${t('fd_quoted_service_charge') || 'Quoted Fee'}: <strong class="text-emerald-700">${feeLabel}</strong></p>
+          ${req.status !== 'awaiting_approval' && typeof volObj === 'object' ? `<p class="text-xs text-slate-500 font-medium">Contact: ${escapeHTML(volObj.phone || '—')}</p>` : ''}
+          ${req.volunteerNotes ? `<p class="text-xs text-slate-600 italic bg-white p-2 rounded-lg border border-slate-200/60 mt-1">"${escapeHTML(req.volunteerNotes)}"</p>` : ''}
+          ${req.status === 'completed' && req.resolutionNotes ? `<p class="text-xs text-slate-600 italic bg-white p-2 rounded-lg border border-slate-200/60 mt-1">${escapeHTML(req.resolutionNotes)}</p>` : ''}
         </div>`;
     }
 
@@ -1578,70 +1792,72 @@ function renderAllRequests(requests) {
         ? req.actualPurchaseCost
         : (req.purchasePaymentDetails ? req.purchasePaymentDetails.amountPaid : (req.paymentDetails ? req.paymentDetails.itemsCost : 0))) || 0;
 
-      const paidTotal = Number(req.paymentDetails ? req.paymentDetails.amountPaid : 0);
-
       let tipVal = Number(req.tipAmount || (req.paymentDetails ? req.paymentDetails.tipAmount : 0) || (req.tipPaymentDetails ? req.tipPaymentDetails.amountPaid : 0)) || 0;
       const totalSpent = itemCostVal + serviceFeeVal + tipVal;
 
-      const breakdownText = `Items Purchased ₹${itemCostVal} + Volunteer Charge ₹${serviceFeeVal}${tipVal > 0 ? ` + Tip ₹${tipVal}` : ''}`;
+      const breakdownText = `Items ₹${itemCostVal} + Service Fee ₹${serviceFeeVal}${tipVal > 0 ? ` + Tip ₹${tipVal}` : ''}`;
 
       totalSpentHtml = `
-        <div style="margin-top: 12px; padding: 14px 18px; background: #e8f5e9; border: 2px solid #a5d6a7; border-left: 6px solid #2e7d32; border-radius: 12px; box-shadow: 0 2px 8px rgba(46,125,50,0.08);">
-          <div style="font-size: 1.15rem; font-weight: 800; color: #1b5e20;">
-            💵 ${t('fd_total_spent')}: <strong style="font-size: 1.3rem; color: #2e7d32;">₹${totalSpent}</strong>
-          </div>
-          <div style="margin-top: 6px; font-size: 0.9rem; color: #388e3c; font-weight: 500;">
-            ${t('fd_breakdown')}: ${breakdownText}
+        <div class="mt-3 p-3.5 bg-emerald-50/80 border border-emerald-200/80 rounded-2xl flex items-center justify-between flex-wrap gap-2">
+          <div>
+            <div class="text-xs font-bold text-emerald-950">${t('fd_total_spent') || 'Total Spent'}: <strong class="text-sm font-extrabold text-emerald-700">₹${totalSpent}</strong></div>
+            <div class="text-[11px] text-emerald-700 mt-0.5">${breakdownText}</div>
           </div>
         </div>`;
     }
-
-    if (req.familyRejectionReason && req.familyApprovalStatus === 'rejected') {
-      volunteerInfo += `
-        <div style="margin-top: 8px; padding: 10px; background: #fff8e1; border-radius: 8px; border-left: 4px solid #f57f17;">
-          <p style="font-size: 0.9rem; color: #e65100;"><strong>Previous Rejection Reason:</strong> ${escapeHTML(req.familyRejectionReason)}</p>
-        </div>`;
-    }
-
-    let stepActionHtml = '';
-
-    let audioHtml = '';
 
     let finalImages = req.finalReceiptDocs && req.finalReceiptDocs.length > 0 
       ? req.finalReceiptDocs 
       : (req.completionProof ? [req.completionProof] : []);
 
     let proofSlider = renderProofSliderHtml(req._id, finalImages);
-
     let proofHtml = proofSlider ? `
-      <div style="margin-top: 10px; background: #ffffff; padding: 10px; border-radius: 8px; border: 1px solid var(--color-primary-light);">
-        <div style="font-weight: bold; color: var(--color-primary-dark); font-size: 0.9rem; margin-bottom: 6px;">${t('fd_uploaded_proof')}</div>
+      <div class="mt-3 p-3 bg-slate-50 border border-slate-200/70 rounded-2xl">
+        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">${t('fd_uploaded_proof')}</label>
         ${proofSlider}
       </div>` : '';
 
     return `
-      <div class="request-card">
-        <div class="request-card-header">
-          <div class="request-title" style="color: ${statusColor};">${escapeHTML(req.title)}</div>
-          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+      <div class="bg-white rounded-3xl border border-slate-200/90 shadow-premium hover:shadow-cardHover p-5 sm:p-6 mb-5 transition-all relative overflow-hidden group" id="allReqCard-${req._id}">
+        <!-- Top accent line -->
+        <div class="h-1 bg-gradient-to-r ${accentGradient} -mx-5 sm:-mx-6 -mt-5 sm:-mt-6 mb-5"></div>
+
+        <!-- Header -->
+        <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3 pb-3.5 border-b border-slate-100 mb-4">
+          <div class="space-y-1 flex-1 min-w-0">
+            <h3 class="text-base sm:text-lg font-extrabold text-slate-900 tracking-tight leading-snug group-hover:text-brand-700 transition-colors">${escapeHTML(req.title)}</h3>
+            <div class="flex items-center gap-2 text-xs font-semibold text-slate-500 flex-wrap">
+              <span class="inline-flex items-center gap-1.5 text-brand-700 font-bold bg-brand-50 border border-brand-200/60 px-2.5 py-0.5 rounded-lg">
+                <svg class="w-3.5 h-3.5 text-brand-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 005.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 009.568 3z"/></svg>
+                ${translateCategory(req.category)}
+              </span>
+              <span>&bull;</span>
+              <span class="inline-flex items-center gap-1 text-slate-500">
+                <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                ${new Date(req.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+              </span>
+            </div>
+          </div>
+          <div class="flex flex-col sm:items-end items-start gap-2 flex-shrink-0 sm:ml-auto">
             ${statusBadge}
-            <span class="badge badge-urgency">${translateCategory(req.category)}</span>
           </div>
         </div>
-        ${req.description ? `<div class="request-description">${escapeHTML(req.description)}</div>` : ''}
-        ${req.shoppingPreference ? `
-          <div style="margin-top: 6px; margin-bottom: 10px; padding: 8px 12px; background: #e3f2fd; border-left: 4px solid #1976d2; border-radius: 8px; font-size: 0.95rem; color: #0d47a1; font-weight: 600;">
-            🛒 <strong>${t('fd_shopping_preference')}</strong> ${escapeHTML(req.shoppingPreference)}
+
+        ${req.description && req.description !== req.title ? `
+          <div class="text-xs font-medium text-slate-700 leading-relaxed mb-3 bg-slate-50/70 rounded-xl p-3 border border-slate-100">
+            ${escapeHTML(req.description)}
           </div>` : ''}
-        ${audioHtml}
+
+        ${req.shoppingPreference ? `
+          <div class="bg-amber-50/70 border border-amber-200/80 rounded-xl px-3 py-2 mb-3 flex items-center gap-2 text-xs font-semibold text-amber-900">
+            <svg class="w-4 h-4 text-amber-600 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"/></svg>
+            <span><strong>Shopping Preference:</strong> ${escapeHTML(req.shoppingPreference)}</span>
+          </div>` : ''}
+
         ${proofHtml}
-        ${stepActionHtml}
         ${timeline}
         ${volunteerInfo}
         ${totalSpentHtml}
-        <div style="font-size: 0.85rem; color: #999; margin-top: 0.8rem;">
-          ${t('fd_raised')} ${new Date(req.createdAt).toLocaleDateString()}
-        </div>
       </div>`;
   }).join('');
 }
@@ -1662,7 +1878,7 @@ function openSelectVolunteerConfirmModal(requestId, volunteerId, volName, feeTex
     bodyEl.innerHTML = `Are you sure you want to select and approve <strong>${escapeHTML(volName)}</strong> (${escapeHTML(feeText)}) to fulfill this request for your senior citizen?`;
   }
   if (btnConfirm) {
-    btnConfirm.textContent = `✅ Confirm & Assign ${escapeHTML(volName)}`;
+    btnConfirm.textContent = `Confirm & Assign ${escapeHTML(volName)}`;
   }
 
   if (modal) modal.style.display = 'flex';
@@ -1698,7 +1914,7 @@ async function confirmSelectVolunteerAssignment() {
   }
 
   if (res.ok && res.data.success) {
-    showToast(res.data.message || `✅ ${volName} approved and task assigned successfully!`, 'success');
+    showToast(res.data.message || `${volName} approved and task assigned successfully!`, 'success');
     closeSelectVolunteerConfirmModal();
     loadFamilyDashboard();
   } else {
@@ -1741,7 +1957,7 @@ function openShoppingPrefModal(requestId, volunteerId = null, volName = '') {
   }
 
   if (btnConfirm) {
-    btnConfirm.textContent = volunteerId ? `✅ Confirm & Assign ${volName || 'Volunteer'}` : '🤝 Confirm & Allot Task';
+    btnConfirm.innerHTML = `<svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg><span>${volunteerId ? `Submit & Assign ${volName || 'Volunteer'}` : 'Submit Preferences'}</span>`;
   }
 
   if (modal) modal.style.display = 'flex';
@@ -1783,10 +1999,10 @@ async function confirmAndSubmitAllotment() {
   let finalPreference = preferenceList.length > 0 ? preferenceList.join(', ') : 'No Preference';
 
   const btnConfirm = document.getElementById('btnConfirmShoppingPref');
-  let origText = '';
+  let origHTML = '';
   if (btnConfirm) {
-    origText = btnConfirm.textContent;
-    btnConfirm.textContent = 'Allotting...';
+    origHTML = btnConfirm.innerHTML;
+    btnConfirm.innerHTML = `<span class="animate-pulse">Submitting...</span>`;
     btnConfirm.disabled = true;
   }
 
@@ -1800,12 +2016,12 @@ async function confirmAndSubmitAllotment() {
   const res = await apiCall(`/requests/${pendingAllotRequestId}/family-approve`, 'PUT', payload);
 
   if (btnConfirm) {
-    btnConfirm.textContent = origText;
+    btnConfirm.innerHTML = origHTML;
     btnConfirm.disabled = false;
   }
 
   if (res.ok && res.data.success) {
-    showToast(res.data.message || '✅ Task allotted with shopping preferences!', 'success');
+    showToast(res.data.message || 'Task allotted with shopping preferences!', 'success');
     const reqId = pendingAllotRequestId;
     closeShoppingPrefModal();
 

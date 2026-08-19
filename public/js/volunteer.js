@@ -32,10 +32,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Personalize welcome bar
   currentVolunteerUser = JSON.parse(localStorage.getItem('user'));
   const welcomeTitle = document.getElementById('welcomeTitle');
+  const navUserName = document.getElementById('navUserName');
   if (welcomeTitle && currentVolunteerUser) {
-    welcomeTitle.textContent = t('vd_welcome', { name: currentVolunteerUser.name });
+    welcomeTitle.textContent = `Welcome back, ${currentVolunteerUser.name || 'Volunteer'}!`;
   }
-
+  if (navUserName && currentVolunteerUser) {
+    navUserName.textContent = `Hello, ${currentVolunteerUser.name || 'Volunteer'}`;
+  }
 
   // Render initial status from localStorage immediately
   if (currentVolunteerUser) {
@@ -49,6 +52,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (meRes && meRes.data && meRes.data.user) {
       currentVolunteerUser = meRes.data.user;
       localStorage.setItem('user', JSON.stringify(resDataUser(meRes.data.user)));
+      if (welcomeTitle) {
+        welcomeTitle.textContent = `Welcome back, ${currentVolunteerUser.name || 'Volunteer'}!`;
+      }
+      if (navUserName) {
+        navUserName.textContent = `Hello, ${currentVolunteerUser.name || 'Volunteer'}`;
+      }
       renderKycStatus(currentVolunteerUser);
       await renderRatingProfileCard(currentVolunteerUser);
     }
@@ -282,114 +291,186 @@ function renderKycStatus(user) {
   const volunteerTaskGrid = document.getElementById('volunteerTaskGrid');
   const btnViewTrustStatus = document.getElementById('btnViewTrustStatus');
 
+  // Section elements to show/hide based on verification
+  const topMetricsGrid = document.getElementById('topMetricsGrid');
+  const volunteerWorkspaceGrid = document.getElementById('volunteerWorkspaceGrid');
+  const helperPerformanceSection = document.getElementById('helperPerformanceSection');
+  const earningsWalletCard = document.getElementById('earningsWalletCard');
+  const unverifiedTrustContainer = document.getElementById('unverifiedTrustContainer');
+  const welcomeVerificationPill = document.getElementById('welcomeVerificationPill');
+  const welcomeVerificationText = document.getElementById('welcomeVerificationText');
+
   const isIdVerified = user.isIdVerified === true || user.isIdVerified === 'true';
   const isPoliceVerified = user.isPoliceVerified === true || user.isPoliceVerified === 'true';
   const isFullyVerified = (status === 'verified') && isIdVerified && isPoliceVerified;
 
-  const userId = user._id || user.id || '';
-  const acknowledgedKey = userId ? `verified_acknowledged_${userId}` : 'verified_acknowledged';
-  const hasAcknowledged = localStorage.getItem(acknowledgedKey) === 'true';
-
-  if (badgePhone) {
-    badgePhone.innerHTML = user.isPhoneVerified ? 'Phone: Verified' : 'Phone: Unverified';
-    badgePhone.style.background = user.isPhoneVerified ? '#e8f5e9' : '#ffebee';
-    badgePhone.style.color = user.isPhoneVerified ? '#2e7d32' : '#c62828';
-  }
-  if (badgeEmail) {
-    badgeEmail.innerHTML = user.isEmailVerified ? 'Email: Verified' : 'Email: Unverified';
-    badgeEmail.style.background = user.isEmailVerified ? '#e8f5e9' : '#ffebee';
-    badgeEmail.style.color = user.isEmailVerified ? '#2e7d32' : '#c62828';
-  }
-  if (badgeGovtId) {
-    badgeGovtId.innerHTML = isIdVerified ? 'Govt ID: Verified' : (user.govtIdCard ? 'Govt ID: Submitted (Pending)' : 'Govt ID: Not Uploaded');
-    badgeGovtId.style.background = isIdVerified ? '#e8f5e9' : (user.govtIdCard ? '#e3f2fd' : '#ffebee');
-    badgeGovtId.style.color = isIdVerified ? '#2e7d32' : (user.govtIdCard ? '#0d47a1' : '#c62828');
-  }
-  if (badgePolice) {
-    badgePolice.innerHTML = isPoliceVerified ? 'Police Check: Verified' : 'Police Check: Pending Admin Clearance';
-    badgePolice.style.background = isPoliceVerified ? '#e8f5e9' : '#fff3e0';
-    badgePolice.style.color = isPoliceVerified ? '#2e7d32' : '#e65100';
-  }
-
   if (isFullyVerified) {
-    if (!hasAcknowledged) {
-      // First time verified: Show Multi-Level Trust & Verification Status card ONCE with option to proceed to render service
-      if (kycStatusCard) kycStatusCard.style.display = 'block';
-      if (volunteerTaskGrid) volunteerTaskGrid.style.display = 'none';
-      if (btnViewTrustStatus) btnViewTrustStatus.style.display = 'none';
+    // ════════════════════════════════════════════════════════════════
+    // VERIFIED VOLUNTEER STATE: Show all features, tasks, wallet, stats
+    // ════════════════════════════════════════════════════════════════
+    if (unverifiedTrustContainer) unverifiedTrustContainer.style.display = 'none';
+    if (topMetricsGrid) topMetricsGrid.style.display = 'grid';
+    if (volunteerWorkspaceGrid) volunteerWorkspaceGrid.style.display = 'grid';
+    if (helperPerformanceSection) helperPerformanceSection.style.display = 'block';
+    if (earningsWalletCard) earningsWalletCard.style.display = 'block';
+    if (volunteerTaskGrid) volunteerTaskGrid.style.display = 'block';
 
-      if (kycAlertBanner) {
-        kycAlertBanner.style.borderLeftColor = '#2e7d32';
-        kycAlertBanner.style.background = '#e8f5e9';
-        kycAlertBanner.innerHTML = `
-          <div style="display: flex; flex-direction: column; gap: 12px;">
+    if (welcomeVerificationPill) {
+      welcomeVerificationPill.className = "inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/20 backdrop-blur-md rounded-xl border border-emerald-400/40 text-xs font-bold text-emerald-100 shadow-xs";
+    }
+    if (welcomeVerificationText) {
+      welcomeVerificationText.textContent = "Community Volunteer — Verified";
+    }
+
+    if (kycStatusCard) kycStatusCard.style.display = 'none';
+
+  } else {
+    // ════════════════════════════════════════════════════════════════
+    // UNVERIFIED STATE: ONLY show Multi-Level Trust & Verification section
+    // Hide all requests, task workspace, wallet, top metrics, & performance
+    // ════════════════════════════════════════════════════════════════
+    if (topMetricsGrid) topMetricsGrid.style.display = 'none';
+    if (volunteerWorkspaceGrid) volunteerWorkspaceGrid.style.display = 'none';
+    if (helperPerformanceSection) helperPerformanceSection.style.display = 'none';
+    if (earningsWalletCard) earningsWalletCard.style.display = 'none';
+    if (unverifiedTrustContainer) unverifiedTrustContainer.style.display = 'block';
+
+    if (welcomeVerificationPill) {
+      welcomeVerificationPill.className = "inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/20 backdrop-blur-md rounded-xl border border-amber-400/40 text-xs font-bold text-amber-100 shadow-xs";
+    }
+    if (welcomeVerificationText) {
+      welcomeVerificationText.textContent = "Community Volunteer — Pending Verification";
+    }
+
+    // Populate the 4 steps in the Unverified Spotlight
+    const unverifiedStepGovtIdText = document.getElementById('unverifiedStepGovtIdText');
+    const unverifiedStepGovtIdIcon = document.getElementById('unverifiedStepGovtIdIcon');
+    const unverifiedStepSelfieText = document.getElementById('unverifiedStepSelfieText');
+    const unverifiedStepSelfieIcon = document.getElementById('unverifiedStepSelfieIcon');
+    const unverifiedStepPoliceText = document.getElementById('unverifiedStepPoliceText');
+    const unverifiedStepPoliceIcon = document.getElementById('unverifiedStepPoliceIcon');
+    const unverifiedAlertBanner = document.getElementById('unverifiedAlertBanner');
+    const btnUnverifiedOpenKyc = document.getElementById('btnUnverifiedOpenKyc');
+    const btnUnverifiedOpenKycText = document.getElementById('btnUnverifiedOpenKycText');
+
+    if (unverifiedStepGovtIdText) {
+      if (isIdVerified) {
+        unverifiedStepGovtIdText.textContent = 'Verified';
+        unverifiedStepGovtIdText.className = 'text-xs font-extrabold text-emerald-700 block';
+        if (unverifiedStepGovtIdIcon) {
+          unverifiedStepGovtIdIcon.textContent = '✓';
+          unverifiedStepGovtIdIcon.className = 'w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center flex-shrink-0 font-bold text-xs';
+        }
+      } else if (user.govtIdCard) {
+        unverifiedStepGovtIdText.textContent = 'Submitted (Pending Review)';
+        unverifiedStepGovtIdText.className = 'text-xs font-extrabold text-brand-700 block';
+        if (unverifiedStepGovtIdIcon) {
+          unverifiedStepGovtIdIcon.textContent = '⏳';
+          unverifiedStepGovtIdIcon.className = 'w-8 h-8 rounded-xl bg-brand-500/10 text-brand-600 flex items-center justify-center flex-shrink-0 font-bold text-xs';
+        }
+      } else {
+        unverifiedStepGovtIdText.textContent = 'Pending Upload';
+        unverifiedStepGovtIdText.className = 'text-xs font-extrabold text-amber-700 block';
+        if (unverifiedStepGovtIdIcon) {
+          unverifiedStepGovtIdIcon.textContent = '⚠️';
+          unverifiedStepGovtIdIcon.className = 'w-8 h-8 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center flex-shrink-0 font-bold text-xs';
+        }
+      }
+    }
+
+    if (unverifiedStepSelfieText) {
+      if (isIdVerified) {
+        unverifiedStepSelfieText.textContent = 'Verified';
+        unverifiedStepSelfieText.className = 'text-xs font-extrabold text-emerald-700 block';
+        if (unverifiedStepSelfieIcon) {
+          unverifiedStepSelfieIcon.textContent = '✓';
+          unverifiedStepSelfieIcon.className = 'w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center flex-shrink-0 font-bold text-xs';
+        }
+      } else if (user.selfiePhoto) {
+        unverifiedStepSelfieText.textContent = 'Submitted (Pending Review)';
+        unverifiedStepSelfieText.className = 'text-xs font-extrabold text-brand-700 block';
+        if (unverifiedStepSelfieIcon) {
+          unverifiedStepSelfieIcon.textContent = '⏳';
+          unverifiedStepSelfieIcon.className = 'w-8 h-8 rounded-xl bg-brand-500/10 text-brand-600 flex items-center justify-center flex-shrink-0 font-bold text-xs';
+        }
+      } else {
+        unverifiedStepSelfieText.textContent = 'Pending Upload';
+        unverifiedStepSelfieText.className = 'text-xs font-extrabold text-amber-700 block';
+        if (unverifiedStepSelfieIcon) {
+          unverifiedStepSelfieIcon.textContent = '⚠️';
+          unverifiedStepSelfieIcon.className = 'w-8 h-8 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center flex-shrink-0 font-bold text-xs';
+        }
+      }
+    }
+
+    if (unverifiedStepPoliceText) {
+      if (isPoliceVerified) {
+        unverifiedStepPoliceText.textContent = 'Cleared & Verified';
+        unverifiedStepPoliceText.className = 'text-xs font-extrabold text-emerald-700 block';
+        if (unverifiedStepPoliceIcon) {
+          unverifiedStepPoliceIcon.textContent = '✓';
+          unverifiedStepPoliceIcon.className = 'w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center flex-shrink-0 font-bold text-xs';
+        }
+      } else {
+        unverifiedStepPoliceText.textContent = 'Pending Admin Clearance';
+        unverifiedStepPoliceText.className = 'text-xs font-extrabold text-amber-700 block';
+        if (unverifiedStepPoliceIcon) {
+          unverifiedStepPoliceIcon.textContent = '⏳';
+          unverifiedStepPoliceIcon.className = 'w-8 h-8 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center flex-shrink-0 font-bold text-xs';
+        }
+      }
+    }
+
+    if (unverifiedAlertBanner) {
+      if (status === 'pending') {
+        unverifiedAlertBanner.className = 'p-4 rounded-2xl bg-blue-50 border border-blue-200/80 text-xs font-semibold text-blue-900 leading-relaxed';
+        unverifiedAlertBanner.innerHTML = `
+          <div class="flex items-start gap-3">
+            <span class="text-base">📋</span>
             <div>
-              <strong style="font-size: 1.1rem; color: #1b5e20;">Multi-Level Verification Complete!</strong><br>
-              <span style="color: #2e7d32; font-size: 0.98rem;">Your Government ID, Phone, Email, and Police Clearance have all been verified by Admin. You are now officially authorized to render services to Senior Citizens.</span>
-            </div>
-            <div>
-              <button id="btnProceedToService" class="btn btn-primary" style="background-color: #2e7d32; font-size: 1.05rem; padding: 12px 24px; cursor: pointer; border-radius: 8px; font-weight: bold; border: none; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: inline-flex; align-items: center; gap: 8px;">
-                Proceed to Render Service &rarr;
-              </button>
+              <strong class="font-extrabold text-blue-950 block text-sm mb-0.5">KYC Documents Submitted &amp; Pending Admin Clearance</strong>
+              <span>Your National ID card and live selfie have been successfully uploaded. AgeWell Administrators are verifying your identity and police safety records. Once approved, all elder requests and your earnings wallet will unlock instantly.</span>
             </div>
           </div>
         `;
-        if (btnOpenKycModal) btnOpenKycModal.style.display = 'none';
-
-        setTimeout(() => {
-          const btnProceed = document.getElementById('btnProceedToService');
-          if (btnProceed) {
-            btnProceed.onclick = () => {
-              localStorage.setItem(acknowledgedKey, 'true');
-              if (kycStatusCard) kycStatusCard.style.display = 'none';
-              if (volunteerTaskGrid) volunteerTaskGrid.style.display = 'grid';
-              if (btnViewTrustStatus) btnViewTrustStatus.style.display = 'inline-block';
-              if (typeof showToast === 'function') {
-                showToast('Welcome! You can now browse available help requests.', 'success');
-              }
-            };
-          }
-        }, 50);
-      }
-    } else {
-      // Later visits: User already clicked Proceed to Render Service. Hide Trust card, show other volunteer service tabs directly
-      if (kycStatusCard) kycStatusCard.style.display = 'none';
-      if (volunteerTaskGrid) volunteerTaskGrid.style.display = 'grid';
-      if (btnViewTrustStatus) btnViewTrustStatus.style.display = 'inline-block';
-    }
-  } else {
-    // Unverified / Pending / Rejected
-    if (kycStatusCard) kycStatusCard.style.display = 'block';
-    if (volunteerTaskGrid) volunteerTaskGrid.style.display = 'none';
-    if (btnViewTrustStatus) btnViewTrustStatus.style.display = 'none';
-
-    if (kycAlertBanner) {
-      if (status === 'pending') {
-        kycAlertBanner.style.borderLeftColor = '#0288d1';
-        kycAlertBanner.style.background = '#e3f2fd';
-        kycAlertBanner.innerHTML = `<strong>KYC &amp; Police Clearance Under Review.</strong> Your Govt ID and Selfie documents are submitted. Admin is conducting background &amp; police clearance. Your task portal will unlock once approved by Admin.`;
-        if (btnOpenKycModal) {
-          btnOpenKycModal.style.display = 'inline-block';
-          btnOpenKycModal.textContent = 'Update KYC Documents';
-        }
+        if (btnUnverifiedOpenKycText) btnUnverifiedOpenKycText.textContent = 'Update / Replace Documents';
       } else if (status === 'rejected') {
-        kycAlertBanner.style.borderLeftColor = '#c62828';
-        kycAlertBanner.style.background = '#ffebee';
-        const reason = user.verificationRejectionReason ? `<br><em>Reason: ${escapeHTML(user.verificationRejectionReason)}</em>` : '';
-        kycAlertBanner.innerHTML = `<strong>Verification Rejected.</strong> Please re-upload your Government ID and Selfie photo to unlock your task portal.${reason}`;
-        if (btnOpenKycModal) {
-          btnOpenKycModal.style.display = 'inline-block';
-          btnOpenKycModal.textContent = 'Re-submit KYC Documents';
-        }
+        unverifiedAlertBanner.className = 'p-4 rounded-2xl bg-rose-50 border border-rose-200/80 text-xs font-semibold text-rose-900 leading-relaxed';
+        const reason = user.verificationRejectionReason ? `<p class="mt-1 font-bold text-rose-800 bg-white/70 p-2 rounded-xl border border-rose-200">Admin Note: ${escapeHTML(user.verificationRejectionReason)}</p>` : '';
+        unverifiedAlertBanner.innerHTML = `
+          <div class="flex items-start gap-3">
+            <span class="text-base">❌</span>
+            <div>
+              <strong class="font-extrabold text-rose-950 block text-sm mb-0.5">Verification Clarification Requested</strong>
+              <span>Your submission requires document correction before your account can be cleared for elder visits.${reason}</span>
+            </div>
+          </div>
+        `;
+        if (btnUnverifiedOpenKycText) btnUnverifiedOpenKycText.textContent = 'Re-Submit Corrected Documents';
       } else {
-        kycAlertBanner.style.borderLeftColor = '#f57f17';
-        kycAlertBanner.style.background = '#fff8e1';
-        kycAlertBanner.innerHTML = `<strong>Verification Required:</strong> You must upload your Govt ID and Selfie for Admin &amp; Police Clearance before accessing help requests.`;
-        if (btnOpenKycModal) {
-          btnOpenKycModal.style.display = 'inline-block';
-          btnOpenKycModal.textContent = 'Submit KYC Documents Now';
-        }
+        unverifiedAlertBanner.className = 'p-4 rounded-2xl bg-amber-50 border border-amber-200/80 text-xs font-semibold text-amber-900 leading-relaxed';
+        unverifiedAlertBanner.innerHTML = `
+          <div class="flex items-start gap-3">
+            <span class="text-base">🛡️</span>
+            <div>
+              <strong class="font-extrabold text-amber-950 block text-sm mb-0.5">Identity Verification Required</strong>
+              <span>To ensure complete elder safety, please upload a clear photo of your Government ID (Aadhaar / Passport / Voter ID) and a live selfie photo.</span>
+            </div>
+          </div>
+        `;
+        if (btnUnverifiedOpenKycText) btnUnverifiedOpenKycText.textContent = 'Upload KYC Documents Now';
       }
+    }
+
+    if (btnUnverifiedOpenKyc) {
+      btnUnverifiedOpenKyc.onclick = () => {
+        const modalAadhaarNumber = document.getElementById('modalAadhaarNumber');
+        if (modalAadhaarNumber && currentVolunteerUser && currentVolunteerUser.aadhaarNumber) {
+          modalAadhaarNumber.value = currentVolunteerUser.aadhaarNumber;
+        }
+        const kycModal = document.getElementById('kycModal');
+        if (kycModal) kycModal.style.display = 'flex';
+      };
     }
   }
 }
@@ -508,36 +589,39 @@ async function loadVolunteerRequests(silent = false) {
     // 4. Completed History: Tasks completed by this volunteer
     const completedRequests = requests.filter(r => r.status === 'completed' && isMyApprovedTask(r));
 
-    // Update badge counts on tabs dynamically
+    // Update badge counts on tabs & top summary bar dynamically
     const elCountPending = document.getElementById('countPending');
     const elCountActive = document.getElementById('countActive');
     const elCountAwaiting = document.getElementById('countAwaiting');
     const elCountHistory = document.getElementById('countHistory');
 
-    if (elCountPending) {
-      elCountPending.textContent = pendingRequests.length;
-      elCountPending.className = pendingRequests.length > 0
-        ? "bg-brand-600 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full"
-        : "bg-slate-200 text-slate-500 text-[10px] font-extrabold px-2 py-0.5 rounded-full";
+    const elQuickPending = document.getElementById('countQuickPending');
+    const elQuickActive = document.getElementById('countQuickActive');
+    const elQuickCompleted = document.getElementById('countQuickCompleted');
+
+    // Helper to format tab counter badges based on section state
+    function updateNavBadge(el, count, isHistory = false) {
+      if (!el) return;
+      el.textContent = count;
+      if (isHistory) {
+        // Just reflect the number in a neutral slate pill, never blue, never blinking
+        el.className = "bg-slate-100 text-slate-700 text-xs font-extrabold px-2.5 py-0.5 rounded-full border border-slate-200/80 flex-shrink-0";
+      } else if (count > 0) {
+        // Attention-grabbing blinking pulse animation when requests > 0
+        el.className = "bg-brand-600 text-white text-xs font-extrabold px-2.5 py-0.5 rounded-full shadow-xs badge-blink-active flex-shrink-0";
+      } else {
+        el.className = "bg-slate-100 text-slate-400 text-xs font-bold px-2.5 py-0.5 rounded-full flex-shrink-0";
+      }
     }
-    if (elCountActive) {
-      elCountActive.textContent = activeRequests.length;
-      elCountActive.className = activeRequests.length > 0
-        ? "bg-brand-600 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full"
-        : "bg-slate-200 text-slate-500 text-[10px] font-extrabold px-2 py-0.5 rounded-full";
-    }
-    if (elCountAwaiting) {
-      elCountAwaiting.textContent = awaitingRequests.length;
-      elCountAwaiting.className = awaitingRequests.length > 0
-        ? "bg-brand-600 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full"
-        : "bg-slate-200 text-slate-500 text-[10px] font-extrabold px-2 py-0.5 rounded-full";
-    }
-    if (elCountHistory) {
-      elCountHistory.textContent = completedRequests.length;
-      elCountHistory.className = completedRequests.length > 0
-        ? "bg-brand-600 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full"
-        : "bg-slate-200 text-slate-500 text-[10px] font-extrabold px-2 py-0.5 rounded-full";
-    }
+
+    updateNavBadge(elCountPending, pendingRequests.length, false);
+    updateNavBadge(elCountActive, activeRequests.length, false);
+    updateNavBadge(elCountAwaiting, awaitingRequests.length, false);
+    updateNavBadge(elCountHistory, completedRequests.length, true);
+
+    if (elQuickPending) elQuickPending.textContent = pendingRequests.length;
+    if (elQuickActive) elQuickActive.textContent = activeRequests.length;
+    if (elQuickCompleted) elQuickCompleted.textContent = completedRequests.length;
 
     // --- Render Task Notifications ---
     if (notificationsCard && notificationsList) {
@@ -548,45 +632,33 @@ async function loadVolunteerRequests(silent = false) {
 
           if (req.status === 'cancelled') {
             return `
-              <div class="request-card" style="border-left: 5px solid #c62828; background: #ffffff; margin-bottom: 1rem;">
-                <div class="request-card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
-                  <div class="request-title" style="color: #c62828;">${escapeHTML(req.title)}</div>
-                  <div style="display: flex; align-items: center; gap: 8px;">
-                    <span class="badge" style="background: #c62828; color: #fff;">Cancelled</span>
-                    <button type="button" class="btn btn-secondary" onclick="dismissTaskNotification('${req._id}')" style="padding: 4px 10px; font-size: 0.85rem; border-radius: 6px; cursor: pointer; border: 1.5px solid #ccc; background: #f9f9f9; color: #333; min-height: 32px; display: inline-flex; align-items: center; justify-content: center; gap: 4px; font-weight: bold;" title="Dismiss this notification">
-                      Dismiss
-                    </button>
+              <div class="bg-white rounded-2xl border border-rose-200/80 shadow-2xs p-4 relative overflow-hidden">
+                <div class="h-1 bg-rose-500 -mx-4 -mt-4 mb-3"></div>
+                <div class="flex justify-between items-start gap-3 flex-wrap mb-2">
+                  <h4 class="text-sm font-extrabold text-rose-700 tracking-tight">${escapeHTML(req.title)}</h4>
+                  <div class="flex items-center gap-2">
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-extrabold bg-rose-50 text-rose-700 border border-rose-200">Cancelled</span>
+                    <button type="button" onclick="dismissTaskNotification('${req._id}')" class="px-2.5 py-1 text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl border border-slate-200 transition-all cursor-pointer">Dismiss</button>
                   </div>
                 </div>
-                <div style="margin-top: 10px; padding: 12px 16px; background-color: #ffebee; border: 2px solid #c62828; border-radius: 10px;">
-                  <p style="color: #c62828; font-weight: bold; font-size: 1.02rem; margin-bottom: 4px;">
-                    The senior has cancelled this request.
-                  </p>
-                  <p style="color: #c62828; font-size: 0.93rem; margin: 0;">
-                    Help is no longer required. Thank you so much for your support to <strong>${seniorName}</strong>!
-                  </p>
+                <div class="p-3 bg-rose-50/70 border border-rose-200/70 rounded-xl text-xs text-rose-900 font-medium">
+                  The senior has cancelled this request. Help is no longer required. Thank you for offering support to <strong>${seniorName}</strong>!
                 </div>
               </div>`;
           }
 
           return `
-            <div class="request-card" style="border-left: 5px solid #2e7d32; background: #ffffff; margin-bottom: 1rem;">
-              <div class="request-card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
-                <div class="request-title" style="color: #1b5e20;">${escapeHTML(req.title)}</div>
-                <div style="display: flex; align-items: center; gap: 8px;">
-                  <span class="badge" style="background: #2e7d32; color: #fff;">Task Assigned</span>
-                  <button type="button" class="btn btn-secondary" onclick="dismissTaskNotification('${req._id}')" style="padding: 4px 10px; font-size: 0.85rem; border-radius: 6px; cursor: pointer; border: 1.5px solid #ccc; background: #f9f9f9; color: #333; min-height: 32px; display: inline-flex; align-items: center; justify-content: center; gap: 4px; font-weight: bold;" title="Dismiss this notification">
-                    Dismiss
-                  </button>
+            <div class="bg-white rounded-2xl border border-brand-200/80 shadow-2xs p-4 relative overflow-hidden">
+              <div class="h-1 bg-brand-500 -mx-4 -mt-4 mb-3"></div>
+              <div class="flex justify-between items-start gap-3 flex-wrap mb-2">
+                <h4 class="text-sm font-extrabold text-slate-900 tracking-tight">${escapeHTML(req.title)}</h4>
+                <div class="flex items-center gap-2">
+                  <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-extrabold bg-brand-50 text-brand-700 border border-brand-200">Task Assigned</span>
+                  <button type="button" onclick="dismissTaskNotification('${req._id}')" class="px-2.5 py-1 text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl border border-slate-200 transition-all cursor-pointer">Dismiss</button>
                 </div>
               </div>
-              <div style="margin-top: 10px; padding: 12px 16px; background-color: #e8f5e9; border: 2px solid #2e7d32; border-radius: 10px;">
-                <p style="color: #1b5e20; font-weight: bold; font-size: 1.02rem; margin-bottom: 4px;">
-                  The caregiver has assigned this task to another volunteer.
-                </p>
-                <p style="color: #2e7d32; font-size: 0.93rem; margin: 0;">
-                  Thank you so much for offering your voluntary support to <strong>${seniorName}</strong>! You can browse and quote on other open requests below.
-                </p>
+              <div class="p-3 bg-brand-50/70 border border-brand-200/70 rounded-xl text-xs text-brand-950 font-medium">
+                The caregiver has assigned this task to another volunteer. Thank you for your voluntary support to <strong>${seniorName}</strong>! You can browse other open requests below.
               </div>
             </div>`;
         }).join('');
@@ -599,15 +671,32 @@ async function loadVolunteerRequests(silent = false) {
     if (pendingList) {
       if (pendingRequests.length === 0) {
         pendingList.innerHTML = `
-          <div class="col-span-full py-12 px-6 bg-white rounded-2xl text-center border-2 border-dashed border-slate-200">
-            <p class="text-slate-800 font-extrabold text-sm" data-i18n="vd_no_pending">No pending help requests at this time.</p>
-            <p class="text-xs text-slate-400 font-medium mt-1">Check back later to support Senior Citizens in need!</p>
+          <div class="bg-brand-50/50 border-2 border-dashed border-brand-200 rounded-3xl p-8 text-center space-y-2">
+            <div class="w-12 h-12 mx-auto rounded-2xl bg-brand-100/80 text-brand-700 flex items-center justify-center shadow-xs">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+            <p class="text-base font-extrabold text-brand-950" data-i18n="vd_no_pending">No pending help requests at this time.</p>
+            <p class="text-xs font-semibold text-slate-500 max-w-md mx-auto">Check back later to support Senior Citizens in your neighborhood!</p>
           </div>`;
       } else {
         pendingList.innerHTML = pendingRequests.map(req => {
-          let urgencyClass = req.urgency === 'high' ? 'urgency-high' : req.urgency === 'emergency' ? 'urgency-emergency' : '';
-          let urgencyLabel = req.urgency === 'emergency' ? 'SOS EMERGENCY' : req.urgency === 'high' ? 'High Priority' : 'Normal';
-          let audioHtml = req.audioFile ? `<div class="request-audio-player mt-3 bg-slate-50 border border-slate-100 p-2.5 rounded-xl text-xs"><label class="block font-bold text-slate-600 mb-1">Senior's Voice Message:</label><audio class="w-full h-8" controls src="${req.audioFile}"></audio></div>` : '';
+          const urgencyBadge = req.urgency === 'emergency'
+            ? `<span class="inline-flex items-center gap-1.5 px-3 py-1 bg-rose-50 text-rose-700 border border-rose-200/80 rounded-full text-xs font-extrabold tracking-wide shadow-2xs whitespace-nowrap">
+                 <span class="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping"></span>
+                 Emergency
+               </span>`
+            : req.urgency === 'high'
+              ? `<span class="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-50 text-amber-800 border border-amber-200/80 rounded-full text-xs font-extrabold tracking-wide shadow-2xs whitespace-nowrap">
+                   <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                   High Priority
+                 </span>`
+              : `<span class="inline-flex items-center gap-1 px-3 py-1 bg-slate-100 text-slate-700 border border-slate-200/80 rounded-full text-xs font-bold shadow-2xs whitespace-nowrap">
+                   Normal
+                 </span>`;
+
+          const categoryBadge = getCategoryBadgeHtml(req.category);
+          const voiceNoteHtml = getVoiceNotePlayerHtml(req.audioFile);
+          const prefHtml = getShoppingPreferenceHtml(req.shoppingPreference);
 
           let existingQuoteBadge = '';
           let myQuote = null;
@@ -619,96 +708,134 @@ async function loadVolunteerRequests(silent = false) {
           }
 
           if (myQuote) {
-            const feeStr = (myQuote.serviceFee !== undefined && myQuote.serviceFee > 0) ? `₹${myQuote.serviceFee}` : '₹0 (Free)';
+            const feeStr = (myQuote.serviceFee !== undefined && myQuote.serviceFee > 0) ? `₹${myQuote.serviceFee}` : '₹0 (Voluntary)';
             existingQuoteBadge = `
-              <div class="mt-3 p-3 bg-emerald-50 border border-emerald-100 rounded-xl text-xs text-emerald-800 leading-normal font-semibold">
-                <strong>You submitted a quote: ${feeStr}</strong> (Awaiting Caregiver Selection). You can update your quote below!
+              <div class="mb-4 p-3.5 bg-emerald-50/80 border border-emerald-200/80 rounded-2xl flex items-center justify-between gap-3 text-xs text-emerald-950 shadow-2xs">
+                <div class="flex items-center gap-2">
+                  <div class="w-6 h-6 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center flex-shrink-0">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
+                  </div>
+                  <span><strong>Your Quote Submitted:</strong> <strong class="text-emerald-700 font-extrabold text-sm">${feeStr}</strong> (Awaiting Caregiver Selection)</span>
+                </div>
               </div>`;
           } else if (otherQuote) {
-            const feeStr = (otherQuote.serviceFee !== undefined && otherQuote.serviceFee > 0) ? `₹${otherQuote.serviceFee}` : '₹0 (Free)';
+            const feeStr = (otherQuote.serviceFee !== undefined && otherQuote.serviceFee > 0) ? `₹${otherQuote.serviceFee}` : '₹0 (Voluntary)';
             const countStr = req.volunteerQuotes.length > 1 ? ` (${req.volunteerQuotes.length} quotes submitted)` : '';
             existingQuoteBadge = `
-              <div class="mt-3 p-3 bg-brand-50 border border-brand-100 rounded-xl text-xs text-brand-800 leading-normal font-semibold">
-                A volunteer quoted <strong>${feeStr}</strong>${countStr} (Awaiting Caregiver Selection). You can also submit your quote!
+              <div class="mb-4 p-3 bg-brand-50/80 border border-brand-200/80 rounded-2xl flex items-center gap-2.5 text-xs text-brand-950 shadow-2xs">
+                <span class="w-2 h-2 rounded-full bg-brand-500"></span>
+                <span>A volunteer quoted <strong>${feeStr}</strong>${countStr}. You can also submit your voluntary quote!</span>
               </div>`;
           }
 
-          const btnText = myQuote ? 'Update Your Quote' : 'Volunteer to Help';
+          const btnText = myQuote ? 'Update Your Quote' : 'Quote Fee & Volunteer';
 
           return `
-            <div class="bg-white rounded-2xl border ${req.urgency === 'emergency' ? 'border-red-200 bg-red-50/5' : 'border-slate-200/80'} shadow-sm hover:shadow-premium hover:-translate-y-0.5 transition-all duration-200 p-5 flex flex-col justify-between">
-              <div>
-                <div class="flex justify-between items-start gap-3 flex-wrap mb-3">
-                  <h4 class="text-sm font-extrabold text-slate-900 tracking-tight leading-tight flex-1">${escapeHTML(req.title)}</h4>
-                  <div class="flex gap-1.5 flex-wrap">
-                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-extrabold tracking-wider uppercase ${req.urgency === 'emergency' ? 'bg-red-100 text-red-700' : req.urgency === 'high' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-500'}">
-                      ${urgencyLabel}
-                    </span>
-                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-extrabold tracking-wider uppercase bg-brand-50 text-brand-700">
-                      ${escapeHTML(req.category)}
-                    </span>
-                  </div>
-                </div>
-                
-                ${req.description ? `<p class="text-xs text-slate-500 leading-relaxed mb-3 line-clamp-3">${escapeHTML(req.description)}</p>` : ''}
-                
-                <!-- Caregiver Shopping Preference -->
-                <div class="rounded-xl p-3 bg-amber-50/50 border border-amber-100 mb-3">
-                  <div class="text-[9px] font-extrabold text-amber-800 uppercase tracking-wider">Caregiver Shopping Preference</div>
-                  <div class="text-xs font-bold text-amber-900 mt-0.5">
-                    ${escapeHTML((req.shoppingPreference && req.shoppingPreference.trim()) ? req.shoppingPreference.trim() : 'No Preference')}
-                  </div>
-                </div>
+            <div class="bg-white rounded-3xl border border-slate-200/90 shadow-premium hover:shadow-cardHover p-5 sm:p-6 transition-all relative overflow-hidden group" id="reqCard-${req._id}">
+              <!-- Top accent gradient line -->
+              <div class="h-1.5 bg-gradient-to-r from-brand-500 to-brand-600 -mx-5 sm:-mx-6 -mt-5 sm:-mt-6 mb-5"></div>
 
-                ${audioHtml}
-                ${existingQuoteBadge}
-                ${renderPlatformHelperHtml(req)}
+              <!-- Header: Title, Category & Date + Badges -->
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 pb-4 border-b border-slate-100 mb-4">
+                <div class="space-y-2 flex-1 min-w-0">
+                  <h3 class="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight leading-snug group-hover:text-brand-700 transition-colors">${escapeHTML(req.title)}</h3>
+                  <div class="flex items-center gap-2.5 text-xs font-semibold text-slate-500 flex-wrap">
+                    ${categoryBadge}
+                    <span class="inline-flex items-center gap-1.5 text-slate-400 font-medium pl-1">
+                      <svg class="w-3.5 h-3.5 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                      <span>${new Date(req.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                    </span>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2 flex-shrink-0 sm:self-center flex-wrap">
+                  ${urgencyBadge}
+                  <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-brand-50 text-brand-700 border border-brand-200/80 rounded-full text-xs font-extrabold shadow-2xs whitespace-nowrap">
+                    <span class="w-1.5 h-1.5 rounded-full bg-brand-500 animate-pulse"></span>
+                    Seeking Volunteers
+                  </span>
+                </div>
               </div>
 
-              <div class="flex justify-between items-center mt-4 pt-3 border-t border-slate-100 text-[10px] text-slate-400 font-semibold gap-3 flex-wrap">
-                <span>Posted: ${new Date(req.createdAt).toLocaleDateString()}</span>
-                <button class="px-4 py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-xs font-extrabold rounded-xl transition-all cursor-pointer shadow-xs focus:outline-none flex items-center gap-1.5 border-none" onclick="acceptHelpRequest('${req._id}', '${escapeHTML(req.title).replace(/'/g, "\\'")}', '${escapeHTML(req.shoppingPreference || 'No Preference').replace(/'/g, "\\'")}')">
-                  ${btnText}
+              <!-- Description -->
+              ${req.description && req.description !== req.title ? `
+                <div class="text-sm font-medium text-slate-700 leading-relaxed mb-4 bg-slate-50/70 rounded-2xl p-3.5 border border-slate-100">
+                  ${escapeHTML(req.description)}
+                </div>` : ''}
+
+              ${voiceNoteHtml}
+              ${prefHtml}
+              ${existingQuoteBadge}
+              ${renderPlatformHelperHtml(req)}
+
+              <!-- Action Area -->
+              <div class="flex items-center justify-between pt-4 mt-4 border-t border-slate-100 flex-wrap gap-3">
+                <div class="flex items-center gap-2 text-xs font-semibold text-slate-500">
+                  <svg class="w-4 h-4 text-brand-600 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                  <span>Free or Quoted Service Assistance</span>
+                </div>
+                <button
+                  type="button"
+                  onclick="acceptHelpRequest('${req._id}', '${escapeHTML(req.title).replace(/'/g, "\\'")}', '${escapeHTML(req.shoppingPreference || 'No Preference').replace(/'/g, "\\'")}')"
+                  class="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-brand-600 to-brand-700 hover:from-brand-700 hover:to-brand-800 text-white font-extrabold text-xs sm:text-sm rounded-2xl shadow-sm hover:shadow-md transition-all active:scale-95 border-none cursor-pointer"
+                >
+                  <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                  <span>${btnText}</span>
                 </button>
               </div>
             </div>`;
         }).join('');
       }
     }
+
     // --- Render Awaiting Family Approval ---
     if (awaitingList) {
       if (awaitingRequests.length === 0) {
         awaitingList.innerHTML = `
-          <div class="col-span-full py-12 px-6 bg-white rounded-2xl text-center border-2 border-dashed border-slate-200">
-            <p class="text-slate-800 font-extrabold text-sm" data-i18n="vd_no_awaiting">No tasks currently awaiting family approval.</p>
-            <p class="text-xs text-slate-400 font-medium mt-1">When you commit to help, the family reviews your profile here.</p>
+          <div class="bg-amber-50/50 border-2 border-dashed border-amber-200 rounded-3xl p-8 text-center space-y-2">
+            <div class="w-12 h-12 mx-auto rounded-2xl bg-amber-100/80 text-amber-700 flex items-center justify-center shadow-xs">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+            <p class="text-base font-extrabold text-amber-950" data-i18n="vd_no_awaiting">No tasks currently awaiting family approval.</p>
+            <p class="text-xs font-semibold text-slate-500 max-w-md mx-auto">When you quote to help, the family reviews your profile and fee quote here.</p>
           </div>`;
       } else {
         awaitingList.innerHTML = awaitingRequests.map(req => {
+          const categoryBadge = getCategoryBadgeHtml(req.category);
+          const prefHtml = getShoppingPreferenceHtml(req.shoppingPreference);
+          const voiceNoteHtml = getVoiceNotePlayerHtml(req.audioFile);
+
           return `
-            <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-premium transition-all duration-200 p-5 flex flex-col justify-between">
-              <div>
-                <div class="flex justify-between items-start gap-3 flex-wrap mb-3">
-                  <h4 class="text-sm font-extrabold text-slate-900 tracking-tight leading-tight flex-1">${escapeHTML(req.title)}</h4>
-                  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-extrabold tracking-wider uppercase bg-amber-100 text-amber-700">
-                    Awaiting Approval
-                  </span>
-                </div>
-                
-                ${req.description ? `<p class="text-xs text-slate-500 leading-relaxed mb-3 line-clamp-3">${escapeHTML(req.description)}</p>` : ''}
-                
-                <!-- Caregiver Shopping Preference -->
-                <div class="rounded-xl p-3 bg-amber-50/50 border border-amber-100 mb-3">
-                  <div class="text-[9px] font-extrabold text-amber-800 uppercase tracking-wider">Caregiver Shopping Preference</div>
-                  <div class="text-xs font-bold text-amber-900 mt-0.5">
-                    ${escapeHTML((req.shoppingPreference && req.shoppingPreference.trim()) ? req.shoppingPreference.trim() : 'No Preference')}
+            <div class="bg-white rounded-3xl border border-slate-200/90 shadow-premium hover:shadow-cardHover p-5 sm:p-6 transition-all relative overflow-hidden group">
+              <div class="h-1.5 bg-gradient-to-r from-amber-400 to-amber-600 -mx-5 sm:-mx-6 -mt-5 sm:-mt-6 mb-5"></div>
+
+              <!-- Header -->
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 pb-4 border-b border-slate-100 mb-4">
+                <div class="space-y-2 flex-1 min-w-0">
+                  <h3 class="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight leading-snug">${escapeHTML(req.title)}</h3>
+                  <div class="flex items-center gap-2.5 text-xs font-semibold text-slate-500 flex-wrap">
+                    ${categoryBadge}
+                    <span class="inline-flex items-center gap-1.5 text-slate-400 font-medium pl-1">
+                      <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                      <span>${new Date(req.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                    </span>
                   </div>
                 </div>
-
-                <div class="rounded-xl p-3 bg-slate-50 border border-slate-100 text-xs text-slate-650 font-semibold space-y-1">
-                  <p><strong>Senior:</strong> ${req.senior ? escapeHTML(req.senior.name) : 'Senior Citizen'}</p>
-                  <p class="text-[10px] text-slate-400 font-medium italic mt-1 leading-normal">The senior's family caregiver has been notified to review and approve your commitment.</p>
+                <div class="flex items-center gap-2 flex-shrink-0 sm:self-center">
+                  <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-50 text-amber-800 border border-amber-200/80 rounded-full text-xs font-extrabold shadow-2xs whitespace-nowrap">
+                    <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                    Awaiting Caregiver Selection
+                  </span>
                 </div>
+              </div>
+
+              ${req.description ? `<div class="text-sm font-medium text-slate-700 leading-relaxed mb-4 bg-slate-50/70 rounded-2xl p-3.5 border border-slate-100">${escapeHTML(req.description)}</div>` : ''}
+              ${voiceNoteHtml}
+              ${prefHtml}
+
+              <!-- Notice card -->
+              <div class="p-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl text-xs text-slate-700 space-y-1">
+                <p><strong>Senior:</strong> ${req.senior ? escapeHTML(req.senior.name) : 'Senior Citizen'}</p>
+                <p class="text-[11px] text-slate-500 font-medium leading-normal">The family caregiver has been notified to review your quote. Once approved, the task moves to your active commitments.</p>
               </div>
             </div>`;
         }).join('');
@@ -719,9 +846,12 @@ async function loadVolunteerRequests(silent = false) {
     if (activeList) {
       if (activeRequests.length === 0) {
         activeList.innerHTML = `
-          <div class="col-span-full py-12 px-6 bg-white rounded-2xl text-center border-2 border-dashed border-slate-200">
-            <p class="text-slate-800 font-extrabold text-sm" data-i18n="vd_no_active">You have no active help commitments right now.</p>
-            <p class="text-xs text-slate-400 font-medium mt-1">Browse open requests and quote your fee to start helping!</p>
+          <div class="bg-emerald-50/50 border-2 border-dashed border-emerald-200 rounded-3xl p-8 text-center space-y-2">
+            <div class="w-12 h-12 mx-auto rounded-2xl bg-emerald-100/80 text-emerald-700 flex items-center justify-center shadow-xs">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+            <p class="text-base font-extrabold text-emerald-950" data-i18n="vd_no_active">You have no active help commitments right now.</p>
+            <p class="text-xs font-semibold text-slate-500 max-w-md mx-auto">Browse open requests and quote your fee to start helping!</p>
           </div>`;
       } else {
         activeList.innerHTML = activeRequests.map(req => {
@@ -747,31 +877,19 @@ async function loadVolunteerRequests(silent = false) {
           let rejectionWarningBox = '';
           if (isRejected) {
             rejectionWarningBox = `
-              <div class="mt-3 p-3.5 bg-red-55/10 border-l-4 border-red-500 rounded-xl text-xs text-red-800 leading-normal font-semibold">
-                <p class="text-red-750 font-bold mb-1">
-                  Delivery Verification Rejected by Caregiver
-                </p>
-                <p class="text-red-700 font-medium">
-                  <strong>Reason:</strong> "${escapeHTML(req.verificationRejectionReason || 'Caregiver requested updated receipt or delivery photo proof.')}"
-                </p>
-                <p class="text-slate-500 font-normal mt-1 leading-normal">
-                  Please re-upload a clear bill receipt photo or delivery proof and re-apply completion.
-                </p>
+              <div class="mb-4 p-3.5 bg-rose-50 border border-rose-200 rounded-2xl text-xs text-rose-900 font-semibold shadow-2xs">
+                <p class="font-bold text-rose-800 mb-1">Delivery Proof Rejected by Caregiver</p>
+                <p class="font-medium text-rose-700"><strong>Reason:</strong> "${escapeHTML(req.verificationRejectionReason || 'Caregiver requested updated receipt or delivery photo proof.')}"</p>
+                <p class="text-slate-500 font-normal mt-1">Please re-upload a clear store receipt or delivery photo proof.</p>
               </div>`;
           }
 
           if (req.purchaseRejectionReason && req.status === 'accepted') {
             rejectionWarningBox += `
-              <div class="mt-3 p-3.5 bg-amber-55/10 border-l-4 border-amber-500 rounded-xl text-xs text-amber-800 leading-normal font-semibold">
-                <p class="text-amber-750 font-bold mb-1">
-                  Caregiver Requested Revision on Purchase Cost
-                </p>
-                <p class="text-amber-700 font-medium">
-                  <strong>Caregiver Note:</strong> "${escapeHTML(req.purchaseRejectionReason)}"
-                </p>
-                <p class="text-slate-500 font-normal mt-1 leading-normal">
-                  Please review the cost/prices, adjust your purchase details, and re-submit below.
-                </p>
+              <div class="mb-4 p-3.5 bg-amber-50 border border-amber-200 rounded-2xl text-xs text-amber-900 font-semibold shadow-2xs">
+                <p class="font-bold text-amber-800 mb-1">Caregiver Requested Revision on Purchase Cost</p>
+                <p class="font-medium text-amber-700"><strong>Caregiver Note:</strong> "${escapeHTML(req.purchaseRejectionReason)}"</p>
+                <p class="text-slate-500 font-normal mt-1">Please adjust your purchase details and re-submit below.</p>
               </div>`;
           }
 
@@ -780,12 +898,13 @@ async function loadVolunteerRequests(silent = false) {
 
           if (req.status === 'accepted') {
             stepBoxHtml = `
-              <div class="mt-3 p-3.5 bg-blue-50 border-l-4 border-blue-500 rounded-xl text-xs text-blue-800 leading-normal font-semibold">
-                <strong>Next Step:</strong> Review items requested, order/purchase from recommended platforms or store, then submit the actual store receipt cost.
+              <div class="mb-4 p-3.5 bg-brand-50/70 border border-brand-200/80 rounded-2xl text-xs text-brand-950 font-medium">
+                <strong>Next Step:</strong> Review items requested, order/purchase from recommended store, then submit the actual store receipt cost.
               </div>`;
             actionBtnHtml = `
-              <button class="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-extrabold rounded-xl transition-all cursor-pointer shadow-xs border-none focus:outline-none flex items-center gap-1.5" onclick="openPurchaseCostModal('${req._id}')">
-                Submit Purchase Cost
+              <button class="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs sm:text-sm rounded-2xl shadow-xs transition-all active:scale-95 border-none cursor-pointer" onclick="openPurchaseCostModal('${req._id}')">
+                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+                <span>Submit Purchase Cost &amp; Bill</span>
               </button>`;
           } else if (req.status === 'purchase_cost_submitted') {
             let proofImages = req.purchaseProofDocs && req.purchaseProofDocs.length > 0 
@@ -794,84 +913,91 @@ async function loadVolunteerRequests(silent = false) {
             let proofSlider = renderProofSliderHtml(req._id, proofImages);
 
             stepBoxHtml = `
-              <div class="mt-3 p-3.5 bg-amber-50 border-l-4 border-amber-500 rounded-xl text-xs text-amber-800 leading-normal font-semibold">
+              <div class="mb-4 p-3.5 bg-amber-50/80 border border-amber-200/80 rounded-2xl text-xs text-amber-950 font-medium">
                 <strong>Purchase Cost Submitted: ₹${req.actualPurchaseCost || 0}</strong><br/>
-                Awaiting Caregiver Escrow Payment. Once caregiver deposits funds, proceed with delivery.
+                Awaiting Caregiver Escrow Funding. Once caregiver deposits funds, proceed with delivery.
                 ${proofSlider}
               </div>`;
             actionBtnHtml = `
-              <div class="inline-flex items-center justify-center px-4 py-2 bg-amber-50 text-amber-750 border border-amber-250 rounded-xl text-xs font-bold cursor-default select-none">
-                Escrow Funding Pending
+              <div class="inline-flex items-center justify-center px-4 py-2.5 bg-amber-50 text-amber-800 border border-amber-200 rounded-2xl text-xs font-extrabold select-none">
+                Escrow Payment Pending
               </div>`;
           } else if (req.status === 'purchase_funded' || req.status === 'in_progress') {
             stepBoxHtml = `
-              <div class="mt-3 p-3.5 bg-emerald-50 border-l-4 border-emerald-500 rounded-xl text-xs text-emerald-800 leading-normal font-semibold">
+              <div class="mb-4 p-3.5 bg-emerald-50/80 border border-emerald-200/80 rounded-2xl text-xs text-emerald-950 font-medium">
                 <strong>Escrow Funded: ₹${req.actualPurchaseCost || 0} Deposited</strong><br/>
-                Items paid by caregiver. Deliver the items to the senior, collect confirmation, and upload final proof!
+                Items paid by caregiver. Deliver the items to the senior and upload final completion proof!
               </div>`;
             actionBtnHtml = `
-              <button class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold rounded-xl transition-all cursor-pointer shadow-xs border-none focus:outline-none flex items-center gap-1.5" onclick="openCompletionModal('${req._id}')">
-                Upload Proof &amp; Complete
+              <button class="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm rounded-2xl shadow-xs transition-all active:scale-95 border-none cursor-pointer" onclick="openCompletionModal('${req._id}')">
+                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <span>Upload Proof &amp; Complete</span>
               </button>`;
           } else if (req.status === 'awaiting_verification') {
             stepBoxHtml = `
-              <div class="mt-3 p-3.5 bg-purple-50 border-l-4 border-purple-500 rounded-xl text-xs text-purple-800 leading-normal font-semibold">
-                <strong>Store Cash Receipt Uploaded</strong><br/>
-                Awaiting Caregiver Final Verification &amp; Volunteer Service Charge (₹${myQuotedFee > 0 ? myQuotedFee : 150}) Escrow Release.
-                ${req.finalReceiptDoc || req.completionProof ? `<div class="mt-2"><a href="${req.finalReceiptDoc || req.completionProof}" target="_blank" onclick="event.stopPropagation(); openImageLightbox('${req.finalReceiptDoc || req.completionProof}'); return false;" class="text-purple-700 font-bold hover:underline">View Uploaded Receipt Photo</a></div>` : ''}
+              <div class="mb-4 p-3.5 bg-purple-50/80 border border-purple-200/80 rounded-2xl text-xs text-purple-950 font-medium">
+                <strong>Store Bill &amp; Delivery Proof Uploaded</strong><br/>
+                Awaiting Caregiver Final Verification &amp; Service Charge (₹${myQuotedFee > 0 ? myQuotedFee : 150}) Escrow Release.
               </div>`;
             actionBtnHtml = `
-              <div class="inline-flex items-center justify-center px-4 py-2 bg-purple-50 text-purple-750 border border-purple-250 rounded-xl text-xs font-bold cursor-default select-none">
+              <div class="inline-flex items-center justify-center px-4 py-2.5 bg-purple-50 text-purple-800 border border-purple-200 rounded-2xl text-xs font-extrabold select-none">
                 Verification Pending
               </div>`;
           } else {
             actionBtnHtml = `
-              <button class="px-4 py-2.5 text-white text-xs font-extrabold rounded-xl transition-all cursor-pointer shadow-xs border-none focus:outline-none" onclick="openCompletionModal('${req._id}')" style="background-color: ${isRejected ? '#c62828' : 'var(--color-primary-dark)'};">
-                ${isRejected ? 'Re-upload & Re-apply' : 'Complete & Upload Proof'}
+              <button class="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs sm:text-sm rounded-2xl shadow-xs transition-all active:scale-95 border-none cursor-pointer" onclick="openCompletionModal('${req._id}')">
+                <span>${isRejected ? 'Re-upload & Re-apply' : 'Complete & Upload Proof'}</span>
               </button>`;
           }
 
+          const categoryBadge = getCategoryBadgeHtml(req.category);
+          const voiceNoteHtml = getVoiceNotePlayerHtml(req.audioFile);
+          const prefHtml = getShoppingPreferenceHtml(req.shoppingPreference);
+
           return `
-            <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-premium transition-all duration-200 p-5 flex flex-col justify-between ${isRejected ? 'border-red-200 bg-red-50/5' : ''}">
-              <div>
-                <div class="flex justify-between items-start gap-3 flex-wrap mb-3">
-                  <div>
-                    <h4 class="text-sm font-extrabold text-slate-900 tracking-tight leading-tight">${escapeHTML(req.title)}</h4>
-                    <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-100 mt-1">
+            <div class="bg-white rounded-3xl border border-slate-200/90 shadow-premium hover:shadow-cardHover p-5 sm:p-6 transition-all relative overflow-hidden group ${isRejected ? 'border-rose-200' : ''}">
+              <div class="h-1.5 bg-gradient-to-r from-emerald-500 to-emerald-600 -mx-5 sm:-mx-6 -mt-5 sm:-mt-6 mb-5"></div>
+
+              <!-- Header -->
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 pb-4 border-b border-slate-100 mb-4">
+                <div class="space-y-2 flex-1 min-w-0">
+                  <h3 class="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight leading-snug">${escapeHTML(req.title)}</h3>
+                  <div class="flex items-center gap-2.5 text-xs font-semibold text-slate-500 flex-wrap">
+                    ${categoryBadge}
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-xl text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
                       Quoted Fee: ₹${myQuotedFee > 0 ? myQuotedFee : '0 (Free)'}
                     </span>
                   </div>
-                  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-extrabold tracking-wider uppercase bg-brand-50 text-brand-700">
-                    In Progress
+                </div>
+                <div class="flex items-center gap-2 flex-shrink-0 sm:self-center">
+                  <span class="inline-flex items-center gap-1.5 px-3.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200/80 rounded-full text-xs font-extrabold shadow-2xs whitespace-nowrap">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                    Task In Progress
                   </span>
                 </div>
-
-                ${req.description ? `<p class="text-xs text-slate-500 leading-relaxed mb-3 line-clamp-3">${escapeHTML(req.description)}</p>` : ''}
-
-                <!-- Caregiver Shopping Preference -->
-                <div class="rounded-xl p-3 bg-amber-50/50 border border-amber-100 mb-3">
-                  <div class="text-[9px] font-extrabold text-amber-800 uppercase tracking-wider">Caregiver Shopping Preference</div>
-                  <div class="text-xs font-bold text-amber-900 mt-0.5">
-                    ${escapeHTML((req.shoppingPreference && req.shoppingPreference.trim()) ? req.shoppingPreference.trim() : 'No Preference')}
-                  </div>
-                </div>
-
-                <!-- Senior Citizen Info Box -->
-                <div class="rounded-xl p-3 bg-brand-50/50 border border-brand-100 text-xs text-slate-600 space-y-1 mb-3">
-                  <p class="font-extrabold text-slate-900 border-b border-brand-100/50 pb-1 mb-1 text-[10px] uppercase tracking-wider">Senior Information</p>
-                  <p><strong>Name:</strong> ${escapeHTML(seniorName)}</p>
-                  <p><strong>Phone:</strong> <a href="tel:${seniorPhone}" class="text-brand-600 font-bold hover:underline">${escapeHTML(seniorPhone)}</a></p>
-                  <p><strong>Address:</strong> ${escapeHTML(seniorAddress)}</p>
-                  <p><strong>Emergency Contact:</strong> ${escapeHTML(emergencyContact)}</p>
-                </div>
-
-                ${rejectionWarningBox}
-                ${stepBoxHtml}
-                ${renderPlatformHelperHtml(req)}
               </div>
 
-              <div class="flex justify-between items-center mt-4 pt-3 border-t border-slate-100 text-[10px] text-slate-400 font-semibold gap-3 flex-wrap">
-                <span>Accepted: ${new Date(req.acceptedAt || Date.now()).toLocaleDateString()}</span>
+              ${req.description ? `<div class="text-sm font-medium text-slate-700 leading-relaxed mb-4 bg-slate-50/70 rounded-2xl p-3.5 border border-slate-100">${escapeHTML(req.description)}</div>` : ''}
+
+              <!-- Senior Contact Card -->
+              <div class="rounded-2xl p-4 bg-slate-50 border border-slate-200/80 text-xs text-slate-700 space-y-1.5 mb-4 shadow-2xs">
+                <div class="flex items-center justify-between pb-1.5 border-b border-slate-200/60 font-extrabold text-slate-900 text-xs uppercase tracking-wider">
+                  <span>Senior Citizen Details</span>
+                </div>
+                <p><strong>Name:</strong> ${escapeHTML(seniorName)}</p>
+                <p><strong>Phone:</strong> <a href="tel:${seniorPhone}" class="text-brand-600 font-bold hover:underline">${escapeHTML(seniorPhone)}</a></p>
+                <p><strong>Address:</strong> ${escapeHTML(seniorAddress)}</p>
+                ${emergencyContact ? `<p class="text-slate-500"><strong>Emergency Contact:</strong> ${escapeHTML(emergencyContact)}</p>` : ''}
+              </div>
+
+              ${voiceNoteHtml}
+              ${prefHtml}
+              ${rejectionWarningBox}
+              ${stepBoxHtml}
+              ${renderPlatformHelperHtml(req)}
+
+              <div class="flex items-center justify-between pt-4 mt-4 border-t border-slate-100 flex-wrap gap-3">
+                <span class="text-xs text-slate-400 font-medium">Accepted: ${new Date(req.acceptedAt || Date.now()).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</span>
                 ${actionBtnHtml}
               </div>
             </div>`;
@@ -883,121 +1009,126 @@ async function loadVolunteerRequests(silent = false) {
     if (historyList) {
       if (completedRequests.length === 0) {
         historyList.innerHTML = `
-          <div class="col-span-full py-12 px-6 bg-white rounded-2xl text-center border-2 border-dashed border-slate-200">
-            <p class="text-slate-800 font-extrabold text-sm" data-i18n="vd_no_history">No completed requests logged yet.</p>
-            <p class="text-xs text-slate-400 font-medium mt-1">Your verified completions will appear here.</p>
+          <div class="bg-slate-50 border-2 border-dashed border-slate-200 rounded-3xl p-8 text-center space-y-2">
+            <div class="w-12 h-12 mx-auto rounded-2xl bg-slate-100 text-slate-600 flex items-center justify-center shadow-xs">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+            <p class="text-base font-extrabold text-slate-900" data-i18n="vd_no_history">No completed requests logged yet.</p>
+            <p class="text-xs font-semibold text-slate-500 max-w-md mx-auto">Your verified completions and caregiver ratings will appear here.</p>
           </div>`;
       } else {
         historyList.innerHTML = completedRequests.map(req => {
-          let audioHtml = req.audioFile ? `<div class="request-audio-player mt-3 bg-slate-50 border border-slate-100 p-2.5 rounded-xl text-xs"><label class="block font-bold text-slate-600 mb-1">Senior's Voice Message:</label><audio class="w-full h-8" controls src="${req.audioFile}"></audio></div>` : '';
-          
+          const voiceNoteHtml = getVoiceNotePlayerHtml(req.audioFile);
+          const categoryBadge = getCategoryBadgeHtml(req.category);
+
           const serviceFeeEarned = Number((req.serviceFee !== undefined && req.serviceFee !== null)
             ? req.serviceFee
             : ((req.volunteerQuotes && req.volunteerQuotes[0] && req.volunteerQuotes[0].serviceFee !== undefined)
               ? req.volunteerQuotes[0].serviceFee
               : (req.paymentDetails ? req.paymentDetails.volunteerFee : 0))) || 0;
 
-          const itemCostVal = Number((req.actualPurchaseCost !== undefined && req.actualPurchaseCost !== null)
-            ? req.actualPurchaseCost
-            : (req.purchasePaymentDetails ? req.purchasePaymentDetails.amountPaid : (req.paymentDetails ? req.paymentDetails.itemsCost : 0))) || 0;
-
           const tipEarned = Number(req.tipAmount || (req.paymentDetails ? req.paymentDetails.tipAmount : 0) || (req.tipPaymentDetails ? req.tipPaymentDetails.amountPaid : 0)) || 0;
-
           const totalEarned = serviceFeeEarned + tipEarned;
 
           let earningsHtml = `
-            <div class="mt-3 p-3 bg-emerald-50 border border-emerald-100 rounded-xl">
+            <div class="mb-4 p-3.5 bg-emerald-50/80 border border-emerald-200/80 rounded-2xl shadow-2xs">
               <div class="flex justify-between items-center flex-wrap gap-2">
-                <span class="text-xs font-bold text-emerald-800">
-                  Total Amount Earned: <strong class="text-sm font-extrabold">₹${totalEarned}</strong>
+                <span class="text-xs font-bold text-emerald-950">
+                  Total Earned: <strong class="text-sm font-extrabold text-emerald-700">₹${totalEarned}</strong>
                 </span>
                 ${tipEarned > 0 ? `
-                  <button type="button" onclick="showTipEarnedModal('${escapeHTML(req.title)}', ${tipEarned}, ${serviceFeeEarned})" class="bg-amber-100 text-amber-850 hover:bg-amber-150 border border-amber-200 px-3 py-1 rounded-full font-extrabold text-[10px] cursor-pointer transition-all shadow-xs focus:outline-none flex items-center gap-1">
-                    Special Tip: ₹${tipEarned}
-                  </button>
-                ` : ''}
+                  <button type="button" onclick="showTipEarnedModal('${escapeHTML(req.title).replace(/'/g, "\\'")}', ${tipEarned}, ${serviceFeeEarned})" class="bg-amber-100 text-amber-800 hover:bg-amber-200 border border-amber-300 px-3 py-1 rounded-full font-extrabold text-xs cursor-pointer transition-all shadow-xs flex items-center gap-1">
+                    Bonus Tip: ₹${tipEarned}
+                  </button>` : ''}
               </div>
-              <div class="text-[10px] text-emerald-600 font-semibold mt-1">
-                Breakdown: Service Fee ₹${serviceFeeEarned} ${tipEarned > 0 ? `+ Caregiver Tip ₹${tipEarned}` : ''}
+              <div class="text-[11px] text-emerald-700 font-semibold mt-1">
+                Breakdown: Service Charge ₹${serviceFeeEarned} ${tipEarned > 0 ? `+ Caregiver Tip ₹${tipEarned}` : ''}
               </div>
             </div>`;
-          
+
           let proofHtml = req.completionProof ? `
-            <div class="mt-3 background-white p-3 rounded-xl border border-slate-200/60 shadow-xs">
+            <div class="mb-4 p-3.5 bg-slate-50 border border-slate-200/70 rounded-2xl">
               <div class="flex justify-between items-center mb-2 flex-wrap gap-2">
-                <label class="font-extrabold text-slate-800 text-[10px] uppercase tracking-wider">Receipt / Proof:</label>
-                <button type="button" onclick="openImageLightbox('${escapeHTML(req.completionProof)}')" class="px-2.5 py-1 text-[10px] font-bold bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-lg cursor-pointer transition-all">View Full Photo</button>
+                <label class="font-extrabold text-slate-800 text-xs uppercase tracking-wider">Uploaded Proof:</label>
+                <button type="button" onclick="openImageLightbox('${escapeHTML(req.completionProof)}')" class="px-2.5 py-1 text-xs font-bold bg-white hover:bg-slate-100 border border-slate-200 rounded-xl cursor-pointer transition-all">View Photo</button>
               </div>
-              <img src="${escapeHTML(req.completionProof)}" alt="Receipt Photo Proof" onclick="openImageLightbox('${escapeHTML(req.completionProof)}')" class="max-w-full max-h-[120px] rounded-lg mt-1 block object-contain cursor-pointer mx-auto border border-slate-150">
-            </div>` : '<div class="mt-2 text-[10px] text-slate-400 font-semibold">No receipt/delivery photo attached.</div>';
+              <img src="${escapeHTML(req.completionProof)}" alt="Receipt Photo Proof" onclick="openImageLightbox('${escapeHTML(req.completionProof)}')" class="max-w-full max-h-[140px] rounded-xl block object-contain cursor-pointer mx-auto border border-slate-200">
+            </div>` : '';
 
           let verifyBadge = '';
           let reapplyButtonHtml = '';
           let rejectionReasonAlert = '';
 
           if (req.completionVerified === 'verified') {
-            verifyBadge = `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-extrabold tracking-wider uppercase bg-emerald-100 text-emerald-700">Verified</span>`;
+            verifyBadge = `<span class="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200/80 rounded-full text-xs font-extrabold shadow-2xs whitespace-nowrap">
+              <svg class="w-3.5 h-3.5 text-emerald-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
+              Verified &amp; Paid
+            </span>`;
           } else if (req.completionVerified === 'rejected') {
-            verifyBadge = `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-extrabold tracking-wider uppercase bg-red-100 text-red-700">Rejected</span>`;
+            verifyBadge = `<span class="inline-flex items-center gap-1.5 px-3 py-1 bg-rose-50 text-rose-700 border border-rose-200/80 rounded-full text-xs font-extrabold shadow-2xs whitespace-nowrap">Rejected</span>`;
             
             rejectionReasonAlert = `
-              <div class="mt-3 p-3 bg-red-50/50 border border-red-200 rounded-xl text-xs text-red-800 leading-normal font-semibold">
-                <p class="text-red-750 font-bold mb-1">
-                  Verification Rejected by Caregiver
-                </p>
-                <p class="text-red-700 font-medium">
-                  <strong>Reason:</strong> "${escapeHTML(req.verificationRejectionReason || 'Caregiver requested updated receipt or delivery photo proof.')}"
-                </p>
+              <div class="mb-4 p-3 bg-rose-50/70 border border-rose-200 rounded-2xl text-xs text-rose-900 font-semibold">
+                <p class="font-bold text-rose-800 mb-0.5">Verification Rejected</p>
+                <p class="font-medium text-rose-700"><strong>Reason:</strong> "${escapeHTML(req.verificationRejectionReason || 'Updated receipt proof needed.')}"</p>
               </div>`;
 
             reapplyButtonHtml = `
-              <button class="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-[10px] font-extrabold rounded-lg transition-all cursor-pointer shadow-xs border-none focus:outline-none" onclick="openCompletionModal('${req._id}')">
-                Re-apply
+              <button class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-extrabold rounded-2xl transition-all cursor-pointer shadow-xs border-none" onclick="openCompletionModal('${req._id}')">
+                Re-apply Completion
               </button>`;
-          } else if (req.requiresSeniorVoiceCall) {
-            verifyBadge = `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-extrabold tracking-wider uppercase bg-blue-100 text-blue-700">Voice Call Sent</span>`;
           } else {
-            verifyBadge = `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-extrabold tracking-wider uppercase bg-amber-100 text-amber-700">Pending Verification</span>`;
+            verifyBadge = `<span class="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-50 text-amber-800 border border-amber-200/80 rounded-full text-xs font-extrabold shadow-2xs whitespace-nowrap">Pending Verification</span>`;
           }
 
           return `
-            <div class="request-card" style="opacity: 1; border-color: ${req.completionVerified === 'rejected' ? 'var(--color-emergency)' : '#ddd'}; border-left: 5px solid ${req.completionVerified === 'rejected' ? 'var(--color-emergency)' : '#ddd'};">
-              <div class="request-card-header">
-                <div class="request-title" style="color: #444;">${escapeHTML(req.title)}</div>
-                <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+            <div class="bg-white rounded-3xl border border-slate-200/90 shadow-premium hover:shadow-cardHover p-5 sm:p-6 transition-all relative overflow-hidden group">
+              <div class="h-1.5 bg-gradient-to-r from-emerald-500 to-teal-600 -mx-5 sm:-mx-6 -mt-5 sm:-mt-6 mb-5"></div>
+
+              <!-- Header -->
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 pb-4 border-b border-slate-100 mb-4">
+                <div class="space-y-2 flex-1 min-w-0">
+                  <h3 class="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight leading-snug">${escapeHTML(req.title)}</h3>
+                  <div class="flex items-center gap-2.5 text-xs font-semibold text-slate-500 flex-wrap">
+                    ${categoryBadge}
+                    <span class="inline-flex items-center gap-1.5 text-slate-400 font-medium pl-1">
+                      <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                      <span>Completed ${new Date(req.completedAt || Date.now()).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                    </span>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2 flex-shrink-0 sm:self-center">
                   ${verifyBadge}
-                  <span class="badge badge-urgency">${escapeHTML(req.category)}</span>
                 </div>
               </div>
-              ${req.description ? `<div class="request-description">${escapeHTML(req.description)}</div>` : ''}
-              ${req.shoppingPreference ? `
-                <div style="margin-top: 8px; margin-bottom: 12px; padding: 10px 14px; background: #fff3e0; border-left: 4px solid #e65100; border-radius: 8px; font-size: 0.98rem; color: #e65100; font-weight: 600;">
-                  <strong>Caregiver Shopping Preference:</strong> ${escapeHTML(req.shoppingPreference)}
-                </div>` : ''}
-              ${audioHtml}
+
+              ${req.description ? `<div class="text-sm font-medium text-slate-700 leading-relaxed mb-4 bg-slate-50/70 rounded-2xl p-3.5 border border-slate-100">${escapeHTML(req.description)}</div>` : ''}
+              ${voiceNoteHtml}
               ${proofHtml}
               ${rejectionReasonAlert}
-              <div class="request-details" style="margin-top: 10px;">
+
+              <div class="p-3.5 bg-slate-50 rounded-2xl border border-slate-200/80 text-xs text-slate-700 space-y-1 mb-4">
                 <p><strong>Senior Assisted:</strong> ${req.senior ? escapeHTML(req.senior.name) : 'Senior Citizen'}</p>
-                <p><strong>Completion Notes:</strong> ${escapeHTML(req.resolutionNotes)}</p>
-                <p><strong>Completed On:</strong> ${new Date(req.completedAt || Date.now()).toLocaleDateString()}</p>
+                <p><strong>Completion Summary:</strong> ${escapeHTML(req.resolutionNotes || 'Task completed successfully.')}</p>
               </div>
 
               ${earningsHtml}
 
               ${req.feedback ? `
-                <div style="margin-top: 10px; padding: 10px 14px; background: #fffdf5; border: 1.5px solid #fde68a; border-radius: 10px; box-shadow: 0 2px 6px rgba(245,158,11,0.08);">
-                  <div style="font-weight: 700; color: #b45309; font-size: 0.95rem; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
-                    Caregiver Feedback &amp; Rating Review:
+                <div class="mb-4 p-4 bg-amber-50/60 border border-amber-200/80 rounded-2xl space-y-2">
+                  <div class="font-extrabold text-amber-900 text-xs uppercase tracking-wider flex items-center gap-1.5">
+                    <svg class="w-4 h-4 text-amber-500 fill-amber-400" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                    Caregiver Feedback &amp; Rating Review
                   </div>
-                  <div style="font-size: 0.88rem; color: #444; display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 4px;">
-                    <span>Cost Utilization: <strong style="color: #b45309;">${req.feedback.costUtilization}/5</strong></span>
-                    <span>Speed: <strong style="color: #b45309;">${req.feedback.speedTimeliness}/5</strong></span>
-                    <span>Communication: <strong style="color: #b45309;">${req.feedback.communication}/5</strong></span>
-                    <span>Choose Again: <strong style="color: #2e7d32;">${escapeHTML(req.feedback.chooseAgain)}</strong></span>
+                  <div class="flex gap-3 flex-wrap text-xs text-slate-700">
+                    <span>Cost: <strong class="text-amber-800">${req.feedback.costUtilization}/5</strong></span>
+                    <span>Speed: <strong class="text-amber-800">${req.feedback.speedTimeliness}/5</strong></span>
+                    <span>Kindness: <strong class="text-amber-800">${req.feedback.communication}/5</strong></span>
+                    <span>Recommend: <strong class="text-emerald-700">${escapeHTML(req.feedback.chooseAgain)}</strong></span>
                   </div>
-                  ${req.feedback.additionalFeedback ? `<p style="margin: 4px 0 0 0; font-size: 0.88rem; color: #333; font-style: italic; background: #ffffff; padding: 6px 10px; border-radius: 6px; border-left: 3px solid #fde68a;">"${escapeHTML(req.feedback.additionalFeedback)}"</p>` : ''}
+                  ${req.feedback.additionalFeedback ? `<p class="text-xs text-slate-600 italic bg-white p-2.5 rounded-xl border border-amber-200/60 mt-1">"${escapeHTML(req.feedback.additionalFeedback)}"</p>` : ''}
                 </div>` : ''}
+
               ${reapplyButtonHtml}
             </div>`;
         }).join('');
@@ -1009,6 +1140,83 @@ async function loadVolunteerRequests(silent = false) {
   } else {
     alert("Error loading requests data");
   }
+}
+
+// Helper functions for Category Badges, Shopping Preferences and Voice Note Player
+function getCategoryBadgeHtml(category) {
+  const cat = (category || 'other').toLowerCase();
+  if (cat.includes('grocery') || cat.includes('shopping')) {
+    return `<span class="inline-flex items-center gap-1.5 text-amber-700 font-bold bg-amber-50 border border-amber-200/60 px-2.5 py-0.5 rounded-xl">
+      <svg class="w-3.5 h-3.5 text-amber-600 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25c-.669 0-1.189-.578-1.119-1.243l1.263-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/></svg>
+      <span>Grocery Shopping</span>
+    </span>`;
+  }
+  if (cat.includes('med') || cat.includes('doctor') || cat.includes('health') || cat.includes('escort')) {
+    return `<span class="inline-flex items-center gap-1.5 text-rose-700 font-bold bg-rose-50 border border-rose-200/60 px-2.5 py-0.5 rounded-xl">
+      <svg class="w-3.5 h-3.5 text-rose-600 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+      <span>Medical Escort</span>
+    </span>`;
+  }
+  if (cat.includes('tech') || cat.includes('mobile') || cat.includes('phone') || cat.includes('support')) {
+    return `<span class="inline-flex items-center gap-1.5 text-blue-700 font-bold bg-blue-50 border border-blue-200/60 px-2.5 py-0.5 rounded-xl">
+      <svg class="w-3.5 h-3.5 text-blue-600 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3"/></svg>
+      <span>Tech Support</span>
+    </span>`;
+  }
+  if (cat.includes('clean') || cat.includes('house') || cat.includes('maid')) {
+    return `<span class="inline-flex items-center gap-1.5 text-teal-700 font-bold bg-teal-50 border border-teal-200/60 px-2.5 py-0.5 rounded-xl">
+      <svg class="w-3.5 h-3.5 text-teal-600 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"/></svg>
+      <span>Housekeeping</span>
+    </span>`;
+  }
+  if (cat.includes('companion') || cat.includes('talk') || cat.includes('chat') || cat.includes('social')) {
+    return `<span class="inline-flex items-center gap-1.5 text-purple-700 font-bold bg-purple-50 border border-purple-200/60 px-2.5 py-0.5 rounded-xl">
+      <svg class="w-3.5 h-3.5 text-purple-600 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z"/></svg>
+      <span>Companionship</span>
+    </span>`;
+  }
+  return `<span class="inline-flex items-center gap-1.5 text-slate-700 font-bold bg-slate-100 border border-slate-200/80 px-2.5 py-0.5 rounded-xl">
+    <svg class="w-3.5 h-3.5 text-slate-600 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z"/></svg>
+    <span>${escapeHTML(category || 'Assistance')}</span>
+  </span>`;
+}
+
+function getShoppingPreferenceHtml(pref) {
+  if (!pref || !pref.trim()) return '';
+  return `
+    <div class="bg-amber-50/80 border border-amber-200/70 rounded-2xl p-3 mb-3.5 flex items-center gap-2.5 text-xs text-amber-950 shadow-2xs">
+      <div class="w-7 h-7 rounded-xl bg-amber-500/15 text-amber-700 flex items-center justify-center flex-shrink-0">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25c-.669 0-1.189-.578-1.119-1.243l1.263-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+        </svg>
+      </div>
+      <div class="flex items-center gap-1.5 flex-wrap">
+        <strong class="font-bold text-amber-900">Caregiver Preference:</strong>
+        <span class="font-medium text-amber-800">${escapeHTML(pref.trim())}</span>
+      </div>
+    </div>`;
+}
+
+function getVoiceNotePlayerHtml(audioFile) {
+  if (!audioFile) return '';
+  return `
+    <div class="bg-slate-50/90 border border-slate-200/90 rounded-2xl p-4 mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 shadow-2xs">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-2xl bg-indigo-50 border border-indigo-200/70 text-indigo-600 flex items-center justify-center shadow-xs flex-shrink-0">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15a3 3 0 01-3-3V4.5a3 3 0 116 0v7.5a3 3 0 01-3 3z" />
+          </svg>
+        </div>
+        <div>
+          <div class="flex items-center gap-1.5">
+            <span class="text-xs font-extrabold text-slate-900 tracking-tight">Senior Voice Message</span>
+            <span class="px-1.5 py-0.5 bg-indigo-100/80 text-indigo-700 text-[10px] font-bold rounded-md uppercase tracking-wider">Voice Note</span>
+          </div>
+          <span class="text-[11px] text-slate-500 font-medium">Recorded Voice Request Attached</span>
+        </div>
+      </div>
+      <audio controls src="${audioFile}" class="h-10 w-full sm:w-72 max-w-full rounded-xl"></audio>
+    </div>`;
 }
 
 
@@ -1096,23 +1304,28 @@ function renderPlatformHelperHtml(req) {
     return `
       <button 
         type="button" 
-        class="platform-chip-btn" 
-        style="border-color: ${p.color || '#1976d2'};"
+        class="inline-flex items-center gap-2 px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-800 font-bold text-xs rounded-xl border border-slate-200/90 hover:border-brand-300 shadow-2xs hover:shadow-xs transition-all active:scale-95 cursor-pointer group"
         onclick="openPlatformWithPreFill('${escapeHTML(p.url)}', '${escapeHTML(q)}', '${escapeHTML(p.name)}')"
-        title="Open ${escapeHTML(p.name)} pre-filled search for '${escapeHTML(q)}'"
+        title="Open ${escapeHTML(p.name)} search for '${escapeHTML(q)}'"
       >
-        <span>${escapeHTML(p.name)}</span>
-        <span style="font-size:0.75rem; color:#888; font-weight:normal;">↗</span>
+        <span class="w-2 h-2 rounded-full flex-shrink-0" style="background-color: ${p.color || '#026bc9'};"></span>
+        <span class="font-bold">${escapeHTML(p.name)}</span>
+        <svg class="w-3 h-3 text-slate-400 group-hover:text-brand-600 transition-colors" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"/></svg>
       </button>`;
   }).join('');
 
   return `
-    <div class="ai-platform-recommendation-box">
-      <div class="ai-platform-header">
-        <span class="ai-platform-title">AI Suggested Ordering Platforms</span>
-        ${queryLabel ? `<span class="platform-items-pill">Items: "${queryLabel}"</span>` : ''}
+    <div class="bg-gradient-to-r from-brand-50/40 via-slate-50 to-indigo-50/30 border border-brand-200/60 rounded-2xl p-4 mb-4 shadow-2xs">
+      <div class="flex items-center justify-between gap-3 flex-wrap mb-3">
+        <div class="flex items-center gap-2">
+          <div class="w-6 h-6 rounded-lg bg-brand-500/10 text-brand-600 flex items-center justify-center flex-shrink-0">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z"/></svg>
+          </div>
+          <span class="text-xs font-extrabold text-slate-800">AI Suggested Ordering Platforms</span>
+        </div>
+        ${queryLabel ? `<span class="bg-white border border-brand-200/80 text-brand-800 text-[11px] font-bold px-2.5 py-0.5 rounded-full shadow-2xs">Items: "${queryLabel}"</span>` : ''}
       </div>
-      <div class="platform-chips-grid">
+      <div class="flex items-center gap-2 flex-wrap">
         ${chipsHtml}
       </div>
     </div>`;
@@ -1295,20 +1508,44 @@ async function renderRatingProfileCard(user) {
   const simpleReviews = document.getElementById('simpleReviews');
 
   if (simpleOverallBadge) {
+    const rVal = (stats.reviewsCount > 0 && stats.overallRating) ? stats.overallRating.toFixed(1) : (stats.tasksCompleted > 0 ? '5.0' : '0.0');
+    simpleOverallBadge.innerHTML = `<span class="text-xl font-extrabold text-slate-900 tracking-tight">${rVal}</span><span class="text-[11px] font-bold text-slate-400">/ 5.0</span>`;
+  }
+
+  const quickRatingText = document.getElementById('quickRatingText');
+  if (quickRatingText) {
     if (stats.reviewsCount > 0) {
-      simpleOverallBadge.textContent = `${stats.overallRating.toFixed(1)} Rating`;
+      quickRatingText.textContent = `${stats.overallRating.toFixed(1)} ★ Rating`;
     } else if (stats.tasksCompleted > 0) {
-      simpleOverallBadge.textContent = `0.0 (No reviews yet)`;
+      quickRatingText.textContent = `${stats.tasksCompleted} Completed`;
     } else {
-      simpleOverallBadge.textContent = `0.0 Rating`;
+      quickRatingText.textContent = `5.0 ★ Rating`;
     }
   }
-  if (simpleCost) simpleCost.textContent = `${stats.costUtilization > 0 ? stats.costUtilization.toFixed(1) : '0'}/5`;
-  if (simpleSpeed) simpleSpeed.textContent = `${stats.speedTimeliness > 0 ? stats.speedTimeliness.toFixed(1) : '0'}/5`;
-  if (simpleComm) simpleComm.textContent = `${stats.communication > 0 ? stats.communication.toFixed(1) : '0'}/5`;
-  if (simpleRecommend) simpleRecommend.textContent = `${stats.recommendationRate}% recommend`;
-  if (simpleTasks) simpleTasks.textContent = `${stats.tasksCompleted} tasks`;
-  if (simpleReviews) simpleReviews.textContent = `${stats.reviewsCount} review${stats.reviewsCount === 1 ? '' : 's'}`;
+
+  if (simpleCost) {
+    const val = stats.costUtilization > 0 ? stats.costUtilization.toFixed(1) : (stats.tasksCompleted > 0 ? '5.0' : '0.0');
+    simpleCost.innerHTML = `<span class="text-xl font-extrabold text-slate-900 tracking-tight">${val}</span><span class="text-[11px] font-bold text-slate-400">/ 5.0</span>`;
+  }
+  if (simpleSpeed) {
+    const val = stats.speedTimeliness > 0 ? stats.speedTimeliness.toFixed(1) : (stats.tasksCompleted > 0 ? '5.0' : '0.0');
+    simpleSpeed.innerHTML = `<span class="text-xl font-extrabold text-slate-900 tracking-tight">${val}</span><span class="text-[11px] font-bold text-slate-400">/ 5.0</span>`;
+  }
+  if (simpleComm) {
+    const val = stats.communication > 0 ? stats.communication.toFixed(1) : (stats.tasksCompleted > 0 ? '5.0' : '0.0');
+    simpleComm.innerHTML = `<span class="text-xl font-extrabold text-slate-900 tracking-tight">${val}</span><span class="text-[11px] font-bold text-slate-400">/ 5.0</span>`;
+  }
+  if (simpleRecommend) {
+    simpleRecommend.textContent = `${stats.recommendationRate || 100}% Families Recommend`;
+  }
+  if (simpleTasks) {
+    const count = stats.tasksCompleted || 0;
+    simpleTasks.textContent = `${count} task${count === 1 ? '' : 's'}`;
+  }
+  if (simpleReviews) {
+    const count = stats.reviewsCount || 0;
+    simpleReviews.textContent = `${count} review${count === 1 ? '' : 's'}`;
+  }
 }
 
 // Open Modal Tab for Submitting Purchase Cost & Bill Proof (Step 4 & 5)
@@ -1562,24 +1799,28 @@ async function loadVolunteerEarnings(silent = false) {
     _earningsData = res.data;
     const { wallet, monthly, transactions } = res.data;
 
-    // Show the wallet card
+    // Show the wallet card only if fully verified
     const card = document.getElementById('earningsWalletCard');
-    if (card) card.style.display = 'block';
+    const isFullyVerified = currentVolunteerUser && (currentVolunteerUser.verificationStatus === 'verified') && (currentVolunteerUser.isIdVerified === true || currentVolunteerUser.isIdVerified === 'true') && (currentVolunteerUser.isPoliceVerified === true || currentVolunteerUser.isPoliceVerified === 'true');
+    if (card) card.style.display = isFullyVerified ? 'block' : 'none';
 
     // Update wallet numbers with animation (silent = no animation on background refresh)
     const totalEl = document.getElementById('walletTotalEarned');
     const availEl = document.getElementById('walletAvailable');
     const pendEl  = document.getElementById('walletPending');
+    const quickWalletEl = document.getElementById('quickWalletBalance');
 
     if (silent) {
       // Silent refresh: just update text without animation
       if (totalEl) totalEl.textContent = `₹${wallet.totalEarned.toLocaleString('en-IN')}`;
       if (availEl) availEl.textContent = `₹${wallet.available.toLocaleString('en-IN')}`;
       if (pendEl)  pendEl.textContent  = `₹${wallet.pending.toLocaleString('en-IN')}`;
+      if (quickWalletEl) quickWalletEl.textContent = `₹${wallet.available.toLocaleString('en-IN')}`;
     } else {
       animateCounter(totalEl, wallet.totalEarned);
       animateCounter(availEl, wallet.available);
       animateCounter(pendEl,  wallet.pending);
+      animateCounter(quickWalletEl, wallet.available);
     }
 
     // Update withdraw button label
@@ -1841,20 +2082,41 @@ window.switchTaskTab = function(tab) {
   const tabs = ['pending', 'active', 'awaiting', 'history'];
   const tabBtnIds = { pending: 'tabBtnPending', active: 'tabBtnActive', awaiting: 'tabBtnAwaiting', history: 'tabBtnHistory' };
   const paneIds = { pending: 'tabPanePending', active: 'tabPaneActive', awaiting: 'tabPaneAwaiting', history: 'tabPaneHistory' };
+  const badgeIds = { pending: 'countPending', active: 'countActive', awaiting: 'countAwaiting', history: 'countHistory' };
 
   tabs.forEach(t => {
     const btn = document.getElementById(tabBtnIds[t]);
     const pane = document.getElementById(paneIds[t]);
+    const badge = document.getElementById(badgeIds[t]);
     const isActive = (t === tab);
+
     if (btn) {
       if (isActive) {
-        btn.classList.add('bg-white', 'text-brand-600', 'shadow-sm');
-        btn.classList.remove('text-slate-600', 'hover:bg-slate-100/50');
+        btn.className = "w-full p-3.5 rounded-2xl transition-all duration-150 flex items-center justify-between gap-3 text-left cursor-pointer border-2 bg-brand-50/90 border-brand-500 shadow-xs ring-2 ring-brand-100/50";
         btn.setAttribute('aria-selected', 'true');
+        const titleSpan = btn.querySelector('span.text-sm');
+        if (titleSpan) {
+          titleSpan.className = "text-sm font-extrabold text-brand-950 block leading-tight truncate";
+        }
       } else {
-        btn.classList.remove('bg-white', 'text-brand-600', 'shadow-sm');
-        btn.classList.add('text-slate-600', 'hover:bg-slate-100/50');
+        btn.className = "w-full p-3.5 rounded-2xl transition-all duration-150 flex items-center justify-between gap-3 text-left cursor-pointer border bg-white hover:bg-slate-50 border-slate-200/80 shadow-2xs";
         btn.setAttribute('aria-selected', 'false');
+        const titleSpan = btn.querySelector('span.text-sm');
+        if (titleSpan) {
+          titleSpan.className = "text-sm font-bold text-slate-800 block leading-tight truncate";
+        }
+      }
+
+      // Maintain user's badge rules: Completed History is never blue, others blink when > 0
+      if (badge) {
+        const count = parseInt(badge.textContent, 10) || 0;
+        if (t === 'history') {
+          badge.className = "bg-slate-100 text-slate-700 text-xs font-extrabold px-2.5 py-0.5 rounded-full border border-slate-200/80 flex-shrink-0";
+        } else if (count > 0) {
+          badge.className = "bg-brand-600 text-white text-xs font-extrabold px-2.5 py-0.5 rounded-full shadow-xs badge-blink-active flex-shrink-0";
+        } else {
+          badge.className = "bg-slate-100 text-slate-400 text-xs font-bold px-2.5 py-0.5 rounded-full flex-shrink-0";
+        }
       }
     }
     if (pane) {
