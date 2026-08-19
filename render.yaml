@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: agewell
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGODB_URI
+        sync: false # Set your MongoDB Atlas connection string in Render Dashboard
+      - key: JWT_SECRET
+        generateValue: true # Render will automatically generate a secure secret
+      - key: RAZORPAY_KEY_ID
+        sync: false # Set your Razorpay Key ID in Render Dashboard (optional if not using payments)
+      - key: RAZORPAY_KEY_SECRET
+        sync: false # Set your Razorpay Key Secret in Render Dashboard (optional if not using payments)
