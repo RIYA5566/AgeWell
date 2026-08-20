@@ -29,12 +29,34 @@ function getRazorpayInstance() {
 }
 
 // ─── Helper: compute total amount from request + paymentType ──────────────────
-function computeAmount(request, paymentType, clientTipAmount = 0) {
+function computeAmount(request, paymentType, clientTipAmount = 0, fallbackAmount = 0) {
   if (paymentType === 'purchase') {
-    return Math.round(Number(request.actualPurchaseCost) || 0);
+    let cost = Math.round(Number(request.actualPurchaseCost) || 0);
+    if (cost <= 0 && request.purchasePaymentDetails?.amountPaid) {
+      cost = Math.round(Number(request.purchasePaymentDetails.amountPaid) || 0);
+    }
+    if (cost <= 0 && fallbackAmount > 0) {
+      cost = Math.round(Number(fallbackAmount) || 0);
+    }
+    return cost;
   }
   if (paymentType === 'completion') {
-    return Math.round(Number(request.serviceFee) || 0);
+    let fee = Math.round(Number(request.serviceFee) || 0);
+    if (fee <= 0 && request.volunteerQuotes && request.volunteerQuotes.length > 0) {
+      const targetVolId = request.volunteer ? String(request.volunteer._id || request.volunteer.id || request.volunteer) : null;
+      let matchQuote = null;
+      if (targetVolId) {
+        matchQuote = request.volunteerQuotes.find(q => q.volunteer && String(q.volunteer._id || q.volunteer.id || q.volunteer) === targetVolId);
+      }
+      if (!matchQuote) matchQuote = request.volunteerQuotes[0];
+      if (matchQuote && matchQuote.serviceFee !== undefined && matchQuote.serviceFee !== null) {
+        fee = Math.round(Number(matchQuote.serviceFee) || 0);
+      }
+    }
+    if (fee <= 0 && fallbackAmount > 0) {
+      fee = Math.round(Number(fallbackAmount) || 0);
+    }
+    return fee;
   }
   if (paymentType === 'tip') {
     const tip = Math.round(Number(clientTipAmount) || 0);
@@ -51,7 +73,7 @@ function computeAmount(request, paymentType, clientTipAmount = 0) {
 // ──────────────────────────────────────────────────────────────────────────────
 exports.createRazorpayOrder = async (req, res) => {
   try {
-    const { requestId, paymentType, tipAmount: clientTip } = req.body;
+    const { requestId, paymentType, tipAmount: clientTip, fallbackAmount } = req.body;
 
     if (!requestId || !paymentType) {
       return res.status(400).json({ success: false, message: 'requestId and paymentType are required' });
@@ -74,7 +96,7 @@ exports.createRazorpayOrder = async (req, res) => {
     // Simple authorization: user must be role='family' — handled by route middleware.
 
     // ── Server-side amount calculation ────────────────────────────────────────
-    const totalAmount = computeAmount(request, paymentType, clientTip);
+    const totalAmount = computeAmount(request, paymentType, clientTip, fallbackAmount);
 
     if (totalAmount <= 0) {
       return res.status(400).json({

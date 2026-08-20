@@ -4,827 +4,149 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Payment & Delivery Authorization - AgeWell</title>
-  <link rel="stylesheet" href="css/style.css">
-  <script src="/js/i18n.js"></script>
+  
+  <!-- Google Fonts: Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="/css/style.css?v=322">
+  <script src="/js/i18n.js?v=303"></script>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#f0f7ff',
+              100: '#e0effe',
+              200: '#b9dbfe',
+              300: '#7cc0fd',
+              400: '#36a2fa',
+              500: '#0c87eb',
+              600: '#026bc9',
+              700: '#0355a3',
+              800: '#074887',
+              900: '#0b3d70',
+              950: '#082547',
+            },
+          },
+          boxShadow: {
+            'cardHover': '0 12px 30px -10px rgba(0,0,0,0.08)',
+            'premium': '0 4px 20px -2px rgba(0, 0, 0, 0.05)',
+          }
+        }
+      }
+    }
+  </script>
+
   <!-- Razorpay Standard Checkout SDK -->
   <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
   <style>
-    .payment-container {
-      max-width: 720px;
-      margin: 2rem auto;
-      padding: 0 1rem;
-    }
-
-    .payment-card {
-      background: var(--color-white);
-      border-radius: 16px;
-      box-shadow: 0 8px 30px rgba(0,0,0,0.08);
-      border: 2px solid #e0e0e0;
-      padding: 2.5rem;
-      margin-bottom: 2rem;
-    }
-
-    .payment-header {
-      text-align: center;
-      margin-bottom: 2rem;
-      padding-bottom: 1.5rem;
-      border-bottom: 2px dashed #e0e0e0;
-    }
-
-    .payment-header h1 {
-      font-size: 1.8rem;
-      color: var(--color-primary-dark);
-      margin-bottom: 0.5rem;
-    }
-
-    .summary-box {
-      background: #f8fbf8;
-      border: 2px solid var(--color-primary-light);
-      border-radius: 12px;
-      padding: 1.5rem;
-      margin-bottom: 2rem;
-    }
-
-    .summary-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 0.8rem 0;
-      font-size: 1.05rem;
-      border-bottom: 1px solid #e0e0e0;
-    }
-
-    .summary-row:last-child {
-      border-bottom: none;
-    }
-
-    .summary-row.total {
-      font-size: 1.35rem;
-      font-weight: 700;
-      color: var(--color-primary-dark);
-      padding-top: 1rem;
-      margin-top: 0.5rem;
-      border-top: 2px solid var(--color-primary);
-    }
-
-    .payment-methods {
-      margin: 2rem 0;
-    }
-
-    .method-option {
-      display: flex;
-      align-items: center;
-      padding: 1rem 1.2rem;
-      border: 2px solid #e0e0e0;
-      border-radius: 12px;
-      margin-bottom: 1rem;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      background: #fff;
-    }
-
-    .method-option:hover {
-      border-color: var(--color-primary);
-      background: #f1f8e9;
-    }
-
-    .method-option input[type="radio"] {
-      width: 22px;
-      height: 22px;
-      accent-color: var(--color-primary);
-      margin-right: 1rem;
-      cursor: pointer;
-    }
-
-    .method-option label {
-      font-size: 1.05rem;
-      font-weight: 600;
-      color: var(--color-gray-dark);
-      cursor: pointer;
-      flex: 1;
-    }
-
-    .upi-input-group {
-      margin-top: 1rem;
-      padding: 1.2rem;
-      background: #e8f5e9;
-      border-radius: 12px;
-      border: 2px solid var(--color-primary-light);
-    }
-
-    .upi-input-group label {
-      display: block;
-      font-weight: 600;
-      color: var(--color-primary-dark);
-      margin-bottom: 0.5rem;
-    }
-
-    .upi-input-group input {
-      width: 100%;
-      padding: 12px 16px;
-      font-size: 1.05rem;
-      border: 2px solid var(--color-primary);
-      border-radius: 8px;
-      outline: none;
-    }
-
-    .btn-pay {
-      width: 100%;
-      padding: 1.2rem;
-      font-size: 1.25rem;
-      font-weight: 700;
-      background-color: var(--color-primary);
-      color: var(--color-white);
-      border: none;
-      border-radius: 12px;
-      cursor: pointer;
-      transition: background 0.2s ease, transform 0.1s ease;
-      box-shadow: 0 4px 14px rgba(46, 125, 50, 0.3);
-    }
-
-    .btn-pay:hover {
-      background-color: var(--color-primary-dark);
-      transform: translateY(-2px);
-    }
-
-    /* Success Step Card */
-    .success-card {
-      display: none;
-      text-align: center;
-      background: #ffffff;
-      border-radius: 16px;
-      border: 3px solid #2e7d32;
-      padding: 3rem 2rem;
-      box-shadow: 0 10px 35px rgba(46, 125, 50, 0.15);
-    }
-
-    .success-icon {
-      width: 80px;
-      height: 80px;
-      background: #e8f5e9;
-      color: #2e7d32;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 3rem;
-      margin: 0 auto 1.5rem auto;
-      border: 3px solid #2e7d32;
-    }
-
-    .success-details {
-      background: #f1f8e9;
-      border-radius: 12px;
-      padding: 1.5rem;
-      margin: 2rem 0;
-      text-align: left;
-    }
-
-    .success-row {
-      display: flex;
-      justify-content: space-between;
-      padding: 0.7rem 0;
-      font-size: 1.1rem;
-      border-bottom: 1px solid #c8e6c9;
-    }
-
-    .success-row:last-child {
-      border-bottom: none;
-    }
-
-    .action-buttons {
-      display: flex;
-      gap: 1rem;
-      margin-top: 2rem;
-    }
-
-    .action-buttons button, .action-buttons a {
-      flex: 1;
-      padding: 1rem;
-      font-size: 1.05rem;
-      font-weight: 700;
-      text-decoration: none;
-      border-radius: 10px;
-      text-align: center;
-      cursor: pointer;
-    }
-
-    .btn-receipt {
-      background: #ffffff;
-      color: var(--color-primary-dark);
-      border: 2px solid var(--color-primary-dark);
-    }
-
-    .btn-receipt:hover {
-      background: var(--color-bg-light);
-    }
-
-    .btn-home {
-      background: var(--color-primary);
-      color: #ffffff !important;
-      border: none;
-    }
-
-    .btn-home:hover {
-      background: var(--color-primary-dark);
-    }
-
-    /* Modal for Printable Receipt */
-    .modal-overlay {
-      display: none;
-      position: fixed;
-      top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0,0,0,0.5);
-      z-index: 1000;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .modal-content {
-      background: #fff;
-      padding: 2.5rem;
-      border-radius: 16px;
-      max-width: 500px;
-      width: 90%;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    @page {
+      size: portrait;
+      margin: 12mm;
     }
 
     @media print {
-      body * { visibility: hidden; }
-      #printableReceipt, #printableReceipt * { visibility: visible; }
-      #printableReceipt { position: absolute; left: 0; top: 0; width: 100%; }
+      html, body {
+        background: #ffffff !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        min-height: auto !important;
+        overflow: visible !important;
+      }
+
+      /* Hide header, background main content and all overlays except the receipt */
+      header, main, #rzpMockModal, #feedbackModal, #receiptActionButtons {
+        display: none !important;
+      }
+
+      #receiptModal {
+        display: block !important;
+        position: static !important;
+        inset: auto !important;
+        background: transparent !important;
+        backdrop-filter: none !important;
+        padding: 0 !important;
+        margin: 0 auto !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+      }
+
+      #printableReceipt {
+        position: relative !important;
+        box-shadow: none !important;
+        border: 1.5px solid #94a3b8 !important;
+        border-radius: 14px !important;
+        margin: 20px auto !important;
+        max-width: 440px !important;
+        width: 100% !important;
+        padding: 20px 22px !important;
+        background: #ffffff !important;
+        page-break-inside: avoid;
+        overflow: visible !important;
+      }
+
+      * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
     }
 
-    /* Volunteer Feedback Modal Styles */
-    .feedback-modal-card {
-      max-width: 680px;
-      width: 95%;
-      background: #ffffff;
-      border-radius: 20px;
-      padding: 2rem;
-      border: 2px solid var(--color-primary-light);
-      box-shadow: 0 15px 50px rgba(0, 0, 0, 0.15);
-      max-height: 90vh;
-      overflow-y: auto;
-    }
-
-    .feedback-header {
-      text-align: center;
-      margin-bottom: 1.5rem;
-      border-bottom: 2px dashed #e0e0e0;
-      padding-bottom: 1rem;
-    }
-
-    .feedback-badge {
-      display: inline-block;
-      background: #e8f5e9;
-      color: #2e7d32;
-      padding: 4px 14px;
-      border-radius: 20px;
-      font-weight: 700;
-      font-size: 0.85rem;
-      margin-bottom: 0.5rem;
-      border: 1px solid #c8e6c9;
-    }
-
-    .feedback-header h2 {
-      font-size: 1.5rem;
-      color: var(--color-primary-dark);
-      margin-bottom: 0.3rem;
-    }
-
-    .feedback-header p {
-      color: #666;
-      font-size: 0.92rem;
-    }
-
-    .feedback-table-container {
-      overflow-x: auto;
-      margin-bottom: 1rem;
-    }
-
-    .feedback-table {
-      width: 100%;
-      border-collapse: separate;
-      border-spacing: 0 6px;
-      font-size: 0.95rem;
-    }
-
-    .feedback-table th {
-      background: #f4f6f8;
-      text-align: left;
-      padding: 10px 14px;
-      font-size: 0.85rem;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      color: #444;
-      font-weight: 700;
-      border-bottom: 2px solid #e0e0e0;
-    }
-
-    .feedback-table tr {
-      background: #fafafa;
-    }
-
-    .feedback-table td {
-      padding: 12px 14px;
-      vertical-align: middle;
-      border-top: 1px solid #eeeeee;
-      border-bottom: 1px solid #eeeeee;
-    }
-
-    .metric-cell {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .metric-icon {
-      font-size: 1.4rem;
-      flex-shrink: 0;
-    }
-
-    .metric-sub {
-      display: block;
-      font-size: 0.78rem;
-      color: #777;
-      font-weight: normal;
-      margin-top: 2px;
-    }
-
-    .star-rating-wrapper {
-      display: inline-flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .star-score-badge {
-      font-size: 0.85rem;
-      font-weight: 700;
-      color: #b45309;
-      background: #fef3c7;
-      padding: 4px 10px;
-      border-radius: 12px;
-      border: 1px solid #fde68a;
-      min-width: 90px;
-      text-align: center;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-      transition: all 0.2s ease;
-    }
-
-    .star-score-badge.unrated {
-      color: #6b7280;
-      background: #f3f4f6;
-      border-color: #e5e7eb;
-    }
-
-    .star-rating {
-      display: inline-flex;
-      gap: 4px;
-      cursor: pointer;
-      font-size: 1.6rem;
-      user-select: none;
-    }
-
+    /* Star rating active states */
     .star-rating .star {
       color: #d1d5db;
       transition: color 0.15s ease, transform 0.15s ease;
       cursor: pointer;
       padding: 0 2px;
+      user-select: none;
     }
-
     .star-rating .star.active {
       color: #f59e0b;
     }
-
     .star-rating .star:hover {
-      transform: scale(1.25);
+      transform: scale(1.2);
     }
 
-    .pill-group {
-      display: inline-flex;
-      gap: 6px;
-      flex-wrap: wrap;
+    /* Modal overlay */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(4px);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
     }
 
-    .pill-option {
-      padding: 7px 16px;
-      border-radius: 20px;
-      font-size: 0.88rem;
-      font-weight: 600;
-      border: 2px solid #d1d5db;
-      background: #f9fafb;
-      color: #4b5563;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      user-select: none;
-    }
-
-    .pill-option:hover {
-      border-color: #2e7d32;
-      color: #2e7d32;
-      background: #f1f8e9;
-    }
-
-    .pill-option.active {
-      border-color: #2e7d32;
-      background: #2e7d32 !important;
-      color: #ffffff !important;
-      box-shadow: 0 3px 10px rgba(46, 125, 50, 0.25);
-    }
-
-    .additional-feedback-box {
-      margin-top: 1.2rem;
-    }
-
-    .additional-feedback-box label {
-      display: block;
-      font-weight: 700;
-      color: #333;
-      margin-bottom: 0.4rem;
-      font-size: 0.95rem;
-    }
-
-    .additional-feedback-box textarea {
-      width: 100%;
-      border: 2px solid #e0e0e0;
-      border-radius: 12px;
-      padding: 12px 14px;
-      font-size: 0.95rem;
-      outline: none;
-      transition: border-color 0.2s ease;
-      resize: vertical;
-      box-sizing: border-box;
-      font-family: inherit;
-    }
-
-    .additional-feedback-box textarea:focus {
-      border-color: #2e7d32;
-    }
-
-    .feedback-actions {
-      display: flex;
-      gap: 12px;
-      margin-top: 1.5rem;
-      justify-content: flex-end;
-    }
-
-    .btn-skip {
-      background: #f3f4f6;
-      border: 2px solid #e5e7eb;
-      color: #4b5563;
-      font-weight: 600;
-      padding: 10px 18px;
-      border-radius: 10px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-
-    .btn-skip:hover {
-      background: #e5e7eb;
-      color: #111827;
-    }
-
-    .btn-submit-feedback {
-      background: #2e7d32;
-      color: #ffffff;
-      border: none;
-      font-weight: 700;
-      padding: 12px 24px;
-      border-radius: 10px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      font-size: 1rem;
-      box-shadow: 0 4px 14px rgba(46, 125, 50, 0.3);
-    }
-
-    .btn-submit-feedback:hover {
-      background: #1b5e20;
-      transform: translateY(-1px);
-    }
-
-    /* Razorpay Mock Modal Styles */
+    /* Razorpay Mock Modal */
     .rzp-mock-modal-overlay {
       display: none;
       position: fixed;
       z-index: 2500;
-      top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0, 0, 0, 0.6);
+      inset: 0;
+      background: rgba(15, 23, 42, 0.7);
+      backdrop-filter: blur(4px);
       align-items: center;
       justify-content: center;
-    }
-
-    .rzp-mock-modal {
-      display: flex;
-      flex-direction: column;
-      width: 680px;
-      max-width: 95%;
-      height: 500px;
-      background: #ffffff;
-      border-radius: 8px;
-      overflow: hidden;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.35);
-      position: relative;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    }
-
-    .rzp-mock-header {
-      background: #0f2b46;
-      color: #ffffff;
-      padding: 1rem 1.5rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      border-bottom: 1px solid rgba(255,255,255,0.1);
-    }
-
-    .rzp-mock-header-brand {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .rzp-mock-header-logo {
-      width: 32px;
-      height: 32px;
-      background: #1f72e5;
-      border-radius: 6px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.25rem;
-      font-weight: bold;
-      color: #fff;
-    }
-
-    .rzp-mock-header-title {
-      font-size: 1.1rem;
-      font-weight: 600;
-    }
-
-    .rzp-mock-header-desc {
-      font-size: 0.75rem;
-      color: #a5b4fc;
-      margin-top: 1px;
-    }
-
-    .rzp-mock-header-amount {
-      text-align: right;
-    }
-
-    .rzp-mock-amount-label {
-      font-size: 0.7rem;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      color: #a5b4fc;
-    }
-
-    .rzp-mock-amount-value {
-      font-size: 1.3rem;
-      font-weight: 700;
-      color: #ffffff;
-    }
-
-    .rzp-mock-body {
-      display: flex;
-      flex: 1;
-      overflow: hidden;
-      position: relative;
-    }
-
-    .rzp-mock-sidebar {
-      width: 220px;
-      background: #f8f9fa;
-      border-right: 1px solid #e9ecef;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .rzp-mock-sidebar-item {
-      padding: 1rem 1.2rem;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      cursor: pointer;
-      border-left: 4px solid transparent;
-      font-weight: 500;
-      font-size: 0.95rem;
-      color: #495057;
-      border-bottom: 1px solid #f1f3f5;
-      transition: all 0.15s ease;
-    }
-
-    .rzp-mock-sidebar-item:hover {
-      background: #f1f3f5;
-      color: #212529;
-    }
-
-    .rzp-mock-sidebar-item.active {
-      background: #eef2f7;
-      border-left-color: #1f72e5;
-      color: #1f72e5;
-      font-weight: 600;
-    }
-
-    .rzp-mock-sidebar-icon {
-      font-size: 1.15rem;
-      width: 20px;
-      text-align: center;
-    }
-
-    .rzp-mock-content {
-      flex: 1;
-      padding: 1.5rem;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      background: #ffffff;
-    }
-
-    .rzp-mock-tab-panel {
-      display: none;
-      height: 100%;
-    }
-
-    .rzp-mock-tab-panel.active {
-      display: flex;
-      flex-direction: column;
-    }
-
-    .rzp-mock-section-title {
-      font-size: 0.9rem;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      color: #868e96;
-      font-weight: 700;
-      margin-bottom: 0.8rem;
-    }
-
-    .rzp-mock-input-group {
-      margin-bottom: 1rem;
-    }
-
-    .rzp-mock-input-group label {
-      display: block;
-      font-size: 0.85rem;
-      font-weight: 600;
-      color: #495057;
-      margin-bottom: 0.3rem;
-    }
-
-    .rzp-mock-input-row {
-      display: flex;
-      gap: 12px;
-    }
-
-    .rzp-mock-input {
-      width: 100%;
-      padding: 0.65rem 0.8rem;
-      border: 1.5px solid #ced4da;
-      border-radius: 4px;
-      font-size: 0.95rem;
-      box-sizing: border-box;
-      outline: none;
-      transition: border-color 0.15s ease;
-      font-family: inherit;
-    }
-
-    .rzp-mock-input:focus {
-      border-color: #1f72e5;
-      box-shadow: 0 0 0 3px rgba(31, 114, 229, 0.15);
-    }
-
-    .rzp-mock-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 10px;
-      margin-bottom: 1rem;
-    }
-
-    .rzp-mock-grid-item {
-      border: 1.5px solid #dee2e6;
-      padding: 0.65rem;
-      border-radius: 6px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      cursor: pointer;
-      font-size: 0.88rem;
-      font-weight: 600;
-      color: #495057;
-      transition: all 0.15s ease;
-      background: #ffffff;
-      justify-content: flex-start;
-    }
-
-    .rzp-mock-grid-item:hover {
-      border-color: #1f72e5;
-      background: #f8fbff;
-      color: #1f72e5;
-    }
-
-    .rzp-mock-grid-item.active {
-      border-color: #1f72e5;
-      background: #eef5fc;
-      color: #1f72e5;
-      box-shadow: 0 0 0 1px #1f72e5;
-    }
-
-    .rzp-mock-btn-pay {
-      width: 100%;
-      padding: 0.85rem;
-      background: #1f72e5;
-      color: #ffffff;
-      border: none;
-      border-radius: 4px;
-      font-size: 1.05rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: background 0.15s ease;
-      margin-top: auto;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      box-shadow: 0 4px 10px rgba(31, 114, 229, 0.2);
-    }
-
-    .rzp-mock-btn-pay:hover {
-      background: #155cb4;
-    }
-
-    .rzp-mock-btn-pay:disabled {
-      background: #a5c7f7;
-      cursor: not-allowed;
-      box-shadow: none;
-    }
-
-    .rzp-mock-footer-branding {
-      text-align: center;
-      font-size: 0.72rem;
-      color: #adb5bd;
-      margin-top: auto;
-      padding-top: 0.8rem;
-      border-top: 1px solid #f1f3f5;
-      font-weight: 600;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 4px;
-    }
-
-    .rzp-mock-close {
-      cursor: pointer;
-      color: #ced4da;
-      font-size: 1.5rem;
-      font-weight: bold;
-      transition: color 0.15s ease;
-      background: none;
-      border: none;
-      padding: 0;
-      line-height: 1;
-      margin-left: 1.5rem;
-    }
-
-    .rzp-mock-close:hover {
-      color: #ffffff;
-    }
-
-    /* Simulated Loader overlay */
-    .rzp-mock-loader-overlay {
-      position: absolute;
-      top: 0; left: 0; width: 100%; height: 100%;
-      background: #ffffff;
-      display: none;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      z-index: 100;
-      text-align: center;
-      padding: 2rem;
-      box-sizing: border-box;
     }
 
     .rzp-mock-spinner {
-      width: 48px;
-      height: 48px;
-      border: 4px solid #f3f3f3;
-      border-top: 4px solid #1f72e5;
+      width: 44px;
+      height: 44px;
+      border: 4px solid #f1f5f9;
+      border-top: 4px solid #026bc9;
       border-radius: 50%;
       animation: rzp-spin 1s linear infinite;
-      margin-bottom: 1.5rem;
-    }
-
-    .rzp-mock-loader-status {
-      font-size: 1.15rem;
-      font-weight: 600;
-      color: #212529;
-      margin-bottom: 0.5rem;
-    }
-
-    .rzp-mock-loader-subtext {
-      font-size: 0.88rem;
-      color: #6c757d;
     }
 
     @keyframes rzp-spin {
@@ -833,511 +155,639 @@
     }
   </style>
 </head>
-<body>
+<body class="bg-slate-50 text-slate-800 antialiased font-sans min-h-screen flex flex-col">
+
   <!-- Header Navbar -->
-  <header style="background: var(--color-primary-dark); color: #fff; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center;">
-    <div style="display: flex; align-items: center; gap: 12px;">
-      <a href="family-dashboard.html" style="color: #fff; text-decoration: none; font-size: 1.3rem; font-weight: 800; display: flex; align-items: center; gap: 8px;">
-        <svg style="width: 24px; height: 24px; color: #fff;" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-        </svg>
-        <span>AgeWell</span>
-      </a>
-      <span style="background: rgba(255,255,255,0.2); padding: 4px 10px; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">Caregiver Delivery Verification & Payment</span>
-    </div>
-    <div>
-      <a href="family-dashboard.html" style="color: #fff; text-decoration: none; font-weight: 700; background: rgba(255,255,255,0.15); padding: 6px 14px; border-radius: 10px; font-size: 0.9rem;">← Back to Dashboard</a>
+  <header class="bg-slate-900 border-b border-slate-800 text-white sticky top-0 z-50 shadow-md">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <a href="family-dashboard.html" class="flex items-center gap-2.5 text-white no-underline group">
+          <div class="w-9 h-9 rounded-xl bg-brand-600 flex items-center justify-center text-white shadow-xs group-hover:bg-brand-500 transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
+            </svg>
+          </div>
+          <span class="font-extrabold text-lg sm:text-xl tracking-tight text-white">AgeWell</span>
+        </a>
+        <span class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-white/10 text-slate-200 border border-white/10">
+          Caregiver Delivery Verification &amp; Payment
+        </span>
+      </div>
+
+      <div>
+        <a href="family-dashboard.html" class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-white/10 hover:bg-white/15 text-slate-100 transition-all border border-white/10 no-underline">
+          <svg class="w-4 h-4 text-slate-300" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+          </svg>
+          <span>Back to Dashboard</span>
+        </a>
+      </div>
     </div>
   </header>
 
-  <main class="payment-container">
-    <!-- Step 1-3 Payment Authorization Card -->
-    <div id="paymentFormCard" class="payment-card">
-      <div class="payment-header">
-        <h1>💳 Payment & Delivery Authorization</h1>
-        <p style="color: #666; font-size: 1rem;">
-          Proof of completion verified! Review the cost summary and select your payment method to finalize delivery.
+  <!-- Main Content Area -->
+  <main class="flex-1 max-w-2xl w-full mx-auto px-4 py-8">
+    
+    <!-- Step 1-3: Payment Authorization Card -->
+    <div id="paymentFormCard" class="bg-white border border-slate-200/90 rounded-3xl shadow-premium p-6 sm:p-8 relative overflow-hidden">
+      <!-- Top brand accent line -->
+      <div class="h-1.5 bg-gradient-to-r from-brand-500 via-brand-600 to-emerald-500 -mx-6 sm:-mx-8 -mt-6 sm:-mt-8 mb-6"></div>
+
+      <!-- Header -->
+      <div class="text-center pb-6 border-b border-slate-100 mb-6">
+        <div class="w-12 h-12 rounded-2xl bg-brand-50 text-brand-600 border border-brand-200/80 mx-auto flex items-center justify-center shadow-2xs mb-3">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" />
+          </svg>
+        </div>
+        <h1 class="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">Payment &amp; Delivery Authorization</h1>
+        <p class="text-xs sm:text-sm font-medium text-slate-500 mt-1 max-w-md mx-auto">
+          Review the cost summary and complete your secure authorization to finalize service release.
         </p>
       </div>
 
       <!-- Target Request & Senior Details Banner -->
-      <div id="requestMetaBanner" style="background: #e3f2fd; border-left: 5px solid #1976d2; padding: 12px 16px; border-radius: 8px; margin-bottom: 1.5rem; display: none;">
-        <div style="font-weight: 700; color: #0d47a1;" id="metaTitle">📋 Loading request...</div>
-        <div style="font-size: 0.92rem; color: #1565c0; margin-top: 4px;" id="metaSenior">Senior Citizen: Loading...</div>
+      <div id="requestMetaBanner" class="bg-brand-50/80 border border-brand-200/80 rounded-2xl p-4 mb-6 shadow-2xs" style="display: none;">
+        <div class="flex items-start gap-3">
+          <div class="w-8 h-8 rounded-xl bg-brand-100 text-brand-700 flex items-center justify-center flex-shrink-0 mt-0.5">
+            <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z" />
+            </svg>
+          </div>
+          <div class="flex-1 min-w-0">
+            <h2 id="metaTitle" class="text-sm font-extrabold text-brand-950 tracking-tight leading-snug">Loading request...</h2>
+            <div class="flex items-center gap-1.5 text-xs text-brand-800 font-medium mt-1">
+              <svg class="w-3.5 h-3.5 text-brand-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+              </svg>
+              <span id="metaSenior">Senior Citizen: Loading...</span>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <!-- Bill Photo Proof Container -->
-      <div id="purchaseProofBox" style="background: #fff3e0; border: 2px solid #ffe0b2; border-left: 5px solid #e65100; padding: 14px 16px; border-radius: 12px; margin-bottom: 1.5rem; display: none;">
-        <div style="font-weight: 700; color: #e65100; font-size: 1.05rem; margin-bottom: 6px;">
-          📸 Bill Photo Proof / Cart Screenshot Submitted by Volunteer:
-        </div>
-        <div id="purchaseProofNotes" style="font-size: 0.93rem; color: #555; margin-bottom: 8px; font-style: italic;"></div>
-        <img id="purchaseProofImg" src="" alt="Bill Photo Proof" style="max-width: 100%; max-height: 240px; border-radius: 8px; border: 1px solid #ccc; display: block; object-fit: contain; cursor: pointer;" onclick="if(this.src) window.open(this.src, '_blank')">
-      </div>
 
-      <!-- Payment Summary -->
-      <h2 style="font-size: 1.25rem; color: var(--color-primary-dark); margin-bottom: 1rem; display: flex; align-items: center; gap: 8px;">
-        📝 Payment Summary
-      </h2>
 
-      <div class="summary-box">
-        <div class="summary-row">
-          <span>Items Purchased</span>
-          <span style="font-weight: 600;" id="summaryItemsCost">₹120</span>
+      <!-- Payment Summary Section -->
+      <div class="mb-6">
+        <div class="flex items-center gap-2 mb-3">
+          <div class="w-6 h-6 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+            </svg>
+          </div>
+          <h3 class="text-sm font-extrabold text-slate-900 tracking-tight uppercase">Payment Summary</h3>
         </div>
 
-        <div class="summary-row">
-          <span>Volunteer Service Charge</span>
-          <span style="font-weight: 600;" id="summaryVolunteerFee">₹150</span>
-        </div>
+        <div class="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 space-y-2.5 shadow-2xs">
+          <div class="flex justify-between items-center text-xs font-semibold text-slate-600">
+            <span>Items Purchased (Store Bill)</span>
+            <span class="text-sm font-extrabold text-slate-900" id="summaryItemsCost">₹0</span>
+          </div>
 
-        <div class="summary-row" id="summaryTipRow" style="display: none;">
-          <span>🎁 Volunteer Tip</span>
-          <span style="font-weight: 600; color: #2e7d32;" id="summaryTipAmount">₹0</span>
-        </div>
+          <div class="flex justify-between items-center text-xs font-semibold text-slate-600">
+            <span>Volunteer Service Charge</span>
+            <span class="text-sm font-extrabold text-slate-900" id="summaryVolunteerFee">₹0</span>
+          </div>
 
-        <div class="summary-row">
-          <span>Platform Fee</span>
-          <span style="color: #2e7d32; font-weight: 600;" id="summaryPlatformFee">₹0</span>
-        </div>
+          <div class="flex justify-between items-center text-xs font-semibold text-slate-600" id="summaryTipRow" style="display: none;">
+            <span class="flex items-center gap-1 text-emerald-700">
+              <svg class="w-3.5 h-3.5 text-emerald-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+              </svg>
+              <span>Caregiver Tip</span>
+            </span>
+            <span class="text-sm font-extrabold text-emerald-700" id="summaryTipAmount">₹0</span>
+          </div>
 
-        <div class="summary-row total">
-          <span>Total</span>
-          <span id="summaryTotal">₹270</span>
+          <div class="flex justify-between items-center text-xs font-semibold text-slate-600">
+            <span>Platform Fee</span>
+            <span class="text-xs font-extrabold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200" id="summaryPlatformFee">Free (₹0)</span>
+          </div>
+
+          <div class="pt-2.5 border-t border-slate-200 flex justify-between items-center">
+            <span class="text-sm font-extrabold text-slate-900">Total Payable Amount</span>
+            <span class="text-xl font-black text-brand-600 tracking-tight" id="summaryTotal">₹0</span>
+          </div>
         </div>
       </div>
 
       <!-- Razorpay Payment Section -->
-      <h2 style="font-size: 1.25rem; color: var(--color-primary-dark); margin-bottom: 1rem; display: flex; align-items: center; gap: 8px;">
-        💳 Pay Securely via Razorpay
-      </h2>
-
-      <!-- Trust badge -->
-      <div style="background: #e8f5e9; border: 1.5px solid #a5d6a7; border-radius: 12px; padding: 1rem 1.2rem; margin-bottom: 1.5rem; display: flex; align-items: flex-start; gap: 12px;">
-        <span style="font-size: 1.8rem; flex-shrink: 0;">🔒</span>
-        <div>
-          <div style="font-weight: 700; color: #1b5e20; font-size: 1rem;">Secure Payment Gateway</div>
-          <div style="font-size: 0.88rem; color: #388e3c; margin-top: 2px;">
-            Powered by <strong>Razorpay</strong> · UPI, Debit Card, Credit Card, Net Banking & Wallets accepted
+      <div class="space-y-4">
+        <!-- Trust badge -->
+        <div class="bg-emerald-50/70 border border-emerald-200/80 rounded-2xl p-4 flex items-start gap-3 shadow-2xs">
+          <div class="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center flex-shrink-0 mt-0.5">
+            <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+            </svg>
           </div>
-          <div id="rzpTestModeBadge" style="margin-top: 6px; display: inline-block; background: #fff3e0; color: #e65100; border: 1px solid #ffcc80; border-radius: 20px; padding: 3px 10px; font-size: 0.8rem; font-weight: 700;">🧪 Test Mode — No real money deducted</div>
+          <div class="flex-1 min-w-0">
+            <div class="text-xs font-bold text-emerald-950 flex items-center justify-between gap-2 flex-wrap">
+              <span>Secure 256-bit Encrypted Checkout</span>
+              <span id="rzpTestModeBadge" class="text-[10px] font-extrabold text-amber-800 bg-amber-100 border border-amber-200 px-2 py-0.5 rounded-full">Test Mode Simulated</span>
+            </div>
+            <p class="text-[11px] text-emerald-800/80 font-medium mt-0.5 leading-relaxed">
+              Powered by <strong>Razorpay</strong> · UPI, Debit Card, Credit Card, Net Banking &amp; Wallets supported.
+            </p>
+          </div>
         </div>
-      </div>
 
-      <!-- Pay via Razorpay button -->
-      <button id="btnPay" class="btn-pay" onclick="processPayment()">
-        🔐 Pay ₹388 via Razorpay
-      </button>
+        <!-- Pay CTA Button -->
+        <button id="btnPay" class="w-full py-3.5 px-5 bg-gradient-to-r from-brand-600 to-brand-700 hover:from-brand-700 hover:to-brand-800 text-white font-extrabold text-sm sm:text-base rounded-2xl shadow-sm hover:shadow-md transition-all active:scale-98 flex items-center justify-center gap-2 cursor-pointer border-none" onclick="processPayment()">
+          <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+          </svg>
+          <span id="btnPayText">Pay Securely via Razorpay</span>
+        </button>
+      </div>
     </div>
 
     <!-- Step 4: Payment Success Card -->
-    <div id="paymentSuccessCard" class="success-card">
-      <div class="success-icon">✓</div>
-      <h1 style="color: #1b5e20; font-size: 1.8rem; margin-bottom: 0.5rem;">🎉 Payment Successful</h1>
-      <p style="color: #2e7d32; font-size: 1.15rem; font-weight: 600;">Payment Successful</p>
-      <p style="color: #666; font-size: 0.95rem; margin-top: 4px;">
-        Delivery completion has been officially verified & payment processed!
+    <div id="paymentSuccessCard" class="bg-white border border-emerald-200 rounded-3xl shadow-premium p-6 sm:p-8 text-center" style="display: none;">
+      <div class="w-16 h-16 rounded-full bg-emerald-50 text-emerald-600 border-2 border-emerald-200 mx-auto flex items-center justify-center shadow-xs mb-4">
+        <svg class="w-8 h-8 text-emerald-600" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+        </svg>
+      </div>
+
+      <h1 class="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">Payment &amp; Delivery Confirmed</h1>
+      <p class="text-xs sm:text-sm text-emerald-700 font-bold mt-1">Transaction Completed Successfully</p>
+      <p class="text-xs text-slate-500 font-medium mt-1 max-w-md mx-auto">
+        Delivery completion has been verified and payment processed to the volunteer escrow account.
       </p>
 
-      <div class="success-details">
-        <div class="success-row">
-          <span style="color: #555;">Amount Paid</span>
-          <span style="font-weight: 700; color: #1b5e20;" id="successAmount">₹388</span>
+      <div class="my-6 bg-slate-50 border border-slate-200/80 rounded-2xl p-4 text-left space-y-2.5 shadow-2xs">
+        <div class="flex justify-between items-center text-xs font-semibold text-slate-600">
+          <span>Amount Paid</span>
+          <span class="text-base font-extrabold text-emerald-700" id="successAmount">₹0</span>
         </div>
 
-        <div class="success-row">
-          <span style="color: #555;">Transaction ID</span>
-          <span style="font-family: monospace; font-weight: 700; color: #0d47a1;" id="successTxnId">TXN92837462</span>
+        <div class="flex justify-between items-center text-xs font-semibold text-slate-600">
+          <span>Transaction ID</span>
+          <span class="text-xs font-mono font-bold text-slate-900 bg-white px-2 py-0.5 rounded border border-slate-200" id="successTxnId">TXN92837462</span>
         </div>
 
-        <div class="success-row">
-          <span style="color: #555;">Paid To</span>
-          <span style="font-weight: 700; color: #2e7d32;" id="successPaidTo">Assigned Volunteer</span>
+        <div class="flex justify-between items-center text-xs font-semibold text-slate-600">
+          <span>Paid To</span>
+          <span class="text-xs font-bold text-slate-900" id="successPaidTo">Assigned Volunteer</span>
         </div>
       </div>
 
-      <div class="action-buttons">
-        <button class="btn-receipt" onclick="openReceiptModal()">📄 View Receipt</button>
-        <button type="button" class="btn-home" onclick="goHome()">🏠 Go Home</button>
+      <div class="flex flex-col sm:flex-row gap-3">
+        <button type="button" class="flex-1 py-3 px-4 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs sm:text-sm border border-slate-200 rounded-xl transition-all shadow-2xs flex items-center justify-center gap-2 cursor-pointer active:scale-95" onclick="openReceiptModal()">
+          <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+          </svg>
+          <span>View Official Receipt</span>
+        </button>
+
+        <button type="button" class="flex-1 py-3 px-4 bg-brand-600 hover:bg-brand-700 text-white font-extrabold text-xs sm:text-sm rounded-xl transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer border-none active:scale-95" onclick="goHome()">
+          <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
+          </svg>
+          <span>Return to Dashboard</span>
+        </button>
       </div>
     </div>
+
   </main>
+
+  <!-- Global Footer -->
+  <footer class="global-footer w-full text-center mt-4 py-6 px-4 bg-[#0b3d70] text-white">
+    <p class="text-xs sm:text-sm font-semibold text-white/90" data-i18n="footer_text">&copy; 2026 AgeWell Platform. Designed with care for Senior Citizens, Volunteers, and Admins.</p>
+  </footer>
 
   <!-- Printable Receipt Modal -->
   <div id="receiptModal" class="modal-overlay">
-    <div class="modal-content" id="printableReceipt">
-      <div style="text-align: center; border-bottom: 2px solid var(--color-primary-light); padding-bottom: 1rem; margin-bottom: 1.5rem;">
-        <h2 style="color: var(--color-primary-dark);">🌸 AgeWell Official Receipt</h2>
-        <p style="color: #666; font-size: 0.9rem;">Senior Citizen Assistance Platform</p>
+    <div class="bg-white rounded-3xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-slate-200 relative m-4 max-h-[90vh] overflow-y-auto" id="printableReceipt">
+      <!-- Receipt Header -->
+      <div class="text-center pb-3 border-b border-slate-100 mb-3">
+        <div class="w-9 h-9 rounded-xl bg-brand-600 text-white mx-auto flex items-center justify-center mb-1.5 shadow-2xs">
+          <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
+          </svg>
+        </div>
+        <h2 class="text-base font-extrabold text-slate-900 tracking-tight">AgeWell Official Receipt</h2>
+        <p class="text-[11px] font-semibold text-slate-400">Senior Citizen Assistance Platform</p>
       </div>
 
-      <div style="margin-bottom: 1.5rem; font-size: 0.95rem;">
-        <p><strong>Transaction ID:</strong> <span id="receiptTxnId">TXN92837462</span></p>
-        <p><strong>Date & Time:</strong> <span id="receiptDate">5 Aug 2026</span></p>
-        <p><strong>Senior Citizen:</strong> <span id="receiptSenior">Avdhut Giri</span></p>
-        <p><strong>Paid To (Volunteer):</strong> <span id="receiptVolunteer" style="font-weight: 700; color: #2e7d32;">Assigned Volunteer</span></p>
+      <!-- Transaction Info Box -->
+      <div class="text-[11px] space-y-1 mb-3 text-slate-600 bg-slate-50 p-3 rounded-xl border border-slate-200/80">
+        <div class="flex justify-between items-center"><span class="font-semibold text-slate-500">Transaction ID:</span> <span class="font-mono font-bold text-slate-900" id="receiptTxnId">TXN92837462</span></div>
+        <div class="flex justify-between items-center"><span class="font-semibold text-slate-500">Date &amp; Time:</span> <span class="font-bold text-slate-800" id="receiptDate">5 Aug 2026</span></div>
+        <div class="flex justify-between items-center"><span class="font-semibold text-slate-500">Senior Citizen:</span> <span class="font-bold text-slate-800" id="receiptSenior">Avdhut Giri</span></div>
+        <div class="flex justify-between items-center"><span class="font-semibold text-slate-500">Paid To (Volunteer):</span> <span class="font-bold text-emerald-700" id="receiptVolunteer">Assigned Volunteer</span></div>
       </div>
 
-      <table style="width: 100%; border-collapse: collapse; margin-bottom: 1.5rem; font-size: 0.95rem;">
-        <thead>
-          <tr style="background: #e8f5e9; text-align: left;">
-            <th style="padding: 8px; border-bottom: 2px solid #c8e6c9;">Item Description</th>
-            <th style="padding: 8px; border-bottom: 2px solid #c8e6c9; text-align: right;">Amount</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td style="padding: 8px; border-bottom: 1px solid #e0e0e0;">Items Purchased</td>
-            <td style="padding: 8px; border-bottom: 1px solid #e0e0e0; text-align: right;" id="receiptItemsCost">₹338</td>
-          </tr>
-          <tr>
-            <td style="padding: 8px; border-bottom: 1px solid #e0e0e0;">Volunteer Service Charge</td>
-            <td style="padding: 8px; border-bottom: 1px solid #e0e0e0; text-align: right;" id="receiptVolunteerFee">₹50</td>
-          </tr>
-          <tr>
-            <td style="padding: 8px; border-bottom: 1px solid #e0e0e0;">Platform Fee</td>
-            <td style="padding: 8px; border-bottom: 1px solid #e0e0e0; text-align: right; color: #2e7d32;">₹0</td>
-          </tr>
-          <tr style="font-weight: bold; font-size: 1.05rem;">
-            <td style="padding: 10px 8px; border-top: 2px solid var(--color-primary-dark);">Total Paid</td>
-            <td style="padding: 10px 8px; border-top: 2px solid var(--color-primary-dark); text-align: right; color: var(--color-primary-dark);" id="receiptTotal">₹388</td>
-          </tr>
-        </tbody>
-      </table>
+      <!-- Compact Breakdown Box -->
+      <div class="border border-slate-200 rounded-xl overflow-hidden mb-3 bg-white">
+        <!-- Header -->
+        <div class="flex justify-between items-center bg-slate-100 px-3.5 py-2 font-extrabold text-slate-700 border-b border-slate-200 text-[11px] uppercase tracking-wider">
+          <span>Item Description</span>
+          <span class="text-right">Amount</span>
+        </div>
 
-      <div style="display: flex; gap: 10px;">
-        <button onclick="window.print()" style="flex: 1; padding: 10px; background: var(--color-primary); color: #fff; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">🖨️ Print Receipt</button>
-        <button onclick="closeReceiptModal()" style="padding: 10px 16px; background: #eee; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">Close</button>
+        <!-- Rows -->
+        <div class="divide-y divide-slate-100 text-xs">
+          <div class="flex justify-between items-center px-3.5 py-2">
+            <span class="text-slate-700 font-medium">Items Purchased (Store Bill)</span>
+            <span class="font-extrabold text-slate-900 text-sm" id="receiptItemsCost">₹0</span>
+          </div>
+          <div class="flex justify-between items-center px-3.5 py-2">
+            <span class="text-slate-700 font-medium">Volunteer Service Charge</span>
+            <span class="font-extrabold text-slate-900 text-sm" id="receiptVolunteerFee">₹0</span>
+          </div>
+          <div class="flex justify-between items-center px-3.5 py-2" id="receiptTipRow" style="display: none;">
+            <span class="text-emerald-700 font-medium">Volunteer Tip</span>
+            <span class="font-extrabold text-emerald-700 text-sm" id="receiptTipAmount">₹0</span>
+          </div>
+          <div class="flex justify-between items-center px-3.5 py-2">
+            <span class="text-slate-700 font-medium">Platform Fee</span>
+            <span class="font-bold text-emerald-600">Free (₹0)</span>
+          </div>
+          <div class="flex justify-between items-center px-3.5 py-2.5 bg-slate-50 border-t-2 border-slate-200 font-black text-slate-900">
+            <span class="font-extrabold text-xs text-slate-900">Total Paid</span>
+            <span class="text-brand-600 font-black text-base" id="receiptTotal">₹0</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Print Only Verified Seal & Note -->
+      <div class="text-center text-[10px] text-slate-400 pt-1 pb-1">
+        This is a computer-generated authorized receipt.
+      </div>
+
+      <!-- Actions Buttons (Hidden on Print) -->
+      <div id="receiptActionButtons" class="flex gap-2 pt-2.5 border-t border-slate-100">
+        <button type="button" onclick="window.print()" class="flex-1 py-2 px-3 bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs rounded-xl shadow-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer border-none">
+          <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6.72 13.829c-.24-1.056.867-1.829 1.89-1.829h6.78c1.023 0 2.13.773 1.89 1.829m-10.56 0A2.25 2.25 0 004.5 16.079v3.171c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125v-3.171a2.25 2.25 0 00-1.77-2.25m-10.56 0L8.25 8.25h7.5l1.53 5.579M8.25 8.25V4.875c0-.621.504-1.125 1.125-1.125h5.25c.621 0 1.125.504 1.125 1.125V8.25" />
+          </svg>
+          <span>Print Receipt</span>
+        </button>
+        <button type="button" onclick="closeReceiptModal()" class="py-2 px-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-all cursor-pointer border border-slate-200">
+          Close
+        </button>
       </div>
     </div>
   </div>
 
   <!-- Volunteer Feedback Modal -->
   <div id="feedbackModal" class="modal-overlay">
-    <div class="modal-content feedback-modal-card">
-      <div class="feedback-header">
-        <div class="feedback-badge">🌟 Volunteer Feedback</div>
-        <h2>Feedback for <span id="feedbackVolunteerName" style="color: var(--color-primary-dark);">Assigned Volunteer</span></h2>
-        <p>Please rate the volunteer who just completed the task to help us improve service quality.</p>
+    <div class="bg-white rounded-3xl max-w-xl w-full p-6 sm:p-7 shadow-2xl border border-slate-200 relative m-4 max-h-[90vh] overflow-y-auto">
+      <div class="text-center pb-4 border-b border-slate-100 mb-4">
+        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold bg-brand-50 text-brand-700 border border-brand-200 mb-2">
+          <svg class="w-3.5 h-3.5 text-brand-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" />
+          </svg>
+          <span>Volunteer Feedback</span>
+        </span>
+        <h2 class="text-lg font-extrabold text-slate-900" id="feedbackModalHeading">Feedback for <span id="feedbackVolunteerName" class="text-brand-600">Assigned Volunteer</span></h2>
+        <p class="text-xs font-medium text-slate-500 mt-0.5">Please rate the volunteer to help maintain high community standards.</p>
       </div>
 
-      <form id="feedbackForm" onsubmit="handleFeedbackSubmit(event)">
-        <div class="feedback-table-container">
-          <table class="feedback-table">
-            <thead>
-              <tr>
-                <th style="width: 55%;">Metric</th>
-                <th style="width: 45%;">Rating</th>
-              </tr>
-            </thead>
-            <tbody>
-              <!-- 💰 Cost Utilization -->
-              <tr>
-                <td>
-                  <div class="metric-cell">
-                    <span class="metric-icon">💰</span>
-                    <div>
-                      <strong>Cost Utilization</strong>
-                      <span class="metric-sub">Fairness & budget management</span>
-                    </div>
-                  </div>
-                </td>
-                <td>
-                  <div class="star-rating-wrapper">
-                    <div class="star-rating" data-metric="costUtilization" onmouseleave="resetStarRating('costUtilization')">
-                      <span class="star" data-val="1" onclick="setStarRating('costUtilization', 1)" onmouseenter="hoverStarRating('costUtilization', 1)">★</span>
-                      <span class="star" data-val="2" onclick="setStarRating('costUtilization', 2)" onmouseenter="hoverStarRating('costUtilization', 2)">★</span>
-                      <span class="star" data-val="3" onclick="setStarRating('costUtilization', 3)" onmouseenter="hoverStarRating('costUtilization', 3)">★</span>
-                      <span class="star" data-val="4" onclick="setStarRating('costUtilization', 4)" onmouseenter="hoverStarRating('costUtilization', 4)">★</span>
-                      <span class="star" data-val="5" onclick="setStarRating('costUtilization', 5)" onmouseenter="hoverStarRating('costUtilization', 5)">★</span>
-                      <input type="hidden" id="costUtilizationVal" value="0">
-                    </div>
-                    <span class="star-score-badge unrated" id="costUtilizationText">Select Rating</span>
-                  </div>
-                </td>
-              </tr>
-
-              <!-- ⏱️ Speed & Timeliness -->
-              <tr>
-                <td>
-                  <div class="metric-cell">
-                    <span class="metric-icon">⏱️</span>
-                    <div>
-                      <strong>Speed & Timeliness</strong>
-                      <span class="metric-sub">Punctuality & execution speed</span>
-                    </div>
-                  </div>
-                </td>
-                <td>
-                  <div class="star-rating-wrapper">
-                    <div class="star-rating" data-metric="speedTimeliness" onmouseleave="resetStarRating('speedTimeliness')">
-                      <span class="star" data-val="1" onclick="setStarRating('speedTimeliness', 1)" onmouseenter="hoverStarRating('speedTimeliness', 1)">★</span>
-                      <span class="star" data-val="2" onclick="setStarRating('speedTimeliness', 2)" onmouseenter="hoverStarRating('speedTimeliness', 2)">★</span>
-                      <span class="star" data-val="3" onclick="setStarRating('speedTimeliness', 3)" onmouseenter="hoverStarRating('speedTimeliness', 3)">★</span>
-                      <span class="star" data-val="4" onclick="setStarRating('speedTimeliness', 4)" onmouseenter="hoverStarRating('speedTimeliness', 4)">★</span>
-                      <span class="star" data-val="5" onclick="setStarRating('speedTimeliness', 5)" onmouseenter="hoverStarRating('speedTimeliness', 5)">★</span>
-                      <input type="hidden" id="speedTimelinessVal" value="0">
-                    </div>
-                    <span class="star-score-badge unrated" id="speedTimelinessText">Select Rating</span>
-                  </div>
-                </td>
-              </tr>
-
-              <!-- 📋 Task Completion -->
-              <tr>
-                <td>
-                  <div class="metric-cell">
-                    <span class="metric-icon">📋</span>
-                    <div>
-                      <strong>Task Completion</strong>
-                      <span class="metric-sub">Full completion of requested items</span>
-                    </div>
-                  </div>
-                </td>
-                <td>
-                  <div class="pill-group" id="taskCompletionGroup">
-                    <label class="pill-option" onclick="selectPill(this, 'taskCompletion', 'Completely')">
-                      <input type="radio" name="taskCompletion" value="Completely" hidden>
-                      Completely
-                    </label>
-                    <label class="pill-option" onclick="selectPill(this, 'taskCompletion', 'Partially')">
-                      <input type="radio" name="taskCompletion" value="Partially" hidden>
-                      Partially
-                    </label>
-                    <label class="pill-option" onclick="selectPill(this, 'taskCompletion', 'No')">
-                      <input type="radio" name="taskCompletion" value="No" hidden>
-                      No
-                    </label>
-                  </div>
-                </td>
-              </tr>
-
-              <!-- 📞 Communication -->
-              <tr>
-                <td>
-                  <div class="metric-cell">
-                    <span class="metric-icon">📞</span>
-                    <div>
-                      <strong>Communication</strong>
-                      <span class="metric-sub">Politeness & responsiveness</span>
-                    </div>
-                  </div>
-                </td>
-                <td>
-                  <div class="star-rating-wrapper">
-                    <div class="star-rating" data-metric="communication" onmouseleave="resetStarRating('communication')">
-                      <span class="star" data-val="1" onclick="setStarRating('communication', 1)" onmouseenter="hoverStarRating('communication', 1)">★</span>
-                      <span class="star" data-val="2" onclick="setStarRating('communication', 2)" onmouseenter="hoverStarRating('communication', 2)">★</span>
-                      <span class="star" data-val="3" onclick="setStarRating('communication', 3)" onmouseenter="hoverStarRating('communication', 3)">★</span>
-                      <span class="star" data-val="4" onclick="setStarRating('communication', 4)" onmouseenter="hoverStarRating('communication', 4)">★</span>
-                      <span class="star" data-val="5" onclick="setStarRating('communication', 5)" onmouseenter="hoverStarRating('communication', 5)">★</span>
-                      <input type="hidden" id="communicationVal" value="0">
-                    </div>
-                    <span class="star-score-badge unrated" id="communicationText">Select Rating</span>
-                  </div>
-                </td>
-              </tr>
-
-              <!-- 👍 Would you choose this volunteer again? -->
-              <tr>
-                <td>
-                  <div class="metric-cell">
-                    <span class="metric-icon">👍</span>
-                    <div>
-                      <strong>Would you choose this volunteer again?</strong>
-                      <span class="metric-sub">Overall trust & recommendation</span>
-                    </div>
-                  </div>
-                </td>
-                <td>
-                  <div class="pill-group" id="chooseAgainGroup">
-                    <label class="pill-option" onclick="selectPill(this, 'chooseAgain', 'Yes')">
-                      <input type="radio" name="chooseAgain" value="Yes" hidden>
-                      Yes
-                    </label>
-                    <label class="pill-option" onclick="selectPill(this, 'chooseAgain', 'Maybe')">
-                      <input type="radio" name="chooseAgain" value="Maybe" hidden>
-                      Maybe
-                    </label>
-                    <label class="pill-option" onclick="selectPill(this, 'chooseAgain', 'No')">
-                      <input type="radio" name="chooseAgain" value="No" hidden>
-                      No
-                    </label>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+      <form id="feedbackForm" onsubmit="handleFeedbackSubmit(event)" class="space-y-4">
+        <!-- Metric 1: Cost Utilization -->
+        <div class="flex items-center justify-between gap-3 p-3 rounded-xl bg-slate-50 border border-slate-200/70">
+          <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-800 flex items-center justify-center flex-shrink-0 font-extrabold text-xs">
+              ₹
+            </div>
+            <div>
+              <div class="text-xs font-bold text-slate-900">Cost Utilization</div>
+              <div class="text-[10px] text-slate-500 font-medium">Fairness &amp; bill accuracy</div>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="star-rating text-lg" data-metric="costUtilization" onmouseleave="resetStarRating('costUtilization')">
+              <span class="star" data-val="1" onclick="setStarRating('costUtilization', 1)" onmouseenter="hoverStarRating('costUtilization', 1)">★</span>
+              <span class="star" data-val="2" onclick="setStarRating('costUtilization', 2)" onmouseenter="hoverStarRating('costUtilization', 2)">★</span>
+              <span class="star" data-val="3" onclick="setStarRating('costUtilization', 3)" onmouseenter="hoverStarRating('costUtilization', 3)">★</span>
+              <span class="star" data-val="4" onclick="setStarRating('costUtilization', 4)" onmouseenter="hoverStarRating('costUtilization', 4)">★</span>
+              <span class="star" data-val="5" onclick="setStarRating('costUtilization', 5)" onmouseenter="hoverStarRating('costUtilization', 5)">★</span>
+              <input type="hidden" id="costUtilizationVal" value="0">
+            </div>
+            <span class="text-[10px] font-bold text-slate-500 bg-white px-2 py-0.5 rounded border border-slate-200 min-w-[55px] text-center" id="costUtilizationText">Rate</span>
+          </div>
         </div>
 
-        <!-- Additional Feedback -->
-        <div class="additional-feedback-box">
-          <label for="additionalFeedback">Additional feedback (optional)</label>
-          <textarea id="additionalFeedback" rows="3" placeholder="Share any extra thoughts, appreciation, or suggestions for the volunteer..."></textarea>
+        <!-- Metric 2: Speed & Timeliness -->
+        <div class="flex items-center justify-between gap-3 p-3 rounded-xl bg-slate-50 border border-slate-200/70">
+          <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-lg bg-blue-100 text-blue-800 flex items-center justify-center flex-shrink-0">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div>
+              <div class="text-xs font-bold text-slate-900">Speed &amp; Timeliness</div>
+              <div class="text-[10px] text-slate-500 font-medium">Punctuality &amp; turnaround</div>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="star-rating text-lg" data-metric="speedTimeliness" onmouseleave="resetStarRating('speedTimeliness')">
+              <span class="star" data-val="1" onclick="setStarRating('speedTimeliness', 1)" onmouseenter="hoverStarRating('speedTimeliness', 1)">★</span>
+              <span class="star" data-val="2" onclick="setStarRating('speedTimeliness', 2)" onmouseenter="hoverStarRating('speedTimeliness', 2)">★</span>
+              <span class="star" data-val="3" onclick="setStarRating('speedTimeliness', 3)" onmouseenter="hoverStarRating('speedTimeliness', 3)">★</span>
+              <span class="star" data-val="4" onclick="setStarRating('speedTimeliness', 4)" onmouseenter="hoverStarRating('speedTimeliness', 4)">★</span>
+              <span class="star" data-val="5" onclick="setStarRating('speedTimeliness', 5)" onmouseenter="hoverStarRating('speedTimeliness', 5)">★</span>
+              <input type="hidden" id="speedTimelinessVal" value="0">
+            </div>
+            <span class="text-[10px] font-bold text-slate-500 bg-white px-2 py-0.5 rounded border border-slate-200 min-w-[55px] text-center" id="speedTimelinessText">Rate</span>
+          </div>
         </div>
 
-        <div class="feedback-actions">
-          <button type="button" class="btn-skip" onclick="skipFeedbackAndGoHome()">Skip & Go Home</button>
-          <button type="submit" id="btnSubmitFeedback" class="btn-submit-feedback">Submit Feedback & Go Home ➔</button>
+        <!-- Metric 3: Task Completion -->
+        <div class="flex items-center justify-between gap-3 p-3 rounded-xl bg-slate-50 border border-slate-200/70">
+          <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-800 flex items-center justify-center flex-shrink-0">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div>
+              <div class="text-xs font-bold text-slate-900">Task Completion</div>
+              <div class="text-[10px] text-slate-500 font-medium">Full requested items delivered</div>
+            </div>
+          </div>
+          <div class="flex items-center gap-1.5" id="taskCompletionGroup">
+            <button type="button" class="pill-option px-2.5 py-1 text-xs font-bold rounded-lg border-2 border-slate-200 bg-white text-slate-700 cursor-pointer transition-all hover:bg-slate-50" onclick="selectPill(this, 'taskCompletion', 'Completely')">
+              Completely
+            </button>
+            <button type="button" class="pill-option px-2.5 py-1 text-xs font-bold rounded-lg border-2 border-slate-200 bg-white text-slate-700 cursor-pointer transition-all hover:bg-slate-50" onclick="selectPill(this, 'taskCompletion', 'Partially')">
+              Partially
+            </button>
+            <button type="button" class="pill-option px-2.5 py-1 text-xs font-bold rounded-lg border-2 border-slate-200 bg-white text-slate-700 cursor-pointer transition-all hover:bg-slate-50" onclick="selectPill(this, 'taskCompletion', 'No')">
+              No
+            </button>
+            <input type="hidden" id="taskCompletionVal" name="taskCompletion" value="">
+          </div>
+        </div>
+
+        <!-- Metric 4: Communication -->
+        <div class="flex items-center justify-between gap-3 p-3 rounded-xl bg-slate-50 border border-slate-200/70">
+          <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-lg bg-amber-100 text-amber-800 flex items-center justify-center flex-shrink-0">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 01.865-.501 48.172 48.172 0 003.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z" />
+              </svg>
+            </div>
+            <div>
+              <div class="text-xs font-bold text-slate-900">Communication</div>
+              <div class="text-[10px] text-slate-500 font-medium">Politeness &amp; responsiveness</div>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="star-rating text-lg" data-metric="communication" onmouseleave="resetStarRating('communication')">
+              <span class="star" data-val="1" onclick="setStarRating('communication', 1)" onmouseenter="hoverStarRating('communication', 1)">★</span>
+              <span class="star" data-val="2" onclick="setStarRating('communication', 2)" onmouseenter="hoverStarRating('communication', 2)">★</span>
+              <span class="star" data-val="3" onclick="setStarRating('communication', 3)" onmouseenter="hoverStarRating('communication', 3)">★</span>
+              <span class="star" data-val="4" onclick="setStarRating('communication', 4)" onmouseenter="hoverStarRating('communication', 4)">★</span>
+              <span class="star" data-val="5" onclick="setStarRating('communication', 5)" onmouseenter="hoverStarRating('communication', 5)">★</span>
+              <input type="hidden" id="communicationVal" value="0">
+            </div>
+            <span class="text-[10px] font-bold text-slate-500 bg-white px-2 py-0.5 rounded border border-slate-200 min-w-[55px] text-center" id="communicationText">Rate</span>
+          </div>
+        </div>
+
+        <!-- Metric 5: Choose Again -->
+        <div class="flex items-center justify-between gap-3 p-3 rounded-xl bg-slate-50 border border-slate-200/70">
+          <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-lg bg-teal-100 text-teal-800 flex items-center justify-center flex-shrink-0">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6.633 10.5c.806 0 1.533-.446 2.031-1.08a9.041 9.041 0 012.861-2.4c.723-.384 1.35-.956 1.653-1.715a4.498 4.498 0 00.322-1.672V3a.75.75 0 01.75-.75 2.25 2.25 0 012.25 2.25c0 1.152-.26 2.243-.723 3.218-.266.558.107 1.282.725 1.282h3.126c1.026 0 1.945.694 2.054 1.715.045.422.068.85.068 1.285a11.95 11.95 0 01-2.649 7.521c-.388.482-.987.729-1.605.729H13.48c-.483 0-.964-.078-1.423-.23l-3.114-1.038a4.501 4.501 0 00-1.423-.23H5.25A2.25 2.25 0 013 15.75V12.75a2.25 2.25 0 012.25-2.25h1.383z" />
+              </svg>
+            </div>
+            <div>
+              <div class="text-xs font-bold text-slate-900">Choose Again?</div>
+              <div class="text-[10px] text-slate-500 font-medium">Overall recommendation</div>
+            </div>
+          </div>
+          <div class="flex items-center gap-1.5" id="chooseAgainGroup">
+            <button type="button" class="pill-option px-2.5 py-1 text-xs font-bold rounded-lg border-2 border-slate-200 bg-white text-slate-700 cursor-pointer transition-all hover:bg-slate-50" onclick="selectPill(this, 'chooseAgain', 'Yes')">
+              Yes
+            </button>
+            <button type="button" class="pill-option px-2.5 py-1 text-xs font-bold rounded-lg border-2 border-slate-200 bg-white text-slate-700 cursor-pointer transition-all hover:bg-slate-50" onclick="selectPill(this, 'chooseAgain', 'Maybe')">
+              Maybe
+            </button>
+            <button type="button" class="pill-option px-2.5 py-1 text-xs font-bold rounded-lg border-2 border-slate-200 bg-white text-slate-700 cursor-pointer transition-all hover:bg-slate-50" onclick="selectPill(this, 'chooseAgain', 'No')">
+              No
+            </button>
+            <input type="hidden" id="chooseAgainVal" name="chooseAgain" value="">
+          </div>
+        </div>
+
+        <!-- Additional Feedback Note -->
+        <div>
+          <label for="additionalFeedback" class="block text-xs font-bold text-slate-700 mb-1">Additional Feedback (Optional)</label>
+          <textarea id="additionalFeedback" rows="2" class="w-full text-xs p-3 rounded-xl border border-slate-200 focus:border-brand-500 outline-none" placeholder="Share any words of appreciation or notes..."></textarea>
+        </div>
+
+        <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
+          <button type="button" class="py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl cursor-pointer transition-all" onclick="skipFeedbackAndGoHome()">
+            Skip
+          </button>
+          <button type="submit" id="btnSubmitFeedback" class="py-2.5 px-5 bg-brand-600 hover:bg-brand-700 text-white font-extrabold text-xs rounded-xl shadow-xs transition-all cursor-pointer border-none">
+            Submit Feedback &amp; Finish
+          </button>
         </div>
       </form>
     </div>
   </div>
 
-  <!-- Razorpay Mock Payment Modal Overlay -->
+  <!-- Razorpay Mock Payment Gateway Modal Overlay -->
   <div id="rzpMockModal" class="rzp-mock-modal-overlay">
-    <div class="rzp-mock-modal">
+    <div class="bg-white rounded-3xl w-full max-w-2xl shadow-2xl border border-slate-200 overflow-hidden relative m-4 flex flex-col h-[560px]">
       <!-- Simulated Gateway Loading State -->
-      <div id="rzpMockLoader" class="rzp-mock-loader-overlay">
-        <div class="rzp-mock-spinner"></div>
-        <div class="rzp-mock-loader-status" id="rzpLoaderStatus">Verifying Payment Details...</div>
-        <div class="rzp-mock-loader-subtext">Do not close this window or click the back button.</div>
+      <div id="rzpMockLoader" class="absolute inset-0 bg-white/95 backdrop-blur-sm z-50 flex flex-col items-center justify-center p-8 text-center" style="display: none;">
+        <div class="rzp-mock-spinner mb-4"></div>
+        <div class="text-base font-extrabold text-slate-900" id="rzpLoaderStatus">Verifying Payment Details...</div>
+        <div class="text-xs sm:text-sm text-slate-500 font-medium mt-1">Please do not refresh or close this window.</div>
       </div>
 
       <!-- Header -->
-      <div class="rzp-mock-header">
-        <div class="rzp-mock-header-brand">
-          <div class="rzp-mock-header-logo">🌸</div>
+      <div class="bg-slate-900 text-white p-5 sm:p-6 flex justify-between items-center border-b border-slate-800">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-brand-600 text-white flex items-center justify-center font-black text-base shadow-xs">
+            A
+          </div>
           <div>
-            <div class="rzp-mock-header-title">AgeWell</div>
-            <div class="rzp-mock-header-desc" data-i18n="rzp_mock_sim_checkout">Simulated Test Checkout</div>
+            <div class="text-base font-extrabold text-white">AgeWell Checkout</div>
+            <div class="text-xs text-slate-400 font-semibold" data-i18n="rzp_mock_sim_checkout">Simulated Test Payment</div>
           </div>
         </div>
-        <div style="display: flex; align-items: center;">
-          <div class="rzp-mock-header-amount">
-            <div class="rzp-mock-amount-label" data-i18n="rzp_mock_amt_payable">Amount Payable</div>
-            <div class="rzp-mock-amount-value" id="rzpMockHeaderAmount">₹0.00</div>
+        <div class="flex items-center gap-4">
+          <div class="text-right">
+            <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider" data-i18n="rzp_mock_amt_payable">Amount Payable</div>
+            <div class="text-base sm:text-lg font-black text-white" id="rzpMockHeaderAmount">₹0.00</div>
           </div>
-          <button class="rzp-mock-close" onclick="closeRzpMockModal()">&times;</button>
+          <button class="text-slate-400 hover:text-white text-2xl font-bold p-1 cursor-pointer bg-transparent border-none leading-none transition-colors" onclick="closeRzpMockModal()">&times;</button>
         </div>
       </div>
 
-      <!-- Body -->
-      <div class="rzp-mock-body">
+      <!-- Body Tabs & Content -->
+      <div class="flex flex-1 overflow-hidden">
         <!-- Sidebar -->
-        <div class="rzp-mock-sidebar">
-          <div class="rzp-mock-sidebar-item active" id="rzpTabLinkUpi" onclick="switchRzpMockTab('upi')">
-            <span class="rzp-mock-sidebar-icon">📱</span>
+        <div class="w-44 sm:w-52 bg-slate-50 border-r border-slate-200 flex flex-col text-xs sm:text-sm font-bold text-slate-600">
+          <div class="p-4 cursor-pointer border-l-4 border-brand-600 bg-white text-brand-700 flex items-center gap-2.5 transition-all" id="rzpTabLinkUpi" onclick="switchRzpMockTab('upi')">
             <span>UPI / QR</span>
           </div>
-          <div class="rzp-mock-sidebar-item" id="rzpTabLinkCard" onclick="switchRzpMockTab('card')">
-            <span class="rzp-mock-sidebar-icon">💳</span>
+          <div class="p-4 cursor-pointer border-l-4 border-transparent hover:bg-slate-100 flex items-center gap-2.5 transition-all" id="rzpTabLinkCard" onclick="switchRzpMockTab('card')">
             <span>Card</span>
           </div>
-          <div class="rzp-mock-sidebar-item" id="rzpTabLinkNet" onclick="switchRzpMockTab('net')">
-            <span class="rzp-mock-sidebar-icon">🏦</span>
+          <div class="p-4 cursor-pointer border-l-4 border-transparent hover:bg-slate-100 flex items-center gap-2.5 transition-all" id="rzpTabLinkNet" onclick="switchRzpMockTab('net')">
             <span>Netbanking</span>
           </div>
-          <div class="rzp-mock-sidebar-item" id="rzpTabLinkWallet" onclick="switchRzpMockTab('wallet')">
-            <span class="rzp-mock-sidebar-icon">💼</span>
+          <div class="p-4 cursor-pointer border-l-4 border-transparent hover:bg-slate-100 flex items-center gap-2.5 transition-all" id="rzpTabLinkWallet" onclick="switchRzpMockTab('wallet')">
             <span>Wallets</span>
           </div>
         </div>
 
-        <!-- Content Panel -->
-        <div class="rzp-mock-content">
-          <!-- UPI Tab -->
-          <div class="rzp-mock-tab-panel active" id="rzpPanelUpi">
-            <div class="rzp-mock-section-title" data-i18n="rzp_mock_upi_title">Pay via UPI</div>
-            <div style="font-size: 0.85rem; color: #6c757d; margin-bottom: 0.8rem;" data-i18n="rzp_mock_upi_subtitle">Select a UPI App or enter your UPI ID</div>
-            <div class="rzp-mock-grid">
-              <div class="rzp-mock-grid-item" onclick="prefillRzpMockUpi('gpay')">
-                <span style="font-size: 1.1rem;">Ⓜ️</span> Google Pay
+        <!-- Content Panels -->
+        <div class="flex-1 p-6 sm:p-7 overflow-y-auto flex flex-col text-xs sm:text-sm">
+          <!-- UPI Panel -->
+          <div class="flex-1 flex flex-col" id="rzpPanelUpi">
+            <div class="flex items-center justify-between mb-3">
+              <div>
+                <div class="font-extrabold text-slate-900 text-sm" data-i18n="rzp_mock_upi_title">Pay via UPI</div>
+                <div class="text-xs text-slate-500 font-medium" data-i18n="rzp_mock_upi_subtitle">Select an app or enter UPI ID</div>
               </div>
-              <div class="rzp-mock-grid-item" onclick="prefillRzpMockUpi('phonepe')">
-                <span style="font-size: 1.1rem;">👾</span> PhonePe
+              <button type="button" class="text-xs font-bold text-brand-600 hover:text-brand-700 underline cursor-pointer bg-transparent border-none" onclick="toggleUpiQrView()">
+                <span id="upiToggleText">Scan QR Instead</span>
+              </button>
+            </div>
+
+            <!-- UPI App Select Grid -->
+            <div id="upiAppsContainer">
+              <div class="grid grid-cols-2 gap-2.5 mb-4" id="rzpUpiAppGrid">
+                <button type="button" class="p-3 border-2 border-brand-600 bg-brand-50 rounded-xl text-brand-900 font-bold text-xs sm:text-sm text-left cursor-pointer transition-all shadow-2xs rzp-upi-btn" onclick="selectRzpMockUpiApp(this, 'gpay')">Google Pay</button>
+                <button type="button" class="p-3 border-2 border-slate-200 bg-white hover:bg-slate-50 rounded-xl text-slate-700 font-bold text-xs sm:text-sm text-left cursor-pointer transition-all shadow-2xs rzp-upi-btn" onclick="selectRzpMockUpiApp(this, 'phonepe')">PhonePe</button>
+                <button type="button" class="p-3 border-2 border-slate-200 bg-white hover:bg-slate-50 rounded-xl text-slate-700 font-bold text-xs sm:text-sm text-left cursor-pointer transition-all shadow-2xs rzp-upi-btn" onclick="selectRzpMockUpiApp(this, 'paytm')">Paytm UPI</button>
+                <button type="button" class="p-3 border-2 border-slate-200 bg-white hover:bg-slate-50 rounded-xl text-slate-700 font-bold text-xs sm:text-sm text-left cursor-pointer transition-all shadow-2xs rzp-upi-btn" onclick="selectRzpMockUpiApp(this, 'ybl')">BHIM UPI</button>
               </div>
-              <div class="rzp-mock-grid-item" onclick="prefillRzpMockUpi('paytm')">
-                <span style="font-size: 1.1rem;">💎</span> Paytm
-              </div>
-              <div class="rzp-mock-grid-item" onclick="prefillRzpMockUpi('ybl')">
-                <span style="font-size: 1.1rem;">⚡</span> BHIM UPI
+
+              <div class="mb-5">
+                <label for="rzpUpiId" class="block text-xs font-bold text-slate-700 mb-1.5">Enter / Edit UPI ID</label>
+                <input type="text" id="rzpUpiId" class="w-full p-3 border border-slate-200 rounded-xl text-xs sm:text-sm outline-none focus:border-brand-600 font-medium" value="agewell@okaxis" placeholder="username@bank">
               </div>
             </div>
-            <div class="rzp-mock-input-group">
-              <label for="rzpUpiId" data-i18n="rzp_mock_upi_label">Enter UPI ID (e.g. success@okaxis)</label>
-              <input type="text" id="rzpUpiId" class="rzp-mock-input" placeholder="e.g. username@bank" value="agewell@pay">
+
+            <!-- UPI QR Code View (Hidden by default) -->
+            <div id="upiQrContainer" class="text-center py-2 mb-4" style="display: none;">
+              <div class="w-36 h-36 mx-auto bg-white p-2 border-2 border-slate-300 rounded-2xl shadow-xs flex items-center justify-center mb-2">
+                <!-- SVG Simulated QR Code -->
+                <svg class="w-full h-full text-slate-900" viewBox="0 0 100 100" fill="currentColor">
+                  <path d="M0,0 h30 v30 h-30 z M5,5 v20 h20 v-20 z M10,10 h10 v10 h-10 z" />
+                  <path d="M70,0 h30 v30 h-30 z M75,5 v20 h20 v-20 z M80,10 h10 v10 h-10 z" />
+                  <path d="M0,70 h30 v30 h-30 z M5,75 v20 h20 v-20 z M10,80 h10 v10 h-10 z" />
+                  <rect x="35" y="10" width="5" height="15" />
+                  <rect x="45" y="5" width="10" height="5" />
+                  <rect x="45" y="15" width="5" height="10" />
+                  <rect x="55" y="10" width="10" height="5" />
+                  <rect x="35" y="35" width="30" height="5" />
+                  <rect x="35" y="45" width="10" height="15" />
+                  <rect x="55" y="45" width="15" height="10" />
+                  <rect x="45" y="65" width="10" height="15" />
+                  <rect x="75" y="35" width="20" height="5" />
+                  <rect x="85" y="45" width="10" height="20" />
+                  <rect x="70" y="70" width="10" height="10" />
+                  <rect x="85" y="75" width="10" height="15" />
+                  <rect x="15" y="45" width="15" height="5" />
+                  <rect x="5" y="55" width="10" height="5" />
+                </svg>
+              </div>
+              <div class="text-xs font-bold text-slate-700">Scan with any UPI app (GPay, PhonePe, Paytm)</div>
+              <div class="text-[11px] text-emerald-600 font-semibold mt-0.5">Auto-verifies upon scanning</div>
             </div>
-            <button class="rzp-mock-btn-pay" onclick="submitRzpMockPayment('upi')">
-              <span data-i18n="rzp_mock_pay_securely">🔒 Pay Securely</span> <strong id="rzpMockBtnAmountUpi">₹0.00</strong>
+
+            <button class="w-full mt-auto py-3.5 bg-brand-600 hover:bg-brand-700 text-white font-extrabold text-xs sm:text-sm rounded-xl shadow-xs cursor-pointer border-none transition-all active:scale-98" onclick="submitRzpMockPayment('upi')">
+              Pay Securely <span id="rzpMockBtnAmountUpi">₹0.00</span>
             </button>
           </div>
 
-          <!-- Card Tab -->
-          <div class="rzp-mock-tab-panel" id="rzpPanelCard">
-            <div class="rzp-mock-section-title" data-i18n="rzp_mock_card_title">Pay via Card</div>
-            <div class="rzp-mock-input-group">
-              <label for="rzpCardNumber" data-i18n="rzp_mock_card_no">Card Number</label>
-              <input type="text" id="rzpCardNumber" class="rzp-mock-input" placeholder="4111 1111 1111 1111" maxlength="19" oninput="formatCardNumber(this)" value="4111 1111 1111 1111">
-            </div>
-            <div class="rzp-mock-input-row">
-              <div class="rzp-mock-input-group" style="flex: 1;">
-                <label for="rzpCardExpiry" data-i18n="rzp_mock_card_exp">Expiry</label>
-                <input type="text" id="rzpCardExpiry" class="rzp-mock-input" placeholder="MM/YY" maxlength="5" oninput="formatCardExpiry(this)" value="12/29">
+          <!-- Card Panel -->
+          <div class="flex-1 flex-col" id="rzpPanelCard" style="display: none;">
+            <div class="font-extrabold text-slate-900 text-sm mb-4" data-i18n="rzp_mock_card_title">Pay via Card</div>
+            <div class="space-y-3.5 mb-5">
+              <div>
+                <label for="rzpCardNumber" class="block text-xs font-bold text-slate-700 mb-1.5">Card Number</label>
+                <input type="text" id="rzpCardNumber" class="w-full p-3 border border-slate-200 rounded-xl text-xs sm:text-sm outline-none focus:border-brand-600 font-medium" value="4111 1111 1111 1111" maxlength="19" oninput="formatCardNumber(this)">
               </div>
-              <div class="rzp-mock-input-group" style="flex: 1;">
-                <label for="rzpCardCvv" data-i18n="rzp_mock_card_cvv">CVV</label>
-                <input type="password" id="rzpCardCvv" class="rzp-mock-input" placeholder="123" maxlength="3" value="123">
+              <div>
+                <label for="rzpCardHolderName" class="block text-xs font-bold text-slate-700 mb-1.5">Cardholder Name</label>
+                <input type="text" id="rzpCardHolderName" class="w-full p-3 border border-slate-200 rounded-xl text-xs sm:text-sm outline-none focus:border-brand-600 font-medium" value="Caregiver Account" placeholder="Name on card">
+              </div>
+              <div class="flex gap-3">
+                <div class="flex-1">
+                  <label for="rzpCardExpiry" class="block text-xs font-bold text-slate-700 mb-1.5">Expiry</label>
+                  <input type="text" id="rzpCardExpiry" class="w-full p-3 border border-slate-200 rounded-xl text-xs sm:text-sm outline-none focus:border-brand-600 font-medium" value="12/29" placeholder="MM/YY" maxlength="5" oninput="formatCardExpiry(this)">
+                </div>
+                <div class="flex-1">
+                  <label for="rzpCardCvv" class="block text-xs font-bold text-slate-700 mb-1.5">CVV</label>
+                  <input type="password" id="rzpCardCvv" class="w-full p-3 border border-slate-200 rounded-xl text-xs sm:text-sm outline-none focus:border-brand-600 font-medium" value="123" maxlength="4" placeholder="123">
+                </div>
               </div>
             </div>
-            <div class="rzp-mock-input-group">
-              <label for="rzpCardName" data-i18n="rzp_mock_card_name">Card Holder Name</label>
-              <input type="text" id="rzpCardName" class="rzp-mock-input" placeholder="Cardholder Name" value="John Doe">
-            </div>
-            <button class="rzp-mock-btn-pay" onclick="submitRzpMockPayment('card')">
-              <span data-i18n="rzp_mock_pay_securely">🔒 Pay Securely</span> <strong id="rzpMockBtnAmountCard">₹0.00</strong>
+            <button class="w-full mt-auto py-3.5 bg-brand-600 hover:bg-brand-700 text-white font-extrabold text-xs sm:text-sm rounded-xl shadow-xs cursor-pointer border-none transition-all active:scale-98" onclick="submitRzpMockPayment('card')">
+              Pay Securely <span id="rzpMockBtnAmountCard">₹0.00</span>
             </button>
           </div>
 
-          <!-- Netbanking Tab -->
-          <div class="rzp-mock-tab-panel" id="rzpPanelNet">
-            <div class="rzp-mock-section-title" data-i18n="rzp_mock_net_title">Popular Banks</div>
-            <div class="rzp-mock-grid" id="rzpNetbankingGrid">
-              <div class="rzp-mock-grid-item active" onclick="selectRzpMockBank(this, 'SBI')">🏦 State Bank of India</div>
-              <div class="rzp-mock-grid-item" onclick="selectRzpMockBank(this, 'HDFC')">🏦 HDFC Bank</div>
-              <div class="rzp-mock-grid-item" onclick="selectRzpMockBank(this, 'ICICI')">🏦 ICICI Bank</div>
-              <div class="rzp-mock-grid-item" onclick="selectRzpMockBank(this, 'AXIS')">🏦 Axis Bank</div>
+          <!-- Netbanking Panel -->
+          <div class="flex-1 flex-col" id="rzpPanelNet" style="display: none;">
+            <div class="font-extrabold text-slate-900 text-sm mb-3" data-i18n="rzp_mock_net_title">Select Bank</div>
+            <div class="grid grid-cols-2 gap-2.5 mb-4" id="rzpNetbankingGrid">
+              <button type="button" class="p-3 border-2 border-brand-600 bg-brand-50 rounded-xl text-brand-900 font-bold text-xs sm:text-sm text-left shadow-2xs rzp-bank-btn cursor-pointer" onclick="selectRzpMockBank(this, 'SBI')">State Bank of India</button>
+              <button type="button" class="p-3 border-2 border-slate-200 bg-white hover:bg-slate-50 rounded-xl text-slate-700 font-bold text-xs sm:text-sm text-left shadow-2xs rzp-bank-btn cursor-pointer" onclick="selectRzpMockBank(this, 'HDFC')">HDFC Bank</button>
+              <button type="button" class="p-3 border-2 border-slate-200 bg-white hover:bg-slate-50 rounded-xl text-slate-700 font-bold text-xs sm:text-sm text-left shadow-2xs rzp-bank-btn cursor-pointer" onclick="selectRzpMockBank(this, 'ICICI')">ICICI Bank</button>
+              <button type="button" class="p-3 border-2 border-slate-200 bg-white hover:bg-slate-50 rounded-xl text-slate-700 font-bold text-xs sm:text-sm text-left shadow-2xs rzp-bank-btn cursor-pointer" onclick="selectRzpMockBank(this, 'AXIS')">Axis Bank</button>
             </div>
-            <div class="rzp-mock-input-group">
-              <label for="rzpNetbankingSelect" data-i18n="rzp_mock_net_select">Or Select Other Bank</label>
-              <select id="rzpNetbankingSelect" class="rzp-mock-input" onchange="selectRzpMockBankDropdown(this)">
-                <option value="">Choose a bank...</option>
+
+            <div class="mb-4">
+              <label for="rzpNetbankingSelect" class="block text-xs font-bold text-slate-700 mb-1.5">Or Choose Another Bank</label>
+              <select id="rzpNetbankingSelect" class="w-full p-3 border border-slate-200 rounded-xl text-xs sm:text-sm outline-none focus:border-brand-600 font-medium bg-white" onchange="selectRzpMockBankDropdown(this)">
+                <option value="">-- Select from other banks --</option>
                 <option value="KOTAK">Kotak Mahindra Bank</option>
                 <option value="PNB">Punjab National Bank</option>
                 <option value="BOB">Bank of Baroda</option>
+                <option value="INDUS">IndusInd Bank</option>
+                <option value="IDFC">IDFC First Bank</option>
+                <option value="YES">Yes Bank</option>
                 <option value="CANARA">Canara Bank</option>
-                <option value="INDUSIND">IndusInd Bank</option>
               </select>
             </div>
-            <button class="rzp-mock-btn-pay" onclick="submitRzpMockPayment('net')">
-              <span data-i18n="rzp_mock_pay_securely">🔒 Pay Securely</span> <strong id="rzpMockBtnAmountNet">₹0.00</strong>
+
+            <button class="w-full mt-auto py-3.5 bg-brand-600 hover:bg-brand-700 text-white font-extrabold text-xs sm:text-sm rounded-xl shadow-xs cursor-pointer border-none transition-all active:scale-98" onclick="submitRzpMockPayment('net')">
+              Pay Securely <span id="rzpMockBtnAmountNet">₹0.00</span>
             </button>
           </div>
 
-          <!-- Wallets Tab -->
-          <div class="rzp-mock-tab-panel" id="rzpPanelWallet">
-            <div class="rzp-mock-section-title" data-i18n="rzp_mock_wallet_title">Select Wallet</div>
-            <div class="rzp-mock-grid" id="rzpWalletGrid">
-              <div class="rzp-mock-grid-item active" onclick="selectRzpMockWallet(this, 'Paytm')">💼 Paytm Wallet</div>
-              <div class="rzp-mock-grid-item" onclick="selectRzpMockWallet(this, 'PhonePe')">💼 PhonePe Wallet</div>
-              <div class="rzp-mock-grid-item" onclick="selectRzpMockWallet(this, 'AmazonPay')">💼 Amazon Pay</div>
-              <div class="rzp-mock-grid-item" onclick="selectRzpMockWallet(this, 'MobiKwik')">💼 MobiKwik</div>
+          <!-- Wallets Panel -->
+          <div class="flex-1 flex-col" id="rzpPanelWallet" style="display: none;">
+            <div class="font-extrabold text-slate-900 text-sm mb-3" data-i18n="rzp_mock_wallet_title">Select Wallet</div>
+            <div class="grid grid-cols-2 gap-2.5 mb-4" id="rzpWalletGrid">
+              <button type="button" class="p-3.5 border-2 border-brand-600 bg-brand-50 rounded-xl text-brand-900 font-bold text-xs sm:text-sm text-left shadow-2xs rzp-wallet-btn cursor-pointer" onclick="selectRzpMockWallet(this, 'Paytm')">Paytm Wallet</button>
+              <button type="button" class="p-3.5 border-2 border-slate-200 bg-white hover:bg-slate-50 rounded-xl text-slate-700 font-bold text-xs sm:text-sm text-left shadow-2xs rzp-wallet-btn cursor-pointer" onclick="selectRzpMockWallet(this, 'PhonePe')">PhonePe Wallet</button>
+              <button type="button" class="p-3.5 border-2 border-slate-200 bg-white hover:bg-slate-50 rounded-xl text-slate-700 font-bold text-xs sm:text-sm text-left shadow-2xs rzp-wallet-btn cursor-pointer" onclick="selectRzpMockWallet(this, 'AmazonPay')">Amazon Pay</button>
+              <button type="button" class="p-3.5 border-2 border-slate-200 bg-white hover:bg-slate-50 rounded-xl text-slate-700 font-bold text-xs sm:text-sm text-left shadow-2xs rzp-wallet-btn cursor-pointer" onclick="selectRzpMockWallet(this, 'MobiKwik')">MobiKwik</button>
             </div>
-            <button class="rzp-mock-btn-pay" onclick="submitRzpMockPayment('wallet')">
-              <span data-i18n="rzp_mock_pay_securely">🔒 Pay Securely</span> <strong id="rzpMockBtnAmountWallet">₹0.00</strong>
-            </button>
-          </div>
 
-          <!-- Secure footer -->
-          <div class="rzp-mock-footer-branding">
-            <span data-i18n="rzp_mock_sec_branding">🛡️ Secured by Razorpay Mock Checkout</span>
+            <div class="mb-5">
+              <label for="rzpWalletMobile" class="block text-xs font-bold text-slate-700 mb-1.5">Linked Mobile Number / Account</label>
+              <input type="text" id="rzpWalletMobile" class="w-full p-3 border border-slate-200 rounded-xl text-xs sm:text-sm outline-none focus:border-brand-600 font-medium" value="9876543210" placeholder="Enter 10-digit mobile number">
+            </div>
+
+            <button class="w-full mt-auto py-3.5 bg-brand-600 hover:bg-brand-700 text-white font-extrabold text-xs sm:text-sm rounded-xl shadow-xs cursor-pointer border-none transition-all active:scale-98" onclick="submitRzpMockPayment('wallet')">
+              Pay Securely <span id="rzpMockBtnAmountWallet">₹0.00</span>
+            </button>
           </div>
         </div>
       </div>
     </div>
   </div>
 
-  <script src="js/api.js?v=200"></script>
-  <script src="js/payment.js?v=200"></script>
+  <!-- Scripts -->
+  <script src="js/api.js?v=361"></script>
+  <script src="js/payment.js?v=361"></script>
 </body>
 </html>

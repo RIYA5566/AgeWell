@@ -353,26 +353,30 @@ function renderKycStatus(user) {
     const btnUnverifiedOpenKyc = document.getElementById('btnUnverifiedOpenKyc');
     const btnUnverifiedOpenKycText = document.getElementById('btnUnverifiedOpenKycText');
 
+    const iconCheck = '<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>';
+    const iconClock = '<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>';
+    const iconAlert = '<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>';
+
     if (unverifiedStepGovtIdText) {
-      if (isIdVerified) {
+      if (isGovtIdVerified) {
         unverifiedStepGovtIdText.textContent = 'Verified';
         unverifiedStepGovtIdText.className = 'text-xs font-extrabold text-emerald-700 block';
         if (unverifiedStepGovtIdIcon) {
-          unverifiedStepGovtIdIcon.textContent = '✓';
+          unverifiedStepGovtIdIcon.innerHTML = iconCheck;
           unverifiedStepGovtIdIcon.className = 'w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center flex-shrink-0 font-bold text-xs';
         }
       } else if (user.govtIdCard) {
         unverifiedStepGovtIdText.textContent = 'Submitted (Pending Review)';
         unverifiedStepGovtIdText.className = 'text-xs font-extrabold text-brand-700 block';
         if (unverifiedStepGovtIdIcon) {
-          unverifiedStepGovtIdIcon.textContent = '⏳';
+          unverifiedStepGovtIdIcon.innerHTML = iconClock;
           unverifiedStepGovtIdIcon.className = 'w-8 h-8 rounded-xl bg-brand-500/10 text-brand-600 flex items-center justify-center flex-shrink-0 font-bold text-xs';
         }
       } else {
         unverifiedStepGovtIdText.textContent = 'Pending Upload';
         unverifiedStepGovtIdText.className = 'text-xs font-extrabold text-amber-700 block';
         if (unverifiedStepGovtIdIcon) {
-          unverifiedStepGovtIdIcon.textContent = '⚠️';
+          unverifiedStepGovtIdIcon.innerHTML = iconAlert;
           unverifiedStepGovtIdIcon.className = 'w-8 h-8 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center flex-shrink-0 font-bold text-xs';
         }
       }
@@ -383,21 +387,21 @@ function renderKycStatus(user) {
         unverifiedStepSelfieText.textContent = 'Verified';
         unverifiedStepSelfieText.className = 'text-xs font-extrabold text-emerald-700 block';
         if (unverifiedStepSelfieIcon) {
-          unverifiedStepSelfieIcon.textContent = '✓';
+          unverifiedStepSelfieIcon.innerHTML = iconCheck;
           unverifiedStepSelfieIcon.className = 'w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center flex-shrink-0 font-bold text-xs';
         }
       } else if (user.selfiePhoto) {
         unverifiedStepSelfieText.textContent = 'Submitted (Pending Review)';
         unverifiedStepSelfieText.className = 'text-xs font-extrabold text-brand-700 block';
         if (unverifiedStepSelfieIcon) {
-          unverifiedStepSelfieIcon.textContent = '⏳';
+          unverifiedStepSelfieIcon.innerHTML = iconClock;
           unverifiedStepSelfieIcon.className = 'w-8 h-8 rounded-xl bg-brand-500/10 text-brand-600 flex items-center justify-center flex-shrink-0 font-bold text-xs';
         }
       } else {
         unverifiedStepSelfieText.textContent = 'Pending Upload';
         unverifiedStepSelfieText.className = 'text-xs font-extrabold text-amber-700 block';
         if (unverifiedStepSelfieIcon) {
-          unverifiedStepSelfieIcon.textContent = '⚠️';
+          unverifiedStepSelfieIcon.innerHTML = iconAlert;
           unverifiedStepSelfieIcon.className = 'w-8 h-8 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center flex-shrink-0 font-bold text-xs';
         }
       }
@@ -408,14 +412,14 @@ function renderKycStatus(user) {
         unverifiedStepPoliceText.textContent = 'Cleared & Verified';
         unverifiedStepPoliceText.className = 'text-xs font-extrabold text-emerald-700 block';
         if (unverifiedStepPoliceIcon) {
-          unverifiedStepPoliceIcon.textContent = '✓';
+          unverifiedStepPoliceIcon.innerHTML = iconCheck;
           unverifiedStepPoliceIcon.className = 'w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center flex-shrink-0 font-bold text-xs';
         }
       } else {
         unverifiedStepPoliceText.textContent = 'Pending Admin Clearance';
         unverifiedStepPoliceText.className = 'text-xs font-extrabold text-amber-700 block';
         if (unverifiedStepPoliceIcon) {
-          unverifiedStepPoliceIcon.textContent = '⏳';
+          unverifiedStepPoliceIcon.innerHTML = iconClock;
           unverifiedStepPoliceIcon.className = 'w-8 h-8 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center flex-shrink-0 font-bold text-xs';
         }
       }
@@ -577,9 +581,6 @@ async function loadVolunteerRequests(silent = false) {
     
     const allNotifRequests = [...notifiedRequests, ...cancelledRequests];
 
-    // Save to window for Clear All action
-    window.notifiedRequestIds = allNotifRequests.map(r => r._id);
-
     // 1. Available Help Requests: Open requests with status 'pending' or 'awaiting_approval'
     const pendingRequests   = requests.filter(r => r.status === 'pending' || r.status === 'awaiting_approval');
     // 2. Awaiting Family Approval: Requests where this volunteer submitted a quote and status is 'awaiting_approval'
@@ -588,6 +589,32 @@ async function loadVolunteerRequests(silent = false) {
     const activeRequests    = requests.filter(r => (r.status === 'accepted' || r.status === 'purchase_cost_submitted' || r.status === 'purchase_funded' || r.status === 'awaiting_verification' || r.status === 'in_progress') && isMyApprovedTask(r));
     // 4. Completed History: Tasks completed by this volunteer
     const completedRequests = requests.filter(r => r.status === 'completed' && isMyApprovedTask(r));
+
+    // Save to window for tab switching and actions
+    window.notifiedRequestIds = allNotifRequests.map(r => r._id);
+    window.currentPendingRequests = pendingRequests;
+
+    // Track seen help requests in localStorage per volunteer
+    const seenKey = currentUserId ? `seen_pending_requests_${currentUserId}` : 'seen_pending_requests';
+    let seenList = JSON.parse(localStorage.getItem(seenKey) || '[]');
+
+    // If volunteer is currently on the 'Browse Requests' tab (default when viewing the portal), mark requests as seen
+    const isViewingBrowseRequests = (window.currentVolunteerTab === 'pending' || !window.currentVolunteerTab);
+    if (isViewingBrowseRequests && pendingRequests.length > 0) {
+      pendingRequests.forEach(r => {
+        const idStr = String(r._id || '');
+        if (idStr && !seenList.includes(idStr)) seenList.push(idStr);
+      });
+      localStorage.setItem(seenKey, JSON.stringify(seenList));
+    }
+
+    // New unseen requests: requests that arrived that volunteer hasn't opened/seen yet and hasn't quoted on
+    const newPendingActionCount = isViewingBrowseRequests 
+      ? 0 
+      : pendingRequests.filter(r => !seenList.includes(String(r._id)) && !hasMyQuote(r)).length;
+
+    // Active tasks requiring action from volunteer:
+    const activeActionRequiredCount = activeRequests.filter(r => r.status === 'accepted' || r.status === 'purchase_funded' || r.status === 'in_progress').length;
 
     // Update badge counts on tabs & top summary bar dynamically
     const elCountPending = document.getElementById('countPending');
@@ -599,25 +626,30 @@ async function loadVolunteerRequests(silent = false) {
     const elQuickActive = document.getElementById('countQuickActive');
     const elQuickCompleted = document.getElementById('countQuickCompleted');
 
-    // Helper to format tab counter badges based on section state
-    function updateNavBadge(el, count, isHistory = false) {
+    // Helper to format tab counter badges based on section state & actionNeeded
+    function updateNavBadge(el, count, actionNeeded = false, isHistory = false) {
       if (!el) return;
       el.textContent = count;
+      el.dataset.actionNeeded = actionNeeded ? "true" : "false";
+      el.dataset.isHistory = isHistory ? "true" : "false";
       if (isHistory) {
         // Just reflect the number in a neutral slate pill, never blue, never blinking
         el.className = "bg-slate-100 text-slate-700 text-xs font-extrabold px-2.5 py-0.5 rounded-full border border-slate-200/80 flex-shrink-0";
-      } else if (count > 0) {
-        // Attention-grabbing blinking pulse animation when requests > 0
+      } else if (actionNeeded && count > 0) {
+        // Attention-grabbing blinking pulse animation ONLY when new unseen requests exist
         el.className = "bg-brand-600 text-white text-xs font-extrabold px-2.5 py-0.5 rounded-full shadow-xs badge-blink-active flex-shrink-0";
+      } else if (count > 0) {
+        // Once volunteer opens portal and sees the req / quotes -> calm neutral slate pill, NOT blue, NOT blinking
+        el.className = "bg-slate-100 text-slate-700 text-xs font-extrabold px-2.5 py-0.5 rounded-full border border-slate-200/80 flex-shrink-0";
       } else {
         el.className = "bg-slate-100 text-slate-400 text-xs font-bold px-2.5 py-0.5 rounded-full flex-shrink-0";
       }
     }
 
-    updateNavBadge(elCountPending, pendingRequests.length, false);
-    updateNavBadge(elCountActive, activeRequests.length, false);
-    updateNavBadge(elCountAwaiting, awaitingRequests.length, false);
-    updateNavBadge(elCountHistory, completedRequests.length, true);
+    updateNavBadge(elCountPending, pendingRequests.length, newPendingActionCount > 0, false);
+    updateNavBadge(elCountActive, activeRequests.length, activeActionRequiredCount > 0, false);
+    updateNavBadge(elCountAwaiting, awaitingRequests.length, false, false);
+    updateNavBadge(elCountHistory, completedRequests.length, false, true);
 
     if (elQuickPending) elQuickPending.textContent = pendingRequests.length;
     if (elQuickActive) elQuickActive.textContent = activeRequests.length;
@@ -804,6 +836,24 @@ async function loadVolunteerRequests(silent = false) {
           const prefHtml = getShoppingPreferenceHtml(req.shoppingPreference);
           const voiceNoteHtml = getVoiceNotePlayerHtml(req.audioFile);
 
+          let quotedFee = 0;
+          const currentVolUser = JSON.parse(localStorage.getItem('user') || '{}');
+          const myVolId = currentVolUser._id || currentVolUser.id;
+
+          if (req.volunteerQuotes && req.volunteerQuotes.length > 0 && myVolId) {
+            const match = req.volunteerQuotes.find(q => {
+              const vId = q.volunteer ? (typeof q.volunteer === 'object' ? (q.volunteer._id || q.volunteer.id) : q.volunteer) : null;
+              return String(vId) === String(myVolId);
+            });
+            if (match) {
+              quotedFee = Number(match.serviceFee || 0);
+            }
+          }
+
+          if (quotedFee === 0 && req.serviceFee !== undefined && req.serviceFee !== null && Number(req.serviceFee) > 0) {
+            quotedFee = Number(req.serviceFee);
+          }
+
           return `
             <div class="bg-white rounded-3xl border border-slate-200/90 shadow-premium hover:shadow-cardHover p-5 sm:p-6 transition-all relative overflow-hidden group">
               <div class="h-1.5 bg-gradient-to-r from-amber-400 to-amber-600 -mx-5 sm:-mx-6 -mt-5 sm:-mt-6 mb-5"></div>
@@ -832,10 +882,31 @@ async function loadVolunteerRequests(silent = false) {
               ${voiceNoteHtml}
               ${prefHtml}
 
+              <!-- Your Quoted Fee Strip -->
+              <div class="flex items-center justify-between p-3.5 bg-gradient-to-r from-amber-50/80 via-amber-50/50 to-orange-50/40 border border-amber-200/90 rounded-2xl mb-4 shadow-2xs">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-xl bg-amber-100/90 border border-amber-300 text-amber-800 flex items-center justify-center flex-shrink-0 font-black text-base shadow-2xs">
+                    ₹
+                  </div>
+                  <div>
+                    <span class="text-[11px] font-bold text-amber-900/70 uppercase tracking-wider block">Your Quoted Service Charge</span>
+                    <span class="text-lg font-black text-slate-900 leading-tight">₹${quotedFee}</span>
+                  </div>
+                </div>
+                <div class="text-right">
+                  <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-amber-200 text-amber-800 rounded-xl text-xs font-extrabold shadow-2xs">
+                    <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                    Under Review
+                  </span>
+                </div>
+              </div>
+
               <!-- Notice card -->
               <div class="p-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl text-xs text-slate-700 space-y-1">
-                <p><strong>Senior:</strong> ${req.senior ? escapeHTML(req.senior.name) : 'Senior Citizen'}</p>
-                <p class="text-[11px] text-slate-500 font-medium leading-normal">The family caregiver has been notified to review your quote. Once approved, the task moves to your active commitments.</p>
+                <div class="flex items-center justify-between flex-wrap gap-2">
+                  <p><strong>Senior:</strong> ${req.senior ? escapeHTML(req.senior.name) : 'Senior Citizen'}</p>
+                </div>
+                <p class="text-[11px] text-slate-500 font-medium leading-normal">The family caregiver has been notified to review your quote of <strong>₹${quotedFee}</strong>. Once approved, the task moves to your active commitments.</p>
               </div>
             </div>`;
         }).join('');
@@ -1691,34 +1762,39 @@ window.proofSliderIndex = window.proofSliderIndex || {};
 function renderProofSliderHtml(reqId, rawImages) {
   if (!rawImages || rawImages.length === 0) return '';
 
-  const images = rawImages.map(img => img.startsWith('/') ? img : '/' + img);
+  const images = rawImages
+    .filter(Boolean)
+    .map(img => typeof img === 'string' ? (img.startsWith('/') ? img : '/' + img) : '')
+    .filter(img => img.length > 1);
+
+  if (images.length === 0) return '';
+
   window.proofSliderData[reqId] = images;
   window.proofSliderIndex[reqId] = 0;
 
   const firstImg = images[0];
   const count = images.length;
 
-  if (count === 1) {
-    return `
-      <div style="position: relative; width: 440px; max-width: 100%; height: 320px; border-radius: 12px; overflow: hidden; border: 2px solid #ffe0b2; background: #ffffff; box-shadow: 0 4px 12px rgba(0,0,0,0.12); flex-shrink: 0; margin-top: 10px;">
-        <img src="${escapeHTML(firstImg)}" alt="Proof Image" onclick="event.stopPropagation(); openImageLightbox('${escapeHTML(firstImg)}'); return false;" style="width: 100%; height: 100%; object-fit: contain; cursor: pointer; display: block;" title="Click to enlarge proof photo">
-      </div>`;
-  }
-
   return `
-    <div style="position: relative; width: 440px; max-width: 100%; height: 320px; border-radius: 12px; overflow: hidden; border: 2px solid #ffe0b2; background: #ffffff; box-shadow: 0 4px 12px rgba(0,0,0,0.12); flex-shrink: 0; user-select: none; margin-top: 10px;">
-      <img id="sliderImg_${reqId}" src="${escapeHTML(firstImg)}" alt="Proof Image 1" onclick="event.stopPropagation(); openImageLightbox(this.src); return false;" style="width: 100%; height: 100%; object-fit: contain; cursor: pointer; display: block;" title="Click to enlarge proof photo">
-      
-      <div id="sliderCounter_${reqId}" style="position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.75); color: #ffffff; font-weight: 800; font-size: 0.88rem; padding: 4px 12px; border-radius: 16px; pointer-events: none; z-index: 2; box-shadow: 0 2px 6px rgba(0,0,0,0.3);">
-        1 / ${count}
+    <div class="mt-2.5 p-3 bg-white/90 border border-amber-200/90 rounded-2xl flex items-center justify-between gap-3 group/proof shadow-2xs">
+      <div class="flex items-center gap-3 min-w-0">
+        <div class="relative w-13 h-13 rounded-xl overflow-hidden bg-amber-50 border border-amber-300 flex-shrink-0 cursor-pointer shadow-2xs group-hover/proof:scale-105 transition-transform" onclick="event.stopPropagation(); openImageLightbox('${escapeHTML(firstImg)}', '${reqId}'); return false;" title="Click to view image">
+          <img src="${escapeHTML(firstImg)}" alt="Proof Thumbnail" class="w-full h-full object-cover">
+          ${count > 1 ? `<span class="absolute bottom-0.5 right-0.5 bg-slate-900/85 text-white text-[9px] font-black px-1 rounded">+${count - 1}</span>` : ''}
+        </div>
+        <div class="min-w-0">
+          <span class="text-[10px] font-extrabold text-amber-900/60 uppercase tracking-wider block">Uploaded Receipt</span>
+          <span class="text-xs font-extrabold text-slate-900 truncate block">Purchase Bill Photo</span>
+          <span class="text-[11px] text-slate-500 font-semibold block">${count} photo${count > 1 ? 's' : ''}</span>
+        </div>
       </div>
-
-      <button type="button" onclick="event.stopPropagation(); navigateProofSlider('${reqId}', -1)" style="position: absolute; top: 50%; left: 8px; transform: translateY(-50%); background: rgba(0,0,0,0.6); color: #ffffff; border: none; border-radius: 50%; width: 40px; height: 40px; font-size: 1.3rem; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 3; box-shadow: 0 2px 8px rgba(0,0,0,0.3); transition: all 0.15s ease;" onmouseover="this.style.background='rgba(0,0,0,0.9)'; this.style.transform='translateY(-50%) scale(1.1)'" onmouseleave="this.style.background='rgba(0,0,0,0.6)'; this.style.transform='translateY(-50%) scale(1)'">
-        &lsaquo;
-      </button>
-
-      <button type="button" onclick="event.stopPropagation(); navigateProofSlider('${reqId}', 1)" style="position: absolute; top: 50%; right: 8px; transform: translateY(-50%); background: rgba(0,0,0,0.6); color: #ffffff; border: none; border-radius: 50%; width: 40px; height: 40px; font-size: 1.3rem; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 3; box-shadow: 0 2px 8px rgba(0,0,0,0.3); transition: all 0.15s ease;" onmouseover="this.style.background='rgba(0,0,0,0.9)'; this.style.transform='translateY(-50%) scale(1.1)'" onmouseleave="this.style.background='rgba(0,0,0,0.6)'; this.style.transform='translateY(-50%) scale(1)'">
-        &rsaquo;
+      <button 
+        type="button" 
+        onclick="event.stopPropagation(); openImageLightbox('${escapeHTML(firstImg)}', '${reqId}'); return false;" 
+        class="px-3 py-1.5 bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300 rounded-xl text-xs font-bold transition-all shadow-2xs flex items-center gap-1.5 flex-shrink-0 cursor-pointer active:scale-95"
+      >
+        <svg class="w-3.5 h-3.5 text-amber-800" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        <span>View Photo</span>
       </button>
     </div>`;
 }
@@ -2079,10 +2155,39 @@ window.clearAllTaskNotifications = function() {
 
 // Switch between Task dashboard tabs: Browse Requests, Active, Awaiting Approval, History
 window.switchTaskTab = function(tab) {
+  window.currentVolunteerTab = tab;
   const tabs = ['pending', 'active', 'awaiting', 'history'];
   const tabBtnIds = { pending: 'tabBtnPending', active: 'tabBtnActive', awaiting: 'tabBtnAwaiting', history: 'tabBtnHistory' };
   const paneIds = { pending: 'tabPanePending', active: 'tabPaneActive', awaiting: 'tabPaneAwaiting', history: 'tabPaneHistory' };
   const badgeIds = { pending: 'countPending', active: 'countActive', awaiting: 'countAwaiting', history: 'countHistory' };
+
+  if (tab === 'pending') {
+    const userStr = localStorage.getItem('user');
+    let currentUserId = '';
+    if (userStr) {
+      try {
+        const u = JSON.parse(userStr);
+        currentUserId = String(u._id || u.id || '');
+      } catch (e) {}
+    }
+    const seenKey = currentUserId ? `seen_pending_requests_${currentUserId}` : 'seen_pending_requests';
+    let seenList = JSON.parse(localStorage.getItem(seenKey) || '[]');
+    if (window.currentPendingRequests && window.currentPendingRequests.length > 0) {
+      window.currentPendingRequests.forEach(r => {
+        const idStr = String(r._id || '');
+        if (idStr && !seenList.includes(idStr)) seenList.push(idStr);
+      });
+      localStorage.setItem(seenKey, JSON.stringify(seenList));
+    }
+    const countPendingEl = document.getElementById('countPending');
+    if (countPendingEl) {
+      countPendingEl.dataset.actionNeeded = "false";
+      const cnt = parseInt(countPendingEl.textContent, 10) || 0;
+      if (cnt > 0) {
+        countPendingEl.className = "bg-slate-100 text-slate-700 text-xs font-extrabold px-2.5 py-0.5 rounded-full border border-slate-200/80 flex-shrink-0";
+      }
+    }
+  }
 
   tabs.forEach(t => {
     const btn = document.getElementById(tabBtnIds[t]);
@@ -2107,13 +2212,16 @@ window.switchTaskTab = function(tab) {
         }
       }
 
-      // Maintain user's badge rules: Completed History is never blue, others blink when > 0
-      if (badge) {
+      if (badge && t !== 'pending') {
+        const isActionNeeded = badge.dataset.actionNeeded === "true";
+        const isHistory = badge.dataset.isHistory === "true" || t === 'history';
         const count = parseInt(badge.textContent, 10) || 0;
-        if (t === 'history') {
+        if (isHistory) {
           badge.className = "bg-slate-100 text-slate-700 text-xs font-extrabold px-2.5 py-0.5 rounded-full border border-slate-200/80 flex-shrink-0";
-        } else if (count > 0) {
+        } else if (isActionNeeded && count > 0) {
           badge.className = "bg-brand-600 text-white text-xs font-extrabold px-2.5 py-0.5 rounded-full shadow-xs badge-blink-active flex-shrink-0";
+        } else if (count > 0) {
+          badge.className = "bg-slate-100 text-slate-700 text-xs font-extrabold px-2.5 py-0.5 rounded-full border border-slate-200/80 flex-shrink-0";
         } else {
           badge.className = "bg-slate-100 text-slate-400 text-xs font-bold px-2.5 py-0.5 rounded-full flex-shrink-0";
         }

@@ -883,8 +883,8 @@
   </main>
 
   <!-- Global Footer -->
-  <footer class="max-w-7xl mx-auto px-6 py-8 mt-auto border-t border-slate-200/80 w-full text-center">
-    <p class="text-xs font-semibold text-slate-400" data-i18n="footer_text">&copy; 2026 AgeWell Platform. Designed with care for Senior Citizens, Volunteers, and Administrators.</p>
+  <footer class="global-footer w-full text-center mt-4 py-6 px-4 bg-[#0b3d70] text-white">
+    <p class="text-xs sm:text-sm font-semibold text-white/90" data-i18n="footer_text">&copy; 2026 AgeWell Platform. Designed with care for Senior Citizens, Volunteers, and Admins.</p>
   </footer>
 
   <!-- Tab Pop-Up Modal (In-Tab Popup Dialog) -->
@@ -899,23 +899,23 @@
       <p id="tabPopupMessage" style="font-size: 1.05rem; color: #475569; line-height: 1.5; margin-bottom: 1.6rem; font-weight: 500;">
         Your voice request was sent successfully.
       </p>
-      <button type="button" id="btnTabPopupClose" class="btn" style="width: 100%; font-size: 1.1rem; padding: 14px 24px; background: #026bc9; color: white; border: none; border-radius: 16px; font-weight: 800; cursor: pointer; box-shadow: 0 4px 14px rgba(2,107,201,0.25); transition: all 0.2s;" data-i18n="btn_ok">
-        OK, Got It
+      <button type="button" id="btnTabPopupClose" class="btn" style="width: 100%; font-size: 1.05rem; padding: 13px 20px; background: #026bc9; color: white; border: none; border-radius: 16px; font-weight: 800; cursor: pointer; box-shadow: 0 4px 14px rgba(2,107,201,0.25); transition: all 0.2s;" data-i18n="btn_understood">
+        Understood
       </button>
     </div>
   </div>
 
-  <!-- Tab Confirm Action Modal (In-Tab Confirmation Dialog) -->
+  <!-- Tab Confirm Modal (Cancel Confirmation In-Tab Popup) -->
   <div id="tabConfirmModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="tabConfirmTitle" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; align-items: center; justify-content: center; z-index: 99999; background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(8px);">
     <div class="modal-content" style="max-width: 460px; width: 90%; text-align: center; border: 1px solid rgba(226, 232, 240, 0.8); border-radius: 28px; padding: 2rem 1.8rem; box-shadow: 0 25px 60px -15px rgba(15, 23, 42, 0.35); background: #ffffff; animation: modalFadeIn 0.25s ease-out; position: relative;">
-      <div id="tabConfirmIconContainer" class="mb-3.5 flex items-center justify-center">
-        <div id="tabConfirmIconBadge" class="w-16 h-16 rounded-2xl flex items-center justify-center shadow-xs text-rose-600 bg-rose-50 border border-rose-200/70">
-          <div id="tabConfirmIcon" class="flex items-center justify-center"></div>
+      <div class="mb-3.5 flex items-center justify-center">
+        <div class="w-16 h-16 rounded-2xl flex items-center justify-center shadow-xs text-rose-600 bg-rose-50 border border-rose-200/70">
+          <svg class="w-8 h-8 text-rose-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>
         </div>
       </div>
-      <h3 id="tabConfirmTitle" style="color: #0f172a; font-size: 1.45rem; margin-bottom: 0.6rem; font-weight: 800; letter-spacing: -0.02em;">Cancel Request?</h3>
-      <p id="tabConfirmMessage" style="font-size: 1.05rem; color: #475569; line-height: 1.5; margin-bottom: 1.6rem; font-weight: 500;">
-        Are you sure you want to cancel this help request?
+      <h3 id="tabConfirmTitle" style="color: #0f172a; font-size: 1.45rem; margin-bottom: 0.6rem; font-weight: 800; letter-spacing: -0.02em;" data-i18n="modal_cancel_request_title">Cancel Help Request?</h3>
+      <p id="tabConfirmMessage" style="font-size: 1.05rem; color: #475569; line-height: 1.5; margin-bottom: 1.6rem; font-weight: 500;" data-i18n="modal_cancel_request_desc">
+        Are you sure you want to cancel this request? Volunteers will no longer be able to see or accept it.
       </p>
       <div style="display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap;">
         <button type="button" id="btnTabConfirmYes" class="btn" style="flex: 1; min-width: 140px; font-size: 1.05rem; padding: 13px 20px; background: #c62828; color: white; border: none; border-radius: 16px; font-weight: 800; cursor: pointer; box-shadow: 0 4px 14px rgba(198,40,40,0.25); transition: all 0.2s;" data-i18n="btn_yes_cancel">
@@ -929,7 +929,7 @@
   </div>
 
   <!-- Scripts -->
-  <script src="/js/api.js?v=304"></script>
-  <script src="/js/senior.js?v=304"></script>
+  <script src="/js/api.js?v=361"></script>
+  <script src="/js/senior.js?v=361"></script>
 </body>
 </html>

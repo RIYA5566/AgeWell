@@ -134,19 +134,11 @@ async function loadRequestDetails(reqId) {
       const metaSenior = document.getElementById('metaSenior');
       if (metaBanner && metaTitle && metaSenior) {
         metaBanner.style.display = 'block';
-        metaTitle.textContent = `📋 ${requestTitle}`;
+        metaTitle.textContent = requestTitle;
         metaSenior.textContent = `Senior Citizen: ${seniorName}`;
       }
 
-      // Display Bill Photo Proof container if available
-      const proofBox = document.getElementById('purchaseProofBox');
-      const proofImg = document.getElementById('purchaseProofImg');
-      const proofNotes = document.getElementById('purchaseProofNotes');
-      if (proofBox && (request.purchaseProofDoc || request.completionProof)) {
-        proofBox.style.display = 'block';
-        if (proofImg) proofImg.src = request.purchaseProofDoc || request.completionProof;
-        if (proofNotes) proofNotes.textContent = request.purchaseNotes ? `Volunteer Notes: "${request.purchaseNotes}"` : 'Cart screenshot / price proof attached.';
-      }
+
 
       // --- Multi-stage Fail-Safe Volunteer Name Resolution ---
       let foundVolName = '';
@@ -244,7 +236,13 @@ function updateSummaryUI() {
   totalAmount = itemsCost + volunteerFee + platformFee + tipAmount;
 
   if (elTotal)   elTotal.textContent   = `₹${totalAmount}`;
-  if (btnPay)    btnPay.textContent    = `🔐 Pay ₹${totalAmount} via Razorpay`;
+  if (btnPay) {
+    btnPay.innerHTML = `
+      <svg class="w-5 h-5 text-white flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+      </svg>
+      <span>Pay ₹${totalAmount} via Razorpay</span>`;
+  }
   if (successPaidTo && volunteerName) successPaidTo.textContent = volunteerName;
   if (receiptVol    && volunteerName) receiptVol.textContent    = volunteerName;
 }
@@ -279,7 +277,8 @@ async function processPayment() {
     const orderRes = await apiCall('/payments/create-order', 'POST', {
       requestId: currentRequestId,
       paymentType,
-      tipAmount
+      tipAmount,
+      fallbackAmount: totalAmount
     });
 
     if (!orderRes.ok || !orderRes.data.success) {
@@ -287,7 +286,11 @@ async function processPayment() {
       alert(msg);
       if (btnPay) {
         btnPay.disabled = false;
-        btnPay.textContent = `🔐 Pay ₹${totalAmount} via Razorpay`;
+        btnPay.innerHTML = `
+          <svg class="w-5 h-5 text-white flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+          </svg>
+          <span>Pay ₹${totalAmount} via Razorpay</span>`;
       }
       return;
     }
@@ -295,7 +298,14 @@ async function processPayment() {
   } catch (err) {
     console.error('create-order error:', err);
     alert('Network error creating order. Please check your connection.');
-    if (btnPay) { btnPay.disabled = false; btnPay.textContent = `🔐 Pay ₹${totalAmount} via Razorpay`; }
+    if (btnPay) { 
+      btnPay.disabled = false; 
+      btnPay.innerHTML = `
+        <svg class="w-5 h-5 text-white flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+        </svg>
+        <span>Pay ₹${totalAmount} via Razorpay</span>`;
+    }
     return;
   }
 
@@ -303,7 +313,7 @@ async function processPayment() {
   if (orderData.simulated) {
     // Hide test-mode badge in simulated mode since we're not even using Razorpay
     const badge = document.getElementById('rzpTestModeBadge');
-    if (badge) badge.textContent = '🧪 Simulated Mode — No gateway (keys not configured)';
+    if (badge) badge.textContent = 'Simulated Mode — Test Gateway';
 
     openRzpMockModal(orderData);
     return;
@@ -424,6 +434,8 @@ function openReceiptModal() {
   const rVol = document.getElementById('receiptVolunteer');
   const rItems = document.getElementById('receiptItemsCost');
   const rFee = document.getElementById('receiptVolunteerFee');
+  const rTipRow = document.getElementById('receiptTipRow');
+  const rTip = document.getElementById('receiptTipAmount');
   const rTotal = document.getElementById('receiptTotal');
 
   if (rTxn) rTxn.textContent = transactionId;
@@ -432,6 +444,12 @@ function openReceiptModal() {
   if (rVol) rVol.textContent = volunteerName;
   if (rItems) rItems.textContent = `₹${itemsCost}`;
   if (rFee) rFee.textContent = `₹${volunteerFee}`;
+  if (tipAmount > 0) {
+    if (rTipRow) rTipRow.style.display = 'flex';
+    if (rTip) rTip.textContent = `₹${tipAmount}`;
+  } else {
+    if (rTipRow) rTipRow.style.display = 'none';
+  }
   if (rTotal) rTotal.textContent = `₹${totalAmount}`;
 
   if (modal) modal.style.display = 'flex';
@@ -511,21 +529,66 @@ function updateStars(stars, activeVal) {
   });
 }
 
-function selectPill(labelEl, groupName, value) {
-  const container = labelEl.parentElement;
+function selectPill(btnOrLabel, groupName, value) {
+  const container = document.getElementById(groupName === 'taskCompletion' ? 'taskCompletionGroup' : 'chooseAgainGroup') || btnOrLabel.parentElement;
   if (!container) return;
-  container.querySelectorAll('.pill-option').forEach(p => p.classList.remove('active'));
-  labelEl.classList.add('active');
-  const radio = labelEl.querySelector('input[type="radio"]');
-  if (radio) radio.checked = true;
+
+  container.querySelectorAll('button, label, .pill-option').forEach(p => {
+    p.classList.remove('active', 'border-emerald-600', 'bg-emerald-600', 'text-white');
+    p.classList.add('border-slate-200', 'bg-white', 'text-slate-700');
+    p.style.backgroundColor = '';
+    p.style.color = '';
+    p.style.borderColor = '';
+    const r = p.querySelector('input[type="radio"]');
+    if (r) r.checked = false;
+  });
+
+  btnOrLabel.classList.add('active', 'border-emerald-600', 'bg-emerald-600', 'text-white');
+  btnOrLabel.classList.remove('border-slate-200', 'bg-white', 'text-slate-700');
+  btnOrLabel.style.backgroundColor = '#059669';
+  btnOrLabel.style.color = '#ffffff';
+  btnOrLabel.style.borderColor = '#059669';
+
+  const radio = btnOrLabel.querySelector('input[type="radio"]');
+  if (radio) {
+    radio.checked = true;
+  }
+  const hiddenInput = document.getElementById(`${groupName}Val`);
+  if (hiddenInput) {
+    hiddenInput.value = value;
+  }
 }
 
 function openFeedbackModal() {
   const modal = document.getElementById('feedbackModal');
+  const headingEl = document.getElementById('feedbackModalHeading');
   const nameEl = document.getElementById('feedbackVolunteerName');
-  if (nameEl && volunteerName) {
-    nameEl.textContent = volunteerName;
+  const cleanName = (volunteerName && typeof volunteerName === 'string' && volunteerName.trim() && volunteerName !== '{name}') 
+    ? volunteerName.trim() 
+    : 'Assigned Volunteer';
+
+  if (headingEl) {
+    headingEl.innerHTML = `Feedback for <span id="feedbackVolunteerName" class="text-brand-600">${escapeHTML(cleanName)}</span>`;
+  } else if (nameEl) {
+    nameEl.textContent = cleanName;
   }
+  if (typeof initStarRatings === 'function') {
+    initStarRatings();
+  }
+
+  // Ensure all pills start unselected
+  document.querySelectorAll('#taskCompletionGroup .pill-option, #chooseAgainGroup .pill-option').forEach(p => {
+    p.classList.remove('active', 'border-emerald-600', 'bg-emerald-600', 'text-white');
+    p.classList.add('border-slate-200', 'bg-white', 'text-slate-700');
+    p.style.backgroundColor = '';
+    p.style.color = '';
+    p.style.borderColor = '';
+  });
+  const tcVal = document.getElementById('taskCompletionVal');
+  if (tcVal) tcVal.value = '';
+  const caVal = document.getElementById('chooseAgainVal');
+  if (caVal) caVal.value = '';
+
   if (modal) {
     modal.style.display = 'flex';
   }
@@ -604,33 +667,32 @@ function openRzpMockModal(orderData) {
   const modal = document.getElementById('rzpMockModal');
   if (!modal) return;
 
-  // Set amounts
-  document.getElementById('rzpMockHeaderAmount').textContent = `₹${totalAmount}`;
-  document.getElementById('rzpMockBtnAmountUpi').textContent = `₹${totalAmount}`;
-  document.getElementById('rzpMockBtnAmountCard').textContent = `₹${totalAmount}`;
-  document.getElementById('rzpMockBtnAmountNet').textContent = `₹${totalAmount}`;
-  document.getElementById('rzpMockBtnAmountWallet').textContent = `₹${totalAmount}`;
+  // Set amounts safely
+  const elHeaderAmt = document.getElementById('rzpMockHeaderAmount');
+  const elUpiAmt = document.getElementById('rzpMockBtnAmountUpi');
+  const elCardAmt = document.getElementById('rzpMockBtnAmountCard');
+  const elNetAmt = document.getElementById('rzpMockBtnAmountNet');
+  const elWalletAmt = document.getElementById('rzpMockBtnAmountWallet');
+
+  if (elHeaderAmt) elHeaderAmt.textContent = `₹${totalAmount}`;
+  if (elUpiAmt) elUpiAmt.textContent = `₹${totalAmount}`;
+  if (elCardAmt) elCardAmt.textContent = `₹${totalAmount}`;
+  if (elNetAmt) elNetAmt.textContent = `₹${totalAmount}`;
+  if (elWalletAmt) elWalletAmt.textContent = `₹${totalAmount}`;
 
   // Hide loader if open
-  document.getElementById('rzpMockLoader').style.display = 'none';
+  const loader = document.getElementById('rzpMockLoader');
+  if (loader) loader.style.display = 'none';
 
-  // Reset inputs
-  document.getElementById('rzpUpiId').value = 'agewell@pay';
-  document.getElementById('rzpCardNumber').value = '4111 1111 1111 1111';
-  document.getElementById('rzpCardExpiry').value = '12/29';
-  document.getElementById('rzpCardCvv').value = '123';
-  document.getElementById('rzpCardName').value = 'John Doe';
-  document.getElementById('rzpNetbankingSelect').value = '';
-
-  // Reset grids (active classes)
-  document.querySelectorAll('#rzpNetbankingGrid .rzp-mock-grid-item').forEach((item, idx) => {
-    if (idx === 0) item.classList.add('active');
-    else item.classList.remove('active');
-  });
-  document.querySelectorAll('#rzpWalletGrid .rzp-mock-grid-item').forEach((item, idx) => {
-    if (idx === 0) item.classList.add('active');
-    else item.classList.remove('active');
-  });
+  // Reset inputs safely
+  const upiInp = document.getElementById('rzpUpiId');
+  if (upiInp) upiInp.value = 'agewell@pay';
+  const cardNoInp = document.getElementById('rzpCardNumber');
+  if (cardNoInp) cardNoInp.value = '4111 1111 1111 1111';
+  const expInp = document.getElementById('rzpCardExpiry');
+  if (expInp) expInp.value = '12/29';
+  const cvvInp = document.getElementById('rzpCardCvv');
+  if (cvvInp) cvvInp.value = '123';
 
   // Switch to default tab (upi)
   switchRzpMockTab('upi');
@@ -647,37 +709,65 @@ function closeRzpMockModal() {
   const btnPay = document.getElementById('btnPay');
   if (btnPay) {
     btnPay.disabled = false;
-    btnPay.textContent = `🔐 Pay ₹${totalAmount} via Razorpay`;
+    btnPay.innerHTML = `
+      <svg class="w-5 h-5 text-white flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+      </svg>
+      <span>Pay ₹${totalAmount} via Razorpay</span>`;
   }
 }
 
 function switchRzpMockTab(tabName) {
-  // Hide all panels
-  document.querySelectorAll('.rzp-mock-tab-panel').forEach(panel => {
-    panel.classList.remove('active');
+  const panels = ['upi', 'card', 'net', 'wallet'];
+  panels.forEach(p => {
+    const panelEl = document.getElementById(`rzpPanel${p.charAt(0).toUpperCase() + p.slice(1)}`);
+    const tabEl = document.getElementById(`rzpTabLink${p.charAt(0).toUpperCase() + p.slice(1)}`);
+    
+    if (p === tabName) {
+      if (panelEl) panelEl.style.display = 'flex';
+      if (tabEl) {
+        tabEl.classList.add('bg-white', 'text-brand-700', 'border-brand-600');
+        tabEl.classList.remove('hover:bg-slate-100', 'border-transparent');
+      }
+    } else {
+      if (panelEl) panelEl.style.display = 'none';
+      if (tabEl) {
+        tabEl.classList.remove('bg-white', 'text-brand-700', 'border-brand-600');
+        tabEl.classList.add('hover:bg-slate-100', 'border-transparent');
+      }
+    }
   });
-  // Deactivate all sidebar items
-  document.querySelectorAll('.rzp-mock-sidebar-item').forEach(item => {
-    item.classList.remove('active');
-  });
+}
 
-  // Show active tab
-  if (tabName === 'upi') {
-    document.getElementById('rzpPanelUpi').classList.add('active');
-    document.getElementById('rzpTabLinkUpi').classList.add('active');
-  } else if (tabName === 'card') {
-    document.getElementById('rzpPanelCard').classList.add('active');
-    document.getElementById('rzpTabLinkCard').classList.add('active');
-  } else if (tabName === 'net') {
-    document.getElementById('rzpPanelNet').classList.add('active');
-    document.getElementById('rzpTabLinkNet').classList.add('active');
-  } else if (tabName === 'wallet') {
-    document.getElementById('rzpPanelWallet').classList.add('active');
-    document.getElementById('rzpTabLinkWallet').classList.add('active');
+let isUpiQrVisible = false;
+function toggleUpiQrView() {
+  isUpiQrVisible = !isUpiQrVisible;
+  const qrContainer = document.getElementById('upiQrContainer');
+  const appsContainer = document.getElementById('upiAppsContainer');
+  const toggleText = document.getElementById('upiToggleText');
+
+  if (qrContainer && appsContainer) {
+    if (isUpiQrVisible) {
+      qrContainer.style.display = 'block';
+      appsContainer.style.display = 'none';
+      if (toggleText) toggleText.textContent = 'Enter UPI ID Instead';
+    } else {
+      qrContainer.style.display = 'none';
+      appsContainer.style.display = 'block';
+      if (toggleText) toggleText.textContent = 'Scan QR Instead';
+    }
   }
 }
 
-function prefillRzpMockUpi(app) {
+function selectRzpMockUpiApp(element, app) {
+  document.querySelectorAll('#rzpUpiAppGrid .rzp-upi-btn').forEach(btn => {
+    btn.classList.remove('border-brand-600', 'bg-brand-50', 'text-brand-900');
+    btn.classList.add('border-slate-200', 'bg-white', 'text-slate-700');
+  });
+
+  element.classList.add('border-brand-600', 'bg-brand-50', 'text-brand-900');
+  element.classList.remove('border-slate-200', 'bg-white', 'text-slate-700');
+
   const upiInput = document.getElementById('rzpUpiId');
   if (!upiInput) return;
   
@@ -685,6 +775,21 @@ function prefillRzpMockUpi(app) {
   else if (app === 'phonepe') upiInput.value = 'agewell@ybl';
   else if (app === 'paytm') upiInput.value = 'agewell@paytm';
   else if (app === 'ybl') upiInput.value = 'agewell@upi';
+}
+
+function prefillRzpMockUpi(app) {
+  const btn = document.querySelector(`.rzp-upi-btn[onclick*="${app}"]`);
+  if (btn) {
+    selectRzpMockUpiApp(btn, app);
+  } else {
+    const upiInput = document.getElementById('rzpUpiId');
+    if (upiInput) {
+      if (app === 'gpay') upiInput.value = 'agewell@okaxis';
+      else if (app === 'phonepe') upiInput.value = 'agewell@ybl';
+      else if (app === 'paytm') upiInput.value = 'agewell@paytm';
+      else if (app === 'ybl') upiInput.value = 'agewell@upi';
+    }
+  }
 }
 
 function formatCardNumber(input) {
@@ -710,19 +815,24 @@ function formatCardExpiry(input) {
 
 let selectedBank = 'SBI';
 function selectRzpMockBank(element, bankName) {
-  document.querySelectorAll('#rzpNetbankingGrid .rzp-mock-grid-item').forEach(item => {
-    item.classList.remove('active');
+  document.querySelectorAll('#rzpNetbankingGrid .rzp-bank-btn').forEach(btn => {
+    btn.classList.remove('border-brand-600', 'bg-brand-50', 'text-brand-900');
+    btn.classList.add('border-slate-200', 'bg-white', 'text-slate-700');
   });
-  element.classList.add('active');
-  document.getElementById('rzpNetbankingSelect').value = '';
+
+  element.classList.add('border-brand-600', 'bg-brand-50', 'text-brand-900');
+  element.classList.remove('border-slate-200', 'bg-white', 'text-slate-700');
+
+  const selectElem = document.getElementById('rzpNetbankingSelect');
+  if (selectElem) selectElem.value = '';
   selectedBank = bankName;
 }
 
 function selectRzpMockBankDropdown(selectElem) {
-  if (selectElem.value) {
-    // Deselect grid items
-    document.querySelectorAll('#rzpNetbankingGrid .rzp-mock-grid-item').forEach(item => {
-      item.classList.remove('active');
+  if (selectElem && selectElem.value) {
+    document.querySelectorAll('#rzpNetbankingGrid .rzp-bank-btn').forEach(btn => {
+      btn.classList.remove('border-brand-600', 'bg-brand-50', 'text-brand-900');
+      btn.classList.add('border-slate-200', 'bg-white', 'text-slate-700');
     });
     selectedBank = selectElem.value;
   }
@@ -730,26 +840,28 @@ function selectRzpMockBankDropdown(selectElem) {
 
 let selectedWallet = 'Paytm';
 function selectRzpMockWallet(element, walletName) {
-  document.querySelectorAll('#rzpWalletGrid .rzp-mock-grid-item').forEach(item => {
-    item.classList.remove('active');
+  document.querySelectorAll('#rzpWalletGrid .rzp-wallet-btn').forEach(btn => {
+    btn.classList.remove('border-brand-600', 'bg-brand-50', 'text-brand-900');
+    btn.classList.add('border-slate-200', 'bg-white', 'text-slate-700');
   });
-  element.classList.add('active');
+
+  element.classList.add('border-brand-600', 'bg-brand-50', 'text-brand-900');
+  element.classList.remove('border-slate-200', 'bg-white', 'text-slate-700');
   selectedWallet = walletName;
 }
 
 async function submitRzpMockPayment(method) {
-  // Simple validation
-  if (method === 'upi') {
-    const upiId = document.getElementById('rzpUpiId').value.trim();
+  // Method specific validation
+  if (method === 'upi' && !isUpiQrVisible) {
+    const upiId = document.getElementById('rzpUpiId')?.value?.trim();
     if (!upiId || !upiId.includes('@')) {
       alert('Please enter a valid UPI ID (e.g. username@bank)');
       return;
     }
   } else if (method === 'card') {
-    const cardNo = document.getElementById('rzpCardNumber').value.replace(/\s/g, '');
-    const cardExp = document.getElementById('rzpCardExpiry').value.trim();
-    const cardCvv = document.getElementById('rzpCardCvv').value.trim();
-    const cardName = document.getElementById('rzpCardName').value.trim();
+    const cardNo = document.getElementById('rzpCardNumber')?.value?.replace(/\s/g, '') || '';
+    const cardExp = document.getElementById('rzpCardExpiry')?.value?.trim() || '';
+    const cardCvv = document.getElementById('rzpCardCvv')?.value?.trim() || '';
 
     if (cardNo.length < 16) {
       alert('Please enter a valid 16-digit card number');
@@ -763,8 +875,10 @@ async function submitRzpMockPayment(method) {
       alert('Please enter a valid 3-digit CVV');
       return;
     }
-    if (!cardName) {
-      alert('Please enter cardholder name');
+  } else if (method === 'wallet') {
+    const walletMobile = document.getElementById('rzpWalletMobile')?.value?.trim();
+    if (!walletMobile || walletMobile.length < 10) {
+      alert('Please enter a valid 10-digit mobile number linked to ' + selectedWallet);
       return;
     }
   }
@@ -774,14 +888,16 @@ async function submitRzpMockPayment(method) {
   const loaderStatus = document.getElementById('rzpLoaderStatus');
   if (loader) {
     loader.style.display = 'flex';
-    const loaderSubtext = loader.querySelector('.rzp-mock-loader-subtext');
-    if (loaderSubtext && typeof t === 'function') {
-      loaderSubtext.textContent = t('rzp_mock_loader_subtext');
-    }
   }
   
   if (loaderStatus) {
-    loaderStatus.textContent = typeof t === 'function' ? t('rzp_mock_loader_contacting') : 'Contacting payment network...';
+    loaderStatus.textContent = method === 'upi' 
+      ? 'Connecting to UPI gateway...' 
+      : method === 'card' 
+      ? 'Authorizing card credentials...' 
+      : method === 'net' 
+      ? `Connecting to ${selectedBank} NetBanking...` 
+      : `Connecting to ${selectedWallet}...`;
   }
 
   // Wait 1 sec, then change status, then wait 0.8 sec and call verify

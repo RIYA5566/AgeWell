@@ -1,48 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const path = require('path');
 const multer = require('multer');
+const cloudinary = require('../config/cloudinary');
+const path = require('path');
 const fs = require('fs');
-const {
-  createRequest,
-  getRequests,
-  getRequestById,
-  updateRequest,
-  deleteRequest,
-  acceptRequest,
-  submitPurchaseCost,
-  approvePurchaseFunding,
-  rejectPurchaseCost,
-  completeRequest,
-  familyApproveRequest,
-  familyFulfillSelf,
-  familyRejectRequest,
-  verifyCompletionByFamily,
-  verifyCompletionBySeniorVoice,
-  submitFeedback,
-  payVolunteerTip
-} = require('../controllers/requestController');
-const { protect, authorize } = require('../middleware/authMiddleware');
 
-// ─── Multer config for Audio uploads ──────────────────────────────────────────
-const audioDir = path.join(__dirname, '..', 'uploads', 'audio');
-if (!fs.existsSync(audioDir)) {
-  fs.mkdirSync(audioDir, { recursive: true });
-}
-
-const audioStorage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    if (!fs.existsSync(audioDir)) {
-      fs.mkdirSync(audioDir, { recursive: true });
-    }
-    cb(null, audioDir);
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    const ext = path.extname(file.originalname) || '.webm';
-    cb(null, `audio-${uniqueSuffix}${ext}`);
-  }
-});
+const audioStorage = multer.memoryStorage();
 
 const uploadAudio = multer({
   storage: audioStorage,
@@ -65,14 +28,78 @@ const uploadAudio = multer({
 });
 
 const handleAudioUpload = (req, res, next) => {
-  uploadAudio.single('audio')(req, res, (err) => {
+  uploadAudio.single('audio')(req, res, async (err) => {
     if (err) {
       console.error('Multer Audio Upload Error:', err);
-      return res.status(400).json({ success: false, message: err.message || 'Error uploading audio file' });
+      return res.status(400).json({
+        success: false,
+        message: err.message || 'Error uploading audio file'
+      });
     }
-    next();
+
+    // No audio was uploaded
+    if (!req.file) {
+      return next();
+    }
+
+    try {
+      const result = await new Promise((resolve, reject) => {
+        const uploadStream = cloudinary.uploader.upload_stream(
+          {
+            folder: 'agewell/audio',
+            resource_type: 'video'
+          },
+          (error, result) => {
+            if (error) {
+              reject(error);
+            } else {
+              resolve(result);
+            }
+          }
+        );
+
+        uploadStream.end(req.file.buffer);
+      });
+
+      // Store Cloudinary information for controller
+      req.file.cloudinaryUrl = result.secure_url;
+      req.file.cloudinaryPublicId = result.public_id;
+
+      console.log('🎤 Audio uploaded to Cloudinary:', result.secure_url);
+
+      next();
+    } catch (error) {
+      console.error('Cloudinary Audio Upload Error:', error);
+
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to upload audio to Cloudinary'
+      });
+    }
   });
 };
+const {
+  createRequest,
+  getRequests,
+  getRequestById,
+  updateRequest,
+  deleteRequest,
+  acceptRequest,
+  submitPurchaseCost,
+  approvePurchaseFunding,
+  rejectPurchaseCost,
+  completeRequest,
+  familyApproveRequest,
+  familyFulfillSelf,
+  familyRejectRequest,
+  verifyCompletionByFamily,
+  verifyCompletionBySeniorVoice,
+  submitFeedback,
+  payVolunteerTip
+} = require('../controllers/requestController');
+const { protect, authorize } = require('../middleware/authMiddleware');
+
+
 
 // ─── Multer config for Receipt & Delivery Photo Proof Uploads ──────────────
 const proofDir = path.join(__dirname, '..', 'uploads', 'proofs');
@@ -134,21 +161,21 @@ router.route('/:id')
   .delete(authorize('senior', 'admin'), deleteRequest);
 
 // Volunteer 11-step escrow workflow
-router.put('/:id/accept',               authorize('volunteer'), acceptRequest);
+router.put('/:id/accept', authorize('volunteer'), acceptRequest);
 router.put('/:id/submit-purchase-cost', authorize('volunteer'), handleProofUpload, submitPurchaseCost);
-router.put('/:id/complete',             authorize('volunteer', 'admin'), handleProofUpload, completeRequest);
+router.put('/:id/complete', authorize('volunteer', 'admin'), handleProofUpload, completeRequest);
 
 // Family/Caregiver volunteer approval, purchase funding & fulfillment workflow
-router.put('/:id/family-approve',           authorize('family'), familyApproveRequest);
+router.put('/:id/family-approve', authorize('family'), familyApproveRequest);
 router.put('/:id/approve-purchase-funding', authorize('family'), approvePurchaseFunding);
-router.put('/:id/reject-purchase-cost',     authorize('family'), rejectPurchaseCost);
+router.put('/:id/reject-purchase-cost', authorize('family'), rejectPurchaseCost);
 router.put('/:id/family-fulfill', authorize('family'), familyFulfillSelf);
-router.put('/:id/family-reject',  authorize('family'), familyRejectRequest);
+router.put('/:id/family-reject', authorize('family'), familyRejectRequest);
 
 // Task Completion Verification Workflow (Family Caregiver & Senior Voice IVR Call)
 router.put('/:id/verify-completion-family', authorize('family'), verifyCompletionByFamily);
-router.put('/:id/verify-completion-voice',  authorize('senior', 'admin'), verifyCompletionBySeniorVoice);
-router.put('/:id/pay-tip',                  authorize('family'), payVolunteerTip);
+router.put('/:id/verify-completion-voice', authorize('senior', 'admin'), verifyCompletionBySeniorVoice);
+router.put('/:id/pay-tip', authorize('family'), payVolunteerTip);
 
 // Volunteer Feedback Submission Workflow
 router.put('/:id/feedback', authorize('family', 'senior', 'admin'), submitFeedback);

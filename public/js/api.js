@@ -249,42 +249,99 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Global Toast Notification Helper
 function showToast(message, type = 'info') {
-  const existing = document.getElementById('agewellToast');
-  if (existing) existing.remove();
+  let container = document.getElementById('agewellToastContainer');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'agewellToastContainer';
+    container.style.cssText = `
+      position: fixed;
+      top: 1.25rem;
+      right: 1.25rem;
+      z-index: 999999;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      pointer-events: none;
+      max-width: 440px;
+      width: calc(100vw - 2.5rem);
+    `;
+    document.body.appendChild(container);
+  }
 
-  const colors = {
-    success: { bg: '#e8f5e9', border: '#2e7d32', text: '#1b5e20' },
-    error:   { bg: '#ffebee', border: '#c62828', text: '#b71c1c' },
-    info:    { bg: '#e3f2fd', border: '#1976d2', text: '#0d47a1' }
-  };
+  // Remove oldest if more than 3
+  while (container.children.length >= 3) {
+    container.firstChild.remove();
+  }
 
-  const c = colors[type] || colors.info;
   const toast = document.createElement('div');
-  toast.id = 'agewellToast';
+  toast.className = 'agewell-toast-item';
   toast.style.cssText = `
-    position: fixed;
-    bottom: 2rem;
-    left: 50%;
-    transform: translateX(-50%);
-    background: ${c.bg};
-    border: 3px solid ${c.border};
-    color: ${c.text};
-    padding: 1rem 2rem;
-    border-radius: 12px;
-    font-size: 1.1rem;
-    font-weight: 700;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.2);
-    z-index: 100000;
-    max-width: 90vw;
-    text-align: center;
+    pointer-events: auto;
+    background: #0f172a;
+    color: #f8fafc;
+    border-radius: 18px;
+    padding: 14px 18px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    box-shadow: 0 20px 40px -10px rgba(15, 23, 42, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.1);
+    transform: translateY(-16px) scale(0.96);
+    opacity: 0;
+    transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   `;
 
-  toast.innerHTML = message;
-  document.body.appendChild(toast);
+  let iconSvg = '';
+  let badgeStyle = '';
+  let titleText = '';
 
+  if (type === 'success') {
+    badgeStyle = 'background: rgba(16, 185, 129, 0.18); color: #34d399; border: 1px solid rgba(52, 211, 153, 0.3);';
+    titleText = 'Success';
+    iconSvg = '<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>';
+  } else if (type === 'error') {
+    badgeStyle = 'background: rgba(244, 63, 94, 0.18); color: #fb7185; border: 1px solid rgba(251, 113, 133, 0.3);';
+    titleText = 'Notice';
+    iconSvg = '<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>';
+  } else {
+    badgeStyle = 'background: rgba(59, 130, 246, 0.18); color: #60a5fa; border: 1px solid rgba(96, 165, 250, 0.3);';
+    titleText = 'Information';
+    iconSvg = '<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z"/></svg>';
+  }
+
+  const safeMsg = (typeof message === 'string') ? message : JSON.stringify(message);
+
+  toast.innerHTML = `
+    <div style="width: 32px; height: 32px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; ${badgeStyle}">
+      ${iconSvg}
+    </div>
+    <div style="flex: 1; min-width: 0; padding-top: 1px;">
+      <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; opacity: 0.65; margin-bottom: 2px; color: #94a3b8;">
+        ${titleText}
+      </div>
+      <div style="font-size: 13px; font-weight: 600; line-height: 1.45; color: #f8fafc;">
+        ${safeMsg}
+      </div>
+    </div>
+    <button type="button" style="background: none; border: none; padding: 4px; color: #64748b; cursor: pointer; border-radius: 6px; display: flex; align-items: center; justify-content: center; transition: color 0.2s;" onmouseover="this.style.color='#cbd5e1'" onmouseout="this.style.color='#64748b'" onclick="this.closest('.agewell-toast-item').remove()">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+    </button>
+  `;
+
+  container.appendChild(toast);
+
+  // Entrance
+  requestAnimationFrame(() => {
+    toast.style.transform = 'translateY(0) scale(1)';
+    toast.style.opacity = '1';
+  });
+
+  // Auto dismiss
   setTimeout(() => {
-    toast.style.opacity = '0';
-    toast.style.transition = 'opacity 0.5s ease';
-    setTimeout(() => toast.remove(), 500);
-  }, 4000);
+    if (toast.parentElement) {
+      toast.style.transform = 'translateY(-12px) scale(0.96)';
+      toast.style.opacity = '0';
+      setTimeout(() => toast.remove(), 350);
+    }
+  }, 4500);
 }

@@ -867,18 +867,25 @@ tr:hover {
 }
 
 /* Footer styling */
-footer {
-  background-color: var(--color-primary-dark);
-  color: var(--color-white);
-  text-align: center;
-  padding: 1.5rem;
-  margin-top: auto;
-  border-top: 4px solid var(--color-warning);
+footer, .global-footer, footer.global-footer {
+  background-color: #0b3d70 !important;
+  color: #ffffff !important;
+  text-align: center !important;
+  padding: 1.5rem 1rem !important;
+  margin-top: 1.25rem !important;
+  border-top: none !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  display: block !important;
 }
 
-footer p {
-  max-width: 1200px;
-  margin: 0 auto;
+footer p, .global-footer p, footer.global-footer p {
+  color: rgba(255, 255, 255, 0.9) !important;
+  font-size: 0.85rem !important;
+  font-weight: 600 !important;
+  max-width: 1200px !important;
+  margin: 0 auto !important;
+  line-height: 1.4 !important;
 }
 
 /* =============================

@@ -162,18 +162,27 @@ document.addEventListener('DOMContentLoaded', () => {
 // MAIN LOAD FUNCTION
 // ──────────────────────────────────────────────────────────
 async function loadFamilyDashboard(silent = false) {
+  const elSenior = document.getElementById('seniorRequestsList');
+  const elApproval = document.getElementById('approvalList');
+  const elVerify = document.getElementById('verificationList');
+  const elAll = document.getElementById('allRequestsList');
+
   if (!silent) {
-    document.getElementById('approvalList').innerHTML = `
-      <div class="loading-wrapper"><div class="spinner"></div><span>Loading...</span></div>`;
-    document.getElementById('allRequestsList').innerHTML = `
-      <div class="loading-wrapper"><div class="spinner"></div><span>Loading...</span></div>`;
+    const spinnerHtml = `<div class="loading-wrapper"><div class="spinner"></div><span>Loading...</span></div>`;
+    if (elSenior) elSenior.innerHTML = spinnerHtml;
+    if (elApproval) elApproval.innerHTML = spinnerHtml;
+    if (elVerify) elVerify.innerHTML = spinnerHtml;
+    if (elAll) elAll.innerHTML = spinnerHtml;
   }
 
   const res = await apiCall('/family/dashboard', 'GET');
 
   if (!res.ok || !res.data.success) {
     const errMsg = res.data?.message || 'Could not load dashboard data.';
-    document.getElementById('approvalList').innerHTML = showError(errMsg);
+    if (elSenior) elSenior.innerHTML = showError(errMsg);
+    if (elApproval) elApproval.innerHTML = showError(errMsg);
+    if (elVerify) elVerify.innerHTML = showError(errMsg);
+    if (elAll) elAll.innerHTML = showError(errMsg);
     return;
   }
 
@@ -226,6 +235,53 @@ async function loadFamilyDashboard(silent = false) {
     r.status === 'awaiting_verification'
   );
 
+  // Senior requests needing caregiver action/decision (undecided: not yet allotted/fulfilled/rejected)
+  const seniorActionRequiredCount = seniorRequests.filter(r =>
+    (r.status === 'pending' || r.status === 'awaiting_approval') &&
+    r.familyApprovalStatus !== 'approved' &&
+    r.familyApprovalStatus !== 'rejected' &&
+    !r.fulfilledByFamily &&
+    r.status !== 'fulfilled_by_family' &&
+    r.status !== 'accepted' &&
+    r.status !== 'purchase_funded' &&
+    (!r.volunteerQuotes || r.volunteerQuotes.length === 0)
+  ).length;
+
+  const approvalsActionRequiredCount = volunteerApprovals.length;
+  const verificationsActionRequiredCount = completionVerifications.filter(r =>
+    r.status === 'purchase_cost_submitted' || r.status === 'awaiting_verification'
+  ).length;
+
+  // Helper to format tab counter badges based on section state & actionNeeded
+  function updateFamilyNavBadge(el, count, actionNeeded = false, isHistory = false) {
+    if (!el) return;
+    el.textContent = count;
+    el.dataset.actionNeeded = actionNeeded ? "true" : "false";
+    el.dataset.isHistory = isHistory ? "true" : "false";
+    if (isHistory) {
+      el.className = "bg-slate-100 text-slate-700 text-xs font-extrabold px-2.5 py-0.5 rounded-full border border-slate-200/80 flex-shrink-0";
+    } else if (actionNeeded && count > 0) {
+      // Blue and blinking animation ONLY when action is needed
+      el.className = "bg-brand-600 text-white text-xs font-extrabold px-2.5 py-0.5 rounded-full shadow-xs badge-blink-active flex-shrink-0";
+    } else if (count > 0) {
+      // Once action has been taken (e.g. chosen among 3 options) -> neutral slate pill, NOT blue, NOT blinking
+      el.className = "bg-slate-100 text-slate-700 text-xs font-extrabold px-2.5 py-0.5 rounded-full border border-slate-200/80 flex-shrink-0";
+    } else {
+      el.className = "bg-slate-100 text-slate-400 text-xs font-bold px-2.5 py-0.5 rounded-full flex-shrink-0";
+    }
+  }
+
+  // Update vertical navigation counts
+  const elCountRequests = document.getElementById('countFamilyRequests');
+  const elCountApprovals = document.getElementById('countFamilyApprovals');
+  const elCountVerifications = document.getElementById('countFamilyVerifications');
+  const elCountHistory = document.getElementById('countFamilyHistory');
+
+  updateFamilyNavBadge(elCountRequests, seniorRequests.length, seniorActionRequiredCount > 0, false);
+  updateFamilyNavBadge(elCountApprovals, volunteerApprovals.length, approvalsActionRequiredCount > 0, false);
+  updateFamilyNavBadge(elCountVerifications, completionVerifications.length, verificationsActionRequiredCount > 0, false);
+  updateFamilyNavBadge(elCountHistory, requests.length, false, true);
+
   // Update notification badge specifically for Volunteer Approvals section
   updateApprovalBadge(volunteerApprovals.length);
 
@@ -260,6 +316,11 @@ async function loadFamilyDashboard(silent = false) {
 
   // Render full request history (Section 4)
   renderAllRequests(requests);
+
+  // Maintain active tab
+  if (window.switchFamilyTab) {
+    window.switchFamilyTab(window.currentFamilyTab || 'requests');
+  }
 }
 
 // Global function to open volunteer profile card modal
@@ -309,82 +370,121 @@ async function viewVolunteerProfile(volId) {
   }
 
   const skillsHtml = (vol.skills && vol.skills.length > 0)
-    ? vol.skills.map(s => `<span class="skill-tag" style="background:#e8f5e9; color:#2e7d32; border:1px solid #a5d6a7; font-weight:600; font-size:0.9rem; padding:4px 12px; border-radius:15px;">${escapeHTML(s)}</span>`).join('')
-    : `<span style="color:#888; font-style:italic;">${t('fd_no_skills_listed')}</span>`;
+    ? vol.skills.map(s => `<span class="bg-brand-50 text-brand-700 border border-brand-200/80 font-bold text-xs px-3 py-1 rounded-xl shadow-2xs">${escapeHTML(s)}</span>`).join('')
+    : `<span class="text-xs text-slate-400 italic">${t('fd_no_skills_listed')}</span>`;
 
   const memberSince = vol.createdAt ? new Date(vol.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : t('fd_registered_volunteer');
+  const initials = (vName.split(' ').map(n => n[0]).join('').substring(0, 2) || 'V').toUpperCase();
+  const ratingVal = stats.reviewsCount > 0 ? stats.overallRating.toFixed(1) : 'New';
+  const ratingPill = stats.reviewsCount > 0
+    ? `<span class="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-50 border border-amber-200 text-amber-900 rounded-full text-xs font-extrabold shadow-2xs">
+         <span class="text-amber-500">★</span> ${ratingVal} / 5.0 <span class="text-slate-400 font-normal">(${stats.reviewsCount} reviews)</span>
+       </span>`
+    : `<span class="inline-flex items-center gap-1 px-3 py-1 bg-brand-50 border border-brand-200 text-brand-700 rounded-full text-xs font-extrabold shadow-2xs">
+         ★ New Volunteer
+       </span>`;
 
   detailsEl.innerHTML = `
-    <!-- Header Banner with Symmetrical Ratings Badges -->
-    <div style="margin-bottom: 1.2rem; background: linear-gradient(135deg, #f1f8e9, #ffffff); padding: 1.2rem; border-radius: 14px; border: 2px solid #a5d6a7; box-shadow: 0 2px 8px rgba(46,125,50,0.08);">
-      <div style="display: flex; gap: 16px; align-items: flex-start;">
-        <div style="width: 54px; height: 54px; border-radius: 16px; background: linear-gradient(135deg, #1b5e20, #43a047); display: flex; align-items: center; justify-content: center; color: #fff; flex-shrink: 0; box-shadow: 0 4px 10px rgba(46,125,50,0.2); margin-top: 2px;">
-          <svg style="width: 28px; height: 28px;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"/></svg>
+    <!-- Top Identity Card -->
+    <div class="p-4 rounded-2xl bg-gradient-to-r from-slate-50 to-brand-50/40 border border-slate-200/80 flex items-center justify-between gap-3 flex-wrap">
+      <div class="flex items-center gap-3.5 min-w-0">
+        <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-brand-600 to-brand-700 text-white flex items-center justify-center font-extrabold text-base shadow-sm flex-shrink-0">
+          ${initials}
         </div>
-        <div style="flex: 1; min-width: 0;">
-          <!-- Name & Overall Rating Badge -->
-          <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 8px;">
-            <h3 style="margin: 0; color: #1b5e20; font-size: 1.3rem; font-weight: 700; line-height: 1.2;">${vName}</h3>
-            <span style="font-weight: 700; color: #b45309; background: #fffdf5; border: 1.5px solid #fde68a; padding: 3px 12px; border-radius: 16px; font-size: 0.88rem; white-space: nowrap; box-shadow: 0 2px 5px rgba(245,158,11,0.12);">
-              Rating: ${stats.reviewsCount > 0 ? stats.overallRating.toFixed(1) : '0.0'} / 5.0
+        <div class="min-w-0">
+          <h4 class="text-base font-extrabold text-slate-900 leading-tight truncate">${vName}</h4>
+          <div class="flex items-center gap-2 mt-1 text-xs text-slate-500 flex-wrap">
+            <span class="inline-flex items-center gap-1 font-bold ${isFullyVerified ? 'text-emerald-700' : 'text-amber-700'}">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"/></svg>
+              ${isFullyVerified ? 'Verified Community Helper' : 'Verification In Progress'}
             </span>
+            <span>&bull;</span>
+            <span>Joined ${memberSince}</span>
           </div>
+        </div>
+      </div>
+      <div>
+        ${ratingPill}
+      </div>
+    </div>
 
-          <!-- Symmetrical Badges Grid -->
-          <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center; font-size: 0.88rem; color: #374151; margin-bottom: 8px;">
-            <span style="background: #ffffff; border: 1px solid #c8e6c9; padding: 3px 10px; border-radius: 12px; font-weight: 500;">Cost: <strong style="color: #2e7d32;">${stats.costUtilization > 0 ? stats.costUtilization.toFixed(1) : '0'}/5</strong></span>
-            <span style="background: #ffffff; border: 1px solid #c8e6c9; padding: 3px 10px; border-radius: 12px; font-weight: 500;">Speed: <strong style="color: #2e7d32;">${stats.speedTimeliness > 0 ? stats.speedTimeliness.toFixed(1) : '0'}/5</strong></span>
-            <span style="background: #ffffff; border: 1px solid #c8e6c9; padding: 3px 10px; border-radius: 12px; font-weight: 500;">Comm: <strong style="color: #2e7d32;">${stats.communication > 0 ? stats.communication.toFixed(1) : '0'}/5</strong></span>
-            <span style="background: #ffffff; border: 1px solid #c8e6c9; padding: 3px 10px; border-radius: 12px; font-weight: 500;"><strong style="color: #2e7d32;">${stats.recommendationRate}%</strong> Recommendation</span>
-            <span style="background: #ffffff; border: 1px solid #c8e6c9; padding: 3px 10px; border-radius: 12px; font-weight: 500;"><strong style="color: #2e7d32;">${stats.tasksCompleted}</strong> Tasks</span>
-          </div>
+    <!-- Performance Metrics Matrix -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+      <div class="p-3 bg-white rounded-xl border border-slate-200/80 text-center shadow-2xs">
+        <span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">Tasks Done</span>
+        <span class="text-base font-extrabold text-slate-900 block mt-0.5">${stats.tasksCompleted || 0}</span>
+      </div>
+      <div class="p-3 bg-white rounded-xl border border-slate-200/80 text-center shadow-2xs">
+        <span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">Recommendation</span>
+        <span class="text-base font-extrabold text-emerald-700 block mt-0.5">${stats.recommendationRate > 0 ? stats.recommendationRate + '%' : '100%'}</span>
+      </div>
+      <div class="p-3 bg-white rounded-xl border border-slate-200/80 text-center shadow-2xs">
+        <span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">Speed &amp; Timeliness</span>
+        <span class="text-base font-extrabold text-slate-900 block mt-0.5">${stats.speedTimeliness > 0 ? stats.speedTimeliness.toFixed(1) + ' / 5' : '5.0 / 5'}</span>
+      </div>
+      <div class="p-3 bg-white rounded-xl border border-slate-200/80 text-center shadow-2xs">
+        <span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">Communication</span>
+        <span class="text-base font-extrabold text-slate-900 block mt-0.5">${stats.communication > 0 ? stats.communication.toFixed(1) + ' / 5' : '5.0 / 5'}</span>
+      </div>
+    </div>
 
-          <!-- Verification Status & Member Date -->
-          <div style="font-size: 0.86rem; color: #2e7d32; font-weight: 600; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-            <span>${isFullyVerified ? t('fd_fully_verified') : t('fd_background_clearance_pending')}</span>
-            <span style="color: #a5d6a7;">•</span>
-            <span style="color: #555; font-weight: 500;">Member since ${memberSince}</span>
-          </div>
+    <!-- Verification Checks Clearances -->
+    <div class="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-2xs space-y-2.5">
+      <h5 class="text-xs font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+        <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        Verification Clearances
+      </h5>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        <div class="flex items-center gap-2 p-2.5 rounded-xl ${isIdVerified ? 'bg-emerald-50 text-emerald-900 border border-emerald-200/80' : 'bg-slate-50 text-slate-600 border border-slate-200'} text-xs font-bold">
+          <span class="${isIdVerified ? 'text-emerald-600 font-extrabold' : 'text-slate-400'}">${isIdVerified ? '✓' : '•'}</span>
+          <span>Government Photo ID: <strong>${isIdVerified ? 'Verified' : 'Pending'}</strong></span>
+        </div>
+        <div class="flex items-center gap-2 p-2.5 rounded-xl ${isPoliceVerified ? 'bg-emerald-50 text-emerald-900 border border-emerald-200/80' : 'bg-slate-50 text-slate-600 border border-slate-200'} text-xs font-bold">
+          <span class="${isPoliceVerified ? 'text-emerald-600 font-extrabold' : 'text-slate-400'}">${isPoliceVerified ? '✓' : '•'}</span>
+          <span>Police Background: <strong>${isPoliceVerified ? 'Approved' : 'Pending'}</strong></span>
+        </div>
+        <div class="flex items-center gap-2 p-2.5 rounded-xl ${isPhoneVerified ? 'bg-emerald-50 text-emerald-900 border border-emerald-200/80' : 'bg-slate-50 text-slate-600 border border-slate-200'} text-xs font-bold">
+          <span class="${isPhoneVerified ? 'text-emerald-600 font-extrabold' : 'text-slate-400'}">${isPhoneVerified ? '✓' : '•'}</span>
+          <span>Phone Verification: <strong>${isPhoneVerified ? 'Verified' : 'Unverified'}</strong></span>
+        </div>
+        <div class="flex items-center gap-2 p-2.5 rounded-xl ${isEmailVerified ? 'bg-emerald-50 text-emerald-900 border border-emerald-200/80' : 'bg-slate-50 text-slate-600 border border-slate-200'} text-xs font-bold">
+          <span class="${isEmailVerified ? 'text-emerald-600 font-extrabold' : 'text-slate-400'}">${isEmailVerified ? '✓' : '•'}</span>
+          <span>Email Verification: <strong>${isEmailVerified ? 'Verified' : 'Unverified'}</strong></span>
         </div>
       </div>
     </div>
 
-    <!-- Multi-Level Verification Clearances -->
-    <div style="margin-bottom: 1.2rem; background: #ffffff; border: 2px solid #e0e0e0; border-radius: 12px; padding: 1rem;">
-      <h4 style="color: #1b5e20; margin-top: 0; margin-bottom: 10px; font-size: 1.05rem; display: flex; align-items: center; gap: 6px;">
-        Verification Clearances
-      </h4>
-      <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-        <span class="skill-tag" style="background: ${isIdVerified ? '#e8f5e9' : '#ffebee'}; color: ${isIdVerified ? '#2e7d32' : '#c62828'}; border: 1px solid ${isIdVerified ? '#a5d6a7' : '#ef9a9a'}; font-weight: bold; font-size: 0.88rem; padding: 6px 12px;">
-          Photo ID: ${isIdVerified ? 'Verified' : 'Pending'}
-        </span>
-        <span class="skill-tag" style="background: ${isPoliceVerified ? '#e8f5e9' : '#fff3e0'}; color: ${isPoliceVerified ? '#2e7d32' : '#e65100'}; border: 1px solid ${isPoliceVerified ? '#a5d6a7' : '#ffe082'}; font-weight: bold; font-size: 0.88rem; padding: 6px 12px;">
-          Police Check: ${isPoliceVerified ? 'Approved' : 'Pending'}
-        </span>
-        <span class="skill-tag" style="background: ${isPhoneVerified ? '#e8f5e9' : '#ffebee'}; color: ${isPhoneVerified ? '#2e7d32' : '#c62828'}; border: 1px solid ${isPhoneVerified ? '#a5d6a7' : '#ef9a9a'}; font-weight: bold; font-size: 0.88rem; padding: 6px 12px;">
-          Phone: ${isPhoneVerified ? 'Verified' : 'Unverified'}
-        </span>
-        <span class="skill-tag" style="background: ${isEmailVerified ? '#e8f5e9' : '#ffebee'}; color: ${isEmailVerified ? '#2e7d32' : '#c62828'}; border: 1px solid ${isEmailVerified ? '#a5d6a7' : '#ef9a9a'}; font-weight: bold; font-size: 0.88rem; padding: 6px 12px;">
-          Email: ${isEmailVerified ? 'Verified' : 'Unverified'}
-        </span>
+    <!-- Direct Contact Info -->
+    <div class="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-2xs space-y-2.5">
+      <h5 class="text-xs font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+        <svg class="w-4 h-4 text-brand-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z"/></svg>
+        Direct Contact Details
+      </h5>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+        <div class="p-3 bg-slate-50 rounded-xl border border-slate-200/80 flex items-center justify-between gap-2">
+          <div class="min-w-0">
+            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Phone Number</span>
+            <span class="text-xs font-bold text-slate-900 block truncate">${vPhone}</span>
+          </div>
+          ${vol.phone ? `<a href="tel:${vPhone}" class="px-3 py-1 bg-brand-600 hover:bg-brand-700 text-white rounded-lg text-xs font-bold transition-all shadow-2xs flex-shrink-0">Call</a>` : ''}
+        </div>
+        <div class="p-3 bg-slate-50 rounded-xl border border-slate-200/80 flex items-center justify-between gap-2">
+          <div class="min-w-0">
+            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Email Address</span>
+            <span class="text-xs font-bold text-slate-900 block truncate">${vEmail}</span>
+          </div>
+          ${vol.email ? `<a href="mailto:${vEmail}" class="px-3 py-1 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-lg text-xs font-bold transition-all shadow-2xs flex-shrink-0">Email</a>` : ''}
+        </div>
       </div>
-    </div>
-
-    <!-- Contact Details -->
-    <div style="margin-bottom: 1.2rem; background: #ffffff; border: 2px solid #e0e0e0; border-radius: 12px; padding: 1rem;">
-      <h4 style="color: #1565c0; margin-top: 0; margin-bottom: 10px; font-size: 1.05rem;">Direct Contact</h4>
-      <p style="margin: 6px 0; font-size: 1rem;">
-        <strong>Phone:</strong> <a href="tel:${vPhone}" style="color: #1565c0; font-weight: bold; text-decoration: none;">${vPhone}</a>
-      </p>
-      <p style="margin: 6px 0; font-size: 1rem;">
-        <strong>Email:</strong> <a href="mailto:${vEmail}" style="color: #1565c0; text-decoration: none;">${vEmail}</a>
-      </p>
     </div>
 
     <!-- Skills & Expertise -->
-    <div style="background: #ffffff; border: 2px solid #e0e0e0; border-radius: 12px; padding: 1rem;">
-      <h4 style="color: #2e7d32; margin-top: 0; margin-bottom: 10px; font-size: 1.05rem;">Skills &amp; Expertise</h4>
-      <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+    <div class="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-2xs space-y-2">
+      <h5 class="text-xs font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+        <svg class="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 005.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 009.568 3z"/></svg>
+        Skills &amp; Service Areas
+      </h5>
+      <div class="flex gap-2 flex-wrap pt-0.5">
         ${skillsHtml}
       </div>
     </div>
@@ -996,31 +1096,54 @@ function renderCompletionVerificationQueue(pendingVerifications) {
       let proofSlider = renderProofSliderHtml(req._id, proofImages);
 
       const isZeroPurchaseCost = Number(req.actualPurchaseCost || 0) === 0;
-      const approveBtnHtml = isZeroPurchaseCost ? `
-        <button type="button" onclick="directReleaseServiceCharge('${req._id}', '${resolvedFee}', '${escapeHTML(volName).replace(/'/g, "\\'")}')" class="w-full sm:w-auto px-5 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm rounded-xl shadow-xs transition-all active:scale-95 flex items-center justify-center gap-2">
-          <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
-          ${t('btn_release_service_charge', { fee: resolvedFee })}
-        </button>` : `
-        <button type="button" onclick="approvePurchaseFunding('${req._id}', '${req.actualPurchaseCost || 0}', '${resolvedFee}', '${escapeHTML(volName).replace(/'/g, "\\'")}')" class="w-full sm:w-auto px-5 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm rounded-xl shadow-xs transition-all active:scale-95 flex items-center justify-center gap-2">
-          <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v.375c0 .621.504 1.125 1.125 1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z"/></svg>
-          ${t('btn_approve_payment_release', { cost: req.actualPurchaseCost || 0 })}
-        </button>`;
 
       cardContent = `
-        <div class="my-3 p-4 bg-amber-50/80 border border-amber-200/80 rounded-2xl space-y-3">
-          <div class="flex items-center justify-between flex-wrap gap-2 pb-2.5 border-b border-amber-200/60">
-            <span class="text-sm font-extrabold text-amber-950">${t('fd_vol_submitted_purchase_cost') || 'Submitted Purchase Cost:'} <strong class="text-base text-amber-700">₹${req.actualPurchaseCost || 0}</strong></span>
-            ${req.purchaseNotes ? `<span class="text-xs text-slate-700 italic bg-white px-2.5 py-1 rounded-lg border border-amber-200">${t('fd_notes')}: "${escapeHTML(req.purchaseNotes)}"</span>` : ''}
-          </div>
-          <div class="flex flex-col md:flex-row items-center gap-4">
-            <div class="w-full md:w-auto flex-1">${proofSlider}</div>
-            <div class="w-full md:w-auto flex flex-col gap-2.5 justify-center">
-              ${approveBtnHtml}
-              <button type="button" onclick="openRejectRevisionModal('${req._id}', '${escapeHTML(req.title).replace(/'/g, "\\'")}', '${escapeHTML(req.category).replace(/'/g, "\\'")}')" class="w-full sm:w-auto px-5 py-3 bg-white hover:bg-rose-50 text-rose-600 border border-rose-200 hover:border-rose-300 font-bold text-xs sm:text-sm rounded-xl shadow-xs transition-all active:scale-95 flex items-center justify-center gap-2">
-                <svg class="w-4 h-4 text-rose-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/></svg>
-                ${t('btn_reject_request_revision')}
-              </button>
+        <div class="my-4 p-4 sm:p-5 rounded-2xl bg-amber-50/70 border border-amber-200/80 space-y-4">
+          <!-- Cost & Notes Strip -->
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 bg-white rounded-xl border border-amber-200/70 shadow-2xs">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-amber-100/90 border border-amber-300/80 text-amber-800 flex items-center justify-center flex-shrink-0 font-extrabold text-base">
+                ₹
+              </div>
+              <div>
+                <span class="text-[11px] font-bold text-amber-900/70 uppercase tracking-wider block">Submitted Purchase Cost</span>
+                <span class="text-lg font-extrabold text-amber-950 leading-tight">₹${req.actualPurchaseCost || 0}</span>
+              </div>
             </div>
+            ${req.purchaseNotes ? `
+              <div class="text-xs text-slate-600 italic sm:max-w-md bg-amber-50/50 px-3 py-1.5 rounded-lg border border-amber-100">
+                <span class="font-bold text-amber-950 not-italic">Note:</span> "${escapeHTML(req.purchaseNotes)}"
+              </div>` : ''}
+          </div>
+
+          <!-- Photo Proof Section -->
+          <div>
+            <div class="text-xs font-bold text-amber-950 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+              <svg class="w-3.5 h-3.5 text-amber-700" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z"/><path stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z"/></svg>
+              <span>Uploaded Store Bill / Receipt</span>
+            </div>
+            ${proofSlider}
+          </div>
+
+          <!-- Actions Bar -->
+          <div class="flex flex-col sm:flex-row items-center justify-end gap-2.5 pt-2 border-t border-amber-200/70">
+            <button 
+              type="button" 
+              onclick="openRejectRevisionModal('${req._id}', '${escapeHTML(req.title).replace(/'/g, "\\'")}', '${escapeHTML(req.category).replace(/'/g, "\\'")}')" 
+              class="w-full sm:w-auto px-4 py-2.5 bg-white hover:bg-rose-50 text-rose-700 hover:text-rose-800 border border-slate-200 hover:border-rose-200 rounded-xl text-xs font-bold transition-all shadow-2xs flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
+            >
+              <svg class="w-3.5 h-3.5 text-rose-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/></svg>
+              <span>Request Revision</span>
+            </button>
+            
+            <button 
+              type="button" 
+              onclick="${isZeroPurchaseCost ? `directReleaseServiceCharge('${req._id}', '${resolvedFee}', '${escapeHTML(volName).replace(/'/g, "\\'")}')` : `approvePurchaseFunding('${req._id}', '${req.actualPurchaseCost || 0}', '${resolvedFee}', '${escapeHTML(volName).replace(/'/g, "\\'")}')`}" 
+              class="w-full sm:w-auto px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm rounded-xl shadow-xs transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer border-none"
+            >
+              <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
+              <span>Approve &amp; Pay ₹${req.actualPurchaseCost || 0}</span>
+            </button>
           </div>
         </div>`;
     } else {
@@ -1029,40 +1152,53 @@ function renderCompletionVerificationQueue(pendingVerifications) {
         : (req.completionProof ? [req.completionProof] : []);
       let proofSlider = renderProofSliderHtml(req._id, finalImages);
 
-      let proofHtml = proofSlider ? `
-        <div class="my-3 p-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl">
-          <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">${t('fd_uploaded_proof')}</label>
-          ${proofSlider}
-        </div>` : `<div class="my-2 text-xs text-slate-400 italic">No photo proof attached by volunteer.</div>`;
-
       cardContent = `
-        <div class="text-xs text-slate-700 font-medium mb-3">
-          <strong>${t('fd_vol_completion_notes')}:</strong> "${escapeHTML(req.resolutionNotes || 'Task completed & store receipt uploaded.')}"
-        </div>
-        ${proofHtml}
-        <div class="p-3.5 bg-emerald-50/80 border border-emerald-200/80 rounded-2xl my-3 flex items-center justify-between flex-wrap gap-2">
-          <div>
-            <div class="text-xs font-bold text-emerald-950">${t('fd_service_charge_release')}: <strong class="text-sm font-extrabold text-emerald-700">₹${resolvedFee > 0 ? resolvedFee : 0}</strong></div>
-            <div class="text-[11px] text-emerald-700 mt-0.5">${t('fd_receipt_verify_help')}</div>
+        <div class="my-4 p-4 sm:p-5 rounded-2xl bg-slate-50/70 border border-slate-200/80 space-y-4">
+          <!-- Service Fee & Notes Strip -->
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 bg-white rounded-xl border border-slate-200/70 shadow-2xs">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-purple-50 border border-purple-200 text-purple-700 flex items-center justify-center flex-shrink-0 font-extrabold text-base">
+                ₹
+              </div>
+              <div>
+                <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Service Charge to Release</span>
+                <span class="text-lg font-extrabold text-slate-900 leading-tight">₹${resolvedFee > 0 ? resolvedFee : 0}</span>
+              </div>
+            </div>
+            <div class="text-xs text-slate-600 italic sm:max-w-md bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100">
+              <span class="font-bold text-slate-700 not-italic">Completion Notes:</span> "${escapeHTML(req.resolutionNotes || 'Task completed & store receipt uploaded.')}"
+            </div>
           </div>
-        </div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mt-3">
-          <button
-            type="button"
-            onclick="verifyTaskCompletion('${req._id}', true)"
-            class="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm rounded-xl shadow-xs transition-all active:scale-95"
-          >
-            <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
-            ${t('btn_verify_receipt_release', { fee: resolvedFee > 0 ? resolvedFee : 0 })}
-          </button>
-          <button
-            type="button"
-            onclick="verifyTaskCompletion('${req._id}', false)"
-            class="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-white hover:bg-rose-50 text-rose-600 border border-rose-200 hover:border-rose-300 font-bold text-xs sm:text-sm rounded-xl shadow-xs transition-all active:scale-95"
-          >
-            <svg class="w-4 h-4 text-rose-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>
-            ${t('btn_reject_report_issue')}
-          </button>
+
+          <!-- Photo Proof Section -->
+          <div>
+            <div class="text-xs font-bold text-slate-600 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+              <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z"/><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z"/></svg>
+              <span>Uploaded Delivery Proof</span>
+            </div>
+            ${proofSlider || '<div class="h-40 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400 text-xs italic">No photo proof attached by volunteer.</div>'}
+          </div>
+
+          <!-- Actions Bar -->
+          <div class="flex flex-col sm:flex-row items-center justify-end gap-2.5 pt-2 border-t border-slate-200/60">
+            <button 
+              type="button" 
+              onclick="openReportIssueModal('${req._id}', '${escapeHTML(req.title).replace(/'/g, "\\'")}')" 
+              class="w-full sm:w-auto px-4 py-2.5 bg-white hover:bg-rose-50 text-rose-700 hover:text-rose-800 border border-slate-200 hover:border-rose-200 rounded-xl text-xs font-bold transition-all shadow-2xs flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
+            >
+              <svg class="w-3.5 h-3.5 text-rose-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>
+              <span>Report Issue</span>
+            </button>
+            
+            <button 
+              type="button" 
+              onclick="verifyTaskCompletion('${req._id}', true)" 
+              class="w-full sm:w-auto px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm rounded-xl shadow-xs transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer border-none"
+            >
+              <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
+              <span>Verify Receipt &amp; Release Funds</span>
+            </button>
+          </div>
         </div>`;
     }
 
@@ -1114,6 +1250,105 @@ function renderCompletionVerificationQueue(pendingVerifications) {
 
 let currentFeedbackRequestId = null;
 
+// --- Report Issue Modal Handlers ---
+
+window.openReportIssueModal = function(requestId, title) {
+  const modal = document.getElementById('reportIssueModal');
+  const reqIdInput = document.getElementById('reportIssueRequestId');
+  const noteInput = document.getElementById('reportIssueNote');
+  const titleEl = document.getElementById('reportIssueModalTitle');
+
+  if (reqIdInput) reqIdInput.value = requestId;
+  if (noteInput) noteInput.value = '';
+  if (titleEl && title) {
+    titleEl.textContent = `Report Issue: ${title}`;
+  }
+
+  // Reset preset button styling
+  document.querySelectorAll('#reportIssuePresetChips button').forEach(b => {
+    b.classList.remove('bg-rose-50', 'border-rose-300', 'text-rose-800');
+    b.classList.add('bg-slate-50', 'border-slate-200', 'text-slate-700');
+  });
+
+  if (modal) {
+    modal.style.display = 'flex';
+  }
+};
+
+window.closeReportIssueModal = function() {
+  const modal = document.getElementById('reportIssueModal');
+  const reqIdInput = document.getElementById('reportIssueRequestId');
+  const noteInput = document.getElementById('reportIssueNote');
+
+  if (reqIdInput) reqIdInput.value = '';
+  if (noteInput) noteInput.value = '';
+
+  if (modal) {
+    modal.style.display = 'none';
+  }
+};
+
+window.setReportIssuePreset = function(presetText) {
+  const noteInput = document.getElementById('reportIssueNote');
+  if (noteInput) {
+    if (noteInput.value.trim().length > 0) {
+      noteInput.value = noteInput.value.trim() + '. ' + presetText;
+    } else {
+      noteInput.value = presetText;
+    }
+    noteInput.focus();
+  }
+};
+
+window.handleReportIssueSubmit = async function(event) {
+  if (event) event.preventDefault();
+
+  const reqIdInput = document.getElementById('reportIssueRequestId');
+  const noteInput = document.getElementById('reportIssueNote');
+  const btnSubmit = document.getElementById('btnSubmitReportIssue');
+
+  const requestId = reqIdInput ? reqIdInput.value : '';
+  const reason = noteInput ? noteInput.value.trim() : '';
+
+  if (!requestId) {
+    showToast('Invalid request selection', 'error');
+    return;
+  }
+
+  const finalReason = reason || 'Caregiver reported an issue with task completion.';
+
+  if (btnSubmit) {
+    btnSubmit.disabled = true;
+    btnSubmit.textContent = 'Submitting...';
+  }
+
+  try {
+    const res = await apiCall(`/requests/${requestId}/verify-completion-family`, 'PUT', {
+      approved: false,
+      rejectionReason: finalReason
+    });
+
+    if (res.ok && res.data.success) {
+      showToast('Issue reported. The volunteer has been notified to make corrections.', 'info');
+      closeReportIssueModal();
+      loadFamilyDashboard();
+    } else {
+      showToast(res.data?.message || 'Error updating completion status', 'error');
+    }
+  } catch (err) {
+    console.error('Error reporting task completion issue:', err);
+    showToast('Network error submitting issue report.', 'error');
+  } finally {
+    if (btnSubmit) {
+      btnSubmit.disabled = false;
+      btnSubmit.innerHTML = `
+        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        <span>Submit Issue &amp; Request Revision</span>
+      `;
+    }
+  }
+};
+
 // Step 5: Caregiver verifies final receipt & releases volunteer service charge
 async function verifyTaskCompletion(requestId, approved) {
   if (approved) {
@@ -1122,7 +1357,7 @@ async function verifyTaskCompletion(requestId, approved) {
         approved: true
       });
       if (res.ok && res.data.success) {
-        showToast('✅ Receipt verified & service charge released!', 'success');
+        showToast('Receipt verified & funds released successfully!', 'success');
         currentFeedbackRequestId = requestId;
         let volName = 'Assigned Volunteer';
         let serviceFee = 0;
@@ -1144,30 +1379,42 @@ async function verifyTaskCompletion(requestId, approved) {
     return;
   }
 
-  const reason = prompt('Please enter the reason for rejecting or reporting an issue with this completion:') || 'Rejected by family caregiver';
-
-  const res = await apiCall(`/requests/${requestId}/verify-completion-family`, 'PUT', {
-    approved: false,
-    rejectionReason: reason
-  });
-
-  if (res.ok && res.data.success) {
-    showToast('Receipt rejected. Volunteer notified to re-upload.', 'error');
-    loadFamilyDashboard();
-  } else {
-    showToast(res.data?.message || 'Error updating completion verification.', 'error');
-  }
+  // If approved is false, open the report issue modal
+  openReportIssueModal(requestId, 'Task Verification');
 }
 
 // --- Volunteer Feedback Modal Handlers ---
 
 window.openFeedbackModal = function(volName) {
   const modal = document.getElementById('feedbackModal');
+  const headingEl = document.getElementById('feedbackModalHeading');
   const nameEl = document.getElementById('feedbackVolunteerName');
-  if (nameEl && volName) {
-    nameEl.textContent = volName;
+  const cleanName = (volName && typeof volName === 'string' && volName.trim() && volName !== '{name}') 
+    ? volName.trim() 
+    : 'Assigned Volunteer';
+
+  if (headingEl) {
+    headingEl.innerHTML = `Feedback for <span id="feedbackVolunteerName" class="text-brand-600">${escapeHTML(cleanName)}</span>`;
+  } else if (nameEl) {
+    nameEl.textContent = cleanName;
   }
   initStarRatings();
+
+  // Ensure all pills start unselected
+  document.querySelectorAll('#taskCompletionGroup .pill-option, #chooseAgainGroup .pill-option').forEach(p => {
+    p.classList.remove('active', 'border-emerald-600', 'bg-emerald-600', 'text-white');
+    p.classList.add('border-slate-200', 'bg-white', 'text-slate-700');
+    p.style.backgroundColor = '';
+    p.style.color = '';
+    p.style.borderColor = '';
+  });
+  const tcVal = document.getElementById('taskCompletionVal');
+  if (tcVal) tcVal.value = '';
+  const caVal = document.getElementById('chooseAgainVal');
+  if (caVal) caVal.value = '';
+  const note = document.getElementById('additionalFeedback');
+  if (note) note.value = '';
+
   if (modal) {
     modal.style.display = 'flex';
   }
@@ -1326,21 +1573,34 @@ function updateStars(stars, activeVal) {
   });
 }
 
-window.selectPill = function(labelEl, groupName, value) {
-  const container = labelEl.parentElement;
+window.selectPill = function(btnOrLabel, groupName, value) {
+  const container = document.getElementById(groupName === 'taskCompletion' ? 'taskCompletionGroup' : 'chooseAgainGroup') || btnOrLabel.parentElement;
   if (!container) return;
-  container.querySelectorAll('.pill-option').forEach(p => {
-    p.classList.remove('active');
-    p.style.background = '#f9fafb';
-    p.style.color = '#4b5563';
-    p.style.borderColor = '#d1d5db';
+
+  container.querySelectorAll('button, label, .pill-option').forEach(p => {
+    p.classList.remove('active', 'border-emerald-600', 'bg-emerald-600', 'text-white');
+    p.classList.add('border-slate-200', 'bg-white', 'text-slate-700');
+    p.style.backgroundColor = '';
+    p.style.color = '';
+    p.style.borderColor = '';
+    const r = p.querySelector('input[type="radio"]');
+    if (r) r.checked = false;
   });
-  labelEl.classList.add('active');
-  labelEl.style.background = '#2e7d32';
-  labelEl.style.color = '#ffffff';
-  labelEl.style.borderColor = '#2e7d32';
-  const radio = labelEl.querySelector('input[type="radio"]');
-  if (radio) radio.checked = true;
+
+  btnOrLabel.classList.add('active', 'border-emerald-600', 'bg-emerald-600', 'text-white');
+  btnOrLabel.classList.remove('border-slate-200', 'bg-white', 'text-slate-700');
+  btnOrLabel.style.backgroundColor = '#059669';
+  btnOrLabel.style.color = '#ffffff';
+  btnOrLabel.style.borderColor = '#059669';
+
+  const radio = btnOrLabel.querySelector('input[type="radio"]');
+  if (radio) {
+    radio.checked = true;
+  }
+  const hiddenInput = document.getElementById(`${groupName}Val`);
+  if (hiddenInput) {
+    hiddenInput.value = value;
+  }
 };
 
 window.handleFeedbackSubmit = async function(event) {
@@ -1360,9 +1620,9 @@ window.handleFeedbackSubmit = async function(event) {
   const communication = rawComm > 0 ? rawComm : 5;
 
   const taskCompletionRadio = document.querySelector('input[name="taskCompletion"]:checked');
-  const taskCompletion = taskCompletionRadio ? taskCompletionRadio.value : 'Completely';
+  const taskCompletion = taskCompletionRadio ? taskCompletionRadio.value : (document.getElementById('taskCompletionVal')?.value || 'Completely');
   const chooseAgainRadio = document.querySelector('input[name="chooseAgain"]:checked');
-  const chooseAgain = chooseAgainRadio ? chooseAgainRadio.value : 'Yes';
+  const chooseAgain = chooseAgainRadio ? chooseAgainRadio.value : (document.getElementById('chooseAgainVal')?.value || 'Yes');
   const additionalFeedback = document.getElementById('additionalFeedback')?.value || '';
 
   if (currentFeedbackRequestId) {
@@ -1411,27 +1671,26 @@ function renderProofSliderHtml(reqId, rawImages) {
   const firstImg = images[0];
   const count = images.length;
 
-  if (count === 1) {
-    return `
-      <div style="position: relative; width: 440px; max-width: 100%; height: 320px; border-radius: 12px; overflow: hidden; border: 2px solid #ffe0b2; background: #ffffff; box-shadow: 0 4px 12px rgba(0,0,0,0.12); flex-shrink: 0;">
-        <img src="${escapeHTML(firstImg)}" alt="Proof Image" onclick="event.stopPropagation(); openImageLightbox('${escapeHTML(firstImg)}', '${reqId}'); return false;" style="width: 100%; height: 100%; object-fit: contain; cursor: pointer; display: block;" title="Click to enlarge proof photo">
-      </div>`;
-  }
-
   return `
-    <div style="position: relative; width: 440px; max-width: 100%; height: 320px; border-radius: 12px; overflow: hidden; border: 2px solid #ffe0b2; background: #ffffff; box-shadow: 0 4px 12px rgba(0,0,0,0.12); flex-shrink: 0; user-select: none;">
-      <img id="sliderImg_${reqId}" src="${escapeHTML(firstImg)}" alt="Proof Image 1" onclick="event.stopPropagation(); openImageLightbox(this.src, '${reqId}'); return false;" style="width: 100%; height: 100%; object-fit: contain; cursor: pointer; display: block;" title="Click to enlarge proof photo">
-      
-      <div id="sliderCounter_${reqId}" style="position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.75); color: #ffffff; font-weight: 800; font-size: 0.88rem; padding: 4px 12px; border-radius: 16px; pointer-events: none; z-index: 2; box-shadow: 0 2px 6px rgba(0,0,0,0.3);">
-        1 / ${count}
+    <div class="p-3 sm:p-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl flex items-center justify-between gap-3 group/proof transition-all hover:bg-slate-100/70">
+      <div class="flex items-center gap-3 min-w-0">
+        <div class="relative w-13 h-13 sm:w-14 sm:h-14 rounded-xl overflow-hidden bg-slate-200 border border-slate-300 flex-shrink-0 cursor-pointer shadow-2xs group-hover/proof:scale-105 transition-transform" onclick="event.stopPropagation(); openImageLightbox('${escapeHTML(firstImg)}', '${reqId}'); return false;" title="Click to view image">
+          <img src="${escapeHTML(firstImg)}" alt="Receipt Thumbnail" class="w-full h-full object-cover">
+          ${count > 1 ? `<span class="absolute bottom-0.5 right-0.5 bg-slate-900/85 text-white text-[9px] font-black px-1 rounded shadow-xs">+${count - 1}</span>` : ''}
+        </div>
+        <div class="min-w-0">
+          <span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">Attached Photo Proof</span>
+          <span class="text-xs sm:text-sm font-extrabold text-slate-800 truncate block">Store Receipt &amp; Delivery Proof</span>
+          <span class="text-[11px] text-slate-500 font-semibold block">${count} photo${count > 1 ? 's' : ''} uploaded</span>
+        </div>
       </div>
-
-      <button type="button" onclick="event.stopPropagation(); navigateProofSlider('${reqId}', -1)" style="position: absolute; top: 50%; left: 8px; transform: translateY(-50%); background: rgba(0,0,0,0.6); color: #ffffff; border: none; border-radius: 50%; width: 40px; height: 40px; font-size: 1.3rem; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 3; box-shadow: 0 2px 8px rgba(0,0,0,0.3); transition: all 0.15s ease;" onmouseover="this.style.background='rgba(0,0,0,0.9)'; this.style.transform='translateY(-50%) scale(1.1)'" onmouseleave="this.style.background='rgba(0,0,0,0.6)'; this.style.transform='translateY(-50%) scale(1)'">
-        &#9664;
-      </button>
-
-      <button type="button" onclick="event.stopPropagation(); navigateProofSlider('${reqId}', 1)" style="position: absolute; top: 50%; right: 8px; transform: translateY(-50%); background: rgba(0,0,0,0.6); color: #ffffff; border: none; border-radius: 50%; width: 40px; height: 40px; font-size: 1.3rem; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 3; box-shadow: 0 2px 8px rgba(0,0,0,0.3); transition: all 0.15s ease;" onmouseover="this.style.background='rgba(0,0,0,0.9)'; this.style.transform='translateY(-50%) scale(1.1)'" onmouseleave="this.style.background='rgba(0,0,0,0.6)'; this.style.transform='translateY(-50%) scale(1)'">
-        &#9654;
+      <button 
+        type="button" 
+        onclick="event.stopPropagation(); openImageLightbox('${escapeHTML(firstImg)}', '${reqId}'); return false;" 
+        class="px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-800 hover:text-emerald-700 border border-slate-200 hover:border-emerald-300 rounded-xl text-xs font-bold transition-all shadow-2xs flex items-center gap-1.5 flex-shrink-0 cursor-pointer active:scale-95"
+      >
+        <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        <span>View Image${count > 1 ? 's' : ''}</span>
       </button>
     </div>`;
 }
@@ -1508,7 +1767,7 @@ window.directApprovePurchaseFunding = async function(requestId, serviceFee, volN
 
 // Step 2: Caregiver approves payment for actual purchase cost → sends to payment page
 // Payment page charges: purchase amount + service fee only. No tip at this stage.
-function approvePurchaseFunding(requestId, amount, serviceFee, volName) {
+window.approvePurchaseFunding = function(requestId, amount, serviceFee, volName) {
   if (Number(amount || 0) === 0) {
     // If purchase cost is zero, just approve-purchase-funding on backend and move forward
     directApprovePurchaseFunding(requestId, serviceFee, volName);
@@ -1516,7 +1775,16 @@ function approvePurchaseFunding(requestId, amount, serviceFee, volName) {
   }
   // Redirect to payment page with purchase amount + service fee. Tip NOT included here.
   window.location.href = `/payment.html?requestId=${requestId}&type=purchase&itemsCost=${amount}&serviceFee=${serviceFee || 0}&volunteerName=${encodeURIComponent(volName || 'Assigned Volunteer')}`;
-}
+};
+
+// Step 5: Caregiver verifies completion & pays volunteer service fee via Razorpay
+window.redirectToCompletionPayment = function(requestId, serviceFee, volName) {
+  window.location.href = `/payment.html?requestId=${requestId}&type=completion&serviceFee=${serviceFee || 0}&volunteerName=${encodeURIComponent(volName || 'Assigned Volunteer')}`;
+};
+
+window.directReleaseServiceCharge = function(requestId, serviceFee, volName) {
+  window.redirectToCompletionPayment(requestId, serviceFee, volName);
+};
 
 // Open Custom Modal Tab for Requesting Purchase Cost Revision & Sending Bargain Note
 window.openRejectRevisionModal = function(requestId, requestTitle, requestCategory) {
@@ -1738,27 +2006,85 @@ function renderAllRequests(requests) {
     const isDeliveredAndPaid = req.status === 'awaiting_verification' || req.status === 'completed' || req.serviceChargeReleased;
     const isCompleted = req.status === 'completed';
 
-    const timeline = isFulfilledByFamily ? `
-      <div class="request-timeline my-3">
-        <div class="timeline-step done">${t('status_pending')}</div>
-        <span class="timeline-arrow text-slate-400">&rarr;</span>
-        <div class="timeline-step done">${t('fd_awaiting_decision')}</div>
-        <span class="timeline-arrow text-slate-400">&rarr;</span>
-        <div class="timeline-step done font-bold text-emerald-700">${t('btn_fulfill_myself')}</div>
-      </div>` : `
-      <div class="request-timeline my-3">
-        <div class="timeline-step done">${t('status_pending')}</div>
-        <span class="timeline-arrow text-slate-400">&rarr;</span>
-        <div class="timeline-step ${isVolAssigned ? 'done' : 'future'}">${t('fd_assigned_in_progress')}</div>
-        <span class="timeline-arrow text-slate-400">&rarr;</span>
-        <div class="timeline-step ${isPurchaseFunded ? 'done' : (req.status === 'purchase_cost_submitted' ? 'active' : 'future')}">${t('fd_purchase_funded_progress')}</div>
-        <span class="timeline-arrow text-slate-400">&rarr;</span>
-        <div class="timeline-step ${isServiceInProgress ? 'done' : 'future'}">${t('status_approved')}</div>
-        <span class="timeline-arrow text-slate-400">&rarr;</span>
-        <div class="timeline-step ${isDeliveredAndPaid ? 'done' : (req.status === 'awaiting_verification' ? 'active' : 'future')}">${t('fd_proof_verifications_title')}</div>
-        <span class="timeline-arrow text-slate-400">&rarr;</span>
-        <div class="timeline-step ${isCompleted ? 'done' : 'future'}">${t('status_completed')}</div>
-      </div>`;
+    let timelineHtml = '';
+    if (isFulfilledByFamily) {
+      timelineHtml = `
+        <div class="mt-4 p-3.5 sm:p-4 rounded-2xl bg-slate-50/80 border border-slate-200/80">
+          <div class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 mb-2.5 flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            <span>Fulfillment Progress</span>
+          </div>
+          <div class="flex items-center justify-between gap-1.5 text-xs">
+            <div class="flex items-center gap-1.5 font-bold text-emerald-700">
+              <span class="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-[10px] font-black shadow-2xs">✓</span>
+              <span>Requested</span>
+            </div>
+            <div class="h-0.5 flex-1 bg-emerald-300 mx-1"></div>
+            <div class="flex items-center gap-1.5 font-bold text-emerald-700">
+              <span class="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-[10px] font-black shadow-2xs">✓</span>
+              <span>Fulfilled Personally</span>
+            </div>
+            <div class="h-0.5 flex-1 bg-emerald-300 mx-1"></div>
+            <div class="flex items-center gap-1.5 font-extrabold text-emerald-800">
+              <span class="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[10px] font-black shadow-2xs">✓</span>
+              <span>Completed</span>
+            </div>
+          </div>
+        </div>`;
+    } else {
+      const steps = [
+        { label: 'Requested', done: true, current: false },
+        { label: 'Assigned', done: isVolAssigned, current: req.status === 'awaiting_approval' },
+        { label: 'Funded', done: isPurchaseFunded, current: req.status === 'purchase_cost_submitted' },
+        { label: 'Delivered', done: isDeliveredAndPaid, current: req.status === 'awaiting_verification' },
+        { label: 'Completed', done: isCompleted, current: false }
+      ];
+
+      const stepsHtml = steps.map((s, idx) => {
+        let nodeClass = 'bg-slate-100 text-slate-400 border border-slate-200';
+        let textClass = 'text-slate-400 font-medium';
+        let icon = `${idx + 1}`;
+
+        if (s.done) {
+          nodeClass = 'bg-emerald-600 text-white shadow-2xs';
+          textClass = 'text-emerald-800 font-bold';
+          icon = '✓';
+        } else if (s.current) {
+          nodeClass = 'bg-amber-500 text-white ring-4 ring-amber-100 shadow-2xs animate-pulse';
+          textClass = 'text-amber-800 font-extrabold';
+        }
+
+        const connector = idx < steps.length - 1 ? `
+          <div class="h-0.5 flex-1 mx-1 transition-colors ${s.done && steps[idx + 1].done ? 'bg-emerald-500' : (s.done ? 'bg-emerald-200' : 'bg-slate-200')}"></div>
+        ` : '';
+
+        return `
+          <div class="flex items-center flex-1 last:flex-initial">
+            <div class="flex items-center gap-1.5">
+              <span class="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black flex-shrink-0 ${nodeClass}">
+                ${icon}
+              </span>
+              <span class="text-[11px] sm:text-xs whitespace-nowrap ${textClass}">${s.label}</span>
+            </div>
+            ${connector}
+          </div>
+        `;
+      }).join('');
+
+      timelineHtml = `
+        <div class="mt-4 p-3.5 sm:p-4 rounded-2xl bg-slate-50/90 border border-slate-200/80">
+          <div class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 mb-2.5 flex items-center justify-between">
+            <span class="flex items-center gap-1.5">
+              <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 010 3.75H5.625a1.875 1.875 0 010-3.75z"/></svg>
+              Task Progress Lifecycle
+            </span>
+            <span class="text-slate-500 font-bold capitalize text-[11px]">${req.status.replace(/_/g, ' ')}</span>
+          </div>
+          <div class="flex items-center justify-between overflow-x-auto pt-1 pb-0.5 gap-1">
+            ${stepsHtml}
+          </div>
+        </div>`;
+    }
 
     let volunteerInfo = '';
     if (req.volunteer && (req.status === 'accepted' || req.status === 'completed' || req.status === 'awaiting_approval')) {
@@ -1771,7 +2097,7 @@ function renderAllRequests(requests) {
         <div class="mt-3 p-3.5 rounded-2xl bg-slate-50/80 border border-slate-200/70 space-y-1">
           <div class="flex justify-between items-center flex-wrap gap-2">
             <span class="text-xs font-bold text-slate-900">${t('fd_approved_volunteer')}: <strong class="text-brand-800">${escapeHTML(vName)}</strong></span>
-            ${vId ? `<button type="button" onclick="viewVolunteerProfile('${volId}')" class="px-2.5 py-0.5 bg-white hover:bg-brand-50 text-brand-700 border border-brand-200 rounded-lg text-[10px] font-bold transition-all">${t('btn_view_profile')}</button>` : ''}
+            ${vId ? `<button type="button" onclick="viewVolunteerProfile('${vId}')" class="px-2.5 py-0.5 bg-white hover:bg-brand-50 text-brand-700 border border-brand-200 rounded-lg text-[10px] font-bold transition-all">${t('btn_view_profile')}</button>` : ''}
           </div>
           <p class="text-xs text-slate-600 font-medium">${t('fd_quoted_service_charge') || 'Quoted Fee'}: <strong class="text-emerald-700">${feeLabel}</strong></p>
           ${req.status !== 'awaiting_approval' && typeof volObj === 'object' ? `<p class="text-xs text-slate-500 font-medium">Contact: ${escapeHTML(volObj.phone || '—')}</p>` : ''}
@@ -1855,7 +2181,7 @@ function renderAllRequests(requests) {
           </div>` : ''}
 
         ${proofHtml}
-        ${timeline}
+        ${timelineHtml}
         ${volunteerInfo}
         ${totalSpentHtml}
       </div>`;
@@ -2064,45 +2390,6 @@ async function doRejectVolunteer(requestId, reason) {
 }
 
 // ──────────────────────────────────────────────────────────
-// TOAST NOTIFICATION HELPER
-// ──────────────────────────────────────────────────────────
-function showToast(message, type = 'info') {
-  const existing = document.getElementById('familyToast');
-  if (existing) existing.remove();
-
-  const colors = {
-    success: { bg: '#e8f5e9', border: 'var(--color-primary)', text: 'var(--color-primary-dark)' },
-    error:   { bg: '#ffebee', border: 'var(--color-emergency)', text: 'var(--color-emergency)' },
-    info:    { bg: '#e3f2fd', border: '#1976d2', text: '#0d47a1' }
-  };
-
-  const c = colors[type] || colors.info;
-  const toast = document.createElement('div');
-  toast.id = 'familyToast';
-  toast.style.cssText = `
-    position: fixed;
-    bottom: 2rem;
-    left: 50%;
-    transform: translateX(-50%);
-    background: ${c.bg};
-    border: 3px solid ${c.border};
-    color: ${c.text};
-    padding: 1rem 2rem;
-    border-radius: 12px;
-    font-size: 1.1rem;
-    font-weight: 600;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.15);
-    z-index: 9999;
-    max-width: 90vw;
-    text-align: center;
-    animation: fadeInUp 0.3s ease-out;
-  `;
-  toast.textContent = message;
-  document.body.appendChild(toast);
-  setTimeout(() => toast.remove(), 5000);
-}
-
-// ──────────────────────────────────────────────────────────
 // UTILITY: escapeHTML (also available from api.js but included here for safety)
 // ──────────────────────────────────────────────────────────
 function escapeHTML(str) {
@@ -2199,3 +2486,61 @@ function closeImageLightbox() {
   const modal = document.getElementById('imageLightboxModal');
   if (modal) modal.style.display = 'none';
 }
+
+// ──────────────────────────────────────────────────────────
+// CAREGIVER DASHBOARD TAB SWITCHER
+// ──────────────────────────────────────────────────────────
+window.currentFamilyTab = 'requests';
+
+window.switchFamilyTab = function(tab) {
+  window.currentFamilyTab = tab;
+  const tabs = ['requests', 'approvals', 'verifications', 'history'];
+  const tabBtnIds = { requests: 'tabBtnRequests', approvals: 'tabBtnApprovals', verifications: 'tabBtnVerifications', history: 'tabBtnHistory' };
+  const paneIds = { requests: 'tabPaneRequests', approvals: 'tabPaneApprovals', verifications: 'tabPaneVerifications', history: 'tabPaneHistory' };
+  const badgeIds = { requests: 'countFamilyRequests', approvals: 'countFamilyApprovals', verifications: 'countFamilyVerifications', history: 'countFamilyHistory' };
+
+  tabs.forEach(t => {
+    const btn = document.getElementById(tabBtnIds[t]);
+    const pane = document.getElementById(paneIds[t]);
+    const badge = document.getElementById(badgeIds[t]);
+    const isActive = (t === tab);
+
+    if (btn) {
+      if (isActive) {
+        btn.className = "w-full p-3.5 rounded-2xl transition-all duration-150 flex items-center justify-between gap-3 text-left cursor-pointer border-2 bg-brand-50/90 border-brand-500 shadow-xs ring-2 ring-brand-100/50";
+        btn.setAttribute('aria-selected', 'true');
+        const titleSpan = btn.querySelector('span.text-sm');
+        if (titleSpan) {
+          titleSpan.className = "text-sm font-extrabold text-brand-950 block leading-tight truncate";
+        }
+      } else {
+        btn.className = "w-full p-3.5 rounded-2xl transition-all duration-150 flex items-center justify-between gap-3 text-left cursor-pointer border bg-white hover:bg-slate-50 border-slate-200/80 shadow-2xs";
+        btn.setAttribute('aria-selected', 'false');
+        const titleSpan = btn.querySelector('span.text-sm');
+        if (titleSpan) {
+          titleSpan.className = "text-sm font-bold text-slate-800 block leading-tight truncate";
+        }
+      }
+
+      if (badge) {
+        const count = parseInt(badge.textContent, 10) || 0;
+        const actionNeeded = badge.dataset.actionNeeded === "true";
+        const isHistory = badge.dataset.isHistory === "true" || t === 'history';
+
+        if (isHistory) {
+          badge.className = "bg-slate-100 text-slate-700 text-xs font-extrabold px-2.5 py-0.5 rounded-full border border-slate-200/80 flex-shrink-0";
+        } else if (actionNeeded && count > 0) {
+          badge.className = "bg-brand-600 text-white text-xs font-extrabold px-2.5 py-0.5 rounded-full shadow-xs badge-blink-active flex-shrink-0";
+        } else if (count > 0) {
+          badge.className = "bg-slate-100 text-slate-700 text-xs font-extrabold px-2.5 py-0.5 rounded-full border border-slate-200/80 flex-shrink-0";
+        } else {
+          badge.className = "bg-slate-100 text-slate-400 text-xs font-bold px-2.5 py-0.5 rounded-full flex-shrink-0";
+        }
+      }
+    }
+
+    if (pane) {
+      pane.style.display = isActive ? 'block' : 'none';
+    }
+  });
+};

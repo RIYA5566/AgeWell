@@ -203,14 +203,8 @@
         </a>
       </div>
 
-      <!-- Text Sizing and Accessibility Panel (Auto-injected language switcher is attached here) -->
-      <div class="accessibility-panel flex flex-wrap items-center gap-2 bg-slate-50 rounded-2xl p-1.5 border border-slate-200/70 text-xs" role="region" aria-label="Accessibility Sizing Controls">
-        <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider px-1.5" data-i18n="nav_text_size">Text Size</span>
-        <button id="btnTextDecrease" class="bg-white hover:bg-slate-100 text-slate-700 font-bold w-8 h-8 rounded-xl border border-slate-200 transition-all flex items-center justify-center text-xs active:scale-95 shadow-xs" aria-label="Make text smaller">-A</button>
-        <button id="btnTextReset" class="bg-white hover:bg-slate-100 text-slate-700 font-semibold px-2.5 h-8 rounded-xl border border-slate-200 transition-all flex items-center justify-center text-xs active:scale-95 shadow-xs" aria-label="Reset text size to normal" data-i18n="nav_reset">Reset</button>
-        <button id="btnTextIncrease" class="bg-white hover:bg-slate-100 text-slate-700 font-bold w-8 h-8 rounded-xl border border-slate-200 transition-all flex items-center justify-center text-xs active:scale-95 shadow-xs" aria-label="Make text larger">+A</button>
-        <span id="fontSizeIndicator" class="bg-brand-600 text-white font-bold px-2 py-1 rounded-lg text-[11px] shadow-xs ml-0.5">18px</span>
-      </div>
+      <!-- Language Switcher Container -->
+      <div class="accessibility-panel flex flex-wrap items-center gap-2 bg-slate-50 rounded-2xl p-1.5 border border-slate-200/70 text-xs" role="region" aria-label="Language Controls"></div>
 
       <!-- User Nav info and Logout -->
       <div class="flex items-center gap-3">
@@ -229,7 +223,7 @@
   </nav>
 
   <!-- Main Content -->
-  <main id="mainContent" class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 pt-0 pb-8">
+  <main id="mainContent" class="max-w-7xl w-full mx-auto px-4 sm:px-6 pt-0 pb-3">
     
     <!-- Top Welcome Greeting Hero Bar -->
     <section class="bg-gradient-to-r from-brand-900 via-brand-700 to-brand-600 rounded-3xl p-6 sm:p-7 text-white shadow-premium relative overflow-hidden flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 -mt-[2mm] mb-6" id="welcomeBar" aria-label="Welcome Banner">
@@ -297,7 +291,9 @@
               <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block">Step 1: ID Document</span>
               <strong id="unverifiedStepGovtIdText" class="text-xs font-extrabold text-slate-800 block">Pending Upload</strong>
             </div>
-            <span id="unverifiedStepGovtIdIcon" class="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center flex-shrink-0 font-bold text-xs">⏳</span>
+            <span id="unverifiedStepGovtIdIcon" class="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center flex-shrink-0 font-bold text-xs">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </span>
           </div>
 
           <!-- Step 2: Live Selfie Photo -->
@@ -306,7 +302,9 @@
               <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block">Step 2: Live Selfie</span>
               <strong id="unverifiedStepSelfieText" class="text-xs font-extrabold text-slate-800 block">Pending Upload</strong>
             </div>
-            <span id="unverifiedStepSelfieIcon" class="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center flex-shrink-0 font-bold text-xs">⏳</span>
+            <span id="unverifiedStepSelfieIcon" class="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center flex-shrink-0 font-bold text-xs">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </span>
           </div>
 
           <!-- Step 3: Contact Channels -->
@@ -315,7 +313,9 @@
               <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block">Step 3: Contact Channels</span>
               <strong id="unverifiedStepContactText" class="text-xs font-extrabold text-emerald-700 block">Phone &amp; Email Verified</strong>
             </div>
-            <span class="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center flex-shrink-0 font-bold text-xs">✓</span>
+            <span class="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center flex-shrink-0 font-bold text-xs">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
+            </span>
           </div>
 
           <!-- Step 4: Police Clearance -->
@@ -324,7 +324,9 @@
               <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block">Step 4: Background</span>
               <strong id="unverifiedStepPoliceText" class="text-xs font-extrabold text-amber-700 block">Admin Review</strong>
             </div>
-            <span id="unverifiedStepPoliceIcon" class="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center flex-shrink-0 font-bold text-xs">⏳</span>
+            <span id="unverifiedStepPoliceIcon" class="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center flex-shrink-0 font-bold text-xs">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </span>
           </div>
         </div>
 
@@ -458,7 +460,7 @@
                   <span class="text-[11px] text-slate-500 font-medium block truncate mt-0.5">Open elder help opportunities</span>
                 </div>
               </div>
-              <span id="countPending" class="bg-brand-600 text-white text-xs font-extrabold px-2.5 py-0.5 rounded-full shadow-2xs flex-shrink-0">0</span>
+              <span id="countPending" class="bg-slate-100 text-slate-400 text-xs font-bold px-2.5 py-0.5 rounded-full flex-shrink-0">0</span>
             </button>
 
             <!-- 2. Active Tasks -->
@@ -1306,12 +1308,12 @@
   </main>
 
   <!-- Global Footer -->
-  <footer class="max-w-7xl mx-auto px-6 py-8 mt-auto border-t border-slate-200/80 w-full text-center">
-    <p class="text-xs font-semibold text-slate-400" data-i18n="footer_text">&copy; 2026 AgeWell Platform. Designed with care for Senior Citizens, Volunteers, and Administrators.</p>
+  <footer class="global-footer w-full text-center mt-4 py-6 px-4 bg-[#0b3d70] text-white">
+    <p class="text-xs sm:text-sm font-semibold text-white/90" data-i18n="footer_text">&copy; 2026 AgeWell Platform. Designed with care for Senior Citizens, Volunteers, and Admins.</p>
   </footer>
 
   <!-- Scripts -->
-  <script src="/js/api.js?v=325"></script>
-  <script src="/js/volunteer.js?v=325"></script>
+  <script src="/js/api.js?v=363"></script>
+  <script src="/js/volunteer.js?v=363"></script>
 </body>
 </html>

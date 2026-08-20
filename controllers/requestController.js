@@ -15,7 +15,7 @@ const seniorHasFamily = async (seniorId) => {
 exports.createRequest = async (req, res) => {
   try {
     const { title, description, category, urgency, transcript, aiConfidenceScore, aiLowConfidence, shoppingPreference } = req.body;
-    const audioFile = req.file ? `/uploads/audio/${req.file.filename}` : '';
+    const audioFile = req.file?.cloudinaryUrl || '';
 
     // Ensure at least some content was provided
     const hasCategory = category && category !== 'Other';
