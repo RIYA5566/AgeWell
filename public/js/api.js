@@ -176,25 +176,33 @@ document.addEventListener('DOMContentLoaded', () => {
       langWrapper.style.cssText = 'display: inline-flex; gap: 8px; align-items: center;';
     }
     
-    // Hindi/Marathi translation labels for the label itself
+    // Globe icon indicator for language switcher
     const labelSpan = document.createElement('span');
     labelSpan.setAttribute('data-i18n', 'nav_language_label');
-    labelSpan.style.cssText = 'font-size: 0.95rem; font-weight: bold; margin-right: 4px;';
-    labelSpan.textContent = 'Lang:';
+    labelSpan.setAttribute('title', 'Language');
+    labelSpan.setAttribute('aria-label', 'Language');
+    labelSpan.style.cssText = 'display: inline-flex; align-items: center; justify-content: center; margin-right: 2px; color: #475569;';
+    labelSpan.innerHTML = '<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true" style="vertical-align: middle; display: inline-block;"><circle cx="12" cy="12" r="9" /><path stroke-linecap="round" stroke-linejoin="round" d="M3.6 9h16.8M3.6 15h16.8" /><path stroke-linecap="round" stroke-linejoin="round" d="M11.5 3a17 17 0 000 18M12.5 3a17 17 0 010 18" /></svg>';
     
     const btnEn = document.createElement('button');
     btnEn.id = 'langBtnEn';
-    btnEn.textContent = 'EN';
+    btnEn.setAttribute('title', 'English');
+    btnEn.setAttribute('aria-label', 'English');
+    btnEn.innerHTML = '<span style="font-weight: 900; font-size: 11px; letter-spacing: -0.02em;">EN</span>';
     btnEn.onclick = () => setLang('en');
     
     const btnHi = document.createElement('button');
     btnHi.id = 'langBtnHi';
-    btnHi.textContent = 'हि';
+    btnHi.setAttribute('title', 'हिन्दी (Hindi)');
+    btnHi.setAttribute('aria-label', 'Hindi');
+    btnHi.innerHTML = '<span style="font-weight: 900; font-size: 13px;">अ</span>';
     btnHi.onclick = () => setLang('hi');
     
     const btnMr = document.createElement('button');
     btnMr.id = 'langBtnMr';
-    btnMr.textContent = 'म';
+    btnMr.setAttribute('title', 'मराठी (Marathi)');
+    btnMr.setAttribute('aria-label', 'Marathi');
+    btnMr.innerHTML = '<span style="font-weight: 900; font-size: 13px;">म</span>';
     btnMr.onclick = () => setLang('mr');
 
     langWrapper.appendChild(labelSpan);
@@ -249,6 +257,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Global Toast Notification Helper
 function showToast(message, type = 'info') {
+  if (!message) return;
+  // Deduplicate identical toast messages within 1.5s
+  if (window._recentToastMsg === message && (Date.now() - (window._recentToastTime || 0)) < 1500) {
+    return;
+  }
+  window._recentToastMsg = message;
+  window._recentToastTime = Date.now();
+
   let container = document.getElementById('agewellToastContainer');
   if (!container) {
     container = document.createElement('div');

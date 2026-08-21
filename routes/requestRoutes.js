@@ -94,8 +94,11 @@ const {
   familyRejectRequest,
   verifyCompletionByFamily,
   verifyCompletionBySeniorVoice,
+  verifyCompletionBySenior,
+  prepayServiceFee,
   submitFeedback,
-  payVolunteerTip
+  payVolunteerTip,
+  volunteerPayPurchase
 } = require('../controllers/requestController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
@@ -162,6 +165,7 @@ router.route('/:id')
 
 // Volunteer 11-step escrow workflow
 router.put('/:id/accept', authorize('volunteer'), acceptRequest);
+router.post('/:id/volunteer-pay-purchase', authorize('volunteer'), handleProofUpload, volunteerPayPurchase);
 router.put('/:id/submit-purchase-cost', authorize('volunteer'), handleProofUpload, submitPurchaseCost);
 router.put('/:id/complete', authorize('volunteer', 'admin'), handleProofUpload, completeRequest);
 
@@ -172,9 +176,11 @@ router.put('/:id/reject-purchase-cost', authorize('family'), rejectPurchaseCost)
 router.put('/:id/family-fulfill', authorize('family'), familyFulfillSelf);
 router.put('/:id/family-reject', authorize('family'), familyRejectRequest);
 
-// Task Completion Verification Workflow (Family Caregiver & Senior Voice IVR Call)
+// Task Completion Verification Workflow (Family Caregiver, Senior & Voice IVR)
 router.put('/:id/verify-completion-family', authorize('family'), verifyCompletionByFamily);
 router.put('/:id/verify-completion-voice', authorize('senior', 'admin'), verifyCompletionBySeniorVoice);
+router.put('/:id/verify-completion-senior', authorize('senior'), verifyCompletionBySenior);
+router.put('/:id/prepay-service-fee', authorize('family'), prepayServiceFee);
 router.put('/:id/pay-tip', authorize('family'), payVolunteerTip);
 
 // Volunteer Feedback Submission Workflow

@@ -169,15 +169,6 @@ const serviceMapping = [
       "chat","whatsapp","zoom","meet"
     ],
     platforms: ["WhatsApp", "Google Meet", "Zoom"]
-  },
-  {
-    category: "Companionship",
-    keywords: [
-      "lonely","talk","conversation",
-      "visit me","company","friend",
-      "walk together"
-    ],
-    platforms: ["Assign Volunteer", "Notify Family"]
   }
 ];
 
@@ -202,7 +193,7 @@ const CATEGORY_DEFAULT_QUERIES = {
   "Travel Booking": "train ticket",
   "Entertainment": "movie tickets",
   "Communication": "whatsapp",
-  "Companionship": "volunteer"
+  "Companionship": "companionship conversation"
 };
 
 // Map platform names to metadata (Icon, Color, and Pre-filled URL Generator)
@@ -259,6 +250,11 @@ const PLATFORM_DETAILS = {
   "WhatsApp": { icon: "💬", color: "#25d366", getUrl: q => `https://web.whatsapp.com/` },
   "Google Meet": { icon: "📹", color: "#00897b", getUrl: q => `https://meet.google.com/` },
   "Zoom": { icon: "🎥", color: "#2d8cff", getUrl: q => `https://zoom.us/` },
+  "ElliQ": { icon: "🤖", color: "#7c3aed", bestFor: "Senior companionship", suitability: "High", getUrl: q => `https://elliq.com/` },
+  "Pi": { icon: "🌿", color: "#059669", bestFor: "Casual/emotional conversation", suitability: "High", getUrl: q => `https://pi.ai/` },
+  "ChatGPT": { icon: "✨", color: "#10a37f", bestFor: "Conversation + assistance", suitability: "High", getUrl: q => `https://chatgpt.com/` },
+  "Replika": { icon: "🤍", color: "#3b82f6", bestFor: "Personalized companionship", suitability: "Medium", getUrl: q => `https://replika.ai/` },
+  "Character.AI": { icon: "🎭", color: "#ea580c", bestFor: "Entertainment", suitability: "Medium", getUrl: q => `https://character.ai/` },
   "Assign Volunteer": { icon: "🤝", color: "#2e7d32", getUrl: q => `#` },
   "Notify Family": { icon: "❤️", color: "#c2185b", getUrl: q => `#` }
 };
@@ -343,6 +339,15 @@ function extractItemsQuery(text) {
  * Recommend platforms and pre-filled search links matching the Service Mapping Dataset
  */
 function recommendPlatforms({ title = '', description = '', transcript = '', category = 'Other' }) {
+  // Companionship is purely human/volunteer oriented - do not recommend AI platforms
+  if (category === 'Companionship') {
+    return {
+      categoryName: 'Companionship',
+      extractedItems: '',
+      suggestedPlatforms: []
+    };
+  }
+
   // Strip 'help request' boilerplate from text BEFORE matching category
   let cleanedText = `${title} ${description} ${transcript}`.toLowerCase();
   cleanedText = cleanedText.replace(/help request\s*[-–—]?\s*\d{1,2}\s+\w+\s+\d{4}/gi, ' ')
@@ -409,6 +414,8 @@ function recommendPlatforms({ title = '', description = '', transcript = '', cat
     const detail = PLATFORM_DETAILS[pName] || {
       icon: "🚀",
       color: "#1976d2",
+      bestFor: "",
+      suitability: "High",
       getUrl: q => `https://www.google.com/search?q=${encodeURIComponent(pName + ' ' + q)}`
     };
 
@@ -417,6 +424,8 @@ function recommendPlatforms({ title = '', description = '', transcript = '', cat
       category: matchedCategoryObj.category,
       icon: detail.icon,
       color: detail.color,
+      bestFor: detail.bestFor || '',
+      suitability: detail.suitability || 'High',
       searchQuery: extractedQuery,
       url: detail.getUrl(extractedQuery)
     };

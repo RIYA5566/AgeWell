@@ -13,6 +13,65 @@ function closeCompletionModal() {
 function openCompletionModal(id) {
   activeRequestIdForCompletion = id;
   const modal = document.getElementById('completionModal');
+  const attachedContainer = document.getElementById('attachedDocsContainer');
+  const attachedList = document.getElementById('attachedDocsList');
+  const attachedCount = document.getElementById('attachedDocsCount');
+  const notesEl = document.getElementById('resolutionNotes');
+
+  const req = (window.allVolunteerRequestsMap && window.allVolunteerRequestsMap[id]);
+
+  if (attachedContainer && attachedList) {
+    const purchases = (req && req.merchantPurchases && req.merchantPurchases.length > 0) ? req.merchantPurchases : [];
+    const extraDocs = (req && req.purchaseProofDocs && req.purchaseProofDocs.length > 0) ? req.purchaseProofDocs : [];
+
+    if (purchases.length > 0 || extraDocs.length > 0) {
+      attachedContainer.style.display = 'block';
+      if (attachedCount) attachedCount.textContent = `${purchases.length || extraDocs.length} Attached`;
+
+      let html = '';
+      if (purchases.length > 0) {
+        purchases.forEach((p, idx) => {
+          html += `
+            <div class="p-2 bg-white rounded-xl border border-emerald-100 flex items-center justify-between text-xs gap-2">
+              <div class="flex items-center gap-2 min-w-0">
+                <span class="w-6 h-6 rounded-lg bg-emerald-100 text-emerald-700 font-extrabold flex items-center justify-center text-[10px] flex-shrink-0">#${idx + 1}</span>
+                <div class="truncate">
+                  <span class="font-extrabold text-slate-900 block truncate">${p.merchant || 'Store'} — ₹${p.amount}</span>
+                  <span class="text-[10px] text-slate-500 font-medium block truncate">${p.itemName ? 'Item: ' + p.itemName : 'Paid via ' + (p.paymentDestinationType || 'Escrow')}</span>
+                </div>
+              </div>
+              <div class="flex items-center gap-1.5 flex-shrink-0">
+                ${p.receiptDoc ? `
+                  <button type="button" onclick="event.stopPropagation(); openImageLightbox('${normalizeDocUrl(p.receiptDoc)}')" class="px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-[11px] font-extrabold rounded-xl transition-all cursor-pointer inline-flex items-center gap-1.5 border border-emerald-300 shadow-2xs">
+                    <svg class="w-3.5 h-3.5 text-emerald-700 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                    <span>View Bill</span>
+                  </button>
+                ` : (p.noReceiptReason ? `
+                  <span class="text-[10px] text-slate-500 font-semibold bg-slate-100 px-2 py-1 rounded-lg">No Bill (${p.noReceiptReason})</span>
+                ` : `<span class="text-[10px] text-slate-400 font-bold italic">No file needed</span>`)}
+              </div>
+            </div>
+          `;
+        });
+      } else if (extraDocs.length > 0) {
+        extraDocs.forEach((doc, idx) => {
+          html += `
+            <div class="p-2 bg-white rounded-xl border border-emerald-100 flex items-center justify-between text-xs">
+              <span class="font-bold text-slate-800">Attached Document #${idx + 1}</span>
+              <button type="button" onclick="event.stopPropagation(); openImageLightbox('${normalizeDocUrl(doc)}')" class="px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-[11px] font-extrabold rounded-xl transition-all cursor-pointer inline-flex items-center gap-1.5 border border-emerald-300 shadow-2xs">
+                <svg class="w-3.5 h-3.5 text-emerald-700 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                <span>View Proof</span>
+              </button>
+            </div>
+          `;
+        });
+      }
+      attachedList.innerHTML = html;
+    } else {
+      attachedContainer.style.display = 'none';
+    }
+  }
+
   if (modal) modal.style.display = 'flex';
 }
 
@@ -66,7 +125,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   // Load requests
-  loadVolunteerRequests();
+  await loadVolunteerRequests();
+
+  // Support ?tab= URL param (e.g. ?tab=active)
+  const urlParams = new URLSearchParams(window.location.search);
+  const qTab = urlParams.get('tab');
+  if (qTab && ['pending', 'active', 'awaiting', 'history'].includes(qTab)) {
+    switchTaskTab(qTab);
+  }
 
   // Load earnings wallet
   loadVolunteerEarnings();
@@ -480,7 +546,7 @@ function renderKycStatus(user) {
 }
 
 // Volunteer opens quote modal to accept request and specify service charge
-function acceptHelpRequest(id, title, pref = '') {
+function acceptHelpRequest(id, title, pref = '', allowedBudget = null) {
   const user = JSON.parse(localStorage.getItem('user'));
   if (user && user.verificationStatus !== 'verified') {
     showToast('Verification Clearance Required: You must complete KYC document submission and receive Admin & Police clearance before accepting requests.', 'error');
@@ -497,16 +563,22 @@ function acceptHelpRequest(id, title, pref = '') {
 
   const prefContainer = document.getElementById('quoteModalPrefContainer');
   const prefText = document.getElementById('quoteModalPrefText');
+  const budgetContainer = document.getElementById('quoteModalBudgetContainer');
+  const budgetText = document.getElementById('quoteModalBudgetText');
 
   if (titleEl && title) titleEl.textContent = title;
   if (feeInput) feeInput.value = '';
   if (notesInput) notesInput.value = '';
 
-  if (pref && pref.trim()) {
-    if (prefText) prefText.textContent = pref.trim();
-    if (prefContainer) prefContainer.style.display = 'block';
-  } else {
-    if (prefContainer) prefContainer.style.display = 'none';
+  const hasPref = (pref && pref.trim() && pref !== 'No Preference');
+  const hasBudget = (allowedBudget !== null && allowedBudget !== undefined && !isNaN(Number(allowedBudget)) && Number(allowedBudget) > 0);
+
+  if (prefText) prefText.textContent = hasPref ? pref.trim() : 'No specific preference';
+  if (budgetText) budgetText.textContent = hasBudget ? `₹${allowedBudget}` : '';
+  if (budgetContainer) budgetContainer.style.display = hasBudget ? 'flex' : 'none';
+
+  if (prefContainer) {
+    prefContainer.style.display = (hasPref || hasBudget) ? 'block' : 'none';
   }
 
   if (modal) modal.style.display = 'flex';
@@ -544,6 +616,12 @@ async function loadVolunteerRequests(silent = false) {
 
   if (res.ok && res.data.success) {
     const requests = res.data.requests;
+    window.allVolunteerRequestsMap = {};
+    if (requests && requests.length > 0) {
+      requests.forEach(r => {
+        if (r && r._id) window.allVolunteerRequestsMap[r._id] = r;
+      });
+    }
     const userStr = localStorage.getItem('user');
     let currentUserId = '';
     if (userStr) {
@@ -699,10 +777,41 @@ async function loadVolunteerRequests(silent = false) {
       }
     }
 
+    // Auto-switch to Active Tasks if volunteer has active tasks and 0 pending
+    if (!window.hasInitializedDefaultTab) {
+      window.hasInitializedDefaultTab = true;
+      const urlParams = new URLSearchParams(window.location.search);
+      const qTab = urlParams.get('tab');
+      if (qTab && ['pending', 'active', 'awaiting', 'history'].includes(qTab)) {
+        switchTaskTab(qTab);
+      } else if (activeRequests.length > 0 && pendingRequests.length === 0) {
+        switchTaskTab('active');
+      }
+    }
+
     // --- Render Available (Pending) Requests ---
     if (pendingList) {
+      const activeNoticeBanner = (activeRequests.length > 0)
+        ? `
+          <div class="mb-4 p-4 bg-emerald-50/90 border-2 border-emerald-300 rounded-3xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-2xl bg-emerald-100 border border-emerald-300 text-emerald-800 flex items-center justify-center flex-shrink-0 font-extrabold shadow-2xs">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              </div>
+              <div>
+                <span class="text-sm font-extrabold text-emerald-950 block">You have ${activeRequests.length} Active Assigned Task${activeRequests.length > 1 ? 's' : ''}!</span>
+                <span class="text-xs text-emerald-800 font-medium">Caregiver has approved and assigned ${activeRequests.map(r => `<strong>"${escapeHTML(r.title)}"</strong>`).join(', ')} to you.</span>
+              </div>
+            </div>
+            <button type="button" onclick="switchTaskTab('active')" class="w-full sm:w-auto px-4 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white font-extrabold text-xs rounded-xl shadow-xs transition-all active:scale-95 border-none cursor-pointer flex items-center justify-center gap-1.5 flex-shrink-0">
+              <span>Open Active Tasks (${activeRequests.length})</span>
+              <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/></svg>
+            </button>
+          </div>`
+        : '';
+
       if (pendingRequests.length === 0) {
-        pendingList.innerHTML = `
+        pendingList.innerHTML = activeNoticeBanner + `
           <div class="bg-brand-50/50 border-2 border-dashed border-brand-200 rounded-3xl p-8 text-center space-y-2">
             <div class="w-12 h-12 mx-auto rounded-2xl bg-brand-100/80 text-brand-700 flex items-center justify-center shadow-xs">
               <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
@@ -711,7 +820,7 @@ async function loadVolunteerRequests(silent = false) {
             <p class="text-xs font-semibold text-slate-500 max-w-md mx-auto">Check back later to support Senior Citizens in your neighborhood!</p>
           </div>`;
       } else {
-        pendingList.innerHTML = pendingRequests.map(req => {
+        pendingList.innerHTML = activeNoticeBanner + pendingRequests.map(req => {
           const urgencyBadge = req.urgency === 'emergency'
             ? `<span class="inline-flex items-center gap-1.5 px-3 py-1 bg-rose-50 text-rose-700 border border-rose-200/80 rounded-full text-xs font-extrabold tracking-wide shadow-2xs whitespace-nowrap">
                  <span class="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping"></span>
@@ -729,6 +838,7 @@ async function loadVolunteerRequests(silent = false) {
           const categoryBadge = getCategoryBadgeHtml(req.category);
           const voiceNoteHtml = getVoiceNotePlayerHtml(req.audioFile);
           const prefHtml = getShoppingPreferenceHtml(req.shoppingPreference);
+          const budgetHtml = getAllowedBudgetHtml(req.allowedBudget, req.fundingMode);
 
           let existingQuoteBadge = '';
           let myQuote = null;
@@ -796,6 +906,7 @@ async function loadVolunteerRequests(silent = false) {
 
               ${voiceNoteHtml}
               ${prefHtml}
+              ${budgetHtml}
               ${existingQuoteBadge}
               ${renderPlatformHelperHtml(req)}
 
@@ -807,7 +918,7 @@ async function loadVolunteerRequests(silent = false) {
                 </div>
                 <button
                   type="button"
-                  onclick="acceptHelpRequest('${req._id}', '${escapeHTML(req.title).replace(/'/g, "\\'")}', '${escapeHTML(req.shoppingPreference || 'No Preference').replace(/'/g, "\\'")}')"
+                  onclick="acceptHelpRequest('${req._id}', '${escapeHTML(req.title).replace(/'/g, "\\'")}', '${escapeHTML(req.shoppingPreference || 'No Preference').replace(/'/g, "\\'")}', ${req.allowedBudget || 'null'})"
                   class="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-brand-600 to-brand-700 hover:from-brand-700 hover:to-brand-800 text-white font-extrabold text-xs sm:text-sm rounded-2xl shadow-sm hover:shadow-md transition-all active:scale-95 border-none cursor-pointer"
                 >
                   <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
@@ -834,6 +945,7 @@ async function loadVolunteerRequests(silent = false) {
         awaitingList.innerHTML = awaitingRequests.map(req => {
           const categoryBadge = getCategoryBadgeHtml(req.category);
           const prefHtml = getShoppingPreferenceHtml(req.shoppingPreference);
+          const budgetHtml = getAllowedBudgetHtml(req.allowedBudget, req.fundingMode);
           const voiceNoteHtml = getVoiceNotePlayerHtml(req.audioFile);
 
           let quotedFee = 0;
@@ -881,6 +993,7 @@ async function loadVolunteerRequests(silent = false) {
               ${req.description ? `<div class="text-sm font-medium text-slate-700 leading-relaxed mb-4 bg-slate-50/70 rounded-2xl p-3.5 border border-slate-100">${escapeHTML(req.description)}</div>` : ''}
               ${voiceNoteHtml}
               ${prefHtml}
+              ${budgetHtml}
 
               <!-- Your Quoted Fee Strip -->
               <div class="flex items-center justify-between p-3.5 bg-gradient-to-r from-amber-50/80 via-amber-50/50 to-orange-50/40 border border-amber-200/90 rounded-2xl mb-4 shadow-2xs">
@@ -967,52 +1080,261 @@ async function loadVolunteerRequests(silent = false) {
           let stepBoxHtml = '';
           let actionBtnHtml = '';
 
-          if (req.status === 'accepted') {
-            stepBoxHtml = `
-              <div class="mb-4 p-3.5 bg-brand-50/70 border border-brand-200/80 rounded-2xl text-xs text-brand-950 font-medium">
-                <strong>Next Step:</strong> Review items requested, order/purchase from recommended store, then submit the actual store receipt cost.
-              </div>`;
-            actionBtnHtml = `
-              <button class="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs sm:text-sm rounded-2xl shadow-xs transition-all active:scale-95 border-none cursor-pointer" onclick="openPurchaseCostModal('${req._id}')">
-                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
-                <span>Submit Purchase Cost &amp; Bill</span>
-              </button>`;
+          // ── Proof Hierarchy: derive which flow this task follows ──────────────
+          const proofType = req.taskProofType || (
+            req.category === 'Grocery Shopping' ? 'financial' :
+            (req.category === 'Tech Support' || req.category === 'Housekeeping' || req.category === 'Companionship') ? 'service_only' : 'mixed'
+          );
+          const isServiceOnly = proofType === 'service_only';
+          const isFinancial   = proofType === 'financial';
+          const isMixed       = proofType === 'mixed';
+
+          // Proof type badge for task card header context
+          const proofBadge = isServiceOnly
+            ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-xl text-[10px] font-bold bg-teal-50 text-teal-800 border border-teal-200">✓ Service Task</span>`
+            : isFinancial
+              ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-xl text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200">🧾 Bill Required</span>`
+              : `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-xl text-[10px] font-bold bg-blue-50 text-blue-800 border border-blue-200">❓ Purchase Optional</span>`;
+
+          if (isServiceOnly) {
+            // ── SERVICE-ONLY: ALWAYS pure service UI (no bill, no merchant payment, no budget) ──
+            if (req.status === 'awaiting_verification') {
+              stepBoxHtml = `
+                <div class="mb-4 p-3.5 bg-teal-50/80 border border-teal-200/80 rounded-2xl text-xs text-teal-950 font-medium">
+                  <strong>Task Completion Awaiting Confirmation</strong><br/>
+                  The senior or their caregiver will confirm that the service was performed to release your service charge.
+                </div>`;
+              actionBtnHtml = `
+                <div class="inline-flex items-center justify-center px-4 py-2.5 bg-teal-50 text-teal-800 border border-teal-200 rounded-2xl text-xs font-extrabold select-none">
+                  Awaiting Confirmation
+                </div>`;
+            } else {
+              stepBoxHtml = `
+                <div class="mb-4 p-3.5 bg-teal-50/70 border border-teal-200/80 rounded-2xl text-xs text-teal-950 font-medium">
+                  <strong>Service Task — No Purchase Required</strong><br/>
+                  Perform the requested service for the senior, then mark it as done. No bill or receipt needed.
+                </div>`;
+              actionBtnHtml = `
+                <button class="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs sm:text-sm rounded-2xl shadow-xs transition-all active:scale-95 border-none cursor-pointer" onclick="openMarkDoneModal('${req._id}', '${escapeHTML(req.title).replace(/'/g, "\\'")}', 'service_only')">
+                  <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                  <span>Mark Task Done</span>
+                </button>`;
+            }
+          } else if (req.status === 'accepted') {
+            if (req.fundingMode === 'pre_fund') {
+              // ── PRE-FUNDED: Volunteer can make direct merchant payments within assigned budget ──
+              const authorizedBudget = Number(req.allowedBudget || 0);
+              let totalSpent = 0;
+              if (req.merchantPurchases && req.merchantPurchases.length > 0) {
+                totalSpent = req.merchantPurchases.reduce((s, p) => s + (Number(p.amount) || 0), 0);
+              } else if (req.fundingMode !== 'pre_fund' && req.actualPurchaseCost && Number(req.actualPurchaseCost) > 0) {
+                totalSpent = Number(req.actualPurchaseCost);
+              }
+              const remainingBudget = authorizedBudget > 0 ? Math.max(0, authorizedBudget - totalSpent) : 0;
+
+              let purchasesHistoryHtml = '';
+              if (req.merchantPurchases && req.merchantPurchases.length > 0) {
+                purchasesHistoryHtml = `
+                  <div class="mt-2 pt-2 border-t border-emerald-200/80 space-y-1.5">
+                    <span class="text-[10px] font-extrabold text-emerald-950 uppercase tracking-wider block">Merchant Payments Made:</span>
+                    <div class="space-y-1">
+                      ${req.merchantPurchases.map(p => `
+                        <div class="flex items-center justify-between text-xs bg-white/90 px-3 py-1.5 rounded-xl border border-emerald-200">
+                          <span class="font-bold text-slate-800">✅ <strong>₹${p.amount}</strong> paid to ${escapeHTML(p.merchant || 'Store')}</span>
+                          <span class="text-[10px] font-extrabold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full">Mock Gateway</span>
+                        </div>
+                      `).join('')}
+                    </div>
+                  </div>`;
+              }
+
+              stepBoxHtml = `
+                <div class="mb-4 p-4 bg-emerald-50/80 border border-emerald-200/90 rounded-2xl text-xs text-emerald-950 font-medium space-y-3">
+                  <div class="flex items-center justify-between flex-wrap gap-2">
+                    <div class="flex items-center gap-1.5 font-extrabold text-emerald-900">
+                      <svg class="w-4 h-4 text-emerald-600 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z"/></svg>
+                      <span>Pre-Funded Budget Authorized</span>
+                    </div>
+                    <span class="text-[10px] font-extrabold text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded-full">Escrow Active</span>
+                  </div>
+
+                  <!-- Financial Ledger Strip (Authorized, Spent, Remaining) -->
+                  <div class="grid grid-cols-3 gap-2.5 text-center">
+                    <div class="p-2 bg-white rounded-xl border border-emerald-200/90 shadow-2xs">
+                      <span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">Authorized</span>
+                      <span class="text-xs sm:text-sm font-black text-slate-900 block mt-0.5">₹${authorizedBudget}</span>
+                    </div>
+                    <div class="p-2 bg-white rounded-xl border border-emerald-200/90 shadow-2xs">
+                      <span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">Spent</span>
+                      <span class="text-xs sm:text-sm font-black text-amber-700 block mt-0.5">₹${totalSpent}</span>
+                    </div>
+                    <div class="p-2 bg-white rounded-xl border border-emerald-200/90 shadow-2xs">
+                      <span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">Remaining</span>
+                      <span class="text-xs sm:text-sm font-black text-emerald-700 block mt-0.5">₹${remainingBudget}</span>
+                    </div>
+                  </div>
+
+                  ${purchasesHistoryHtml}
+                </div>`;
+
+              actionBtnHtml = `
+                <div class="flex items-center gap-2 flex-wrap">
+                  <button class="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-brand-600 hover:bg-brand-700 text-white font-extrabold text-xs sm:text-sm rounded-2xl shadow-xs transition-all active:scale-95 border-none cursor-pointer" onclick="openVolunteerPayPurchaseModal('${req._id}')">
+                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z"/></svg>
+                    <span>Pay for Purchase</span>
+                  </button>
+                  <button class="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm rounded-2xl shadow-xs transition-all active:scale-95 border-none cursor-pointer" onclick="openCompletionModal('${req._id}')">
+                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    <span>Upload Proof &amp; Complete</span>
+                  </button>
+                </div>`;
+            } else if (isMixed) {
+              // ── MIXED / CAREGIVER DIRECT: volunteer declares if a purchase was made ───
+              stepBoxHtml = `
+                <div class="mb-4 p-3.5 bg-blue-50/70 border border-blue-200/80 rounded-2xl text-xs text-blue-950 font-medium">
+                  <strong>Caregiver Direct Approval: Did this task involve purchasing anything?</strong><br/>
+                  If you bought items, submit the purchase cost + store payment info first and wait for caregiver payment approval. Otherwise, mark it done.
+                </div>`;
+              actionBtnHtml = `
+                <div class="flex flex-wrap gap-2">
+                  <button class="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs sm:text-sm rounded-2xl shadow-xs transition-all active:scale-95 border-none cursor-pointer" onclick="openPurchaseCostModal('${req._id}')">
+                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    <span>Submit Store Bill &amp; Payment Info</span>
+                  </button>
+                  <button class="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs sm:text-sm rounded-2xl shadow-xs transition-all active:scale-95 border-none cursor-pointer" onclick="openMarkDoneModal('${req._id}', '${escapeHTML(req.title).replace(/'/g, "\\'")}', '${proofType}')">
+                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    <span>Mark Done (No Purchase Needed)</span>
+                  </button>
+                </div>`;
+            } else {
+              // ── FINANCIAL / CAREGIVER DIRECT: Volunteer submits cost and waits for caregiver payment approval ───
+              stepBoxHtml = `
+                <div class="mb-4 p-3.5 bg-brand-50/70 border border-brand-200/80 rounded-2xl text-xs text-brand-950 font-medium">
+                  <strong>Caregiver Direct Payment:</strong> Submit actual purchase details &amp; store bill first, and wait for caregiver payment approval before final delivery.
+                </div>`;
+              actionBtnHtml = `
+                <button class="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs sm:text-sm rounded-2xl shadow-xs transition-all active:scale-95 border-none cursor-pointer" onclick="openPurchaseCostModal('${req._id}')">
+                  <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                  <span>Submit Store Bill &amp; Payment Info</span>
+                </button>`;
+            }
           } else if (req.status === 'purchase_cost_submitted') {
             let proofImages = req.purchaseProofDocs && req.purchaseProofDocs.length > 0 
               ? req.purchaseProofDocs 
               : (req.purchaseProofDoc ? [req.purchaseProofDoc] : []);
             let proofSlider = renderProofSliderHtml(req._id, proofImages);
 
+            const shopName = req.merchantDetails?.shopName || 'Merchant / Shop';
             stepBoxHtml = `
-              <div class="mb-4 p-3.5 bg-amber-50/80 border border-amber-200/80 rounded-2xl text-xs text-amber-950 font-medium">
-                <strong>Purchase Cost Submitted: ₹${req.actualPurchaseCost || 0}</strong><br/>
-                Awaiting Caregiver Escrow Funding. Once caregiver deposits funds, proceed with delivery.
+              <div class="mb-4 p-3.5 bg-amber-50/80 border border-amber-200/80 rounded-2xl text-xs text-amber-950 font-medium space-y-1.5">
+                <div class="flex items-center justify-between">
+                  <strong class="font-extrabold text-amber-900">Direct Merchant Payment Pending: ₹${req.actualPurchaseCost || 0}</strong>
+                  <span class="text-[10px] font-black text-amber-800 bg-amber-100 px-2 py-0.5 rounded-full">${escapeHTML(shopName)}</span>
+                </div>
+                <p class="text-slate-700">Waiting for caregiver to pay the merchant directly via UPI QR / Payment Link. Once paid, you will be notified to collect the items!</p>
                 ${proofSlider}
               </div>`;
             actionBtnHtml = `
               <div class="inline-flex items-center justify-center px-4 py-2.5 bg-amber-50 text-amber-800 border border-amber-200 rounded-2xl text-xs font-extrabold select-none">
-                Escrow Payment Pending
+                Waiting for Caregiver to Pay Merchant
               </div>`;
           } else if (req.status === 'purchase_funded' || req.status === 'in_progress') {
-            stepBoxHtml = `
-              <div class="mb-4 p-3.5 bg-emerald-50/80 border border-emerald-200/80 rounded-2xl text-xs text-emerald-950 font-medium">
-                <strong>Escrow Funded: ₹${req.actualPurchaseCost || 0} Deposited</strong><br/>
-                Items paid by caregiver. Deliver the items to the senior and upload final completion proof!
-              </div>`;
-            actionBtnHtml = `
-              <button class="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm rounded-2xl shadow-xs transition-all active:scale-95 border-none cursor-pointer" onclick="openCompletionModal('${req._id}')">
-                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                <span>Upload Proof &amp; Complete</span>
-              </button>`;
+            const isPreFund = (req.fundingMode === 'pre_fund');
+            
+            if (isPreFund) {
+              const authorizedBudget = Number(req.allowedBudget || 0);
+              let totalSpent = 0;
+              if (req.merchantPurchases && req.merchantPurchases.length > 0) {
+                totalSpent = req.merchantPurchases.reduce((s, p) => s + (Number(p.amount) || 0), 0);
+              } else if (req.fundingMode !== 'pre_fund' && req.actualPurchaseCost && Number(req.actualPurchaseCost) > 0) {
+                totalSpent = Number(req.actualPurchaseCost);
+              }
+              const remainingBudget = authorizedBudget > 0 ? Math.max(0, authorizedBudget - totalSpent) : 0;
+
+              let purchasesHistoryHtml = '';
+              if (req.merchantPurchases && req.merchantPurchases.length > 0) {
+                purchasesHistoryHtml = `
+                  <div class="mt-2 pt-2 border-t border-emerald-200/80 space-y-1.5">
+                    <span class="text-[10px] font-extrabold text-emerald-950 uppercase tracking-wider block">Merchant Payments Made:</span>
+                    <div class="space-y-1">
+                      ${req.merchantPurchases.map(p => `
+                        <div class="flex items-center justify-between text-xs bg-white/90 px-3 py-1.5 rounded-xl border border-emerald-200">
+                          <span class="font-bold text-slate-800">✅ <strong>₹${p.amount}</strong> paid to ${escapeHTML(p.merchant || 'Store')}</span>
+                          <span class="text-[10px] font-extrabold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full">Mock Gateway</span>
+                        </div>
+                      `).join('')}
+                    </div>
+                  </div>`;
+              }
+
+              stepBoxHtml = `
+                <div class="mb-4 p-4 bg-emerald-50/80 border border-emerald-200/90 rounded-2xl text-xs text-emerald-950 font-medium space-y-3">
+                  <div class="flex items-center justify-between flex-wrap gap-2">
+                    <div class="flex items-center gap-1.5 font-extrabold text-emerald-900">
+                      <svg class="w-4 h-4 text-emerald-600 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z"/></svg>
+                      <span>Pre-Funded Budget Authorized</span>
+                    </div>
+                    <span class="text-[10px] font-extrabold text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded-full">Escrow Active</span>
+                  </div>
+
+                  <!-- Financial Ledger Strip (Authorized, Spent, Remaining) -->
+                  <div class="grid grid-cols-3 gap-2.5 text-center">
+                    <div class="p-2 bg-white rounded-xl border border-emerald-200/90 shadow-2xs">
+                      <span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">Authorized</span>
+                      <span class="text-xs sm:text-sm font-black text-slate-900 block mt-0.5">₹${authorizedBudget}</span>
+                    </div>
+                    <div class="p-2 bg-white rounded-xl border border-emerald-200/90 shadow-2xs">
+                      <span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">Spent</span>
+                      <span class="text-xs sm:text-sm font-black text-amber-700 block mt-0.5">₹${totalSpent}</span>
+                    </div>
+                    <div class="p-2 bg-white rounded-xl border border-emerald-200/90 shadow-2xs">
+                      <span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">Remaining</span>
+                      <span class="text-xs sm:text-sm font-black text-emerald-700 block mt-0.5">₹${remainingBudget}</span>
+                    </div>
+                  </div>
+
+                  ${purchasesHistoryHtml}
+                </div>`;
+
+              actionBtnHtml = `
+                <div class="flex items-center gap-2 flex-wrap">
+                  <button class="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-brand-600 hover:bg-brand-700 text-white font-extrabold text-xs sm:text-sm rounded-2xl shadow-xs transition-all active:scale-95 border-none cursor-pointer" onclick="openVolunteerPayPurchaseModal('${req._id}')">
+                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z"/></svg>
+                    <span>Pay for Purchase</span>
+                  </button>
+                  <button class="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm rounded-2xl shadow-xs transition-all active:scale-95 border-none cursor-pointer" onclick="openCompletionModal('${req._id}')">
+                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    <span>Upload Proof &amp; Complete</span>
+                  </button>
+                </div>`;
+            } else {
+              const shopName = req.merchantDetails?.shopName || 'Merchant / Shop';
+              stepBoxHtml = `
+                <div class="mb-4 p-3.5 bg-emerald-50/80 border border-emerald-200/80 rounded-2xl text-xs text-emerald-950 font-medium space-y-1">
+                  <div class="flex items-center gap-1.5 font-extrabold text-emerald-900">
+                    <svg class="w-4 h-4 text-emerald-600 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    <span>Merchant Payment Confirmed: ₹${req.actualPurchaseCost || 0} Paid to ${escapeHTML(shopName)}</span>
+                  </div>
+                  <p class="text-slate-700">Caregiver has completed payment to the store. Collect the items from the merchant and deliver to <strong>${escapeHTML(seniorName)}</strong>. Upload delivery proof when done!</p>
+                </div>`;
+              actionBtnHtml = `
+                <button class="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm rounded-2xl shadow-xs transition-all active:scale-95 border-none cursor-pointer" onclick="openCompletionModal('${req._id}')">
+                  <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                  <span>Upload Delivery Proof &amp; Complete</span>
+                </button>`;
+            }
           } else if (req.status === 'awaiting_verification') {
+            const isServiceOnlyVerif = proofType === 'service_only' || (proofType === 'mixed' && !req.volunteerDeclaredPurchase);
             stepBoxHtml = `
-              <div class="mb-4 p-3.5 bg-purple-50/80 border border-purple-200/80 rounded-2xl text-xs text-purple-950 font-medium">
-                <strong>Store Bill &amp; Delivery Proof Uploaded</strong><br/>
-                Awaiting Caregiver Final Verification &amp; Service Charge (₹${myQuotedFee > 0 ? myQuotedFee : 150}) Escrow Release.
+              <div class="mb-4 p-3.5 ${isServiceOnlyVerif ? 'bg-teal-50/80 border-teal-200/80' : 'bg-purple-50/80 border-purple-200/80'} border rounded-2xl text-xs ${isServiceOnlyVerif ? 'text-teal-950' : 'text-purple-950'} font-medium">
+                <strong>${isServiceOnlyVerif ? 'Task Completion Awaiting Confirmation' : 'Store Bill &amp; Delivery Proof Uploaded'}</strong><br/>
+                ${isServiceOnlyVerif
+                  ? 'The senior or their caregiver will confirm that the service was performed.'
+                  : `Awaiting Caregiver Final Verification &amp; Service Charge (₹${myQuotedFee > 0 ? myQuotedFee : 150}) Escrow Release.`}
               </div>`;
             actionBtnHtml = `
-              <div class="inline-flex items-center justify-center px-4 py-2.5 bg-purple-50 text-purple-800 border border-purple-200 rounded-2xl text-xs font-extrabold select-none">
-                Verification Pending
+              <div class="inline-flex items-center justify-center px-4 py-2.5 ${isServiceOnlyVerif ? 'bg-teal-50 text-teal-800 border-teal-200' : 'bg-purple-50 text-purple-800 border-purple-200'} border rounded-2xl text-xs font-extrabold select-none">
+                ${isServiceOnlyVerif ? 'Awaiting Confirmation' : 'Verification Pending'}
               </div>`;
           } else {
             actionBtnHtml = `
@@ -1024,6 +1346,7 @@ async function loadVolunteerRequests(silent = false) {
           const categoryBadge = getCategoryBadgeHtml(req.category);
           const voiceNoteHtml = getVoiceNotePlayerHtml(req.audioFile);
           const prefHtml = getShoppingPreferenceHtml(req.shoppingPreference);
+          const budgetHtml = getAllowedBudgetHtml(req.allowedBudget, req.fundingMode);
 
           return `
             <div class="bg-white rounded-3xl border border-slate-200/90 shadow-premium hover:shadow-cardHover p-5 sm:p-6 transition-all relative overflow-hidden group ${isRejected ? 'border-rose-200' : ''}">
@@ -1268,6 +1591,23 @@ function getShoppingPreferenceHtml(pref) {
     </div>`;
 }
 
+function getAllowedBudgetHtml(budget) {
+  if (budget === undefined || budget === null || isNaN(Number(budget)) || Number(budget) <= 0) return '';
+
+  return `
+    <div class="bg-emerald-50/80 border border-emerald-200/70 rounded-2xl p-3 mb-3.5 flex items-center justify-between gap-2.5 text-xs text-emerald-950 shadow-2xs flex-wrap">
+      <div class="flex items-center gap-2.5">
+        <div class="w-7 h-7 rounded-xl bg-emerald-500/15 text-emerald-700 flex items-center justify-center flex-shrink-0 font-extrabold text-xs">
+          ₹
+        </div>
+        <div class="flex items-center gap-1.5 flex-wrap">
+          <strong class="font-bold text-emerald-900">Allowed Budget:</strong>
+          <span class="font-extrabold text-emerald-700 text-sm">₹${budget}</span>
+        </div>
+      </div>
+    </div>`;
+}
+
 function getVoiceNotePlayerHtml(audioFile) {
   if (!audioFile) return '';
   return `
@@ -1310,6 +1650,11 @@ function escapeHTML(str) {
 // AI DYNAMIC PLATFORM RECOMMENDATION & PRE-FILLED LINK HELPER
 // ──────────────────────────────────────────────────────────
 function renderPlatformHelperHtml(req) {
+  // Companionship is purely human/volunteer oriented - do not suggest any AI platforms
+  if (req.category === 'Companionship' || (req.category && req.category.toLowerCase() === 'companionship')) {
+    return '';
+  }
+
   // Do not show AI Suggested Platforms after payment/purchase cost is submitted or completed
   const hideStatuses = ['purchase_cost_submitted', 'purchase_funded', 'awaiting_verification', 'completed', 'fulfilled_by_family', 'delivery_completed'];
   if (hideStatuses.includes(req.status)) {
@@ -1372,16 +1717,19 @@ function renderPlatformHelperHtml(req) {
 
   const chipsHtml = platforms.map(p => {
     const q = cleanProductQuery(p.searchQuery || req.extractedItems || req.description || req.transcript || '');
+    const titleAttr = p.bestFor ? `${escapeHTML(p.name)} - ${escapeHTML(p.bestFor)} (${escapeHTML(p.suitability || '')})` : `Open ${escapeHTML(p.name)} search for '${escapeHTML(q)}'`;
     return `
       <button 
         type="button" 
-        class="inline-flex items-center gap-2 px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-800 font-bold text-xs rounded-xl border border-slate-200/90 hover:border-brand-300 shadow-2xs hover:shadow-xs transition-all active:scale-95 cursor-pointer group"
+        class="inline-flex items-center gap-2 px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-800 font-bold text-xs rounded-xl border border-slate-200/90 hover:border-brand-300 shadow-2xs hover:shadow-xs transition-all active:scale-95 cursor-pointer group flex-wrap"
         onclick="openPlatformWithPreFill('${escapeHTML(p.url)}', '${escapeHTML(q)}', '${escapeHTML(p.name)}')"
-        title="Open ${escapeHTML(p.name)} search for '${escapeHTML(q)}'"
+        title="${titleAttr}"
       >
         <span class="w-2 h-2 rounded-full flex-shrink-0" style="background-color: ${p.color || '#026bc9'};"></span>
-        <span class="font-bold">${escapeHTML(p.name)}</span>
-        <svg class="w-3 h-3 text-slate-400 group-hover:text-brand-600 transition-colors" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"/></svg>
+        <span class="font-extrabold text-slate-900">${escapeHTML(p.name)}</span>
+        ${p.bestFor ? `<span class="text-[10px] text-slate-600 font-semibold bg-slate-100 px-1.5 py-0.5 rounded-md">${escapeHTML(p.bestFor)}</span>` : ''}
+        ${p.suitability ? `<span class="text-[9px] font-black px-1.5 py-0.5 rounded-full ${p.suitability === 'High' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-amber-50 text-amber-700 border border-amber-200'}">${escapeHTML(p.suitability)} Suitability</span>` : ''}
+        <svg class="w-3 h-3 text-slate-400 group-hover:text-brand-600 transition-colors flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"/></svg>
       </button>`;
   }).join('');
 
@@ -1392,9 +1740,9 @@ function renderPlatformHelperHtml(req) {
           <div class="w-6 h-6 rounded-lg bg-brand-500/10 text-brand-600 flex items-center justify-center flex-shrink-0">
             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z"/></svg>
           </div>
-          <span class="text-xs font-extrabold text-slate-800">AI Suggested Ordering Platforms</span>
+          <span class="text-xs font-extrabold text-slate-800">AI Suggested Platforms &amp; Companions</span>
         </div>
-        ${queryLabel ? `<span class="bg-white border border-brand-200/80 text-brand-800 text-[11px] font-bold px-2.5 py-0.5 rounded-full shadow-2xs">Items: "${queryLabel}"</span>` : ''}
+        ${queryLabel ? `<span class="bg-white border border-brand-200/80 text-brand-800 text-[11px] font-bold px-2.5 py-0.5 rounded-full shadow-2xs">Focus: "${queryLabel}"</span>` : ''}
       </div>
       <div class="flex items-center gap-2 flex-wrap">
         ${chipsHtml}
@@ -1442,6 +1790,11 @@ function getDynamicPlatformSearchUrl(platformName, query) {
   const enc = encodeURIComponent(cleanQ);
   const p = (platformName || '').toLowerCase();
 
+  if (p.includes('elliq')) return 'https://elliq.com/';
+  if (p.includes('pi') && !p.includes('pharmeasy') && !p.includes('rapido')) return 'https://pi.ai/';
+  if (p.includes('chatgpt') || p.includes('openai')) return 'https://chatgpt.com/';
+  if (p.includes('replika')) return 'https://replika.ai/';
+  if (p.includes('character.ai') || p.includes('character')) return 'https://character.ai/';
   if (p.includes('blinkit')) return `https://blinkit.com/s/?q=${enc}`;
   if (p.includes('instamart')) return `https://www.swiggy.com/instamart/search?custom_back=true&query=${enc}`;
   if (p.includes('zepto')) return `https://www.zeptonow.com/search?q=${enc}`;
@@ -1474,24 +1827,39 @@ function getDynamicPlatformSearchUrl(platformName, query) {
 let currentLightboxImages = [];
 let currentLightboxIndex = 0;
 
-function openImageLightbox(imageUrl, reqIdOrImages = null) {
+function normalizeDocUrl(rawUrl) {
+  if (!rawUrl || typeof rawUrl !== 'string') return '';
+  let str = rawUrl.replace(/\\/g, '/');
+  if (str.startsWith('http://') || str.startsWith('https://') || str.startsWith('data:')) return str;
+  const uploadsIdx = str.indexOf('/uploads/');
+  if (uploadsIdx !== -1) {
+    return str.substring(uploadsIdx);
+  }
+  const uploadsNoSlashIdx = str.indexOf('uploads/');
+  if (uploadsNoSlashIdx !== -1) {
+    return '/' + str.substring(uploadsNoSlashIdx);
+  }
+  return str.startsWith('/') ? str : '/' + str;
+}
+
+window.openImageLightbox = function(imageUrl, reqIdOrImages = null) {
   if (!imageUrl && !reqIdOrImages) return;
 
   const modal = document.getElementById('imageLightboxModal');
 
   let images = [];
   if (Array.isArray(reqIdOrImages)) {
-    images = reqIdOrImages;
+    images = reqIdOrImages.map(normalizeDocUrl);
   } else if (typeof reqIdOrImages === 'string' && window.proofSliderData && window.proofSliderData[reqIdOrImages]) {
-    images = window.proofSliderData[reqIdOrImages];
+    images = window.proofSliderData[reqIdOrImages].map(normalizeDocUrl);
   } else if (typeof imageUrl === 'string') {
-    images = [imageUrl];
+    images = [normalizeDocUrl(imageUrl)];
   }
 
-  images = images.map(img => img.startsWith('/') ? img : '/' + img);
+  images = images.filter(Boolean);
   currentLightboxImages = images;
 
-  const cleanUrl = typeof imageUrl === 'string' ? (imageUrl.startsWith('/') ? imageUrl : '/' + imageUrl) : images[0];
+  const cleanUrl = normalizeDocUrl(typeof imageUrl === 'string' ? imageUrl : (images[0] || ''));
   let idx = images.indexOf(cleanUrl);
   if (idx === -1) idx = 0;
   currentLightboxIndex = idx;
@@ -1499,7 +1867,7 @@ function openImageLightbox(imageUrl, reqIdOrImages = null) {
   updateLightboxView();
 
   if (modal) modal.style.display = 'flex';
-}
+};
 
 function updateLightboxView() {
   if (!currentLightboxImages || currentLightboxImages.length === 0) return;
@@ -1619,6 +1987,97 @@ async function renderRatingProfileCard(user) {
   }
 }
 
+// ── Mark Task Done Modal (service_only / mixed-no-purchase) ──────────────────
+// Opens a lightweight completion modal — no bill needed, optional photo + note
+window.openMarkDoneModal = function(requestId, taskTitle, proofType) {
+  const modal = document.getElementById('markDoneModal');
+  if (!modal) { alert('Mark Done modal not found.'); return; }
+
+  const reqIdEl = document.getElementById('markDoneRequestId');
+  const titleEl = document.getElementById('markDoneTaskTitle');
+  const noteEl  = document.getElementById('markDoneNote');
+  const fileEl  = document.getElementById('markDonePhoto');
+  const previewEl = document.getElementById('markDonePhotoPreview');
+  const proofTypeEl = document.getElementById('markDoneProofType');
+
+  if (reqIdEl) reqIdEl.value = requestId || '';
+  if (titleEl) titleEl.textContent = taskTitle || 'Task';
+  if (noteEl)  noteEl.value = '';
+  if (fileEl)  fileEl.value = '';
+  if (previewEl) previewEl.style.display = 'none';
+  if (proofTypeEl) proofTypeEl.value = proofType || 'service_only';
+
+  modal.style.display = 'flex';
+};
+
+window.closeMarkDoneModal = function() {
+  const modal = document.getElementById('markDoneModal');
+  if (modal) modal.style.display = 'none';
+};
+
+window.markDonePhotoPreview = function(input) {
+  const previewDiv = document.getElementById('markDonePhotoPreview');
+  if (!previewDiv) return;
+  previewDiv.innerHTML = '';
+  if (input.files && input.files.length > 0) {
+    previewDiv.classList.remove('hidden');
+    previewDiv.style.display = 'flex';
+    previewDiv.className = 'mt-2 flex flex-wrap gap-2';
+    Array.from(input.files).forEach(file => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = document.createElement('img');
+        img.src = e.target.result;
+        img.className = 'w-16 h-16 object-cover rounded-xl border border-slate-200 shadow-2xs';
+        previewDiv.appendChild(img);
+      };
+      reader.readAsDataURL(file);
+    });
+  } else {
+    previewDiv.classList.add('hidden');
+    previewDiv.style.display = 'none';
+  }
+};
+
+window.handleMarkDoneSubmit = async function(e) {
+  e.preventDefault();
+
+  const requestId  = document.getElementById('markDoneRequestId')?.value;
+  const noteVal    = document.getElementById('markDoneNote')?.value || '';
+  const photoEl    = document.getElementById('markDonePhoto');
+  const proofType  = document.getElementById('markDoneProofType')?.value || 'service_only';
+  const btnSubmit  = document.getElementById('btnMarkDone');
+
+  if (!requestId) { alert('Request ID missing'); return; }
+
+  const formData = new FormData();
+  formData.append('resolutionNotes', noteVal.trim() || 'Task completed by volunteer.');
+  formData.append('volunteerDeclaredPurchase', 'false'); // service_only / mixed-no-purchase
+  if (photoEl && photoEl.files && photoEl.files.length > 0) {
+    for (let i = 0; i < photoEl.files.length; i++) {
+      formData.append('proofs', photoEl.files[i]);
+    }
+  }
+
+  if (btnSubmit) { btnSubmit.disabled = true; btnSubmit.textContent = 'Submitting...'; }
+
+  try {
+    const res = await apiCall(`/requests/${requestId}/complete`, 'PUT', formData);
+    if (res.ok && res.data.success) {
+      showToast(res.data.message || 'Task marked as done! Awaiting caregiver confirmation.', 'success');
+      closeMarkDoneModal();
+      loadVolunteerRequests();
+    } else {
+      alert(res.data?.message || 'Error marking task as done');
+    }
+  } catch (err) {
+    console.error(err);
+    alert('Network error marking task as done');
+  } finally {
+    if (btnSubmit) { btnSubmit.disabled = false; btnSubmit.textContent = 'Mark as Done'; }
+  }
+};
+
 // Open Modal Tab for Submitting Purchase Cost & Bill Proof (Step 4 & 5)
 function openPurchaseCostModal(requestId) {
   const modal = document.getElementById('purchaseCostModal');
@@ -1627,12 +2086,49 @@ function openPurchaseCostModal(requestId) {
   const proofFile = document.getElementById('purchaseProofFile');
   const notesInput = document.getElementById('purchaseNotesInput');
   const previewDiv = document.getElementById('purchaseProofPreview');
+  const budgetBanner = document.getElementById('purchaseCostBudgetBanner');
+  const budgetText = document.getElementById('purchaseCostBudgetText');
+
+  const shopNameInput = document.getElementById('merchantShopNameInput');
+  const upiIdInput = document.getElementById('merchantUpiIdInput');
+  const qrFileInput = document.getElementById('merchantQrFile');
+  const qrPreview = document.getElementById('merchantQrPreview');
+  const paymentLinkInput = document.getElementById('merchantPaymentLinkInput');
+  const orderNumberInput = document.getElementById('merchantOrderNumberInput');
 
   if (reqIdInput) reqIdInput.value = requestId || '';
   if (costInput) costInput.value = '';
   if (proofFile) proofFile.value = '';
   if (notesInput) notesInput.value = '';
   if (previewDiv) previewDiv.style.display = 'none';
+
+  if (shopNameInput) shopNameInput.value = '';
+  if (upiIdInput) upiIdInput.value = '';
+  if (qrFileInput) qrFileInput.value = '';
+  if (qrPreview) qrPreview.style.display = 'none';
+  if (paymentLinkInput) paymentLinkInput.value = '';
+  if (orderNumberInput) orderNumberInput.value = '';
+
+  const offlineRadio = document.querySelector('input[name="merchantPaymentTypeRadio"][value="offline_qr"]');
+  if (offlineRadio) offlineRadio.checked = true;
+  toggleMerchantPaymentMethodUI('offline_qr');
+
+  // Check if caregiver set an allowed budget estimate or existing merchant details
+  const req = (window.allVolunteerRequestsMap && window.allVolunteerRequestsMap[requestId]);
+  if (req) {
+    if (req.allowedBudget !== undefined && req.allowedBudget !== null && Number(req.allowedBudget) > 0) {
+      if (budgetText) budgetText.textContent = `₹${req.allowedBudget}`;
+      if (budgetBanner) budgetBanner.style.display = 'block';
+    } else {
+      if (budgetBanner) budgetBanner.style.display = 'none';
+    }
+    if (req.merchantDetails) {
+      if (shopNameInput && req.merchantDetails.shopName) shopNameInput.value = req.merchantDetails.shopName;
+      if (upiIdInput && req.merchantDetails.upiId) upiIdInput.value = req.merchantDetails.upiId;
+      if (paymentLinkInput && req.merchantDetails.paymentLink) paymentLinkInput.value = req.merchantDetails.paymentLink;
+      if (orderNumberInput && req.merchantDetails.orderNumber) orderNumberInput.value = req.merchantDetails.orderNumber;
+    }
+  }
 
   togglePurchaseProofRequired('');
 
@@ -1643,27 +2139,66 @@ function openPurchaseCostModal(requestId) {
   }
 }
 
+window.toggleMerchantPaymentMethodUI = function(method) {
+  const offlineBox = document.getElementById('merchantOfflineFields');
+  const onlineBox = document.getElementById('merchantOnlineFields');
+  const linkInput = document.getElementById('merchantPaymentLinkInput');
+
+  if (method === 'online_link') {
+    if (offlineBox) offlineBox.style.display = 'none';
+    if (onlineBox) onlineBox.style.display = 'block';
+    if (linkInput) linkInput.required = true;
+  } else {
+    if (offlineBox) offlineBox.style.display = 'block';
+    if (onlineBox) onlineBox.style.display = 'none';
+    if (linkInput) linkInput.required = false;
+  }
+};
+
+window.previewMerchantQrImage = function(input) {
+  const previewDiv = document.getElementById('merchantQrPreview');
+  const previewImg = document.getElementById('merchantQrPreviewImg');
+  if (!previewDiv || !previewImg) return;
+
+  if (input.files && input.files[0]) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      previewImg.src = e.target.result;
+      previewDiv.style.display = 'block';
+    };
+    reader.readAsDataURL(input.files[0]);
+  } else {
+    previewDiv.style.display = 'none';
+    previewImg.src = '';
+  }
+};
+
 window.togglePurchaseProofRequired = function(val) {
-  const costNum = Number(val);
   const fileInput = document.getElementById('purchaseProofFile');
   const starEl = document.getElementById('purchaseProofRequiredStar');
   const optionalNote = document.getElementById('purchaseProofOptionalNote');
 
-  if (costNum === 0 && val !== '') {
-    if (fileInput) fileInput.required = false;
-    if (starEl) starEl.style.display = 'none';
-    if (optionalNote) optionalNote.textContent = ' (Optional for ₹0 purchase cost)';
-  } else {
-    if (fileInput) fileInput.required = true;
-    if (starEl) starEl.style.display = 'inline';
-    if (optionalNote) optionalNote.textContent = '';
-  }
+  if (fileInput) fileInput.required = false;
+  if (starEl) starEl.style.display = 'none';
+  if (optionalNote) optionalNote.textContent = ' (Optional if Store QR or UPI ID is provided)';
 };
 
 function closePurchaseCostModal() {
   const modal = document.getElementById('purchaseCostModal');
   if (modal) modal.style.display = 'none';
 }
+
+// Preview helper for Mark Done modal photo
+window.markDonePhotoPreview = function(input) {
+  const previewEl = document.getElementById('markDonePhotoPreview');
+  if (!previewEl) return;
+  if (input.files && input.files.length > 0) {
+    previewEl.classList.remove('hidden');
+    previewEl.querySelector('p').textContent = `${input.files.length} photo${input.files.length > 1 ? 's' : ''} selected ✓`;
+  } else {
+    previewEl.classList.add('hidden');
+  }
+};
 
 function previewPurchaseProofImage(input) {
   const previewDiv = document.getElementById('purchaseProofPreview');
@@ -1706,6 +2241,13 @@ async function handlePurchaseCostSubmit(e) {
   const notesVal = document.getElementById('purchaseNotesInput')?.value;
   const btnSubmit = document.getElementById('btnSubmitPurchaseCost');
 
+  const shopNameVal = document.getElementById('merchantShopNameInput')?.value;
+  const paymentTypeVal = document.querySelector('input[name="merchantPaymentTypeRadio"]:checked')?.value || 'offline_qr';
+  const qrFile = document.getElementById('merchantQrFile');
+  const upiIdVal = document.getElementById('merchantUpiIdInput')?.value;
+  const linkVal = document.getElementById('merchantPaymentLinkInput')?.value;
+  const orderNumVal = document.getElementById('merchantOrderNumberInput')?.value;
+
   if (!requestId) {
     alert('Request ID missing');
     return;
@@ -1717,14 +2259,34 @@ async function handlePurchaseCostSubmit(e) {
     return;
   }
 
-  if (costNum > 0 && (!proofFile || !proofFile.files || !proofFile.files[0])) {
-    alert('Please upload a bill photo proof or cart screenshot image for purchase cost > ₹0');
+  if (!shopNameVal || !shopNameVal.trim()) {
+    alert('Please enter the Merchant / Shop Name');
+    return;
+  }
+
+  const hasBillProof = Boolean(proofFile && proofFile.files && proofFile.files.length > 0);
+  const hasQrPhoto = Boolean(qrFile && qrFile.files && qrFile.files.length > 0);
+  const hasUpiId = Boolean(upiIdVal && upiIdVal.trim());
+  const hasLink = Boolean(linkVal && linkVal.trim());
+
+  if (costNum > 0 && !hasBillProof && !hasQrPhoto && !hasUpiId && !hasLink) {
+    alert('Please provide store payment info (Store UPI QR photo, UPI ID, payment link, or bill photo)');
     return;
   }
 
   const formData = new FormData();
   formData.append('actualPurchaseCost', costNum);
   formData.append('purchaseNotes', notesVal ? notesVal.trim() : '');
+  formData.append('shopName', shopNameVal.trim());
+  formData.append('paymentType', paymentTypeVal);
+  if (upiIdVal) formData.append('upiId', upiIdVal.trim());
+  if (linkVal) formData.append('paymentLink', linkVal.trim());
+  if (orderNumVal) formData.append('orderNumber', orderNumVal.trim());
+
+  if (qrFile && qrFile.files && qrFile.files[0]) {
+    formData.append('merchantQrFile', qrFile.files[0]);
+  }
+
   if (proofFile && proofFile.files && proofFile.files.length > 0) {
     for (let i = 0; i < proofFile.files.length; i++) {
       formData.append('proofs', proofFile.files[i]);
@@ -1739,7 +2301,7 @@ async function handlePurchaseCostSubmit(e) {
   try {
     const res = await apiCall(`/requests/${requestId}/submit-purchase-cost`, 'PUT', formData);
     if (res.ok && res.data.success) {
-      showToast('Actual purchase cost & bill proof submitted! Waiting for caregiver escrow payment.', 'success');
+      showToast('Purchase cost & merchant payment details submitted! Waiting for caregiver direct payment to merchant.', 'success');
       closePurchaseCostModal();
       loadVolunteerRequests();
     } else {
@@ -1756,16 +2318,257 @@ async function handlePurchaseCostSubmit(e) {
   }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// VOLUNTEER PAY FOR PURCHASE (PRE-FUNDED ESCROW MOCK GATEWAY)
+// ─────────────────────────────────────────────────────────────────────────────
+window.togglePayDestinationFields = function(destType) {
+  const fUpiId = document.getElementById('destFieldUpiId');
+  const fUpiQr = document.getElementById('destFieldUpiQr');
+  const fLink = document.getElementById('destFieldPaymentLink');
+  const fOrder = document.getElementById('destFieldOnlineOrder');
+
+  if (fUpiId) fUpiId.style.display = destType === 'upi_id' ? 'block' : 'none';
+  if (fUpiQr) fUpiQr.style.display = destType === 'upi_qr' ? 'block' : 'none';
+  if (fLink) fLink.style.display = destType === 'payment_link' ? 'block' : 'none';
+  if (fOrder) fOrder.style.display = destType === 'online_order' ? 'block' : 'none';
+};
+
+window.togglePayProofOption = function(proofOption) {
+  const uploadContainer = document.getElementById('payProofUploadContainer');
+  const noReceiptContainer = document.getElementById('payNoReceiptReasonContainer');
+
+  if (uploadContainer) uploadContainer.style.display = proofOption === 'has_receipt' ? 'block' : 'none';
+  if (noReceiptContainer) noReceiptContainer.style.display = proofOption === 'no_receipt' ? 'block' : 'none';
+};
+
+window.updatePaymentSummaryLive = function(amountVal) {
+  const reqId = document.getElementById('payPurchaseRequestId')?.value;
+  const req = (window.allVolunteerRequestsMap && window.allVolunteerRequestsMap[reqId]);
+  const authorized = Number(req?.allowedBudget || 0);
+  let spent = 0;
+  if (req?.merchantPurchases && req.merchantPurchases.length > 0) {
+    spent = req.merchantPurchases.reduce((s, p) => s + (Number(p.amount) || 0), 0);
+  } else if (req?.fundingMode !== 'pre_fund' && req?.actualPurchaseCost) {
+    spent = Number(req.actualPurchaseCost);
+  }
+  const remaining = authorized > 0 ? Math.max(0, authorized - spent) : 0;
+
+  const costNum = Number(amountVal || 0);
+  const remainingAfter = Math.max(0, remaining - costNum);
+
+  const elPayAmt = document.getElementById('summaryPayAmount');
+  const elPayRem = document.getElementById('summaryPayRemaining');
+  const elPayAfter = document.getElementById('summaryPayRemainingAfter');
+  const btnText = document.getElementById('btnPayMerchantText');
+
+  if (elPayAmt) elPayAmt.textContent = `₹${costNum}`;
+  if (elPayRem) elPayRem.textContent = `₹${remaining}`;
+  if (elPayAfter) elPayAfter.textContent = `₹${remainingAfter}`;
+  if (btnText) btnText.textContent = costNum > 0 ? `Pay Merchant ₹${costNum}` : 'Pay Merchant';
+};
+
+window.openVolunteerPayPurchaseModal = function(requestId) {
+  const modal = document.getElementById('volunteerPayPurchaseModal');
+  const reqIdInput = document.getElementById('payPurchaseRequestId');
+  const merchantInput = document.getElementById('payPurchaseMerchantInput');
+  const merchantTypeInput = document.getElementById('payPurchaseMerchantTypeInput');
+  const locationInput = document.getElementById('payPurchaseMerchantLocationInput');
+  const phoneInput = document.getElementById('payPurchaseMerchantPhoneInput');
+  const upiIdInput = document.getElementById('payUpiIdInput');
+  const qrFileInput = document.getElementById('payUpiQrFile');
+  const linkInput = document.getElementById('payPaymentLinkInput');
+  const orderInput = document.getElementById('payOrderLinkInput');
+  const itemNameInput = document.getElementById('payItemNameInput');
+  const quantityInput = document.getElementById('payQuantityInput');
+  const amountInput = document.getElementById('payPurchaseAmountInput');
+  const descInput = document.getElementById('payDescriptionInput');
+  const proofFileInput = document.getElementById('payPurchaseProofFile');
+  const noReceiptInput = document.getElementById('payNoReceiptReasonInput');
+
+  const authEl = document.getElementById('modalPayAuthBudget');
+  const spentEl = document.getElementById('modalPaySpentBudget');
+  const remEl = document.getElementById('modalPayRemainingBudget');
+
+  if (reqIdInput) reqIdInput.value = requestId || '';
+  if (merchantInput) merchantInput.value = '';
+  if (merchantTypeInput) merchantTypeInput.value = 'Pharmacy';
+  if (locationInput) locationInput.value = '';
+  if (phoneInput) phoneInput.value = '';
+  if (upiIdInput) upiIdInput.value = '';
+  if (qrFileInput) qrFileInput.value = '';
+  if (linkInput) linkInput.value = '';
+  if (orderInput) orderInput.value = '';
+  if (quantityInput) quantityInput.value = '1';
+  if (amountInput) amountInput.value = '';
+  if (descInput) descInput.value = '';
+  if (proofFileInput) proofFileInput.value = '';
+  if (noReceiptInput) noReceiptInput.value = '';
+
+  const req = (window.allVolunteerRequestsMap && window.allVolunteerRequestsMap[requestId]);
+  if (itemNameInput) itemNameInput.value = req?.title || '';
+
+  const authorized = Number(req?.allowedBudget || 0);
+  let spent = 0;
+  if (req?.merchantPurchases && req.merchantPurchases.length > 0) {
+    spent = req.merchantPurchases.reduce((s, p) => s + (Number(p.amount) || 0), 0);
+  } else if (req?.fundingMode !== 'pre_fund' && req?.actualPurchaseCost) {
+    spent = Number(req.actualPurchaseCost);
+  }
+  const remaining = authorized > 0 ? Math.max(0, authorized - spent) : Infinity;
+
+  if (authEl) authEl.textContent = `₹${authorized}`;
+  if (spentEl) spentEl.textContent = `₹${spent}`;
+  if (remEl) remEl.textContent = `₹${authorized > 0 ? remaining : 'No Limit'}`;
+
+  if (amountInput && authorized > 0) {
+    amountInput.max = remaining > 0 ? remaining : authorized;
+  }
+
+  // Set default radio selections
+  const defaultDestRadio = document.querySelector('input[name="payDestinationType"][value="upi_id"]');
+  if (defaultDestRadio) defaultDestRadio.checked = true;
+  togglePayDestinationFields('upi_id');
+
+  const defaultProofRadio = document.querySelector('input[name="payProofOption"][value="has_receipt"]');
+  if (defaultProofRadio) defaultProofRadio.checked = true;
+  togglePayProofOption('has_receipt');
+
+  updatePaymentSummaryLive(0);
+
+  if (modal) modal.style.display = 'flex';
+};
+
+window.closeVolunteerPayPurchaseModal = function() {
+  const modal = document.getElementById('volunteerPayPurchaseModal');
+  if (modal) modal.style.display = 'none';
+};
+
+window.handleVolunteerPayPurchaseSubmit = async function(e) {
+  e.preventDefault();
+
+  const requestId = document.getElementById('payPurchaseRequestId')?.value;
+  const merchantVal = document.getElementById('payPurchaseMerchantInput')?.value;
+  const merchantTypeVal = document.getElementById('payPurchaseMerchantTypeInput')?.value;
+  const locationVal = document.getElementById('payPurchaseMerchantLocationInput')?.value;
+  const phoneVal = document.getElementById('payPurchaseMerchantPhoneInput')?.value;
+
+  const destTypeVal = document.querySelector('input[name="payDestinationType"]:checked')?.value || 'upi_id';
+  const upiIdVal = document.getElementById('payUpiIdInput')?.value;
+  const upiQrFile = document.getElementById('payUpiQrFile');
+  const linkVal = document.getElementById('payPaymentLinkInput')?.value;
+  const orderVal = document.getElementById('payOrderLinkInput')?.value;
+
+  const itemNameVal = document.getElementById('payItemNameInput')?.value;
+  const quantityVal = document.getElementById('payQuantityInput')?.value;
+  const amountVal = document.getElementById('payPurchaseAmountInput')?.value;
+  const descVal = document.getElementById('payDescriptionInput')?.value;
+
+  const proofOptionVal = document.querySelector('input[name="payProofOption"]:checked')?.value || 'has_receipt';
+  const proofFile = document.getElementById('payPurchaseProofFile');
+  const noReceiptReasonVal = document.getElementById('payNoReceiptReasonInput')?.value;
+
+  const btnSubmit = document.getElementById('btnSubmitVolunteerPayPurchase');
+
+  if (!requestId) {
+    showToast('Request ID missing', 'error');
+    return;
+  }
+
+  const amountNum = Number(amountVal);
+  if (isNaN(amountNum) || amountNum <= 0) {
+    showToast('Please enter a valid purchase amount in ₹', 'warning');
+    const amountInput = document.getElementById('payPurchaseAmountInput');
+    if (amountInput) amountInput.focus();
+    return;
+  }
+
+  const cleanMerchant = (merchantVal && merchantVal.trim()) ? merchantVal.trim() : 'Local Store / Pharmacy';
+
+  // Destination Fallbacks & Smart Defaults
+  let finalUpiId = upiIdVal ? upiIdVal.trim() : '';
+  if (destTypeVal === 'upi_id' && !finalUpiId) {
+    finalUpiId = `${cleanMerchant.toLowerCase().replace(/[^a-z0-9]/g, '') || 'store'}@upi`;
+  }
+  let finalLink = linkVal ? linkVal.trim() : '';
+  if (destTypeVal === 'payment_link' && !finalLink) {
+    finalLink = `https://payment.merchant/${encodeURIComponent(cleanMerchant)}`;
+  }
+  let finalOrder = orderVal ? orderVal.trim() : '';
+  if (destTypeVal === 'online_order' && !finalOrder) {
+    finalOrder = `https://store.online/order/${Date.now()}`;
+  }
+
+  let finalNoReceiptReason = noReceiptReasonVal ? noReceiptReasonVal.trim() : '';
+  if (proofOptionVal === 'no_receipt' && !finalNoReceiptReason) {
+    finalNoReceiptReason = 'No printed bill provided by merchant';
+  }
+
+  const formData = new FormData();
+  formData.append('merchant', cleanMerchant);
+  formData.append('merchantType', merchantTypeVal || 'Pharmacy');
+  if (locationVal) formData.append('merchantLocation', locationVal.trim());
+  if (phoneVal) formData.append('merchantPhone', phoneVal.trim());
+  formData.append('paymentDestinationType', destTypeVal);
+
+  if (finalUpiId) formData.append('upiId', finalUpiId);
+  if (finalLink) formData.append('paymentLink', finalLink);
+  if (finalOrder) formData.append('orderLink', finalOrder);
+  if (upiQrFile && upiQrFile.files && upiQrFile.files[0]) {
+    formData.append('proofs', upiQrFile.files[0]);
+  }
+
+  formData.append('itemName', (itemNameVal && itemNameVal.trim()) || 'Item');
+  formData.append('quantity', (quantityVal && quantityVal.trim()) || '1');
+  formData.append('amount', amountNum);
+  if (descVal) formData.append('description', descVal.trim());
+
+  formData.append('hasReceipt', proofOptionVal === 'has_receipt');
+  if (finalNoReceiptReason) formData.append('noReceiptReason', finalNoReceiptReason);
+  if (proofOptionVal === 'has_receipt' && proofFile && proofFile.files && proofFile.files[0]) {
+    formData.append('proofs', proofFile.files[0]);
+  }
+
+  let origBtnHtml = '';
+  if (btnSubmit) {
+    origBtnHtml = btnSubmit.innerHTML;
+    btnSubmit.disabled = true;
+    btnSubmit.innerHTML = `<span class="animate-pulse">Processing Payment with Gateway...</span>`;
+  }
+
+  try {
+    const res = await apiCall(`/requests/${requestId}/volunteer-pay-purchase`, 'POST', formData);
+    if (res.ok && res.data.success) {
+      const summary = res.data.budgetSummary || {};
+      const txnId = res.data.payment?.transactionId || `TXN_${Date.now()}`;
+      showToast(`Payment Successful! ₹${amountNum} paid to ${cleanMerchant} from Allocated Funds.`, 'success');
+      closeVolunteerPayPurchaseModal();
+      loadVolunteerRequests();
+    } else {
+      showToast(res.data?.message || 'Error processing merchant payment', 'error');
+    }
+  } catch (err) {
+    console.error(err);
+    showToast('Network error processing merchant payment', 'error');
+  } finally {
+    if (btnSubmit) {
+      btnSubmit.disabled = false;
+      btnSubmit.innerHTML = origBtnHtml;
+    }
+  }
+};
+
 window.proofSliderData = window.proofSliderData || {};
 window.proofSliderIndex = window.proofSliderIndex || {};
 
 function renderProofSliderHtml(reqId, rawImages) {
   if (!rawImages || rawImages.length === 0) return '';
 
-  const images = rawImages
-    .filter(Boolean)
-    .map(img => typeof img === 'string' ? (img.startsWith('/') ? img : '/' + img) : '')
-    .filter(img => img.length > 1);
+  const images = Array.from(new Set(
+    rawImages
+      .filter(Boolean)
+      .map(normalizeDocUrl)
+      .filter(img => img && img.length > 1)
+  ));
 
   if (images.length === 0) return '';
 
@@ -1778,7 +2581,7 @@ function renderProofSliderHtml(reqId, rawImages) {
   return `
     <div class="mt-2.5 p-3 bg-white/90 border border-amber-200/90 rounded-2xl flex items-center justify-between gap-3 group/proof shadow-2xs">
       <div class="flex items-center gap-3 min-w-0">
-        <div class="relative w-13 h-13 rounded-xl overflow-hidden bg-amber-50 border border-amber-300 flex-shrink-0 cursor-pointer shadow-2xs group-hover/proof:scale-105 transition-transform" onclick="event.stopPropagation(); openImageLightbox('${escapeHTML(firstImg)}', '${reqId}'); return false;" title="Click to view image">
+        <div class="relative rounded-xl overflow-hidden bg-amber-50 border border-amber-300 flex-shrink-0 cursor-pointer shadow-2xs group-hover/proof:scale-105 transition-transform" style="width:52px;height:52px;min-width:52px;" onclick="event.stopPropagation(); openImageLightbox('${escapeHTML(firstImg)}', '${reqId}'); return false;" title="Click to view image">
           <img src="${escapeHTML(firstImg)}" alt="Proof Thumbnail" class="w-full h-full object-cover">
           ${count > 1 ? `<span class="absolute bottom-0.5 right-0.5 bg-slate-900/85 text-white text-[9px] font-black px-1 rounded">+${count - 1}</span>` : ''}
         </div>

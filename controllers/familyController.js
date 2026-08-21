@@ -25,15 +25,19 @@ exports.getFamilyDashboard = async (req, res) => {
     requests = JSON.parse(JSON.stringify(requests));
 
     for (const r of requests) {
-      if (r.volunteer) {
-        const volId = typeof r.volunteer === 'object' ? r.volunteer._id : r.volunteer;
-        r.volunteer.tasksCompleted = await HelpRequest.countDocuments({ volunteer: volId, status: 'completed' });
+      if (r.volunteer && typeof r.volunteer === 'object') {
+        const volId = r.volunteer._id || r.volunteer.id;
+        if (volId) {
+          r.volunteer.tasksCompleted = await HelpRequest.countDocuments({ volunteer: volId, status: 'completed' });
+        }
       }
-      if (r.volunteerQuotes) {
+      if (r.volunteerQuotes && Array.isArray(r.volunteerQuotes)) {
         for (const q of r.volunteerQuotes) {
-          if (q.volunteer) {
-            const volId = typeof q.volunteer === 'object' ? q.volunteer._id : q.volunteer;
-            q.volunteer.tasksCompleted = await HelpRequest.countDocuments({ volunteer: volId, status: 'completed' });
+          if (q.volunteer && typeof q.volunteer === 'object') {
+            const volId = q.volunteer._id || q.volunteer.id;
+            if (volId) {
+              q.volunteer.tasksCompleted = await HelpRequest.countDocuments({ volunteer: volId, status: 'completed' });
+            }
           }
         }
       }

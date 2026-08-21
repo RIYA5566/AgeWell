@@ -52,7 +52,9 @@ const helpRequestSchema = new mongoose.Schema({
       url: String,
       icon: String,
       color: String,
-      searchQuery: String
+      searchQuery: String,
+      bestFor: String,
+      suitability: String
     }
   ],
 
@@ -62,11 +64,41 @@ const helpRequestSchema = new mongoose.Schema({
     default: 'low'
   },
 
-  // ─── Caregiver Preferences ───────────────────────────────────────────────
+  // ─── Proof Hierarchy: Task Type Classification ────────────────────────────────
+  // Determines which verification path the task follows:
+  //   'service_only' → Companionship, Tech Support, Housekeeping
+  //                    No purchase; volunteer just marks done; senior/family confirms.
+  //   'financial'    → Grocery Shopping
+  //                    Purchase always involved; full 11-step escrow bill flow.
+  //   'mixed'        → Medical Escort, Other
+  //                    Volunteer declares at completion time whether a purchase was made.
+  taskProofType: {
+    type: String,
+    enum: ['service_only', 'financial', 'mixed'],
+    default: 'mixed'
+  },
+  // For 'mixed' tasks: did the volunteer declare making a purchase?
+  // Set when volunteer submits completion (true = trigger escrow; false = direct verification)
+  volunteerDeclaredPurchase: {
+    type: Boolean,
+    default: false
+  },
+
+  // ─── Caregiver Preferences & Budget Estimate ─────────────────────────────
   shoppingPreference: {
     type: String,
     trim: true,
     default: 'No Preference'
+  },
+  allowedBudget: {
+    type: Number,
+    min: 0,
+    default: null
+  },
+  fundingMode: {
+    type: String,
+    enum: ['pre_fund', 'caregiver_direct'],
+    default: 'caregiver_direct'
   },
 
   // ─── Workflow status (11-Step Escrow Lifecycle) ────────────────────────────
@@ -139,6 +171,65 @@ const helpRequestSchema = new mongoose.Schema({
     paymentMethod: String,
     paidAt: Date
   },
+  // ─── Direct Merchant / Shop Payment Details (Caregiver Pays Directly mode) ──
+  merchantDetails: {
+    shopName: {
+      type: String,
+      trim: true,
+      default: ''
+    },
+    paymentType: {
+      type: String,
+      enum: ['offline_qr', 'online_link', 'upi_id', 'other'],
+      default: 'offline_qr'
+    },
+    upiId: {
+      type: String,
+      trim: true,
+      default: ''
+    },
+    upiQrImage: {
+      type: String,
+      default: ''
+    },
+    paymentLink: {
+      type: String,
+      trim: true,
+      default: ''
+    },
+    orderNumber: {
+      type: String,
+      trim: true,
+      default: ''
+    },
+    merchantPhone: {
+      type: String,
+      trim: true,
+      default: ''
+    }
+  },
+  merchantPurchases: [{
+    merchant: { type: String, trim: true },
+    merchantType: { type: String, default: 'Pharmacy' },
+    merchantLocation: { type: String, default: '' },
+    merchantPhone: { type: String, default: '' },
+    paymentDestinationType: { type: String, enum: ['upi_qr', 'upi_id', 'payment_link', 'online_order', 'other'], default: 'upi_id' },
+    upiId: { type: String, default: '' },
+    upiQrImage: { type: String, default: '' },
+    paymentLink: { type: String, default: '' },
+    orderLink: { type: String, default: '' },
+    itemName: { type: String, default: '' },
+    quantity: { type: String, default: '1' },
+    amount: { type: Number, default: 0 },
+    description: { type: String, default: '' },
+    hasReceipt: { type: Boolean, default: true },
+    noReceiptReason: { type: String, default: '' },
+    receiptDoc: { type: String, default: '' },
+    transactionId: { type: String, default: '' },
+    paidAt: { type: Date, default: Date.now },
+    paymentProvider: { type: String, default: 'MOCK_GATEWAY' },
+    status: { type: String, default: 'SUCCESS' }
+  }],
   finalReceiptDoc: {
     type: String,
     default: ''
@@ -157,6 +248,25 @@ const helpRequestSchema = new mongoose.Schema({
     type: Date
   },
 
+  // ─── Upfront Service Fee Payment (service_only tasks) ────────────────────────
+  // For Companionship / Tech / Housekeeping tasks, the caregiver pre-pays the
+  // service charge when allotting the volunteer. Released on task verification.
+  serviceFeePrePaid: {
+    type: Boolean,
+    default: false
+  },
+  serviceFeePrePaidAt: {
+    type: Date
+  },
+  serviceFeePrePaymentDetails: {
+    amountPaid: Number,
+    transactionId: String,
+    paymentMethod: String,
+    razorpayOrderId: String,
+    razorpayPaymentId: String,
+    paidAt: Date
+  },
+
   // ─── People involved & Volunteer Quote ─────────────────────────────────────
   senior: {
     type: mongoose.Schema.Types.ObjectId,
@@ -164,6 +274,11 @@ const helpRequestSchema = new mongoose.Schema({
     required: true
   },
   volunteer: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: null
+  },
+  pendingVolunteer: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     default: null
@@ -276,7 +391,7 @@ const helpRequestSchema = new mongoose.Schema({
   },
   verifierRole: {
     type: String,
-    enum: ['none', 'family', 'senior_voice_ivr'],
+    enum: ['none', 'family', 'senior', 'senior_voice_ivr', 'admin'],
     default: 'none'
   },
   verifiedAt: {

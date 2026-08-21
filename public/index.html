@@ -12,8 +12,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
   <!-- Core Scripts -->
-  <script src="/js/i18n.js"></script>
-  <script src="/js/api.js"></script>
+  <script src="/js/i18n.js?v=421"></script>
+  <script src="/js/api.js?v=421"></script>
 
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -187,6 +187,13 @@
         <svg className="w-6 h-6 text-brand-600" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
         </svg>
+      ),
+      Globe: () => (
+        <svg className="w-4 h-4 text-slate-500 inline-block" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="12" r="9" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M3.6 9h16.8M3.6 15h16.8" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M11.5 3a17 17 0 000 18M12.5 3a17 17 0 010 18" />
+        </svg>
       )
     };
 
@@ -338,11 +345,34 @@
 
                 <div className="h-5 w-px bg-slate-300 hidden sm:block"></div>
 
-                <div className="flex items-center gap-1">
-                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider px-1.5">{t('nav_language_label')}</span>
-                  <button onClick={() => handleSetLang('en')} className={`px-2.5 h-8 rounded-lg font-bold text-xs transition-all ${lang === 'en' ? 'bg-brand-600 text-white' : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'}`}>EN</button>
-                  <button onClick={() => handleSetLang('hi')} className={`px-2.5 h-8 rounded-lg font-bold text-xs transition-all ${lang === 'hi' ? 'bg-brand-600 text-white' : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'}`}>हि</button>
-                  <button onClick={() => handleSetLang('mr')} className={`px-2.5 h-8 rounded-lg font-bold text-xs transition-all ${lang === 'mr' ? 'bg-brand-600 text-white' : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'}`}>म</button>
+                <div className="flex items-center gap-1.5">
+                  <span className="px-0.5 flex items-center justify-center text-slate-500" title="Language" aria-label="Language">
+                    <Icons.Globe />
+                  </span>
+                  <button 
+                    onClick={() => handleSetLang('en')} 
+                    title="English"
+                    aria-label="English"
+                    className={`w-8 h-8 rounded-lg font-black text-[11px] transition-all flex items-center justify-center cursor-pointer ${lang === 'en' ? 'bg-brand-600 text-white shadow-xs scale-105' : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 shadow-2xs'}`}
+                  >
+                    EN
+                  </button>
+                  <button 
+                    onClick={() => handleSetLang('hi')} 
+                    title="हिन्दी (Hindi)"
+                    aria-label="Hindi"
+                    className={`w-8 h-8 rounded-lg font-black text-[13px] transition-all flex items-center justify-center cursor-pointer ${lang === 'hi' ? 'bg-brand-600 text-white shadow-xs scale-105' : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 shadow-2xs'}`}
+                  >
+                    अ
+                  </button>
+                  <button 
+                    onClick={() => handleSetLang('mr')} 
+                    title="मराठी (Marathi)"
+                    aria-label="Marathi"
+                    className={`w-8 h-8 rounded-lg font-black text-[13px] transition-all flex items-center justify-center cursor-pointer ${lang === 'mr' ? 'bg-brand-600 text-white shadow-xs scale-105' : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 shadow-2xs'}`}
+                  >
+                    म
+                  </button>
                 </div>
               </div>
 
@@ -651,7 +681,7 @@
           </main>
 
           {/* Global Footer */}
-          <footer className="global-footer w-full text-center mt-4 py-6 px-4 bg-[#0b3d70] text-white">
+          <footer className="global-footer w-full text-center mt-1 py-6 px-4 bg-[#0b3d70] text-white">
             <p className="text-xs sm:text-sm font-semibold text-white/90">{t('footer_text')}</p>
           </footer>
 

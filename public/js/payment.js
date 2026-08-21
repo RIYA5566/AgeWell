@@ -1,6 +1,7 @@
 // AgeWell Payment & Proof Verification Authorization Script
 
 let currentRequestId = '';
+let currentVolunteerId = '';
 let itemsCost = 0;
 let volunteerFee = 0;
 let platformFee = 0;
@@ -16,6 +17,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Parse URL Parameters
   const params = new URLSearchParams(window.location.search);
   currentRequestId = params.get('requestId');
+  currentVolunteerId = params.get('volunteerId') || '';
   paymentType = params.get('type') || 'completion';
 
   const qItems = params.get('itemsCost');
@@ -39,6 +41,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (paymentType === 'tip') {
     itemsCost = 0;
     volunteerFee = 0;
+  }
+  if (paymentType === 'service_fee_upfront') {
+    // Upfront service fee: only the volunteer's quoted service charge, no items cost
+    itemsCost = 0;
+    tipAmount = 0;
   }
   totalAmount = itemsCost + volunteerFee + platformFee + tipAmount;
   updateSummaryUI();
@@ -99,7 +106,7 @@ async function loadRequestDetails(reqId) {
       if (request.serviceFee !== undefined && request.serviceFee !== null && Number(request.serviceFee) > 0) {
         volunteerFee = Number(request.serviceFee);
       } else if (request.volunteerQuotes && request.volunteerQuotes.length > 0) {
-        const targetVolId = request.volunteer ? String(request.volunteer._id || request.volunteer.id || request.volunteer) : null;
+        const targetVolId = currentVolunteerId || (request.volunteer ? String(request.volunteer._id || request.volunteer.id || request.volunteer) : null);
         let matchQuote = null;
         if (targetVolId) {
           matchQuote = request.volunteerQuotes.find(q => q.volunteer && String(q.volunteer._id || q.volunteer.id || q.volunteer) === targetVolId);
@@ -126,6 +133,36 @@ async function loadRequestDetails(reqId) {
       // Check if this is a Purchase Cost approval payment
       if (paymentType === 'purchase' || request.status === 'purchase_cost_submitted') {
         paymentType = 'purchase';
+      }
+      // Upfront service fee: zero out items cost
+      if (paymentType === 'service_fee_upfront') {
+        itemsCost = 0;
+        tipAmount = 0;
+
+        const pageTitle = document.querySelector('h1');
+        const pageSubtitle = document.querySelector('h1 + p');
+        const feeLabel = document.querySelector('#summaryVolunteerFee')?.previousElementSibling;
+
+        if (pageTitle) pageTitle.textContent = 'Pay Volunteer Service Fee (Escrow)';
+        if (pageSubtitle) pageSubtitle.textContent = 'Pay the volunteer service fee into secure escrow. For store purchases, the volunteer will share the store QR/payment link when shopping, and you will pay the merchant directly.';
+        if (feeLabel) feeLabel.textContent = 'Volunteer Service Fee (Escrow)';
+      }
+      // Pre-Fund payment: combines estimated items budget + service fee in escrow
+      if (paymentType === 'pre_fund') {
+        if (itemsCost === 0 && request.allowedBudget > 0) {
+          itemsCost = Number(request.allowedBudget);
+        }
+        tipAmount = 0;
+
+        const pageTitle = document.querySelector('h1');
+        const pageSubtitle = document.querySelector('h1 + p');
+        const itemsCostLabel = document.querySelector('#summaryItemsCost')?.previousElementSibling;
+        const feeLabel = document.querySelector('#summaryVolunteerFee')?.previousElementSibling;
+
+        if (pageTitle) pageTitle.textContent = 'Pre-Fund Task & Escrow Deposit';
+        if (pageSubtitle) pageSubtitle.textContent = 'Deposit estimated purchase budget & service fee into secure escrow. Volunteer will purchase directly within this budget and submit the bill for your final verification & release.';
+        if (itemsCostLabel) itemsCostLabel.textContent = 'Estimated Purchase Budget (Escrow)';
+        if (feeLabel) feeLabel.textContent = 'Volunteer Service Charge (Escrow)';
       }
 
       // Show metadata banner
@@ -278,6 +315,7 @@ async function processPayment() {
       requestId: currentRequestId,
       paymentType,
       tipAmount,
+      volunteerId: currentVolunteerId,
       fallbackAmount: totalAmount
     });
 
@@ -336,6 +374,8 @@ async function processPayment() {
       ? 'Shopping Fund Release'
       : paymentType === 'tip'
       ? 'Volunteer Tip'
+      : paymentType === 'service_fee_upfront'
+      ? 'Service Fee (Upfront Escrow)'
       : 'Service Charge Release',
     order_id: orderData.orderId,
     image: '',   // optional logo
@@ -347,7 +387,8 @@ async function processPayment() {
     },
     notes: {
       requestId: currentRequestId,
-      paymentType
+      paymentType,
+      volunteerId: currentVolunteerId
     },
     // ── Step 3: Payment Success Handler ─────────────────────────────────────
     handler: async function (response) {
@@ -360,6 +401,7 @@ async function processPayment() {
           razorpay_signature,
           requestId: currentRequestId,
           paymentType,
+          volunteerId: currentVolunteerId,
           tipAmount
         });
 
@@ -370,6 +412,22 @@ async function processPayment() {
           } else if (orderData.volunteerName && orderData.volunteerName !== 'Volunteer' && orderData.volunteerName !== 'Assigned Volunteer') {
             volunteerName = orderData.volunteerName;
           }
+
+          // For service_fee_upfront: record the pre-payment on the request
+          if (paymentType === 'service_fee_upfront') {
+            try {
+              await apiCall(`/requests/${currentRequestId}/prepay-service-fee`, 'PUT', {
+                amountPaid: volunteerFee,
+                volunteerId: currentVolunteerId,
+                razorpayOrderId: razorpay_order_id,
+                razorpayPaymentId: razorpay_payment_id,
+                paymentMethod: 'Razorpay'
+              });
+            } catch (prepayErr) {
+              console.warn('prepay-service-fee call failed (non-fatal):', prepayErr);
+            }
+          }
+
           showSuccessCard();
         } else {
           alert('Payment verification failed: ' + (verifyRes.data?.message || 'Unknown error'));
@@ -420,8 +478,8 @@ function showSuccessCard() {
   if (successTxnId)  successTxnId.textContent  = transactionId;
   if (successPaidTo) successPaidTo.textContent = volunteerName;
 
-  // Only show feedback modal after final payment (not purchase funding)
-  if (paymentType !== 'purchase') {
+  // Only show feedback modal after final completion payment (not purchase funding or upfront fee)
+  if (paymentType !== 'purchase' && paymentType !== 'service_fee_upfront') {
     setTimeout(() => { openFeedbackModal(); }, 600);
   }
 }
@@ -915,6 +973,7 @@ async function submitRzpMockPayment(method) {
           simulated: true,
           requestId: currentRequestId,
           paymentType,
+          volunteerId: currentVolunteerId,
           tipAmount
         });
 
@@ -929,6 +988,21 @@ async function submitRzpMockPayment(method) {
           // Close modal and show success card
           const modal = document.getElementById('rzpMockModal');
           if (modal) modal.style.display = 'none';
+
+          // For upfront service fee: record the pre-payment on the request
+          if (paymentType === 'service_fee_upfront') {
+            try {
+              await apiCall(`/requests/${currentRequestId}/prepay-service-fee`, 'PUT', {
+                amountPaid: volunteerFee,
+                volunteerId: currentVolunteerId,
+                transactionId: transactionId,
+                paymentMethod: 'Simulated'
+              });
+            } catch (prepayErr) {
+              console.warn('prepay-service-fee (simulated) call failed:', prepayErr);
+            }
+          }
+
           showSuccessCard();
         } else {
           alert('Payment verification failed: ' + (verifyRes.data?.message || 'Unknown error'));
@@ -942,3 +1016,15 @@ async function submitRzpMockPayment(method) {
     }, 800);
   }, 1000);
 }
+
+// ──────────────────────────────────────────────────────────
+// CANCEL & RETURN TO DASHBOARD WITHOUT PROCESSING PAYMENT
+// ──────────────────────────────────────────────────────────
+window.handleCancelAndReturnToDashboard = function(e) {
+  if (e && typeof e.preventDefault === 'function') {
+    e.preventDefault();
+  }
+  // Immediately redirect back to the caregiver approvals section without triggering any payment
+  window.location.href = '/family-dashboard.html?tab=approvals';
+};
+

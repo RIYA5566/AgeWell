@@ -645,6 +645,66 @@ function buildSeniorRequestCardHtml(req) {
     const volPhone = volObj ? volObj.phone : '';
     const volEmail = volObj ? volObj.email : '';
 
+    // ── For awaiting_verification: show senior confirmation section ────────────
+    const proofType = req.taskProofType || (
+      req.category === 'Grocery Shopping' ? 'financial' :
+      (req.category === 'Tech Support' || req.category === 'Housekeeping' || req.category === 'Companionship') ? 'service_only' : 'mixed'
+    );
+    const seniorCanVerify = req.status === 'awaiting_verification' && req.completionVerified !== 'verified';
+    const isPrePaid = !!req.serviceFeePrePaid;
+    const serviceFeeAmt = Number(req.serviceFee || 0);
+
+    let verifySection = '';
+    if (seniorCanVerify) {
+      if (proofType === 'service_only' && serviceFeeAmt > 0 && !isPrePaid) {
+        // Caregiver hasn't paid yet — senior can't release until payment is made
+        verifySection = `
+          <div style="margin-top:12px; padding:14px; background:linear-gradient(135deg,#fffbeb,#fef3c7); border:1.5px solid #fcd34d; border-radius:14px;">
+            <p style="font-size:0.88rem; font-weight:700; color:#92400e; margin-bottom:6px; display:flex; align-items:center; gap:6px;">
+              <svg style="width:16px;height:16px;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              Waiting for Caregiver Payment
+            </p>
+            <p style="font-size:0.82rem; color:#78350f;">
+              The volunteer has completed the task! The caregiver needs to pay the service fee of <strong>₹${serviceFeeAmt}</strong> before the volunteer's earnings can be released.
+            </p>
+          </div>`;
+      } else {
+        // Payment done (or ₹0 fee) — show normal verify buttons
+        verifySection = `
+          <div style="margin-top:12px; padding:14px; background:linear-gradient(135deg,#f0fdf4,#ecfdf5); border:1.5px solid #86efac; border-radius:14px;">
+            <p style="font-size:0.88rem; font-weight:700; color:#15803d; margin-bottom:6px; display:flex; align-items:center; gap:6px;">
+              <svg style="width:16px;height:16px;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              ${proofType === 'service_only' ? 'Did the volunteer perform this service?' : 'Did the volunteer complete this task?'}
+            </p>
+            <p style="font-size:0.82rem; color:#166534; margin-bottom:10px;">
+              ${proofType === 'service_only'
+                ? 'Tap "Yes, Done!" to confirm the service was performed and release the volunteer\'s payment.'
+                : 'Confirm whether the volunteer delivered your items correctly.'}
+            </p>
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+              <button
+                id="seniorVerifyBtn_${req._id}"
+                onclick="seniorVerifyTask('${req._id}', true)"
+                style="flex:1; min-width:120px; padding:9px 14px; background:#16a34a; color:#fff; border:none; border-radius:10px; font-size:0.85rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; transition:background 0.2s; box-shadow:0 2px 6px rgba(22,163,74,0.25);"
+                onmouseover="this.style.background='#15803d'" onmouseout="this.style.background='#16a34a'"
+              >
+                <svg style="width:15px;height:15px;" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
+                Yes, Done!
+              </button>
+              <button
+                onclick="seniorVerifyTask('${req._id}', false)"
+                style="flex:1; min-width:120px; padding:9px 14px; background:#fff; color:#b91c1c; border:1.5px solid #fca5a5; border-radius:10px; font-size:0.85rem; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; transition:all 0.2s;"
+                onmouseover="this.style.background='#fff1f2'" onmouseout="this.style.background='#fff'"
+              >
+                <svg style="width:15px;height:15px;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                Not Done Yet
+              </button>
+            </div>
+          </div>`;
+      }
+    }
+
+
     assignmentInfo = `
       <div class="req-volunteer-card">
         <div class="vol-profile-left">
@@ -660,6 +720,7 @@ function buildSeniorRequestCardHtml(req) {
           ${volPhone ? `<a href="tel:${escapeHTML(volPhone)}" class="btn-call-vol"><svg class="w-3.5 h-3.5 inline-block mr-1" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z" /></svg>Call Volunteer (${escapeHTML(volPhone)})</a>` : ''}
           ${volEmail ? `<span style="font-size:0.88rem; color:#64748b; display:inline-flex; align-items:center; gap:4px;"><svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" /></svg>${escapeHTML(volEmail)}</span>` : ''}
         </div>
+        ${verifySection}
       </div>`;
   } else if (req.status === 'completed') {
     const volObj = typeof req.volunteer === 'object' ? req.volunteer : null;
@@ -762,6 +823,12 @@ function buildSeniorRequestCardHtml(req) {
         <div style="margin-bottom: 0.8rem; padding: 7px 12px; background: #eff6ff; border-left: 3px solid #3b82f6; border-radius: 8px; font-size: 0.88rem; color: #1e40af; font-weight: 600; display:flex; align-items:center; gap:6px;">
           <svg class="w-4 h-4 text-blue-600 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" /></svg>
           <span>${t('sd_pref_label')}<strong>${escapeHTML(prefVal)}</strong></span>
+        </div>` : ''}
+
+      ${(req.allowedBudget !== undefined && req.allowedBudget !== null && Number(req.allowedBudget) > 0) ? `
+        <div style="margin-bottom: 0.8rem; padding: 7px 12px; background: #f0fdf4; border-left: 3px solid #10b981; border-radius: 8px; font-size: 0.88rem; color: #065f46; font-weight: 600; display:flex; align-items:center; gap:6px;">
+          <svg class="w-4 h-4 text-emerald-600 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          <span>Caregiver Budget Estimate: <strong>₹${req.allowedBudget}</strong></span>
         </div>` : ''}
 
       <!-- Voice Player -->
@@ -1778,3 +1845,49 @@ async function submitSeniorVoiceIVRResponse(requestId, selection) {
     );
   }
 }
+
+// â”€â”€ Senior directly verifies the volunteer completed the task â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Called from "Yes, Done!" / "Not Done Yet" buttons in the request cards
+window.seniorVerifyTask = async function(requestId, approved) {
+  var btn = document.getElementById('seniorVerifyBtn_' + requestId);
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = approved ? 'Confirming...' : 'Submitting...';
+  }
+  try {
+    var res = await apiCall('/requests/' + requestId + '/verify-completion-senior', 'PUT', {
+      approved: approved,
+      rejectionReason: approved ? '' : 'Senior reported the task is not yet complete.'
+    });
+    if (res.ok && res.data.success) {
+      if (approved) {
+        showTabPopup(
+          'Task Confirmed!',
+          'Thank you! The volunteer service charge has been released. The task is now complete.',
+          'âœ…',
+          '#16a34a'
+        );
+      } else {
+        showTabPopup(
+          'Feedback Noted',
+          'We have notified the volunteer that the task needs attention.',
+          'âš ï¸',
+          '#d97706'
+        );
+      }
+      loadRequests();
+    } else {
+      showTabPopup(
+        'Error',
+        (res.data && res.data.message) || 'Could not record your confirmation. Please try again.',
+        'âŒ',
+        '#c62828'
+      );
+      if (btn) { btn.disabled = false; btn.textContent = 'Yes, Done!'; }
+    }
+  } catch (err) {
+    console.error('Senior verify task error:', err);
+    showTabPopup('Network Error', 'Please check your connection and try again.', 'âŒ', '#c62828');
+    if (btn) { btn.disabled = false; btn.textContent = 'Yes, Done!'; }
+  }
+};

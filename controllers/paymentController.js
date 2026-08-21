@@ -29,7 +29,7 @@ function getRazorpayInstance() {
 }
 
 // ─── Helper: compute total amount from request + paymentType ──────────────────
-function computeAmount(request, paymentType, clientTipAmount = 0, fallbackAmount = 0) {
+function computeAmount(request, paymentType, clientTipAmount = 0, fallbackAmount = 0, targetVolId = null) {
   if (paymentType === 'purchase') {
     let cost = Math.round(Number(request.actualPurchaseCost) || 0);
     if (cost <= 0 && request.purchasePaymentDetails?.amountPaid) {
@@ -40,13 +40,13 @@ function computeAmount(request, paymentType, clientTipAmount = 0, fallbackAmount
     }
     return cost;
   }
-  if (paymentType === 'completion') {
+  if (paymentType === 'completion' || paymentType === 'service_fee_upfront') {
     let fee = Math.round(Number(request.serviceFee) || 0);
     if (fee <= 0 && request.volunteerQuotes && request.volunteerQuotes.length > 0) {
-      const targetVolId = request.volunteer ? String(request.volunteer._id || request.volunteer.id || request.volunteer) : null;
+      const volKey = targetVolId || (request.volunteer ? String(request.volunteer._id || request.volunteer.id || request.volunteer) : null) || (request.pendingVolunteer ? String(request.pendingVolunteer._id || request.pendingVolunteer.id || request.pendingVolunteer) : null);
       let matchQuote = null;
-      if (targetVolId) {
-        matchQuote = request.volunteerQuotes.find(q => q.volunteer && String(q.volunteer._id || q.volunteer.id || q.volunteer) === targetVolId);
+      if (volKey) {
+        matchQuote = request.volunteerQuotes.find(q => q.volunteer && String(q.volunteer._id || q.volunteer.id || q.volunteer) === volKey);
       }
       if (!matchQuote) matchQuote = request.volunteerQuotes[0];
       if (matchQuote && matchQuote.serviceFee !== undefined && matchQuote.serviceFee !== null) {
@@ -57,6 +57,25 @@ function computeAmount(request, paymentType, clientTipAmount = 0, fallbackAmount
       fee = Math.round(Number(fallbackAmount) || 0);
     }
     return fee;
+  }
+  if (paymentType === 'pre_fund') {
+    let fee = Math.round(Number(request.serviceFee) || 0);
+    if (fee <= 0 && request.volunteerQuotes && request.volunteerQuotes.length > 0) {
+      const volKey = targetVolId || (request.volunteer ? String(request.volunteer._id || request.volunteer.id || request.volunteer) : null) || (request.pendingVolunteer ? String(request.pendingVolunteer._id || request.pendingVolunteer.id || request.pendingVolunteer) : null);
+      let matchQuote = null;
+      if (volKey) {
+        matchQuote = request.volunteerQuotes.find(q => q.volunteer && String(q.volunteer._id || q.volunteer.id || q.volunteer) === volKey);
+      }
+      if (!matchQuote) matchQuote = request.volunteerQuotes[0];
+      if (matchQuote && matchQuote.serviceFee !== undefined && matchQuote.serviceFee !== null) {
+        fee = Math.round(Number(matchQuote.serviceFee) || 0);
+      }
+    }
+    let budget = Math.round(Number(request.allowedBudget) || 0);
+    if (budget <= 0 && fallbackAmount > 0) {
+      budget = Math.max(0, Math.round(Number(fallbackAmount)) - fee);
+    }
+    return fee + budget;
   }
   if (paymentType === 'tip') {
     const tip = Math.round(Number(clientTipAmount) || 0);
@@ -73,30 +92,27 @@ function computeAmount(request, paymentType, clientTipAmount = 0, fallbackAmount
 // ──────────────────────────────────────────────────────────────────────────────
 exports.createRazorpayOrder = async (req, res) => {
   try {
-    const { requestId, paymentType, tipAmount: clientTip, fallbackAmount } = req.body;
+    const { requestId, paymentType, tipAmount: clientTip, fallbackAmount, volunteerId } = req.body;
 
     if (!requestId || !paymentType) {
       return res.status(400).json({ success: false, message: 'requestId and paymentType are required' });
     }
-    if (!['purchase', 'completion', 'tip'].includes(paymentType)) {
+    if (!['purchase', 'completion', 'tip', 'service_fee_upfront', 'pre_fund'].includes(paymentType)) {
       return res.status(400).json({ success: false, message: 'Invalid paymentType' });
     }
 
     // ── Fetch request & verify caregiver is linked to this senior ─────────────
     const request = await HelpRequest.findById(requestId)
       .populate('senior', 'name')
-      .populate('volunteer', 'name');
+      .populate('volunteer', 'name')
+      .populate('pendingVolunteer', 'name');
 
     if (!request) {
       return res.status(404).json({ success: false, message: 'Help request not found' });
     }
 
-    // Only the linked family caregiver can pay
-    const { User } = require('../models/User') || {};
-    // Simple authorization: user must be role='family' — handled by route middleware.
-
     // ── Server-side amount calculation ────────────────────────────────────────
-    const totalAmount = computeAmount(request, paymentType, clientTip, fallbackAmount);
+    const totalAmount = computeAmount(request, paymentType, clientTip, fallbackAmount, volunteerId);
 
     if (totalAmount <= 0) {
       return res.status(400).json({
@@ -107,9 +123,23 @@ exports.createRazorpayOrder = async (req, res) => {
 
     // ── Amount breakdowns for Payment record ──────────────────────────────────
     let serviceCharge = 0, shoppingAmount = 0, tipAmt = 0;
-    if (paymentType === 'purchase')    shoppingAmount = totalAmount;
-    if (paymentType === 'completion')  serviceCharge  = totalAmount;
-    if (paymentType === 'tip')         tipAmt         = totalAmount;
+    if (paymentType === 'purchase')                           shoppingAmount = totalAmount;
+    if (paymentType === 'completion' || paymentType === 'service_fee_upfront') serviceCharge  = totalAmount;
+    if (paymentType === 'tip')                                tipAmt         = totalAmount;
+    if (paymentType === 'pre_fund') {
+      let fee = Math.round(Number(request.serviceFee) || 0);
+      if (fee <= 0 && request.volunteerQuotes && request.volunteerQuotes.length > 0) {
+        const volKey = volunteerId || (request.volunteer ? String(request.volunteer._id || request.volunteer.id || request.volunteer) : null) || (request.pendingVolunteer ? String(request.pendingVolunteer._id || request.pendingVolunteer.id || request.pendingVolunteer) : null);
+        let matchQuote = null;
+        if (volKey) {
+          matchQuote = request.volunteerQuotes.find(q => q.volunteer && String(q.volunteer._id || q.volunteer.id || q.volunteer) === volKey);
+        }
+        if (!matchQuote) matchQuote = request.volunteerQuotes[0];
+        if (matchQuote && matchQuote.serviceFee) fee = Math.round(Number(matchQuote.serviceFee));
+      }
+      serviceCharge = fee;
+      shoppingAmount = Math.max(0, totalAmount - serviceCharge);
+    }
 
     // ── Try Razorpay — fall back to simulated if keys not configured ──────────
     const razorpay = getRazorpayInstance();
@@ -119,10 +149,13 @@ exports.createRazorpayOrder = async (req, res) => {
       console.warn('[AgeWell] RAZORPAY_KEY_ID / RAZORPAY_KEY_SECRET not set. Using simulated payment fallback.');
 
       const simOrderId = `sim_order_${Date.now()}`;
+      const targetVol = volunteerId || request.volunteer || request.pendingVolunteer || (request.volunteerQuotes && request.volunteerQuotes[0]?.volunteer) || null;
+      const targetVolId = targetVol?._id || targetVol || null;
+
       await Payment.create({
         request: requestId,
         caregiver: req.user.id,
-        volunteer: request.volunteer?._id || request.volunteer || null,
+        volunteer: targetVolId,
         paymentType,
         serviceCharge,
         shoppingAmount,
@@ -139,7 +172,7 @@ exports.createRazorpayOrder = async (req, res) => {
         amount: totalAmount,
         key: '',
         paymentType,
-        volunteerName: request.volunteer?.name || 'Volunteer',
+        volunteerName: targetVol?.name || request.volunteer?.name || 'Volunteer',
         message: 'Razorpay keys not configured — using simulated payment mode.'
       });
     }
@@ -153,12 +186,14 @@ exports.createRazorpayOrder = async (req, res) => {
     };
 
     const order = await razorpay.orders.create(options);
+    const targetVol = volunteerId || request.volunteer || request.pendingVolunteer || (request.volunteerQuotes && request.volunteerQuotes[0]?.volunteer) || null;
+    const targetVolId = targetVol?._id || targetVol || null;
 
     // Persist Payment record
     await Payment.create({
       request: requestId,
       caregiver: req.user.id,
-      volunteer: request.volunteer?._id || request.volunteer || null,
+      volunteer: targetVolId,
       paymentType,
       serviceCharge,
       shoppingAmount,
@@ -175,7 +210,7 @@ exports.createRazorpayOrder = async (req, res) => {
       amount: totalAmount,
       key: process.env.RAZORPAY_KEY_ID,
       paymentType,
-      volunteerName: request.volunteer?.name || 'Volunteer',
+      volunteerName: targetVol?.name || request.volunteer?.name || 'Volunteer',
       seniorName: request.senior?.name || 'Senior'
     });
 
@@ -294,6 +329,74 @@ async function executeLifecycleTransition(payment, user, clientTipAmount = 0) {
 
   const txnId = payment.razorpayPaymentId || `PAY_${Date.now()}`;
 
+  // ── PRE-FUND: upfront deposit of allowed budget + volunteer service fee ──
+  if (payment.paymentType === 'pre_fund') {
+    if (request.pendingVolunteer) {
+      request.volunteer = request.pendingVolunteer;
+      request.pendingVolunteer = null;
+    } else if (payment.volunteer && !request.volunteer) {
+      request.volunteer = payment.volunteer;
+    } else if (!request.volunteer && request.volunteerQuotes && request.volunteerQuotes.length > 0) {
+      request.volunteer = request.volunteerQuotes[0].volunteer;
+    }
+
+    if ((!request.serviceFee || Number(request.serviceFee) === 0) && request.volunteerQuotes && request.volunteerQuotes.length > 0) {
+      const match = request.volunteerQuotes.find(q => q.volunteer && String(q.volunteer._id || q.volunteer.id || q.volunteer) === String(request.volunteer?._id || request.volunteer));
+      if (match && match.serviceFee) {
+        request.serviceFee = match.serviceFee;
+      } else if (request.volunteerQuotes[0].serviceFee) {
+        request.serviceFee = request.volunteerQuotes[0].serviceFee;
+      }
+    }
+
+    request.serviceFeePrePaid = true;
+    request.serviceFeePrePaidAt = new Date();
+    request.purchaseFunded = true;
+    request.purchaseFundedAt = new Date();
+    request.fundingMode = 'pre_fund';
+    if (!request.merchantPurchases || request.merchantPurchases.length === 0) {
+      request.actualPurchaseCost = 0;
+    }
+    request.status = 'purchase_funded';
+    request.acceptedAt = request.acceptedAt || Date.now();
+    request.serviceFeePrePaymentDetails = {
+      amountPaid: payment.serviceCharge,
+      transactionId: txnId,
+      paymentMethod: 'Razorpay Pre-Fund Escrow',
+      razorpayOrderId: payment.razorpayOrderId || '',
+      razorpayPaymentId: payment.razorpayPaymentId || '',
+      paidAt: new Date()
+    };
+    request.purchasePaymentDetails = {
+      amountPaid: payment.shoppingAmount,
+      transactionId: txnId,
+      paymentMethod: 'Razorpay Pre-Fund Escrow',
+      paidAt: new Date()
+    };
+    await request.save();
+
+    // Create PENDING Earning record for volunteer now that pre-fund is verified
+    if (request.volunteer && Number(payment.serviceCharge || request.serviceFee || 0) > 0) {
+      try {
+        await Earning.deleteOne({ request: request._id, volunteer: request.volunteer, status: 'PENDING', type: 'SERVICE_CHARGE' });
+        await Earning.create({
+          volunteer: request.volunteer,
+          request: request._id,
+          amount: Number(payment.serviceCharge || request.serviceFee || 0),
+          type: 'SERVICE_CHARGE',
+          status: 'PENDING',
+          taskTitle: request.title || 'Help Request',
+          taskCategory: request.category || 'Other'
+        });
+      } catch (earnErr) {
+        console.error('Earning creation error (pre_fund verified):', earnErr);
+      }
+    }
+
+    console.log(`[Payment] Pre-Fund deposit received ₹${payment.totalAmount} (Budget: ₹${payment.shoppingAmount}, Fee: ₹${payment.serviceCharge}) for request ${payment.request}`);
+    return;
+  }
+
   // ── PURCHASE: fund volunteer's shopping money ─────────────────────────────
   if (payment.paymentType === 'purchase') {
     request.purchaseFunded = true;
@@ -307,6 +410,63 @@ async function executeLifecycleTransition(payment, user, clientTipAmount = 0) {
     };
     await request.save();
     console.log(`[Payment] Purchase funded ₹${payment.totalAmount} for request ${payment.request}`);
+    return;
+  }
+
+  // ── SERVICE FEE UPFRONT: pre-escrow service fee for caregiver_direct / service_only tasks ─────
+  if (payment.paymentType === 'service_fee_upfront') {
+    if (request.pendingVolunteer) {
+      request.volunteer = request.pendingVolunteer;
+      request.pendingVolunteer = null;
+    } else if (payment.volunteer && !request.volunteer) {
+      request.volunteer = payment.volunteer;
+    } else if (!request.volunteer && request.volunteerQuotes && request.volunteerQuotes.length > 0) {
+      request.volunteer = request.volunteerQuotes[0].volunteer;
+    }
+
+    if ((!request.serviceFee || Number(request.serviceFee) === 0) && request.volunteerQuotes && request.volunteerQuotes.length > 0) {
+      const match = request.volunteerQuotes.find(q => q.volunteer && String(q.volunteer._id || q.volunteer.id || q.volunteer) === String(request.volunteer?._id || request.volunteer));
+      if (match && match.serviceFee) {
+        request.serviceFee = match.serviceFee;
+      } else if (request.volunteerQuotes[0].serviceFee) {
+        request.serviceFee = request.volunteerQuotes[0].serviceFee;
+      }
+    }
+
+    request.serviceFeePrePaid = true;
+    request.serviceFeePrePaidAt = new Date();
+    request.fundingMode = 'caregiver_direct';
+    request.status = 'accepted';
+    request.acceptedAt = request.acceptedAt || Date.now();
+    request.serviceFeePrePaymentDetails = {
+      amountPaid: payment.totalAmount,
+      transactionId: txnId,
+      paymentMethod: 'Razorpay',
+      razorpayOrderId: payment.razorpayOrderId || '',
+      razorpayPaymentId: payment.razorpayPaymentId || '',
+      paidAt: new Date()
+    };
+    await request.save();
+
+    // Create PENDING Earning record for volunteer
+    if (request.volunteer && Number(payment.totalAmount || request.serviceFee || 0) > 0) {
+      try {
+        await Earning.deleteOne({ request: request._id, volunteer: request.volunteer, status: 'PENDING', type: 'SERVICE_CHARGE' });
+        await Earning.create({
+          volunteer: request.volunteer,
+          request: request._id,
+          amount: Number(payment.totalAmount || request.serviceFee || 0),
+          type: 'SERVICE_CHARGE',
+          status: 'PENDING',
+          taskTitle: request.title || 'Help Request',
+          taskCategory: request.category || 'Other'
+        });
+      } catch (earnErr) {
+        console.error('Earning creation error (service_fee_upfront verified):', earnErr);
+      }
+    }
+
+    console.log(`[Payment] Upfront service fee pre-paid ₹${payment.totalAmount} for request ${payment.request}`);
     return;
   }
 

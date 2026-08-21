@@ -41,7 +41,7 @@ const paymentSchema = new mongoose.Schema({
   // Payment type: which lifecycle step this covers
   paymentType: {
     type: String,
-    enum: ['purchase', 'completion', 'tip'],
+    enum: ['purchase', 'completion', 'tip', 'service_fee_upfront', 'pre_fund'],
     required: true
   },
 

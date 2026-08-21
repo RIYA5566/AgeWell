@@ -8,6 +8,147 @@ let pendingSelectVolunteerId = null;
 let pendingSelectVolunteerName = '';
 let pollInterval = null;
 let currentVolunteersMap = {};
+let currentRequestsMap = {};
+
+// ─── UPI App Deep Link Helper ──────────────────────────────────────────────
+/**
+ * Opens the UPI deep link (upi://pay?...) to launch GPay/PhonePe/Paytm etc.
+ * On desktop or browsers that don't support the scheme, falls back to copying
+ * the UPI ID to clipboard and showing a user-friendly toast.
+ */
+function openInUpiApp(upiUrl, upiId) {
+  if (!upiUrl) {
+    showFamilyToast('No UPI link available.', 'error');
+    return;
+  }
+
+  // Attempt to open the deep link — works natively on Android Chrome/mobile
+  const start = Date.now();
+  window.location.href = upiUrl;
+
+  // After a short timeout, if we're still here (desktop / unsupported browser),
+  // fall back to copying the UPI ID and showing instructions
+  setTimeout(() => {
+    const elapsed = Date.now() - start;
+    // If less than ~1200ms have passed the browser likely didn't hand off to an app
+    if (elapsed < 1500) {
+      // Fallback: copy UPI ID and show toast
+      copyUpiId(upiId);
+      showFamilyToast(
+        `Your browser doesn't support UPI deep links. UPI ID "${upiId}" copied — open GPay / PhonePe / Paytm and paste it to pay.`,
+        'info',
+        6000
+      );
+    }
+  }, 1200);
+}
+
+/**
+ * Copies the UPI ID to clipboard and shows a toast notification.
+ */
+function copyUpiId(upiId) {
+  if (!upiId) return;
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(upiId).then(() => {
+        showFamilyToast(`UPI ID "${upiId}" copied to clipboard!`, 'success');
+      }).catch(() => {
+        _fallbackCopy(upiId);
+      });
+    } else {
+      _fallbackCopy(upiId);
+    }
+  } catch (e) {
+    _fallbackCopy(upiId);
+  }
+}
+
+function _fallbackCopy(text) {
+  const el = document.createElement('textarea');
+  el.value = text;
+  el.style.position = 'fixed';
+  el.style.opacity = '0';
+  document.body.appendChild(el);
+  el.focus();
+  el.select();
+  try {
+    document.execCommand('copy');
+    showFamilyToast(`UPI ID "${text}" copied to clipboard!`, 'success');
+  } catch (e) {
+    showFamilyToast(`Copy failed — UPI ID: ${text}`, 'error');
+  }
+  document.body.removeChild(el);
+}
+
+/**
+ * Show a small toast notification for family dashboard actions.
+ * Tries to reuse an existing toast system; falls back to a custom overlay.
+ */
+function showFamilyToast(message, type = 'success', duration = 3500) {
+  // Try to use the global showToast if available
+  if (typeof showToast === 'function') {
+    showToast(message, type, duration);
+    return;
+  }
+
+  // Custom fallback toast
+  let toast = document.getElementById('familyUpiToast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'familyUpiToast';
+    toast.style.cssText = [
+      'position:fixed', 'bottom:24px', 'left:50%', 'transform:translateX(-50%) translateY(60px)',
+      'z-index:99999', 'padding:12px 20px', 'border-radius:14px',
+      'font-size:13px', 'font-weight:700', 'color:#fff',
+      'box-shadow:0 4px 24px rgba(0,0,0,0.18)', 'transition:transform 0.3s ease, opacity 0.3s ease',
+      'opacity:0', 'max-width:90vw', 'text-align:center', 'pointer-events:none'
+    ].join(';');
+    document.body.appendChild(toast);
+  }
+
+  const colors = { success: '#16a34a', error: '#dc2626', info: '#2563eb' };
+  toast.style.background = colors[type] || colors.success;
+  toast.textContent = message;
+
+  // Animate in
+  requestAnimationFrame(() => {
+    toast.style.opacity = '1';
+    toast.style.transform = 'translateX(-50%) translateY(0)';
+  });
+
+  // Animate out after duration
+  clearTimeout(toast._hideTimer);
+  toast._hideTimer = setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateX(-50%) translateY(60px)';
+  }, duration);
+}
+// ──────────────────────────────────────────────────────────────────────────────
+
+
+function resolveRequestVolunteer(req) {
+  if (!req) return { vol: null, volName: 'Volunteer', volPhone: '', volEmail: '', volId: '' };
+  let vol = req.volunteer;
+  if (typeof vol === 'string' && currentVolunteersMap && currentVolunteersMap[vol]) {
+    vol = currentVolunteersMap[vol];
+  }
+  if ((!vol || typeof vol === 'string') && req.volunteerQuotes && req.volunteerQuotes.length > 0) {
+    const targetId = typeof vol === 'string' ? vol : null;
+    let match = null;
+    if (targetId) {
+      match = req.volunteerQuotes.find(q => q.volunteer && String(q.volunteer._id || q.volunteer.id || q.volunteer) === String(targetId));
+    }
+    if (!match) match = req.volunteerQuotes[0];
+    if (match && typeof match.volunteer === 'object') {
+      vol = match.volunteer;
+    }
+  }
+  const volName = vol && typeof vol === 'object' ? (vol.name || 'Volunteer') : (typeof vol === 'string' && currentVolunteersMap[vol]?.name ? currentVolunteersMap[vol].name : 'Volunteer');
+  const volPhone = vol && typeof vol === 'object' ? (vol.phone || '') : (typeof vol === 'string' && currentVolunteersMap[vol]?.phone ? currentVolunteersMap[vol].phone : '');
+  const volEmail = vol && typeof vol === 'object' ? (vol.email || '') : (typeof vol === 'string' && currentVolunteersMap[vol]?.email ? currentVolunteersMap[vol].email : '');
+  const volId = vol ? (typeof vol === 'object' ? (vol._id || vol.id) : vol) : '';
+  return { vol, volName, volPhone, volEmail, volId };
+}
 
 document.addEventListener('DOMContentLoaded', () => {
   // Validate auth — must be family role
@@ -164,7 +305,7 @@ document.addEventListener('DOMContentLoaded', () => {
 async function loadFamilyDashboard(silent = false) {
   const elSenior = document.getElementById('seniorRequestsList');
   const elApproval = document.getElementById('approvalList');
-  const elVerify = document.getElementById('verificationList');
+  const elVerify = document.getElementById('completionVerificationList') || document.getElementById('verificationList');
   const elAll = document.getElementById('allRequestsList');
 
   if (!silent) {
@@ -188,10 +329,16 @@ async function loadFamilyDashboard(silent = false) {
 
   const { senior, requests, pendingApprovalCount } = res.data;
 
-  // Build lookup map of volunteers for instant profile viewing
+  // Build lookup maps of requests and volunteers for instant lookup
   currentVolunteersMap = {};
+  currentRequestsMap = {};
+  window.currentRequestsMap = currentRequestsMap;
+  window.allRequestsMap = currentRequestsMap;
   if (requests && requests.length > 0) {
     requests.forEach(r => {
+      const rId = String(r._id || r.id || '');
+      if (rId) currentRequestsMap[rId] = r;
+
       if (r.volunteer && typeof r.volunteer === 'object') {
         const vId = String(r.volunteer._id || r.volunteer.id || '');
         if (vId) currentVolunteersMap[vId] = r.volunteer;
@@ -214,6 +361,7 @@ async function loadFamilyDashboard(silent = false) {
   const seniorRequests = requests.filter(r => 
     ( (r.status === 'pending' || r.status === 'awaiting_approval') && (!r.volunteerQuotes || r.volunteerQuotes.length === 0) ) ||
     r.status === 'accepted' ||
+    r.status === 'purchase_cost_submitted' ||
     r.status === 'purchase_funded'
   );
   const volunteerApprovals = requests.filter(r => (r.status === 'pending' || r.status === 'awaiting_approval') && r.volunteerQuotes && r.volunteerQuotes.length > 0);
@@ -305,6 +453,9 @@ async function loadFamilyDashboard(silent = false) {
     document.title = 'Family Caregiver Portal – AgeWell';
   }
 
+  // Render senior release notifications banner
+  renderSeniorReleaseNotifications(requests);
+
   // Render Senior Help Requests & Fulfillment Decisions (Section 1)
   renderSeniorHelpRequests(seniorRequests);
 
@@ -317,7 +468,11 @@ async function loadFamilyDashboard(silent = false) {
   // Render full request history (Section 4)
   renderAllRequests(requests);
 
-  // Maintain active tab
+  // Maintain active tab (honors ?tab= URL param if returning from payment)
+  const urlTab = new URLSearchParams(window.location.search).get('tab');
+  if (urlTab && ['requests', 'approvals', 'verifications', 'history'].includes(urlTab)) {
+    window.currentFamilyTab = urlTab;
+  }
   if (window.switchFamilyTab) {
     window.switchFamilyTab(window.currentFamilyTab || 'requests');
   }
@@ -616,11 +771,7 @@ function renderSeniorHelpRequests(seniorRequests) {
       accentGradient = 'from-emerald-400 to-emerald-600';
       footerHelpText = t('fd_assigned_in_progress');
 
-      const vol = req.volunteer;
-      const volName = vol ? escapeHTML(vol.name || 'Volunteer') : 'Volunteer';
-      const volPhone = vol ? escapeHTML(vol.phone || '') : '';
-      const volEmail = vol ? escapeHTML(vol.email || '') : '';
-      const volId = vol ? (typeof vol === 'object' ? (vol._id || vol.id) : vol) : '';
+      const { vol, volName, volPhone, volEmail, volId } = resolveRequestVolunteer(req);
 
       actionAreaHtml = `
         <div class="mt-4 p-4 rounded-2xl bg-emerald-50/60 border border-emerald-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
@@ -629,16 +780,60 @@ function renderSeniorHelpRequests(seniorRequests) {
               <div class="w-6 h-6 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs font-bold">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"/></svg>
               </div>
-              <span class="text-xs font-extrabold text-emerald-950">${t('fd_approved_volunteer')}: <strong class="font-extrabold text-emerald-800">${volName}</strong></span>
+              <span class="text-xs font-extrabold text-emerald-950">${t('fd_approved_volunteer')} <strong class="font-extrabold text-emerald-800">${escapeHTML(volName)}</strong></span>
             </div>
             ${volPhone ? `<p class="text-xs text-slate-600 font-medium pl-8">Phone: <a href="tel:${volPhone}" class="text-emerald-700 font-bold hover:underline">${volPhone}</a></p>` : ''}
             ${volEmail ? `<p class="text-xs text-slate-500 font-medium pl-8">Email: ${volEmail}</p>` : ''}
           </div>
-          ${volId ? `
-            <button type="button" onclick="viewVolunteerProfile('${volId}')" class="px-3.5 py-2 bg-white hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-xl text-xs font-bold shadow-2xs transition-all flex items-center gap-1.5 self-start sm:self-auto">
-              <svg class="w-3.5 h-3.5 text-emerald-700" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-              ${t('btn_view_profile')}
-            </button>` : ''}
+          <div class="flex items-center gap-2 flex-wrap self-start sm:self-auto">
+            <button type="button" onclick="openShoppingPrefModal('${req._id}')" class="px-3.5 py-2 bg-white hover:bg-amber-50 text-amber-800 border border-amber-300 rounded-xl text-xs font-bold shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer">
+              <svg class="w-3.5 h-3.5 text-amber-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10"/></svg>
+              <span>Edit Budget &amp; Pref</span>
+            </button>
+            ${volId ? `
+              <button type="button" onclick="viewVolunteerProfile('${volId}')" class="px-3.5 py-2 bg-white hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-xl text-xs font-bold shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer">
+                <svg class="w-3.5 h-3.5 text-emerald-700" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                ${t('btn_view_profile')}
+              </button>` : ''}
+          </div>
+        </div>`;
+
+    } else if (req.status === 'purchase_cost_submitted') {
+      statusBadge = `<span class="inline-flex items-center gap-1.5 px-3.5 py-1 bg-amber-50 text-amber-900 border border-amber-300 rounded-full text-xs font-extrabold shadow-2xs">
+        <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+        Store Payment Requested (₹${req.actualPurchaseCost || 0})
+      </span>`;
+      accentGradient = 'from-amber-400 to-amber-600';
+      footerHelpText = 'Volunteer uploaded store payment info. Please pay the merchant directly or switch to Tab 3 for full receipt details.';
+
+      const { vol, volName, volPhone, volEmail, volId } = resolveRequestVolunteer(req);
+      const merchant = req.merchantDetails || {};
+      const shopName = merchant.shopName || 'Merchant / Shop';
+
+      actionAreaHtml = `
+        <div class="mt-4 p-4 rounded-2xl bg-amber-50/80 border border-amber-200/90 space-y-3 shadow-2xs">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <span class="text-xs font-extrabold text-amber-950 block">Pay Merchant: <strong>${escapeHTML(shopName)}</strong> (₹${req.actualPurchaseCost || 0})</span>
+              <span class="text-xs text-slate-600 font-medium">Assisted by <strong>${escapeHTML(volName)}</strong> ${volPhone ? `(<a href="tel:${volPhone}" class="text-emerald-700 font-bold hover:underline">${volPhone}</a>)` : ''}</span>
+            </div>
+            <button
+              type="button"
+              onclick="directApprovePurchaseFunding('${req._id}', '${req.serviceFee || 0}', '${escapeHTML(volName).replace(/'/g, "\\'")}')"
+              class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs rounded-xl shadow-xs transition-all active:scale-95 border-none cursor-pointer flex items-center justify-center gap-1.5"
+            >
+              <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
+              <span>Confirm Merchant Paid ₹${req.actualPurchaseCost || 0}</span>
+            </button>
+          </div>
+          ${merchant.upiQrImage ? `
+            <div class="pt-2 border-t border-amber-200/60 flex items-center gap-3">
+              <img src="${merchant.upiQrImage}" alt="Store QR" class="w-20 h-20 object-contain rounded-xl border border-emerald-300 bg-white p-1">
+              <div class="text-xs text-slate-700 font-medium">
+                <span>Scan this QR with GPay / PhonePe / Paytm to pay <strong>₹${req.actualPurchaseCost || 0}</strong> directly to ${escapeHTML(shopName)}.</span>
+                ${merchant.upiId ? `<span class="block text-slate-900 font-bold mt-0.5">UPI ID: ${escapeHTML(merchant.upiId)}</span>` : ''}
+              </div>
+            </div>` : (merchant.upiId ? `<div class="text-xs text-slate-800 font-bold">UPI ID: ${escapeHTML(merchant.upiId)}</div>` : '')}
         </div>`;
 
     } else if (req.status === 'purchase_funded') {
@@ -649,15 +844,14 @@ function renderSeniorHelpRequests(seniorRequests) {
       accentGradient = 'from-emerald-400 to-emerald-600';
       footerHelpText = t('fd_purchase_funded_progress');
 
-      const vol = req.volunteer;
-      const volName = vol ? escapeHTML(vol.name || 'Volunteer') : 'Volunteer';
-      const volPhone = vol ? escapeHTML(vol.phone || '') : '';
+      const { vol, volName, volPhone, volEmail, volId } = resolveRequestVolunteer(req);
 
+      const shopLabel = req.merchantDetails?.shopName ? ` to ${escapeHTML(req.merchantDetails.shopName)}` : '';
       actionAreaHtml = `
         <div class="mt-4 p-4 rounded-2xl bg-emerald-50/60 border border-emerald-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
           <div>
-            <div class="text-xs font-bold text-emerald-950">${t('fd_funded_purchase_cost')}: <strong class="text-sm font-extrabold text-emerald-700">₹${req.actualPurchaseCost || 0}</strong></div>
-            <div class="text-xs text-slate-600 mt-0.5">${t('fd_assisted_by')} <strong>${volName}</strong> ${volPhone ? `(<a href="tel:${volPhone}" class="text-emerald-700 font-bold hover:underline">${volPhone}</a>)` : ''}</div>
+            <div class="text-xs font-bold text-emerald-950">${t('fd_funded_purchase_cost')} <strong class="text-sm font-extrabold text-emerald-700">₹${req.actualPurchaseCost || 0}</strong><span class="text-slate-600 font-semibold text-[11px] ml-1.5">(Paid directly${shopLabel})</span></div>
+            <div class="text-xs text-slate-600 mt-1">${t('fd_assisted_by')} <strong>${escapeHTML(volName)}</strong> ${volPhone ? `(<a href="tel:${volPhone}" class="text-emerald-700 font-bold hover:underline">${volPhone}</a>)` : ''} — Volunteer is now picking up items for delivery.</div>
           </div>
         </div>`;
 
@@ -807,6 +1001,19 @@ function renderSeniorHelpRequests(seniorRequests) {
             </div>
           </div>` : ''}
 
+        ${(req.allowedBudget !== undefined && req.allowedBudget !== null && Number(req.allowedBudget) > 0) ? `
+          <div class="bg-emerald-50/70 border border-emerald-200/80 rounded-2xl px-4 py-3 mb-4 flex items-center justify-between gap-3 text-xs text-emerald-950 shadow-2xs flex-wrap">
+            <div class="flex items-center gap-2.5">
+              <div class="w-7 h-7 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center flex-shrink-0 font-extrabold text-xs">
+                ₹
+              </div>
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <strong class="font-extrabold text-emerald-950">${t('fd_pref_allowed_budget') || 'Allowed Budget:'}</strong>
+                <span class="text-emerald-700 font-extrabold text-sm">₹${req.allowedBudget}</span>
+              </div>
+            </div>
+          </div>` : ''}
+
         <!-- Action Area -->
         ${actionAreaHtml}
 
@@ -925,6 +1132,20 @@ function renderApprovalQueue(awaitingRequests) {
             </div>
           </div>` : ''}
 
+        ${(req.allowedBudget !== undefined && req.allowedBudget !== null && Number(req.allowedBudget) > 0) ? `
+          <div class="bg-emerald-50/70 border border-emerald-200/80 rounded-2xl px-4 py-3 mb-4 flex items-center justify-between gap-3 text-xs text-emerald-950 shadow-2xs">
+            <div class="flex items-center gap-2.5">
+              <div class="w-7 h-7 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center flex-shrink-0 font-extrabold text-xs">
+                ₹
+              </div>
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <strong class="font-extrabold text-emerald-950">${t('fd_pref_allowed_budget') || 'Allowed Budget:'}</strong>
+                <span class="text-emerald-700 font-extrabold text-sm">₹${req.allowedBudget}</span>
+                <span class="text-[11px] text-emerald-800 font-medium">${t('fd_pref_allowed_budget_optional') || '(optional spend limit)'}</span>
+              </div>
+            </div>
+          </div>` : ''}
+
         <!-- Quoted Volunteers Header -->
         <div class="mt-4 pt-4 border-t border-slate-100">
           <div class="flex items-center justify-between mb-3">
@@ -995,7 +1216,7 @@ function renderApprovalQueue(awaitingRequests) {
                         aria-label="Select and approve this volunteer"
                       >
                         <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
-                        ${t('btn_select_approve_vol', { name: vName, fee: feeText })}
+                        ${t('btn_select_approve_vol', { name: vName })}
                       </button>
                     </div>
                   </div>`;
@@ -1079,10 +1300,15 @@ function renderCompletionVerificationQueue(pendingVerifications) {
     const volPhone = vol ? (typeof vol === 'object' ? vol.phone || 'Phone not available' : '') : '';
 
     let resolvedFee = 0;
-    if (req.serviceFee !== undefined && req.serviceFee !== null) {
+    // Prefer req.serviceFee only if it's a positive number (0 means "not set yet")
+    if (req.serviceFee !== undefined && req.serviceFee !== null && Number(req.serviceFee) > 0) {
       resolvedFee = Number(req.serviceFee);
     } else if (req.volunteerQuotes && req.volunteerQuotes.length > 0) {
-      let matchQ = volId ? req.volunteerQuotes.find(q => q.volunteer && String(q.volunteer._id || q.volunteer.id || q.volunteer) === String(volId)) : null;
+      // Find the accepted volunteer's quote, else fallback to first quote
+      const volIdStr = volId ? String(volId) : '';
+      let matchQ = volIdStr
+        ? req.volunteerQuotes.find(q => q.volunteer && String(q.volunteer._id || q.volunteer.id || q.volunteer) === volIdStr)
+        : null;
       if (!matchQ) matchQ = req.volunteerQuotes[0];
       if (matchQ && matchQ.serviceFee) resolvedFee = Number(matchQ.serviceFee);
     }
@@ -1096,6 +1322,74 @@ function renderCompletionVerificationQueue(pendingVerifications) {
       let proofSlider = renderProofSliderHtml(req._id, proofImages);
 
       const isZeroPurchaseCost = Number(req.actualPurchaseCost || 0) === 0;
+      const merchant = req.merchantDetails || {};
+      const shopName = merchant.shopName || 'Merchant / Shop';
+      const isOnline = merchant.paymentType === 'online_link' || !!merchant.paymentLink;
+
+      let merchantPaymentBlockHtml = '';
+      if (isOnline && merchant.paymentLink) {
+        merchantPaymentBlockHtml = `
+          <!-- Online Merchant Payment Link Block -->
+          <div class="p-4 bg-sky-50/90 border border-sky-200/90 rounded-2xl space-y-2.5">
+            <div class="flex items-center justify-between flex-wrap gap-2">
+              <span class="text-xs font-extrabold text-sky-950 flex items-center gap-1.5">
+                <svg class="w-4 h-4 text-sky-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244"/></svg>
+                Online Store Order / Checkout Link
+              </span>
+              ${merchant.orderNumber ? `<span class="text-[10px] font-black text-sky-800 bg-sky-100 px-2 py-0.5 rounded-md">Order #${escapeHTML(merchant.orderNumber)}</span>` : ''}
+            </div>
+            <p class="text-xs text-slate-700 font-medium">Click the button below to pay <strong>${escapeHTML(shopName)}</strong> directly on their online portal / app:</p>
+            <div class="pt-1">
+              <a href="${escapeHTML(merchant.paymentLink)}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 px-4 py-2.5 bg-sky-600 hover:bg-sky-700 text-white font-extrabold text-xs rounded-xl shadow-xs no-underline transition-all active:scale-95">
+                <span>Open &amp; Pay ${escapeHTML(shopName)} Online</span>
+                <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"/></svg>
+              </a>
+            </div>
+          </div>`;
+      } else {
+        // Offline Store with UPI QR / UPI ID
+        const upiPayUrl = merchant.upiId ? `upi://pay?pa=${encodeURIComponent(merchant.upiId)}&pn=${encodeURIComponent(shopName)}&am=${req.actualPurchaseCost || 0}&cu=INR` : '';
+        merchantPaymentBlockHtml = `
+          <!-- Offline Merchant UPI QR Block -->
+          <div class="p-4 bg-emerald-50/90 border border-emerald-200/90 rounded-2xl space-y-3">
+            <div class="flex items-center justify-between flex-wrap gap-2">
+              <span class="text-xs font-extrabold text-emerald-950 flex items-center gap-1.5">
+                <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 013.75 9.375v-4.5zM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5zM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0113.5 9.375v-4.5z"/></svg>
+                Offline Shop UPI Payment Details (${escapeHTML(shopName)})
+              </span>
+              <span class="text-[10px] font-black text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded-full">Scan &amp; Pay Merchant Directly</span>
+            </div>
+
+            <div class="flex flex-col sm:flex-row items-center gap-4">
+              ${merchant.upiQrImage ? `
+                <div class="p-2.5 bg-white rounded-2xl border border-emerald-300 shadow-2xs flex-shrink-0 text-center">
+                  <img src="${merchant.upiQrImage}" alt="Merchant UPI QR Code" class="w-32 h-32 object-contain rounded-xl mx-auto">
+                  <span class="text-[10px] font-black text-emerald-900 block mt-1">Merchant UPI QR</span>
+                </div>` : ''}
+
+              <div class="space-y-2 flex-1 text-left w-full">
+                <p class="text-xs text-slate-700 font-medium">Scan this Merchant QR code using any UPI app (GPay / PhonePe / Paytm / BHIM) to pay <strong>₹${req.actualPurchaseCost || 0}</strong> directly to the shop.</p>
+                ${merchant.upiId ? `
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <button type="button"
+                      onclick="copyUpiId('${escapeHTML(merchant.upiId)}')"
+                      title="Click to copy UPI ID"
+                      class="text-xs font-bold text-slate-800 bg-white px-3 py-1.5 rounded-xl border border-slate-200 hover:bg-slate-50 transition-all cursor-pointer flex items-center gap-1.5 group">
+                      <span>UPI ID: <strong>${escapeHTML(merchant.upiId)}</strong></span>
+                      <svg class="w-3 h-3 text-slate-400 group-hover:text-slate-700 transition-colors" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.666 3.888A2.25 2.25 0 0013.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 01-.75.75H9a.75.75 0 01-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 01-2.25 2.25H6.75A2.25 2.25 0 014.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 011.927-.184"/></svg>
+                    </button>
+                    ${upiPayUrl ? `
+                      <button type="button"
+                        onclick="openInUpiApp('${upiPayUrl}', '${escapeHTML(merchant.upiId)}')"
+                        class="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-2xs transition-all active:scale-95 border-none cursor-pointer">
+                        <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        <span>Open in UPI App</span>
+                      </button>` : ''}
+                  </div>` : ''}
+              </div>
+            </div>
+          </div>`;
+      }
 
       cardContent = `
         <div class="my-4 p-4 sm:p-5 rounded-2xl bg-amber-50/70 border border-amber-200/80 space-y-4">
@@ -1106,7 +1400,7 @@ function renderCompletionVerificationQueue(pendingVerifications) {
                 ₹
               </div>
               <div>
-                <span class="text-[11px] font-bold text-amber-900/70 uppercase tracking-wider block">Submitted Purchase Cost</span>
+                <span class="text-[11px] font-bold text-amber-900/70 uppercase tracking-wider block">Pay to Merchant: ${escapeHTML(shopName)}</span>
                 <span class="text-lg font-extrabold text-amber-950 leading-tight">₹${req.actualPurchaseCost || 0}</span>
               </div>
             </div>
@@ -1115,6 +1409,9 @@ function renderCompletionVerificationQueue(pendingVerifications) {
                 <span class="font-bold text-amber-950 not-italic">Note:</span> "${escapeHTML(req.purchaseNotes)}"
               </div>` : ''}
           </div>
+
+          <!-- Merchant Payment Details Box -->
+          ${merchantPaymentBlockHtml}
 
           <!-- Photo Proof Section -->
           <div>
@@ -1126,7 +1423,7 @@ function renderCompletionVerificationQueue(pendingVerifications) {
           </div>
 
           <!-- Actions Bar -->
-          <div class="flex flex-col sm:flex-row items-center justify-end gap-2.5 pt-2 border-t border-amber-200/70">
+          <div class="flex flex-col sm:flex-row items-center justify-end gap-2.5 pt-2 border-t border-amber-200/70 flex-wrap">
             <button 
               type="button" 
               onclick="openRejectRevisionModal('${req._id}', '${escapeHTML(req.title).replace(/'/g, "\\'")}', '${escapeHTML(req.category).replace(/'/g, "\\'")}')" 
@@ -1138,68 +1435,266 @@ function renderCompletionVerificationQueue(pendingVerifications) {
             
             <button 
               type="button" 
-              onclick="${isZeroPurchaseCost ? `directReleaseServiceCharge('${req._id}', '${resolvedFee}', '${escapeHTML(volName).replace(/'/g, "\\'")}')` : `approvePurchaseFunding('${req._id}', '${req.actualPurchaseCost || 0}', '${resolvedFee}', '${escapeHTML(volName).replace(/'/g, "\\'")}')`}" 
+              onclick="directApprovePurchaseFunding('${req._id}', '${resolvedFee}', '${escapeHTML(volName).replace(/'/g, "\\'")}')" 
               class="w-full sm:w-auto px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm rounded-xl shadow-xs transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer border-none"
             >
               <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
-              <span>Approve &amp; Pay ₹${req.actualPurchaseCost || 0}</span>
+              <span>Confirm Merchant Paid ₹${req.actualPurchaseCost || 0}</span>
             </button>
           </div>
         </div>`;
     } else {
+      // ── Proof-type-aware verification ────────────────────────────────────────
+      const proofType = req.taskProofType || (
+        req.category === 'Grocery Shopping' ? 'financial' :
+        (req.category === 'Tech Support' || req.category === 'Housekeeping' || req.category === 'Companionship') ? 'service_only' : 'mixed'
+      );
+      const isServiceOnlyVerif = proofType === 'service_only' || (proofType === 'mixed' && !req.volunteerDeclaredPurchase);
+
       let finalImages = req.finalReceiptDocs && req.finalReceiptDocs.length > 0 
         ? req.finalReceiptDocs 
         : (req.completionProof ? [req.completionProof] : []);
       let proofSlider = renderProofSliderHtml(req._id, finalImages);
 
-      cardContent = `
-        <div class="my-4 p-4 sm:p-5 rounded-2xl bg-slate-50/70 border border-slate-200/80 space-y-4">
-          <!-- Service Fee & Notes Strip -->
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 bg-white rounded-xl border border-slate-200/70 shadow-2xs">
-            <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-xl bg-purple-50 border border-purple-200 text-purple-700 flex items-center justify-center flex-shrink-0 font-extrabold text-base">
-                ₹
+      if (isServiceOnlyVerif) {
+        // ── SERVICE-ONLY: gate on whether service fee was pre-paid ──────────────
+        const isPrePaid = !!req.serviceFeePrePaid;
+        const volName = req.volunteer && typeof req.volunteer === 'object' ? req.volunteer.name : 'Assigned Volunteer';
+
+        if (!isPrePaid && resolvedFee > 0) {
+          // ── PAYMENT NOT YET MADE: show pay-now prompt ──────────────────────────
+          cardContent = `
+            <div class="my-4 p-4 sm:p-5 rounded-2xl bg-amber-50/80 border border-amber-300/80 space-y-4">
+              <!-- Warning banner -->
+              <div class="flex items-start gap-3 p-3.5 bg-white rounded-xl border border-amber-200/70 shadow-2xs">
+                <div class="w-10 h-10 rounded-xl bg-amber-100 border border-amber-300 text-amber-700 flex items-center justify-center flex-shrink-0">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>
+                </div>
+                <div>
+                  <span class="text-[11px] font-bold text-amber-900 uppercase tracking-wider block">Service Fee Not Yet Paid</span>
+                  <span class="text-lg font-extrabold text-slate-900 leading-tight">₹${resolvedFee} to ${escapeHTML(volName)}</span>
+                  <p class="text-xs text-amber-800 mt-1">The volunteer has completed the task. Please pay the service fee to release their earnings.</p>
+                </div>
               </div>
+
+              <!-- Volunteer note -->
+              ${req.resolutionNotes ? `
+              <div class="p-3 bg-teal-50 border border-teal-200 rounded-xl text-xs text-teal-900 font-medium">
+                <span class="font-bold">Volunteer's note:</span> "${escapeHTML(req.resolutionNotes)}"
+              </div>` : ''}
+
+              ${proofSlider ? `
               <div>
-                <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Service Charge to Release</span>
-                <span class="text-lg font-extrabold text-slate-900 leading-tight">₹${resolvedFee > 0 ? resolvedFee : 0}</span>
+                <div class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Photo submitted by volunteer</div>
+                ${proofSlider}
+              </div>` : ''}
+
+              <!-- Actions -->
+              <div class="flex flex-col sm:flex-row items-center justify-end gap-2.5 pt-2 border-t border-amber-200/60">
+                <button
+                  type="button"
+                  onclick="openReportIssueModal('${req._id}', '${escapeHTML(req.title).replace(/'/g, "\\'")}');"
+                  class="w-full sm:w-auto px-4 py-2.5 bg-white hover:bg-rose-50 text-rose-700 border border-slate-200 hover:border-rose-200 rounded-xl text-xs font-bold transition-all shadow-2xs flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
+                >
+                  <svg class="w-3.5 h-3.5 text-rose-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>
+                  <span>Service Not Performed</span>
+                </button>
+
+                <button
+                  type="button"
+                  onclick="window.location.href='/payment.html?requestId=${req._id}&type=service_fee_upfront&serviceFee=${resolvedFee}&volunteerName=${encodeURIComponent(volName)}';"
+                  class="w-full sm:w-auto px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs sm:text-sm rounded-xl shadow-xs transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer border-none"
+                >
+                  <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z"/></svg>
+                  <span>Pay Service Fee ₹${resolvedFee} &amp; Release</span>
+                </button>
+              </div>
+            </div>`;
+        } else {
+          // ── PAYMENT DONE: show task confirmation UI ────────────────────────────
+          cardContent = `
+            <div class="my-4 p-4 sm:p-5 rounded-2xl bg-teal-50/70 border border-teal-200/80 space-y-4">
+              <!-- Service confirmation banner -->
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 bg-white rounded-xl border border-teal-200/70 shadow-2xs">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-xl bg-teal-100/90 border border-teal-300/80 text-teal-700 flex items-center justify-center flex-shrink-0">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                  </div>
+                  <div>
+                    <span class="text-[11px] font-bold text-teal-900/70 uppercase tracking-wider block">Service Charge — Escrowed &amp; Ready</span>
+                    <span class="text-lg font-extrabold text-slate-900 leading-tight">₹${resolvedFee > 0 ? resolvedFee : 0}</span>
+                  </div>
+                </div>
+                ${req.resolutionNotes ? `
+                <div class="text-xs text-slate-600 italic sm:max-w-md bg-teal-50 px-3 py-1.5 rounded-lg border border-teal-100">
+                  <span class="font-bold text-teal-700 not-italic">Volunteer's Completion Note:</span> "${escapeHTML(req.resolutionNotes)}"
+                </div>` : ''}
+              </div>
+
+              <!-- Escrow badge -->
+              <div class="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-900 font-medium flex items-center gap-2">
+                <svg class="w-4 h-4 text-emerald-600 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <p><strong>₹${resolvedFee} is in escrow</strong> — confirm the service was performed to release it to the volunteer.</p>
+              </div>
+
+              ${proofSlider ? `
+              <div>
+                <div class="text-xs font-bold text-teal-700 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                  <svg class="w-3.5 h-3.5 text-teal-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z"/><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z"/></svg>
+                  <span>Photo Submitted by Volunteer</span>
+                </div>
+                ${proofSlider}
+              </div>` : ''}
+
+              <!-- Actions Bar -->
+              <div class="flex flex-col sm:flex-row items-center justify-end gap-2.5 pt-2 border-t border-teal-200/60">
+                <button
+                  type="button"
+                  onclick="openReportIssueModal('${req._id}', '${escapeHTML(req.title).replace(/'/g, "\\'")}');"
+                  class="w-full sm:w-auto px-4 py-2.5 bg-white hover:bg-rose-50 text-rose-700 hover:text-rose-800 border border-slate-200 hover:border-rose-200 rounded-xl text-xs font-bold transition-all shadow-2xs flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
+                >
+                  <svg class="w-3.5 h-3.5 text-rose-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>
+                  <span>Service Not Performed</span>
+                </button>
+
+                <button
+                  type="button"
+                  onclick="verifyTaskCompletion('${req._id}', true);"
+                  class="w-full sm:w-auto px-5 py-2.5 bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs sm:text-sm rounded-xl shadow-xs transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer border-none"
+                >
+                  <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
+                  <span>Confirm Service Done &amp; Release ₹${resolvedFee > 0 ? resolvedFee : 0}</span>
+                </button>
+              </div>
+            </div>`;
+        }
+
+      } else {
+        // ── FINANCIAL: receipt verification UI ───────────────────────
+        const authorizedBudget = Number(req.allowedBudget || 0);
+        const purchases = req.merchantPurchases || [];
+        let totalSpent = 0;
+        if (purchases.length > 0) {
+          totalSpent = purchases.reduce((s, p) => s + (Number(p.amount) || 0), 0);
+        } else if (req.actualPurchaseCost) {
+          totalSpent = Number(req.actualPurchaseCost);
+        }
+        const unspentRefund = authorizedBudget > 0 ? Math.max(0, authorizedBudget - totalSpent) : 0;
+
+        let purchasesHtml = '';
+        if (purchases.length > 0) {
+          purchasesHtml = `
+            <div class="p-3.5 bg-white rounded-2xl border border-emerald-100 shadow-2xs space-y-2.5">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-extrabold text-slate-900 flex items-center gap-1.5">
+                  <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/></svg>
+                  Itemized Merchant Purchases (${purchases.length})
+                </span>
+                <span class="text-[11px] font-black text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                  Total Spent: ₹${totalSpent}
+                </span>
+              </div>
+              <div class="space-y-1.5 max-h-56 overflow-y-auto pr-1">
+                ${purchases.map((p, idx) => `
+                  <div class="p-2.5 bg-slate-50/90 rounded-xl border border-slate-200/80 flex items-center justify-between gap-3 text-xs">
+                    <div class="flex items-center gap-2.5 min-w-0">
+                      <span class="w-6 h-6 rounded-lg bg-emerald-100 text-emerald-800 font-extrabold flex items-center justify-center text-[10px] flex-shrink-0">#${idx + 1}</span>
+                      <div class="min-w-0">
+                        <span class="font-extrabold text-slate-900 block truncate">${escapeHTML(p.merchant || 'Store')} — ₹${p.amount}</span>
+                        <span class="text-[11px] text-slate-500 font-medium block truncate">${escapeHTML(p.itemName ? 'Item: ' + p.itemName : 'Paid from Escrow')}</span>
+                      </div>
+                    </div>
+                    <div class="flex items-center gap-1.5 flex-shrink-0">
+                      ${p.receiptDoc ? `
+                        <button type="button" onclick="event.stopPropagation(); openImageLightbox('${normalizeDocUrl(p.receiptDoc)}'); return false;" class="px-2.5 py-1.5 bg-white hover:bg-emerald-50 text-emerald-800 text-[11px] font-extrabold rounded-xl transition-all cursor-pointer border border-emerald-300 shadow-2xs flex items-center gap-1.5 active:scale-95">
+                          <svg class="w-3.5 h-3.5 text-emerald-700" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                          <span>View Bill</span>
+                        </button>
+                      ` : (p.noReceiptReason ? `
+                        <span class="text-[10px] text-slate-500 font-semibold bg-slate-200/70 px-2 py-1 rounded-lg">No Bill (${escapeHTML(p.noReceiptReason)})</span>
+                      ` : `<span class="text-[10px] text-slate-400 font-bold italic">No file needed</span>`)}
+                    </div>
+                  </div>
+                `).join('')}
               </div>
             </div>
-            <div class="text-xs text-slate-600 italic sm:max-w-md bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100">
-              <span class="font-bold text-slate-700 not-italic">Completion Notes:</span> "${escapeHTML(req.resolutionNotes || 'Task completed & store receipt uploaded.')}"
-            </div>
-          </div>
+          `;
+        }
 
-          <!-- Photo Proof Section -->
-          <div>
-            <div class="text-xs font-bold text-slate-600 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-              <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z"/><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z"/></svg>
-              <span>Uploaded Delivery Proof</span>
-            </div>
-            ${proofSlider || '<div class="h-40 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400 text-xs italic">No photo proof attached by volunteer.</div>'}
-          </div>
+        cardContent = `
+          <div class="my-4 p-4 sm:p-5 rounded-3xl bg-slate-50/80 border border-slate-200/90 space-y-4 shadow-2xs">
+            ${authorizedBudget > 0 ? `
+              <!-- Escrow Financial Ledger -->
+              <div class="grid grid-cols-3 gap-2 sm:gap-3 p-3.5 bg-gradient-to-br from-emerald-50/70 to-teal-50/50 rounded-2xl border border-emerald-200/80 text-center">
+                <div class="p-2.5 bg-white rounded-xl border border-emerald-100 shadow-2xs">
+                  <span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">Allotted Fund</span>
+                  <span class="text-sm sm:text-base font-black text-slate-900 block mt-0.5">₹${authorizedBudget}</span>
+                </div>
+                <div class="p-2.5 bg-white rounded-xl border border-emerald-100 shadow-2xs">
+                  <span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">Used in Stores</span>
+                  <span class="text-sm sm:text-base font-black text-amber-700 block mt-0.5">₹${totalSpent}</span>
+                </div>
+                <div class="p-2.5 bg-white rounded-xl border border-emerald-100 shadow-2xs">
+                  <span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">Unspent Balance</span>
+                  <span class="text-sm sm:text-base font-black text-emerald-700 block mt-0.5">₹${unspentRefund}</span>
+                </div>
+              </div>
+            ` : ''}
 
-          <!-- Actions Bar -->
-          <div class="flex flex-col sm:flex-row items-center justify-end gap-2.5 pt-2 border-t border-slate-200/60">
-            <button 
-              type="button" 
-              onclick="openReportIssueModal('${req._id}', '${escapeHTML(req.title).replace(/'/g, "\\'")}')" 
-              class="w-full sm:w-auto px-4 py-2.5 bg-white hover:bg-rose-50 text-rose-700 hover:text-rose-800 border border-slate-200 hover:border-rose-200 rounded-xl text-xs font-bold transition-all shadow-2xs flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
-            >
-              <svg class="w-3.5 h-3.5 text-rose-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>
-              <span>Report Issue</span>
-            </button>
-            
-            <button 
-              type="button" 
-              onclick="verifyTaskCompletion('${req._id}', true)" 
-              class="w-full sm:w-auto px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm rounded-xl shadow-xs transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer border-none"
-            >
-              <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
-              <span>Verify Receipt &amp; Release Funds</span>
-            </button>
-          </div>
-        </div>`;
+            <!-- Service Fee & Notes Strip -->
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 bg-white rounded-2xl border border-slate-200 shadow-2xs">
+              <div class="flex items-center gap-3">
+                <div class="w-11 h-11 rounded-2xl bg-purple-50 border border-purple-200 text-purple-700 flex items-center justify-center flex-shrink-0 font-extrabold text-lg shadow-2xs">
+                  ₹
+                </div>
+                <div>
+                  <span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">Volunteer Service Charge to Release</span>
+                  <span class="text-lg font-black text-slate-900 leading-tight">₹${resolvedFee > 0 ? resolvedFee : 0}</span>
+                </div>
+              </div>
+              ${req.resolutionNotes ? `
+                <div class="text-xs text-slate-600 sm:max-w-md bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                  <span class="font-bold text-slate-800 block mb-0.5">Volunteer Notes:</span>
+                  <span class="italic text-slate-700">"${escapeHTML(req.resolutionNotes)}"</span>
+                </div>` : ''}
+            </div>
+
+            <!-- Itemized Purchases Breakdown (if present) -->
+            ${purchasesHtml}
+
+            <!-- Photo Proof Section -->
+            ${proofSlider ? `
+              <div>
+                <div class="text-xs font-bold text-slate-600 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                  <svg class="w-3.5 h-3.5 text-emerald-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z"/><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z"/></svg>
+                  <span>Handover &amp; Delivery Photo Proof</span>
+                </div>
+                ${proofSlider}
+              </div>
+            ` : ''}
+
+            <!-- Actions Bar -->
+            <div class="flex flex-col sm:flex-row items-center justify-end gap-2.5 pt-3 border-t border-slate-200/80">
+              <button 
+                type="button" 
+                onclick="openReportIssueModal('${req._id}', '${escapeHTML(req.title).replace(/'/g, "\\'")}')" 
+                class="w-full sm:w-auto px-4 py-2.5 bg-white hover:bg-rose-50 text-rose-700 hover:text-rose-800 border border-slate-200 hover:border-rose-200 rounded-xl text-xs font-bold transition-all shadow-2xs flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
+              >
+                <svg class="w-3.5 h-3.5 text-rose-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>
+                <span>Report Issue</span>
+              </button>
+              
+              <button 
+                type="button" 
+                onclick="verifyTaskCompletion('${req._id}', true)" 
+                class="w-full sm:w-auto px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs sm:text-sm rounded-xl shadow-xs transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer border-none"
+              >
+                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
+                <span>Verify &amp; Release Funds (₹${resolvedFee > 0 ? resolvedFee : 0})</span>
+              </button>
+            </div>
+          </div>`;
+      }
     }
 
     return `
@@ -1350,6 +1845,8 @@ window.handleReportIssueSubmit = async function(event) {
 };
 
 // Step 5: Caregiver verifies final receipt & releases volunteer service charge
+// For service_only + serviceFeePrePaid tasks: service charge is already escrowed,
+// so the API just flips it to RELEASED — no second payment needed.
 async function verifyTaskCompletion(requestId, approved) {
   if (approved) {
     try {
@@ -1357,24 +1854,36 @@ async function verifyTaskCompletion(requestId, approved) {
         approved: true
       });
       if (res.ok && res.data.success) {
-        showToast('Receipt verified & funds released successfully!', 'success');
         currentFeedbackRequestId = requestId;
         let volName = 'Assigned Volunteer';
         let serviceFee = 0;
+        let serviceFeePrePaid = false;
+        let proofType = 'mixed';
+
         if (res.data.request) {
           if (res.data.request.volunteer) {
             volName = typeof res.data.request.volunteer === 'object' ? res.data.request.volunteer.name : 'Assigned Volunteer';
           }
           serviceFee = Number(res.data.request.serviceFee || 0);
+          serviceFeePrePaid = !!res.data.request.serviceFeePrePaid;
+          proofType = res.data.request.taskProofType || 'mixed';
         }
-        // Step 5a: Open TIP modal first. After tip decision → feedback modal.
-        promptForVolunteerTip(requestId, volName, { serviceFee, itemsCost: 0, actionType: 'direct' });
+
+        if (serviceFeePrePaid || proofType === 'service_only') {
+          // Service charge was pre-escrowed — no payment page needed
+          showToast('Task confirmed & volunteer service charge released!', 'success');
+          // Open feedback modal directly
+          promptForVolunteerTip(requestId, volName, { serviceFee, itemsCost: 0, actionType: 'direct', skipTip: true });
+        } else {
+          showToast('Receipt verified & funds released successfully!', 'success');
+          promptForVolunteerTip(requestId, volName, { serviceFee, itemsCost: 0, actionType: 'direct' });
+        }
       } else {
-        alert(res.data?.message || 'Error verifying completion receipt');
+        alert(res.data?.message || 'Error verifying completion');
       }
     } catch (e) {
       console.error(e);
-      alert('Network error verifying task receipt');
+      alert('Network error verifying task');
     }
     return;
   }
@@ -1650,6 +2159,21 @@ window.handleFeedbackSubmit = async function(event) {
   loadFamilyDashboard();
 };
 
+function normalizeDocUrl(rawUrl) {
+  if (!rawUrl || typeof rawUrl !== 'string') return '';
+  let str = rawUrl.replace(/\\/g, '/');
+  if (str.startsWith('http://') || str.startsWith('https://') || str.startsWith('data:')) return str;
+  const uploadsIdx = str.indexOf('/uploads/');
+  if (uploadsIdx !== -1) {
+    return str.substring(uploadsIdx);
+  }
+  const uploadsNoSlashIdx = str.indexOf('uploads/');
+  if (uploadsNoSlashIdx !== -1) {
+    return '/' + str.substring(uploadsNoSlashIdx);
+  }
+  return str.startsWith('/') ? str : '/' + str;
+}
+
 window.proofSliderData = window.proofSliderData || {};
 window.proofSliderIndex = window.proofSliderIndex || {};
 
@@ -1659,8 +2183,8 @@ function renderProofSliderHtml(reqId, rawImages) {
   const images = Array.from(new Set(
     rawImages
       .filter(Boolean)
-      .map(img => typeof img === 'string' ? (img.startsWith('/') ? img : '/' + img) : '')
-      .filter(img => img.length > 1)
+      .map(normalizeDocUrl)
+      .filter(img => img && img.length > 1)
   ));
 
   if (images.length === 0) return '';
@@ -1674,7 +2198,7 @@ function renderProofSliderHtml(reqId, rawImages) {
   return `
     <div class="p-3 sm:p-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl flex items-center justify-between gap-3 group/proof transition-all hover:bg-slate-100/70">
       <div class="flex items-center gap-3 min-w-0">
-        <div class="relative w-13 h-13 sm:w-14 sm:h-14 rounded-xl overflow-hidden bg-slate-200 border border-slate-300 flex-shrink-0 cursor-pointer shadow-2xs group-hover/proof:scale-105 transition-transform" onclick="event.stopPropagation(); openImageLightbox('${escapeHTML(firstImg)}', '${reqId}'); return false;" title="Click to view image">
+        <div class="relative rounded-xl overflow-hidden bg-slate-200 border border-slate-300 flex-shrink-0 cursor-pointer shadow-2xs group-hover/proof:scale-105 transition-transform" style="width:52px;height:52px;min-width:52px;" onclick="event.stopPropagation(); openImageLightbox('${escapeHTML(firstImg)}', '${reqId}'); return false;" title="Click to view image">
           <img src="${escapeHTML(firstImg)}" alt="Receipt Thumbnail" class="w-full h-full object-cover">
           ${count > 1 ? `<span class="absolute bottom-0.5 right-0.5 bg-slate-900/85 text-white text-[9px] font-black px-1 rounded shadow-xs">+${count - 1}</span>` : ''}
         </div>
@@ -2087,23 +2611,54 @@ function renderAllRequests(requests) {
     }
 
     let volunteerInfo = '';
-    if (req.volunteer && (req.status === 'accepted' || req.status === 'completed' || req.status === 'awaiting_approval')) {
-      const volObj = req.volunteer;
-      const vName = typeof volObj === 'object' ? volObj.name : 'Volunteer';
-      const vId = typeof volObj === 'object' ? (volObj._id || volObj.id) : volObj;
+    const volResolved = resolveRequestVolunteer(req);
+    if (volResolved.vol && (req.status === 'accepted' || req.status === 'purchase_cost_submitted' || req.status === 'purchase_funded' || req.status === 'awaiting_verification' || req.status === 'completed' || req.status === 'awaiting_approval')) {
+      const vName = volResolved.volName;
+      const vId = volResolved.volId;
       const feeLabel = (req.serviceFee !== undefined && req.serviceFee > 0) ? `₹${req.serviceFee}` : '₹0 (Voluntary)';
 
       volunteerInfo = `
         <div class="mt-3 p-3.5 rounded-2xl bg-slate-50/80 border border-slate-200/70 space-y-1">
           <div class="flex justify-between items-center flex-wrap gap-2">
-            <span class="text-xs font-bold text-slate-900">${t('fd_approved_volunteer')}: <strong class="text-brand-800">${escapeHTML(vName)}</strong></span>
+            <span class="text-xs font-bold text-slate-900">${t('fd_approved_volunteer')} <strong class="text-brand-800">${escapeHTML(vName)}</strong></span>
             ${vId ? `<button type="button" onclick="viewVolunteerProfile('${vId}')" class="px-2.5 py-0.5 bg-white hover:bg-brand-50 text-brand-700 border border-brand-200 rounded-lg text-[10px] font-bold transition-all">${t('btn_view_profile')}</button>` : ''}
           </div>
           <p class="text-xs text-slate-600 font-medium">${t('fd_quoted_service_charge') || 'Quoted Fee'}: <strong class="text-emerald-700">${feeLabel}</strong></p>
-          ${req.status !== 'awaiting_approval' && typeof volObj === 'object' ? `<p class="text-xs text-slate-500 font-medium">Contact: ${escapeHTML(volObj.phone || '—')}</p>` : ''}
+          ${req.status !== 'awaiting_approval' && volResolved.volPhone ? `<p class="text-xs text-slate-500 font-medium">Contact: ${escapeHTML(volResolved.volPhone)}</p>` : ''}
           ${req.volunteerNotes ? `<p class="text-xs text-slate-600 italic bg-white p-2 rounded-lg border border-slate-200/60 mt-1">"${escapeHTML(req.volunteerNotes)}"</p>` : ''}
           ${req.status === 'completed' && req.resolutionNotes ? `<p class="text-xs text-slate-600 italic bg-white p-2 rounded-lg border border-slate-200/60 mt-1">${escapeHTML(req.resolutionNotes)}</p>` : ''}
         </div>`;
+    }
+
+    let purchasesHistoryHtml = '';
+    const purchases = req.merchantPurchases || [];
+    if (purchases.length > 0) {
+      purchasesHistoryHtml = `
+        <div class="mt-3 p-3.5 bg-slate-50/90 rounded-2xl border border-slate-200/80 space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-extrabold text-slate-900 flex items-center gap-1.5">
+              <svg class="w-3.5 h-3.5 text-emerald-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/></svg>
+              Merchant Store Purchases (${purchases.length})
+            </span>
+          </div>
+          <div class="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+            ${purchases.map((p, idx) => `
+              <div class="p-2.5 bg-white rounded-xl border border-slate-200/70 flex items-center justify-between gap-3 text-xs shadow-2xs">
+                <div class="min-w-0">
+                  <span class="font-extrabold text-slate-900 block truncate">${escapeHTML(p.merchant || 'Store')} — ₹${p.amount}</span>
+                  <span class="text-[11px] text-slate-500 font-medium block truncate">${escapeHTML(p.itemName ? 'Item: ' + p.itemName : 'Paid from Escrow')}</span>
+                </div>
+                ${p.receiptDoc ? `
+                  <button type="button" onclick="event.stopPropagation(); openImageLightbox('${normalizeDocUrl(p.receiptDoc)}'); return false;" class="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-[11px] font-extrabold rounded-lg transition-all border border-emerald-200 flex items-center gap-1 flex-shrink-0 cursor-pointer">
+                    <svg class="w-3 h-3 text-emerald-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                    <span>Bill</span>
+                  </button>
+                ` : ''}
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
     }
 
     let totalSpentHtml = '';
@@ -2114,20 +2669,54 @@ function renderAllRequests(requests) {
           ? req.volunteerQuotes[0].serviceFee
           : (req.paymentDetails ? req.paymentDetails.volunteerFee : 0))) || 0;
 
-      const itemCostVal = Number((req.actualPurchaseCost !== undefined && req.actualPurchaseCost !== null)
+      let storePurchasesTotal = 0;
+      if (purchases.length > 0) {
+        storePurchasesTotal = purchases.reduce((s, p) => s + (Number(p.amount) || 0), 0);
+      }
+
+      const itemCostVal = storePurchasesTotal > 0 ? storePurchasesTotal : Number((req.actualPurchaseCost !== undefined && req.actualPurchaseCost !== null)
         ? req.actualPurchaseCost
         : (req.purchasePaymentDetails ? req.purchasePaymentDetails.amountPaid : (req.paymentDetails ? req.paymentDetails.itemsCost : 0))) || 0;
 
       let tipVal = Number(req.tipAmount || (req.paymentDetails ? req.paymentDetails.tipAmount : 0) || (req.tipPaymentDetails ? req.tipPaymentDetails.amountPaid : 0)) || 0;
       const totalSpent = itemCostVal + serviceFeeVal + tipVal;
 
-      const breakdownText = `Items ₹${itemCostVal} + Service Fee ₹${serviceFeeVal}${tipVal > 0 ? ` + Tip ₹${tipVal}` : ''}`;
+      const breakdownParts = [];
+      if (serviceFeeVal > 0) breakdownParts.push(`Released Service Charge: ₹${serviceFeeVal}`);
+      if (itemCostVal > 0) breakdownParts.push(`Store Purchases: ₹${itemCostVal}`);
+      if (tipVal > 0) breakdownParts.push(`Tip: ₹${tipVal}`);
+      const breakdownText = breakdownParts.length > 0 ? breakdownParts.join(' • ') : `Total Paid: ₹${totalSpent}`;
+
+      const isSeniorVerified = (req.verifierRole === 'senior' || req.verifierRole === 'senior_voice_ivr');
+      const releaseSourceText = isSeniorVerified ? 'Released by Senior Citizen ("Yes, Done!")' : 'Released to Volunteer';
 
       totalSpentHtml = `
-        <div class="mt-3 p-3.5 bg-emerald-50/80 border border-emerald-200/80 rounded-2xl flex items-center justify-between flex-wrap gap-2">
-          <div>
-            <div class="text-xs font-bold text-emerald-950">${t('fd_total_spent') || 'Total Spent'}: <strong class="text-sm font-extrabold text-emerald-700">₹${totalSpent}</strong></div>
-            <div class="text-[11px] text-emerald-700 mt-0.5">${breakdownText}</div>
+        <!-- Released Service Charge & Financial Breakdown -->
+        <div class="mt-3 p-3.5 bg-gradient-to-r from-emerald-50/90 to-teal-50/80 border border-emerald-200/90 rounded-2xl space-y-2 shadow-2xs">
+          <div class="flex items-center justify-between flex-wrap gap-2">
+            <div class="flex items-center gap-2">
+              <div class="w-7 h-7 rounded-xl ${isSeniorVerified ? 'bg-teal-600' : 'bg-emerald-600'} text-white flex items-center justify-center font-black text-xs shadow-2xs">
+                ✓
+              </div>
+              <div>
+                <span class="text-[10px] font-extrabold text-emerald-900/80 uppercase tracking-wider block">Service Charge Released</span>
+                <span class="text-sm font-black text-slate-900">₹${serviceFeeVal} ${releaseSourceText}</span>
+              </div>
+            </div>
+            <div class="text-right">
+              <span class="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider block">${t('fd_total_spent') || 'Total Spent'}</span>
+              <span class="text-base font-black text-emerald-800">₹${totalSpent}</span>
+            </div>
+          </div>
+          <div class="pt-2 border-t border-emerald-200/60 text-[11px] font-semibold text-emerald-800/90 flex items-center justify-between flex-wrap gap-1">
+            <span>${breakdownText}</span>
+            <div class="flex items-center gap-1.5 flex-wrap">
+              ${isSeniorVerified ? `<span class="inline-flex items-center gap-1 text-[10px] font-bold text-teal-800 bg-teal-100/90 px-2 py-0.5 rounded-md border border-teal-200">👤 Senior Verified</span>` : ''}
+              <span class="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-100/70 px-2 py-0.5 rounded-md">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
+                Payment Completed
+              </span>
+            </div>
           </div>
         </div>`;
     }
@@ -2180,6 +2769,13 @@ function renderAllRequests(requests) {
             <span><strong>Shopping Preference:</strong> ${escapeHTML(req.shoppingPreference)}</span>
           </div>` : ''}
 
+        ${(req.status !== 'completed' && req.status !== 'cancelled' && req.allowedBudget !== undefined && req.allowedBudget !== null && Number(req.allowedBudget) > 0) ? `
+          <div class="bg-emerald-50/70 border border-emerald-200/80 rounded-xl px-3 py-2 mb-3 flex items-center gap-2 text-xs font-semibold text-emerald-950">
+            <div class="w-4 h-4 rounded-md bg-emerald-100 text-emerald-700 flex items-center justify-center flex-shrink-0 font-extrabold text-[10px]">₹</div>
+            <span><strong>Allowed Budget:</strong> ₹${req.allowedBudget}</span>
+          </div>` : ''}
+
+        ${purchasesHistoryHtml}
         ${proofHtml}
         ${timelineHtml}
         ${volunteerInfo}
@@ -2191,21 +2787,73 @@ function renderAllRequests(requests) {
 // ──────────────────────────────────────────────────────────
 // SELECT VOLUNTEER CONFIRMATION POPUP MODAL
 // ──────────────────────────────────────────────────────────
+window.updateConfirmModalWorkflowText = function(mode) {
+  const labelPreFund = document.getElementById('labelWorkflowPreFund');
+  const labelDirect = document.getElementById('labelWorkflowDirect');
+  const btnConfirm = document.getElementById('btnConfirmSelectVolunteer');
+  const volName = pendingSelectVolunteerName || 'Volunteer';
+
+  if (mode === 'pre_fund') {
+    if (labelPreFund) {
+      labelPreFund.className = "flex items-start gap-3 p-3.5 rounded-2xl border-2 border-emerald-500 bg-emerald-50/60 cursor-pointer transition-all hover:bg-emerald-50";
+    }
+    if (labelDirect) {
+      labelDirect.className = "flex items-start gap-3 p-3.5 rounded-2xl border-2 border-slate-200 bg-white cursor-pointer transition-all hover:bg-slate-50";
+    }
+    if (btnConfirm) {
+      btnConfirm.innerHTML = `<span class="inline-flex items-center gap-1.5"><svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z"/></svg><span>Pre-Fund &amp; Assign ${escapeHTML(volName)}</span></span>`;
+    }
+  } else {
+    if (labelPreFund) {
+      labelPreFund.className = "flex items-start gap-3 p-3.5 rounded-2xl border-2 border-slate-200 bg-white cursor-pointer transition-all hover:bg-slate-50";
+    }
+    if (labelDirect) {
+      labelDirect.className = "flex items-start gap-3 p-3.5 rounded-2xl border-2 border-brand-500 bg-brand-50/50 cursor-pointer transition-all hover:bg-brand-50";
+    }
+    if (btnConfirm) {
+      btnConfirm.innerHTML = `<span class="inline-flex items-center gap-1.5"><svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg><span>Pay Fee &amp; Assign ${escapeHTML(volName)}</span></span>`;
+    }
+  }
+};
+
+let pendingSelectVolunteerFee = 0;
+
 function openSelectVolunteerConfirmModal(requestId, volunteerId, volName, feeText) {
   pendingSelectVolunteerRequestId = requestId;
   pendingSelectVolunteerId = volunteerId;
   pendingSelectVolunteerName = volName || 'Volunteer';
 
+  // Parse numeric fee from feeText (e.g. "Quoted Fee: ₹50" -> 50)
+  let parsedFee = 0;
+  if (feeText) {
+    const num = parseInt(String(feeText).replace(/[^0-9]/g, ''), 10);
+    if (!isNaN(num)) parsedFee = num;
+  }
+  const req = (currentRequestsMap && currentRequestsMap[requestId]) || (window.currentRequestsMap && window.currentRequestsMap[requestId]);
+  if (req && req.volunteerQuotes && req.volunteerQuotes.length > 0) {
+    const q = req.volunteerQuotes.find(x => String(x.volunteer?._id || x.volunteer?.id || x.volunteer) === String(volunteerId));
+    if (q && q.serviceFee !== undefined && q.serviceFee !== null) {
+      parsedFee = Number(q.serviceFee);
+    }
+  }
+  pendingSelectVolunteerFee = parsedFee;
+
   const modal = document.getElementById('selectVolunteerConfirmModal');
   const bodyEl = document.getElementById('selectVolunteerConfirmBody');
-  const btnConfirm = document.getElementById('btnConfirmSelectVolunteer');
+  const workflowContainer = document.getElementById('confirmModalWorkflowContainer');
 
   if (bodyEl) {
     bodyEl.innerHTML = `Are you sure you want to select and approve <strong>${escapeHTML(volName)}</strong> (${escapeHTML(feeText)}) to fulfill this request for your senior citizen?`;
   }
-  if (btnConfirm) {
-    btnConfirm.textContent = `Confirm & Assign ${escapeHTML(volName)}`;
+
+  const isServiceOnly = req?.taskProofType === 'service_only';
+  if (workflowContainer) {
+    workflowContainer.style.display = isServiceOnly ? 'none' : 'block';
   }
+
+  const radioPreFund = document.querySelector('input[name="confirmFundingMode"][value="pre_fund"]');
+  if (radioPreFund) radioPreFund.checked = true;
+  updateConfirmModalWorkflowText('pre_fund');
 
   if (modal) modal.style.display = 'flex';
 }
@@ -2216,6 +2864,7 @@ function closeSelectVolunteerConfirmModal() {
   pendingSelectVolunteerRequestId = null;
   pendingSelectVolunteerId = null;
   pendingSelectVolunteerName = '';
+  pendingSelectVolunteerFee = 0;
 }
 
 async function confirmSelectVolunteerAssignment() {
@@ -2224,18 +2873,57 @@ async function confirmSelectVolunteerAssignment() {
   const btnConfirm = document.getElementById('btnConfirmSelectVolunteer');
   let origText = '';
   if (btnConfirm) {
-    origText = btnConfirm.textContent;
-    btnConfirm.textContent = 'Assigning...';
+    origText = btnConfirm.innerHTML;
+    btnConfirm.textContent = 'Processing...';
     btnConfirm.disabled = true;
   }
 
-  const volName = pendingSelectVolunteerName;
-  const res = await apiCall(`/requests/${pendingSelectVolunteerRequestId}/family-approve`, 'PUT', {
-    volunteerId: pendingSelectVolunteerId
-  });
+  const chosenFundingMode = document.querySelector('input[name="confirmFundingMode"]:checked')?.value || 'pre_fund';
+  const volName = pendingSelectVolunteerName || 'Volunteer';
+  const reqId = pendingSelectVolunteerRequestId;
+  const volId = pendingSelectVolunteerId;
+  const req = (currentRequestsMap && currentRequestsMap[reqId]) || (window.currentRequestsMap && window.currentRequestsMap[reqId]);
+
+  let fee = pendingSelectVolunteerFee || 0;
+  if (fee <= 0 && req && req.volunteerQuotes && req.volunteerQuotes.length > 0) {
+    const q = req.volunteerQuotes.find(x => String(x.volunteer?._id || x.volunteer?.id || x.volunteer) === String(volId));
+    if (q && q.serviceFee) fee = Number(q.serviceFee);
+    else if (req.volunteerQuotes[0]?.serviceFee) fee = Number(req.volunteerQuotes[0].serviceFee);
+  }
+
+  // ── PRE-FUND: Redirect directly to payment (Budget + Fee) WITHOUT mutating database upfront ──
+  if (chosenFundingMode === 'pre_fund') {
+    const budget = Number(req?.allowedBudget || 0);
+    const totalDep = budget + fee;
+
+    showToast(`Redirecting to pre-fund ₹${totalDep} (Budget: ₹${budget} + Fee: ₹${fee})...`, 'info');
+    closeSelectVolunteerConfirmModal();
+    setTimeout(() => {
+      window.location.href = `/payment.html?requestId=${reqId}&type=pre_fund&volunteerId=${volId}&itemsCost=${budget}&serviceFee=${fee}&volunteerName=${encodeURIComponent(volName)}`;
+    }, 400);
+    return;
+  }
+
+  // ── DIRECT MERCHANT SETTLEMENT: Redirect to pay volunteer fee upfront without mutating database ──
+  if (fee > 0) {
+    showToast(`Redirecting to pay volunteer fee of ₹${fee}...`, 'info');
+    closeSelectVolunteerConfirmModal();
+    setTimeout(() => {
+      window.location.href = `/payment.html?requestId=${reqId}&type=service_fee_upfront&volunteerId=${volId}&serviceFee=${fee}&itemsCost=0&volunteerName=${encodeURIComponent(volName)}`;
+    }, 400);
+    return;
+  }
+
+  // If voluntary / ₹0 fee: approve and assign immediately
+  const payload = {
+    volunteerId: volId,
+    fundingMode: 'caregiver_direct'
+  };
+
+  const res = await apiCall(`/requests/${reqId}/family-approve`, 'PUT', payload);
 
   if (btnConfirm) {
-    btnConfirm.textContent = origText;
+    btnConfirm.innerHTML = origText;
     btnConfirm.disabled = false;
   }
 
@@ -2249,8 +2937,25 @@ async function confirmSelectVolunteerAssignment() {
 }
 
 // ──────────────────────────────────────────────────────────
-// ALLOT TO VOLUNTEERS WITH SHOPPING PREFERENCES
+// ALLOT TO VOLUNTEERS WITH SHOPPING PREFERENCES & BUDGET
 // ──────────────────────────────────────────────────────────
+function handleTaskTypeChange(type) {
+  const purchaseContainer = document.getElementById('purchaseDetailsContainer');
+  const serviceNotice = document.getElementById('serviceOnlyNoticeContainer');
+  const budgetInput = document.getElementById('inputAllowedBudget');
+
+  if (type === 'service_only') {
+    if (purchaseContainer) purchaseContainer.style.display = 'none';
+    if (serviceNotice) serviceNotice.style.display = 'flex';
+    if (budgetInput) budgetInput.required = false;
+  } else {
+    if (purchaseContainer) purchaseContainer.style.display = 'block';
+    if (serviceNotice) serviceNotice.style.display = 'none';
+    if (budgetInput) budgetInput.required = true;
+  }
+}
+window.handleTaskTypeChange = handleTaskTypeChange;
+
 function approveVolunteer(requestId) {
   openShoppingPrefModal(requestId);
 }
@@ -2264,6 +2969,7 @@ function openShoppingPrefModal(requestId, volunteerId = null, volName = '') {
   const btnConfirm = document.getElementById('btnConfirmShoppingPref');
   const otherContainer = document.getElementById('otherPrefTextContainer');
   const customInput = document.getElementById('inputCustomOtherPref');
+  const budgetInput = document.getElementById('inputAllowedBudget');
 
   // Reset checkboxes to default ("No Preference" checked, others unchecked)
   const checks = document.querySelectorAll('input[name="shoppingPrefCheck"]');
@@ -2274,11 +2980,24 @@ function openShoppingPrefModal(requestId, volunteerId = null, volName = '') {
   if (otherContainer) otherContainer.style.display = 'none';
   if (customInput) customInput.value = '';
 
+  const req = currentRequestsMap[requestId];
+  const isServiceOnly = req && (req.taskProofType === 'service_only');
+  const defaultType = isServiceOnly ? 'service_only' : 'purchase';
+
+  const typeRadio = document.querySelector(`input[name="caregiverTaskTypeChoice"][value="${defaultType}"]`);
+  if (typeRadio) typeRadio.checked = true;
+  handleTaskTypeChange(defaultType);
+
+  // Pre-fill allowed budget if already set on this request
+  if (budgetInput) {
+    budgetInput.value = (req && req.allowedBudget !== undefined && req.allowedBudget !== null && !isNaN(req.allowedBudget)) ? req.allowedBudget : '';
+  }
+
   if (subtitle) {
     if (volunteerId && volName) {
-      subtitle.textContent = `Specify shopping preferences (select all that apply) before assigning this task to ${volName}:`;
+      subtitle.textContent = `Choose task type and specify budget/preferences before assigning this task to ${volName}:`;
     } else {
-      subtitle.textContent = `Specify shopping preferences (select all that apply) before allotting this task to community volunteers:`;
+      subtitle.textContent = `Choose task type and specify budget/preferences before allotting this task to community volunteers:`;
     }
   }
 
@@ -2296,33 +3015,27 @@ function closeShoppingPrefModal() {
   pendingAllotVolunteerId = null;
 }
 
+let isSubmittingAllotment = false;
 async function confirmAndSubmitAllotment() {
-  if (!pendingAllotRequestId) return;
-
-  const checkedBoxes = Array.from(document.querySelectorAll('input[name="shoppingPrefCheck"]:checked'));
-  const selectedValues = checkedBoxes.map(cb => cb.value);
-
-  let preferenceList = [];
-
-  selectedValues.forEach(val => {
-    if (val === 'Other') {
-      const customText = document.getElementById('inputCustomOtherPref') ? document.getElementById('inputCustomOtherPref').value.trim() : '';
-      if (customText) {
-        preferenceList.push(`Other (${customText})`);
-      } else {
-        preferenceList.push('Other');
-      }
-    } else {
-      preferenceList.push(val);
-    }
-  });
-
-  // Filter out "No Preference" if specific preference options are selected alongside it
-  if (preferenceList.length > 1) {
-    preferenceList = preferenceList.filter(p => p !== 'No Preference');
+  if (isSubmittingAllotment) return;
+  if (!pendingAllotRequestId) {
+    showToast('No active request selected.', 'error');
+    return;
   }
+  isSubmittingAllotment = true;
 
-  let finalPreference = preferenceList.length > 0 ? preferenceList.join(', ') : 'No Preference';
+  const selectedTaskType = document.querySelector('input[name="caregiverTaskTypeChoice"]:checked')?.value || 'purchase';
+  const budgetVal = document.getElementById('inputAllowedBudget')?.value;
+
+  if (selectedTaskType === 'purchase') {
+    if (!budgetVal || isNaN(Number(budgetVal)) || Number(budgetVal) <= 0) {
+      showToast('Please enter an Allowed Budget Allocation (₹) for the purchase task.', 'warning');
+      const budgetInput = document.getElementById('inputAllowedBudget');
+      if (budgetInput) budgetInput.focus();
+      isSubmittingAllotment = false;
+      return;
+    }
+  }
 
   const btnConfirm = document.getElementById('btnConfirmShoppingPref');
   let origHTML = '';
@@ -2332,38 +3045,118 @@ async function confirmAndSubmitAllotment() {
     btnConfirm.disabled = true;
   }
 
-  const payload = {
-    shoppingPreference: finalPreference
-  };
-  if (pendingAllotVolunteerId) {
-    payload.volunteerId = pendingAllotVolunteerId;
-  }
+  try {
+    let finalPreference = '';
+    let parsedBudget = null;
 
-  const res = await apiCall(`/requests/${pendingAllotRequestId}/family-approve`, 'PUT', payload);
+    if (selectedTaskType === 'purchase') {
+      const checkedBoxes = Array.from(document.querySelectorAll('input[name="shoppingPrefCheck"]:checked'));
+      const selectedValues = checkedBoxes.map(cb => cb.value);
 
-  if (btnConfirm) {
-    btnConfirm.innerHTML = origHTML;
-    btnConfirm.disabled = false;
-  }
+      let preferenceList = [];
 
-  if (res.ok && res.data.success) {
-    showToast(res.data.message || 'Task allotted with shopping preferences!', 'success');
-    const reqId = pendingAllotRequestId;
-    closeShoppingPrefModal();
+      selectedValues.forEach(val => {
+        if (val === 'Other') {
+          const customText = document.getElementById('inputCustomOtherPref') ? document.getElementById('inputCustomOtherPref').value.trim() : '';
+          if (customText) {
+            preferenceList.push(`Other (${customText})`);
+          } else {
+            preferenceList.push('Other');
+          }
+        } else {
+          preferenceList.push(val);
+        }
+      });
 
-    const card = document.getElementById(`seniorCard-${reqId}`) || document.getElementById(`approvalCard-${reqId}`);
-    if (card) {
-      card.style.transition = 'opacity 0.5s, transform 0.5s';
-      card.style.opacity = '0';
-      card.style.transform = 'scale(0.95)';
-      setTimeout(() => loadFamilyDashboard(), 500);
-    } else {
-      loadFamilyDashboard();
+      // Filter out "No Preference" if specific preference options are selected alongside it
+      if (preferenceList.length > 1) {
+        preferenceList = preferenceList.filter(p => p !== 'No Preference');
+      }
+
+      finalPreference = preferenceList.length > 0 ? preferenceList.join(', ') : 'No Preference';
+      parsedBudget = Number(budgetVal.trim());
     }
-  } else {
-    showToast(res.data?.message || 'Error allotting task. Please try again.', 'error');
+
+    const payload = {
+      taskProofType: selectedTaskType === 'service_only' ? 'service_only' : 'financial',
+      shoppingPreference: finalPreference,
+      fundingMode: 'caregiver_direct',
+      allowedBudget: parsedBudget
+    };
+
+    if (pendingAllotVolunteerId) {
+      payload.volunteerId = pendingAllotVolunteerId;
+    }
+
+    const res = await apiCall(`/requests/${pendingAllotRequestId}/family-approve`, 'PUT', payload);
+
+    if (btnConfirm) {
+      btnConfirm.innerHTML = origHTML;
+      btnConfirm.disabled = false;
+    }
+
+    if (res.ok && res.data.success) {
+      // ── If Pre-Fund selected: redirect to pre-fund deposit (budget + service fee)
+      if (res.data.requiresPreFundPayment && res.data.request) {
+        const reqData = res.data.request;
+        const budget = res.data.allowedBudget || reqData.allowedBudget || 0;
+        const fee = res.data.serviceFee || reqData.serviceFee || 0;
+        const totalDep = res.data.totalPreFundDeposit || (budget + fee);
+        const volNameStr = (typeof reqData.volunteer === 'object' ? reqData.volunteer?.name : '') || 'Assigned Volunteer';
+        showToast(`Task assigned! Redirecting to pre-fund ₹${totalDep} (Budget: ₹${budget} + Fee: ₹${fee})...`, 'info');
+        closeShoppingPrefModal();
+        setTimeout(() => {
+          window.location.href = `/payment.html?requestId=${reqData._id}&type=pre_fund&itemsCost=${budget}&serviceFee=${fee}&volunteerName=${encodeURIComponent(volNameStr)}`;
+        }, 1200);
+        return;
+      }
+
+      // ── If service_only task: redirect to pre-pay service fee ────────────────
+      if (res.data.requiresServiceFeePayment && res.data.request) {
+        const reqData = res.data.request;
+        const fee = res.data.serviceFee || reqData.serviceFee || 0;
+        const volNameStr = (typeof reqData.volunteer === 'object' ? reqData.volunteer?.name : '') || 'Assigned Volunteer';
+        showToast(`Volunteer allotted! Redirecting to pay service fee of ₹${fee}...`, 'info');
+        closeShoppingPrefModal();
+        setTimeout(() => {
+          window.location.href = `/payment.html?requestId=${reqData._id}&type=service_fee_upfront&serviceFee=${fee}&volunteerName=${encodeURIComponent(volNameStr)}`;
+        }, 1200);
+        return;
+      }
+
+      showToast(res.data.message || 'Task allotted successfully!', 'success');
+      const reqId = pendingAllotRequestId;
+      closeShoppingPrefModal();
+
+      const card = document.getElementById(`seniorCard-${reqId}`) || document.getElementById(`approvalCard-${reqId}`);
+      if (card) {
+        card.style.transition = 'opacity 0.5s, transform 0.5s';
+        card.style.opacity = '0';
+        card.style.transform = 'scale(0.95)';
+        setTimeout(() => loadFamilyDashboard(), 500);
+      } else {
+        loadFamilyDashboard();
+      }
+    } else {
+      showToast(res.data?.message || 'Error allotting task. Please try again.', 'error');
+    }
+  } catch (err) {
+    console.error('Error submitting preferences:', err);
+    if (btnConfirm) {
+      btnConfirm.innerHTML = origHTML;
+      btnConfirm.disabled = false;
+    }
+    showToast('Failed to submit preferences. Please try again.', 'error');
+  } finally {
+    setTimeout(() => {
+      isSubmittingAllotment = false;
+    }, 800);
   }
 }
+
+window.confirmAndSubmitAllotment = confirmAndSubmitAllotment;
+window.openShoppingPrefModal = openShoppingPrefModal;
+window.closeShoppingPrefModal = closeShoppingPrefModal;
 
 // ──────────────────────────────────────────────────────────
 // OPEN REJECT MODAL
@@ -2418,17 +3211,17 @@ function openImageLightbox(imageUrl, reqIdOrImages = null) {
 
   let images = [];
   if (Array.isArray(reqIdOrImages)) {
-    images = reqIdOrImages;
+    images = reqIdOrImages.map(normalizeDocUrl);
   } else if (typeof reqIdOrImages === 'string' && window.proofSliderData && window.proofSliderData[reqIdOrImages]) {
-    images = window.proofSliderData[reqIdOrImages];
+    images = window.proofSliderData[reqIdOrImages].map(normalizeDocUrl);
   } else if (typeof imageUrl === 'string') {
-    images = [imageUrl];
+    images = [normalizeDocUrl(imageUrl)];
   }
 
-  images = images.map(img => img.startsWith('/') ? img : '/' + img);
+  images = images.filter(Boolean);
   currentLightboxImages = images;
 
-  const cleanUrl = typeof imageUrl === 'string' ? (imageUrl.startsWith('/') ? imageUrl : '/' + imageUrl) : images[0];
+  const cleanUrl = normalizeDocUrl(typeof imageUrl === 'string' ? imageUrl : (images[0] || ''));
   let idx = images.indexOf(cleanUrl);
   if (idx === -1) idx = 0;
   currentLightboxIndex = idx;
@@ -2544,3 +3337,107 @@ window.switchFamilyTab = function(tab) {
     }
   });
 };
+
+// ─── Senior Citizen Service Charge Release Notifications ───────────────────────
+window.notifiedSeniorReleasesSet = window.notifiedSeniorReleasesSet || new Set();
+
+function renderSeniorReleaseNotifications(requests) {
+  const container = document.getElementById('seniorReleaseNotifContainer');
+  if (!container) return;
+
+  const currentFamilyUser = JSON.parse(localStorage.getItem('user') || '{}');
+  const userId = currentFamilyUser._id || currentFamilyUser.id || 'caregiver';
+  const dismissedKey = `dismissed_senior_releases_${userId}`;
+  const dismissed = JSON.parse(localStorage.getItem(dismissedKey) || '[]');
+
+  // Find requests completed by senior citizen confirmation ("Yes, Done!")
+  const seniorReleases = (requests || []).filter(r => {
+    if (r.status !== 'completed' && r.status !== 'verified') return false;
+    const isSeniorVerified = (r.verifierRole === 'senior' || r.verifierRole === 'senior_voice_ivr');
+    return isSeniorVerified && !dismissed.includes(String(r._id));
+  });
+
+  if (seniorReleases.length === 0) {
+    container.innerHTML = '';
+    container.style.display = 'none';
+    return;
+  }
+
+  // Trigger live toast notification for newly loaded senior releases
+  seniorReleases.forEach(r => {
+    const notifKey = `senior_rel_${r._id}`;
+    if (!window.notifiedSeniorReleasesSet.has(notifKey)) {
+      window.notifiedSeniorReleasesSet.add(notifKey);
+      const sName = r.senior?.name || 'Your senior citizen';
+      const fee = Number(r.serviceFee || (r.volunteerQuotes && r.volunteerQuotes[0]?.serviceFee) || 0);
+      showToast(`${sName} confirmed "Yes, Done!" for "${r.title}" — volunteer service charge of ₹${fee} released.`, 'info');
+    }
+  });
+
+  container.style.display = 'block';
+  container.innerHTML = seniorReleases.map(r => {
+    const seniorName = r.senior?.name || 'Senior Citizen';
+    const volName = r.volunteer?.name || 'Assigned Volunteer';
+    const fee = Number(r.serviceFee || (r.volunteerQuotes && r.volunteerQuotes[0]?.serviceFee) || 0);
+    const releaseTime = r.verifiedAt || r.serviceChargeReleasedAt || r.completedAt || Date.now();
+    const timeStr = new Date(releaseTime).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+    return `
+      <div class="p-4 bg-gradient-to-r from-teal-50/95 via-emerald-50/90 to-teal-50/80 border-2 border-teal-200 rounded-3xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3.5 shadow-premium animate-fade-in" id="seniorReleaseNotif_${r._id}">
+        <div class="flex items-start gap-3.5 min-w-0">
+          <div class="w-10 h-10 rounded-2xl bg-teal-600 text-white flex items-center justify-center shadow-xs flex-shrink-0 mt-0.5">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
+          </div>
+          <div class="space-y-1 min-w-0">
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="text-xs font-black text-teal-950 uppercase tracking-wider">Service Charge Released by Senior</span>
+              <span class="text-[10px] font-extrabold bg-teal-100/90 text-teal-800 border border-teal-300 px-2.5 py-0.5 rounded-full">
+                "Yes, Done!" Confirmed
+              </span>
+              <span class="text-[11px] text-slate-400 font-medium">${timeStr}</span>
+            </div>
+            <p class="text-xs text-slate-700 font-medium leading-relaxed">
+              <strong>${escapeHTML(seniorName)}</strong> confirmed task completion for <strong>"${escapeHTML(r.title)}"</strong> and released the volunteer service charge of <strong class="text-teal-900 font-extrabold">₹${fee}</strong> to <strong>${escapeHTML(volName)}</strong>.
+            </p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2 flex-shrink-0 self-end sm:self-center">
+          <button 
+            type="button" 
+            onclick="dismissSeniorReleaseNotif('${r._id}')" 
+            class="px-3.5 py-1.5 bg-white hover:bg-slate-100 text-slate-700 font-extrabold text-xs rounded-xl border border-slate-200/90 shadow-2xs transition-all cursor-pointer active:scale-95"
+          >
+            Dismiss
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+window.dismissSeniorReleaseNotif = function(requestId) {
+  const currentFamilyUser = JSON.parse(localStorage.getItem('user') || '{}');
+  const userId = currentFamilyUser._id || currentFamilyUser.id || 'caregiver';
+  const dismissedKey = `dismissed_senior_releases_${userId}`;
+  const dismissed = JSON.parse(localStorage.getItem(dismissedKey) || '[]');
+
+  if (!dismissed.includes(String(requestId))) {
+    dismissed.push(String(requestId));
+    localStorage.setItem(dismissedKey, JSON.stringify(dismissed));
+  }
+
+  const el = document.getElementById(`seniorReleaseNotif_${requestId}`);
+  if (el) {
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(-6px)';
+    el.style.transition = 'all 0.25s ease';
+    setTimeout(() => {
+      el.remove();
+      const container = document.getElementById('seniorReleaseNotifContainer');
+      if (container && container.children.length === 0) {
+        container.style.display = 'none';
+      }
+    }, 250);
+  }
+};
+

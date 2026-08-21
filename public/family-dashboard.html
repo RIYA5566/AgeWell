@@ -12,7 +12,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
   <link rel="stylesheet" href="/css/style.css?v=322">
-  <script src="/js/i18n.js?v=303"></script>
+  <script src="/js/i18n.js?v=421"></script>
 
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -704,6 +704,9 @@
 
         </div>
 
+        <!-- Senior Citizen Verification & Service Charge Released Notifications -->
+        <div id="seniorReleaseNotifContainer" class="space-y-3" style="display: none;"></div>
+
         <!-- Main Dynamic Content Workspace (Tabbed) -->
         <div class="bg-white border border-slate-200/90 rounded-3xl shadow-premium p-5 sm:p-6 min-h-[400px]">
           
@@ -863,69 +866,142 @@
   <div id="shoppingPrefModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="shoppingPrefModalTitle" style="display: none; z-index: 10050;">
     <div class="modal-content max-w-lg p-6 sm:p-7 max-h-[90vh] overflow-y-auto">
       <div class="flex justify-between items-center border-b border-slate-100 pb-3 mb-4">
-        <h3 id="shoppingPrefModalTitle" class="text-lg font-extrabold text-slate-900 flex items-center gap-2" data-i18n="fd_pref_modal_title">
-          Specify Caregiver Preferences
+        <h3 id="shoppingPrefModalTitle" class="text-lg font-extrabold text-slate-900 flex items-center gap-2">
+          Caregiver Task Setup &amp; Allotment
         </h3>
         <button id="shoppingPrefModalClose" class="modal-close w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-700 flex items-center justify-center transition-all border-none cursor-pointer p-0 flex-shrink-0 active:scale-95" aria-label="Close Modal">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
         </button>
       </div>
 
-      <p id="shoppingPrefModalSubtitle" class="text-slate-600 text-sm font-semibold mb-4" data-i18n="fd_pref_modal_subtitle">
-        Specify shopping preferences (select all that apply) before allotting this task to community volunteers:
+      <p id="shoppingPrefModalSubtitle" class="text-slate-600 text-sm font-semibold mb-4">
+        Choose task nature and specify budget or preferences before allotting to volunteers:
       </p>
 
-      <form id="shoppingPrefForm" onsubmit="return false;">
-        <div class="space-y-2.5 mb-5">
-          <label class="flex items-center gap-3 p-3.5 border border-slate-200 rounded-2xl cursor-pointer hover:bg-brand-50/50 hover:border-brand-300 transition-all text-sm font-bold text-slate-800">
-            <input type="checkbox" name="shoppingPrefCheck" value="Lowest Cost" class="w-5 h-5 rounded text-brand-600 focus:ring-brand-500">
-            <span data-i18n="fd_pref_lowest_cost">Lowest Cost</span>
+      <form id="shoppingPrefForm" onsubmit="event.preventDefault(); confirmAndSubmitAllotment();" class="space-y-4">
+        <!-- ── Step 1: 2 Options - Service Only vs Purchase Task ─────────────────── -->
+        <div>
+          <label class="block text-xs font-extrabold text-slate-800 uppercase tracking-wider mb-2">
+            Select Task Type:
           </label>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5" id="caregiverTaskTypeSelector">
+            <!-- Option 1: Service Task Only -->
+            <label class="flex items-start gap-3 p-3.5 rounded-2xl border-2 border-slate-200 bg-white hover:bg-slate-50 cursor-pointer transition-all has-[:checked]:border-brand-500 has-[:checked]:bg-brand-50/50" onclick="handleTaskTypeChange('service_only')">
+              <input type="radio" name="caregiverTaskTypeChoice" value="service_only" class="mt-0.5 text-brand-600 focus:ring-brand-500 w-4 h-4 cursor-pointer" onchange="handleTaskTypeChange('service_only')">
+              <div class="space-y-0.5">
+                <span class="text-xs font-extrabold text-slate-900 block">🛠️ Service Task Only</span>
+                <p class="text-[11px] text-slate-500 font-medium leading-tight">
+                  Pure assistance / service. No store purchases or budget needed.
+                </p>
+              </div>
+            </label>
 
-          <label class="flex items-center gap-3 p-3.5 border border-slate-200 rounded-2xl cursor-pointer hover:bg-brand-50/50 hover:border-brand-300 transition-all text-sm font-bold text-slate-800">
-            <input type="checkbox" name="shoppingPrefCheck" value="Nearby Shop" class="w-5 h-5 rounded text-brand-600 focus:ring-brand-500">
-            <span data-i18n="fd_pref_nearby_shop">Nearby Shop</span>
-          </label>
-
-          <label class="flex items-center gap-3 p-3.5 border border-slate-200 rounded-2xl cursor-pointer hover:bg-brand-50/50 hover:border-brand-300 transition-all text-sm font-bold text-slate-800">
-            <input type="checkbox" name="shoppingPrefCheck" value="Premium Brands" class="w-5 h-5 rounded text-brand-600 focus:ring-brand-500">
-            <span data-i18n="fd_pref_premium_brands">Premium Brands</span>
-          </label>
-
-          <label class="flex items-center gap-3 p-3.5 border border-slate-200 rounded-2xl cursor-pointer hover:bg-brand-50/50 hover:border-brand-300 transition-all text-sm font-bold text-slate-800">
-            <input type="checkbox" name="shoppingPrefCheck" value="Fastest Purchase" class="w-5 h-5 rounded text-brand-600 focus:ring-brand-500">
-            <span data-i18n="fd_pref_fastest_purchase">Fastest Purchase</span>
-          </label>
-
-          <label class="flex items-center gap-3 p-3.5 border border-slate-200 rounded-2xl cursor-pointer hover:bg-brand-50/50 hover:border-brand-300 transition-all text-sm font-bold text-slate-800">
-            <input type="checkbox" name="shoppingPrefCheck" value="No Preference" id="checkNoPref" checked class="w-5 h-5 rounded text-brand-600 focus:ring-brand-500">
-            <span data-i18n="fd_pref_no_pref">No Preference</span>
-          </label>
-
-          <label class="flex items-center gap-3 p-3.5 border border-slate-200 rounded-2xl cursor-pointer hover:bg-brand-50/50 hover:border-brand-300 transition-all text-sm font-bold text-slate-800">
-            <input type="checkbox" name="shoppingPrefCheck" value="Other" id="checkOtherPref" class="w-5 h-5 rounded text-brand-600 focus:ring-brand-500">
-            <span data-i18n="fd_pref_other">Other (type it)</span>
-          </label>
+            <!-- Option 2: Purchase Task -->
+            <label class="flex items-start gap-3 p-3.5 rounded-2xl border-2 border-slate-200 bg-white hover:bg-slate-50 cursor-pointer transition-all has-[:checked]:border-emerald-500 has-[:checked]:bg-emerald-50/60" onclick="handleTaskTypeChange('purchase')">
+              <input type="radio" name="caregiverTaskTypeChoice" value="purchase" class="mt-0.5 text-emerald-600 focus:ring-emerald-500 w-4 h-4 cursor-pointer" onchange="handleTaskTypeChange('purchase')" checked>
+              <div class="space-y-0.5">
+                <span class="text-xs font-extrabold text-emerald-950 block">🛒 Purchase Task</span>
+                <p class="text-[11px] text-emerald-800 font-medium leading-tight">
+                  Involves buying groceries, medicines, or items from stores.
+                </p>
+              </div>
+            </label>
+          </div>
         </div>
 
-        <!-- Custom 'Other' text input field -->
-        <div id="otherPrefTextContainer" class="hidden mb-5">
-          <label for="inputCustomOtherPref" class="block font-bold text-brand-900 mb-1.5 text-xs uppercase tracking-wider" data-i18n="fd_pref_type_other">
-            Type Other Preference:
-          </label>
-          <input
-            type="text"
-            id="inputCustomOtherPref"
-            placeholder="e.g. Organic items only, buy from local dairy, etc."
-            data-i18n="placeholder_pref_other"
-            maxlength="100"
-            class="w-full px-4 py-2.5 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-brand-500 font-sans"
-          >
+        <!-- ── Service Only Informational Notice ─────────────────────────────────── -->
+        <div id="serviceOnlyNoticeContainer" class="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs text-slate-600 font-medium flex items-center gap-2.5" style="display: none;">
+          <svg class="w-5 h-5 text-brand-600 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z"/></svg>
+          <p>This task is purely service-oriented. The volunteer will only receive the agreed service fee upon completion. No item purchase budget is required.</p>
+        </div>
+
+        <!-- ── Purchase Details Container (Only active if Purchase Task is selected) ─ -->
+        <div id="purchaseDetailsContainer" class="space-y-4">
+          <!-- Allowed Budget Allocation Field -->
+          <div class="p-4 bg-emerald-50/60 border border-emerald-200/90 rounded-2xl">
+            <label for="inputAllowedBudget" class="block font-bold text-slate-800 mb-1.5 text-xs tracking-wider">
+              <div class="flex items-center justify-between flex-wrap gap-1">
+                <span class="inline-flex items-center gap-1.5 font-extrabold text-emerald-950 uppercase">
+                  <svg class="w-4 h-4 text-emerald-600 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                  <span>Allowed Budget Allocation (₹)</span>
+                  <span class="text-rose-500 text-sm font-extrabold leading-none">*</span>
+                </span>
+                <span class="text-[11px] font-bold text-emerald-700 lowercase">(spending limit for volunteer)</span>
+              </div>
+            </label>
+            <div class="relative mt-1">
+              <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-500 font-extrabold text-sm pointer-events-none">₹</span>
+              <input
+                type="number"
+                id="inputAllowedBudget"
+                min="1"
+                step="1"
+                placeholder="e.g. 500"
+                class="w-full pl-8 pr-4 py-2.5 text-sm font-extrabold text-slate-900 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 font-sans"
+              />
+            </div>
+            <p class="text-[11px] text-slate-500 font-medium mt-1.5" data-i18n="fd_pref_allowed_budget_hint">
+              Allocates an authorized purchase budget so the volunteer can pay merchants from AgeWell funds.
+            </p>
+          </div>
+
+          <!-- Shopping Preferences -->
+          <div>
+            <label class="block text-xs font-extrabold text-slate-800 uppercase tracking-wider mb-2">
+              Shopping Preferences (optional):
+            </label>
+            <div class="space-y-2 mb-2">
+              <label class="flex items-center gap-3 p-3 border border-slate-200 rounded-2xl cursor-pointer hover:bg-brand-50/50 hover:border-brand-300 transition-all text-xs font-bold text-slate-800">
+                <input type="checkbox" name="shoppingPrefCheck" value="Lowest Cost" class="w-4 h-4 rounded text-brand-600 focus:ring-brand-500">
+                <span data-i18n="fd_pref_lowest_cost">Lowest Cost</span>
+              </label>
+
+              <label class="flex items-center gap-3 p-3 border border-slate-200 rounded-2xl cursor-pointer hover:bg-brand-50/50 hover:border-brand-300 transition-all text-xs font-bold text-slate-800">
+                <input type="checkbox" name="shoppingPrefCheck" value="Nearby Shop" class="w-4 h-4 rounded text-brand-600 focus:ring-brand-500">
+                <span data-i18n="fd_pref_nearby_shop">Nearby Shop</span>
+              </label>
+
+              <label class="flex items-center gap-3 p-3 border border-slate-200 rounded-2xl cursor-pointer hover:bg-brand-50/50 hover:border-brand-300 transition-all text-xs font-bold text-slate-800">
+                <input type="checkbox" name="shoppingPrefCheck" value="Premium Brands" class="w-4 h-4 rounded text-brand-600 focus:ring-brand-500">
+                <span data-i18n="fd_pref_premium_brands">Premium Brands</span>
+              </label>
+
+              <label class="flex items-center gap-3 p-3 border border-slate-200 rounded-2xl cursor-pointer hover:bg-brand-50/50 hover:border-brand-300 transition-all text-xs font-bold text-slate-800">
+                <input type="checkbox" name="shoppingPrefCheck" value="Fastest Purchase" class="w-4 h-4 rounded text-brand-600 focus:ring-brand-500">
+                <span data-i18n="fd_pref_fastest_purchase">Fastest Purchase</span>
+              </label>
+
+              <label class="flex items-center gap-3 p-3 border border-slate-200 rounded-2xl cursor-pointer hover:bg-brand-50/50 hover:border-brand-300 transition-all text-xs font-bold text-slate-800">
+                <input type="checkbox" name="shoppingPrefCheck" value="No Preference" id="checkNoPref" checked class="w-4 h-4 rounded text-brand-600 focus:ring-brand-500">
+                <span data-i18n="fd_pref_no_pref">No Preference</span>
+              </label>
+
+              <label class="flex items-center gap-3 p-3 border border-slate-200 rounded-2xl cursor-pointer hover:bg-brand-50/50 hover:border-brand-300 transition-all text-xs font-bold text-slate-800">
+                <input type="checkbox" name="shoppingPrefCheck" value="Other" id="checkOtherPref" class="w-4 h-4 rounded text-brand-600 focus:ring-brand-500">
+                <span data-i18n="fd_pref_other">Other (type it)</span>
+              </label>
+            </div>
+
+            <!-- Custom 'Other' text input field -->
+            <div id="otherPrefTextContainer" class="hidden mb-3">
+              <label for="inputCustomOtherPref" class="block font-bold text-brand-900 mb-1 text-[11px] uppercase tracking-wider" data-i18n="fd_pref_type_other">
+                Type Other Preference:
+              </label>
+              <input
+                type="text"
+                id="inputCustomOtherPref"
+                placeholder="e.g. Organic items only, buy from local dairy, etc."
+                data-i18n="placeholder_pref_other"
+                maxlength="100"
+                class="w-full px-3.5 py-2 text-xs border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-brand-500 font-sans"
+              />
+            </div>
+          </div>
         </div>
 
         <!-- Action Buttons Footer -->
         <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
-          <button type="button" id="btnCancelShoppingPref" class="px-4 py-2.5 rounded-2xl border border-slate-200 text-slate-700 font-bold text-sm hover:bg-slate-50 transition-all active:scale-95 cursor-pointer" data-i18n="btn_cancel">
+          <button type="button" id="btnCancelShoppingPref" onclick="closeShoppingPrefModal()" class="px-4 py-2.5 rounded-2xl border border-slate-200 text-slate-700 font-bold text-sm hover:bg-slate-50 transition-all active:scale-95 cursor-pointer" data-i18n="btn_cancel">
             Cancel
           </button>
           <button type="button" id="btnConfirmShoppingPref" class="px-6 py-2.5 rounded-2xl bg-gradient-to-r from-brand-600 to-brand-700 hover:from-brand-700 hover:to-brand-800 text-white font-extrabold text-sm shadow-md shadow-brand-500/20 transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer border-none" data-i18n="btn_submit_pref">
@@ -953,16 +1029,59 @@
         <p id="selectVolunteerConfirmBody" class="text-slate-700 text-sm leading-relaxed" data-i18n="fd_confirm_vol_body">
           Are you sure you want to select and approve this volunteer to fulfill the request?
         </p>
-        <div class="p-4 bg-brand-50/70 border border-brand-200 rounded-2xl text-xs text-brand-900 font-medium" data-i18n="fd_confirm_vol_note">
+
+        <!-- Payment Workflow Selection (Pre-Fund Escrow vs Caregiver Direct) -->
+        <div id="confirmModalWorkflowContainer" class="space-y-2.5 pt-1">
+          <label class="block text-xs font-extrabold text-slate-800 uppercase tracking-wider">
+            Choose Store Payment Mode:
+          </label>
+          <div class="grid grid-cols-1 gap-2.5">
+            <!-- Option 1: Pre-Fund Upfront -->
+            <label class="flex items-start gap-3 p-3.5 rounded-2xl border-2 border-emerald-500 bg-emerald-50/60 cursor-pointer transition-all hover:bg-emerald-50" id="labelWorkflowPreFund" onclick="updateConfirmModalWorkflowText('pre_fund')">
+              <input type="radio" name="confirmFundingMode" value="pre_fund" checked class="mt-1 text-emerald-600 focus:ring-emerald-500 w-4 h-4 cursor-pointer" onchange="updateConfirmModalWorkflowText('pre_fund')">
+              <div class="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z"/></svg>
+              </div>
+              <div class="space-y-0.5 flex-1 min-w-0">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <span class="text-xs font-extrabold text-slate-900 block">Pre-Fund Escrow Allocation</span>
+                  <span class="text-[10px] font-extrabold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-md border border-emerald-300">Fastest Checkout</span>
+                </div>
+                <p class="text-[11px] text-slate-600 font-medium leading-tight">
+                  Pre-fund the budget &amp; service charge now. The volunteer can pay merchants instantly up to your limit.
+                </p>
+              </div>
+            </label>
+
+            <!-- Option 2: Caregiver Direct Payment -->
+            <label class="flex items-start gap-3 p-3.5 rounded-2xl border-2 border-slate-200 bg-white cursor-pointer transition-all hover:bg-slate-50" id="labelWorkflowDirect" onclick="updateConfirmModalWorkflowText('caregiver_direct')">
+              <input type="radio" name="confirmFundingMode" value="caregiver_direct" class="mt-1 text-brand-600 focus:ring-brand-500 w-4 h-4 cursor-pointer" onchange="updateConfirmModalWorkflowText('caregiver_direct')">
+              <div class="w-8 h-8 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z"/></svg>
+              </div>
+              <div class="space-y-0.5 flex-1 min-w-0">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <span class="text-xs font-extrabold text-slate-900 block">Direct Merchant Settlement</span>
+                  <span class="text-[10px] font-extrabold bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md border border-slate-200">Pay Store on Purchase</span>
+                </div>
+                <p class="text-[11px] text-slate-600 font-medium leading-tight">
+                  Pay volunteer fee now. For purchases, volunteer will submit the merchant QR/link at checkout, and you pay the store directly.
+                </p>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div class="p-3.5 bg-brand-50/70 border border-brand-200 rounded-2xl text-xs text-brand-900 font-medium" data-i18n="fd_confirm_vol_note">
           Once approved, the task will be assigned exclusively to this volunteer, and other volunteers will be notified.
         </div>
       </div>
 
       <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 mt-4">
-        <button type="button" id="btnCancelSelectVolunteer" class="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-700 font-bold text-sm hover:bg-slate-50 transition-all active:scale-95" data-i18n="btn_cancel">
+        <button type="button" id="btnCancelSelectVolunteer" onclick="closeSelectVolunteerConfirmModal()" class="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-700 font-bold text-sm hover:bg-slate-50 transition-all active:scale-95 cursor-pointer" data-i18n="btn_cancel">
           Cancel
         </button>
-        <button type="button" id="btnConfirmSelectVolunteer" class="px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold text-sm shadow-sm transition-all active:scale-95" data-i18n="btn_confirm_assign">
+        <button type="button" id="btnConfirmSelectVolunteer" onclick="confirmSelectVolunteerAssignment()" class="px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold text-sm shadow-sm transition-all active:scale-95 cursor-pointer border-none" data-i18n="btn_confirm_assign">
           Confirm &amp; Assign Volunteer
         </button>
       </div>
@@ -1272,6 +1391,201 @@
               Delivery Not Received
             </button>
           </div>
+        </span>
+        <h2 class="text-xl font-extrabold text-slate-900" id="feedbackModalHeading">
+          Feedback for <span id="feedbackVolunteerName" class="text-brand-600">Assigned Volunteer</span>
+        </h2>
+        <p class="text-xs sm:text-sm text-slate-500 font-medium mt-1" data-i18n="fd_feedback_subtitle">
+          Your receipt verification and service charge release are complete. Please rate the volunteer to help maintain service excellence.
+        </p>
+      </div>
+
+      <form id="feedbackForm" onsubmit="handleFeedbackSubmit(event)" class="space-y-4">
+        <div class="overflow-x-auto border border-slate-100 rounded-2xl">
+          <table class="w-full text-left text-sm">
+            <thead class="bg-slate-50 text-[11px] font-extrabold text-slate-500 uppercase tracking-wider border-b border-slate-200/60">
+              <tr>
+                <th class="p-3.5" data-i18n="fd_feedback_metric">Metric</th>
+                <th class="p-3.5" data-i18n="fd_feedback_rating">Rating</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+              <!-- Cost Utilization -->
+              <tr class="hover:bg-slate-50/50 transition-colors">
+                <td class="p-3.5">
+                  <div>
+                    <strong class="block text-slate-900" data-i18n="fd_feedback_cost_utilization">Cost Utilization</strong>
+                    <span class="text-[11px] text-slate-500" data-i18n="fd_feedback_cost_utilization_sub">Fairness and budget management</span>
+                  </div>
+                </td>
+                <td class="p-3.5">
+                  <div class="inline-flex items-center gap-3">
+                    <div class="star-rating inline-flex gap-1 cursor-pointer text-2xl select-none" data-metric="costUtilization" onmouseleave="resetStarRating('costUtilization')">
+                      <span class="star text-slate-300 hover:text-amber-400 transition-colors" data-val="1" onclick="setStarRating('costUtilization', 1)" onmouseenter="hoverStarRating('costUtilization', 1)">★</span>
+                      <span class="star text-slate-300 hover:text-amber-400 transition-colors" data-val="2" onclick="setStarRating('costUtilization', 2)" onmouseenter="hoverStarRating('costUtilization', 2)">★</span>
+                      <span class="star text-slate-300 hover:text-amber-400 transition-colors" data-val="3" onclick="setStarRating('costUtilization', 3)" onmouseenter="hoverStarRating('costUtilization', 3)">★</span>
+                      <span class="star text-slate-300 hover:text-amber-400 transition-colors" data-val="4" onclick="setStarRating('costUtilization', 4)" onmouseenter="hoverStarRating('costUtilization', 4)">★</span>
+                      <span class="star text-slate-300 hover:text-amber-400 transition-colors" data-val="5" onclick="setStarRating('costUtilization', 5)" onmouseenter="hoverStarRating('costUtilization', 5)">★</span>
+                      <input type="hidden" id="costUtilizationVal" value="0">
+                    </div>
+                    <span class="star-score-badge text-xs font-bold text-slate-500 bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-xl min-w-[90px] text-center" id="costUtilizationText" data-i18n="fd_feedback_select_rating">Select Rating</span>
+                  </div>
+                </td>
+              </tr>
+
+              <!-- Speed & Timeliness -->
+              <tr class="hover:bg-slate-50/50 transition-colors">
+                <td class="p-3.5">
+                  <div>
+                    <strong class="block text-slate-900" data-i18n="fd_feedback_speed_timeliness">Speed &amp; Timeliness</strong>
+                    <span class="text-[11px] text-slate-500" data-i18n="fd_feedback_speed_timeliness_sub">Punctuality and execution speed</span>
+                  </div>
+                </td>
+                <td class="p-3.5">
+                  <div class="inline-flex items-center gap-3">
+                    <div class="star-rating inline-flex gap-1 cursor-pointer text-2xl select-none" data-metric="speedTimeliness" onmouseleave="resetStarRating('speedTimeliness')">
+                      <span class="star text-slate-300 hover:text-amber-400 transition-colors" data-val="1" onclick="setStarRating('speedTimeliness', 1)" onmouseenter="hoverStarRating('speedTimeliness', 1)">★</span>
+                      <span class="star text-slate-300 hover:text-amber-400 transition-colors" data-val="2" onclick="setStarRating('speedTimeliness', 2)" onmouseenter="hoverStarRating('speedTimeliness', 2)">★</span>
+                      <span class="star text-slate-300 hover:text-amber-400 transition-colors" data-val="3" onclick="setStarRating('speedTimeliness', 3)" onmouseenter="hoverStarRating('speedTimeliness', 3)">★</span>
+                      <span class="star text-slate-300 hover:text-amber-400 transition-colors" data-val="4" onclick="setStarRating('speedTimeliness', 4)" onmouseenter="hoverStarRating('speedTimeliness', 4)">★</span>
+                      <span class="star text-slate-300 hover:text-amber-400 transition-colors" data-val="5" onclick="setStarRating('speedTimeliness', 5)" onmouseenter="hoverStarRating('speedTimeliness', 5)">★</span>
+                      <input type="hidden" id="speedTimelinessVal" value="0">
+                    </div>
+                    <span class="star-score-badge text-xs font-bold text-slate-500 bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-xl min-w-[90px] text-center" id="speedTimelinessText" data-i18n="fd_feedback_select_rating">Select Rating</span>
+                  </div>
+                </td>
+              </tr>
+
+              <!-- Task Completion -->
+              <tr class="hover:bg-slate-50/50 transition-colors">
+                <td class="p-3.5">
+                  <div>
+                    <strong class="block text-slate-900" data-i18n="fd_feedback_task_completion">Task Completion</strong>
+                    <span class="text-[11px] text-slate-500" data-i18n="fd_feedback_task_completion_sub">Full completion of requested items</span>
+                  </div>
+                </td>
+                <td class="p-3.5">
+                  <div class="inline-flex gap-2 flex-wrap" id="taskCompletionGroup">
+                    <button type="button" class="pill-option px-3.5 py-1.5 rounded-full text-xs font-bold border-2 border-slate-200 bg-white text-slate-700 cursor-pointer transition-all hover:bg-slate-50" onclick="selectPill(this, 'taskCompletion', 'Completely')">
+                      <span data-i18n="fd_feedback_completely">Completely</span>
+                    </button>
+                    <button type="button" class="pill-option px-3.5 py-1.5 rounded-full text-xs font-bold border-2 border-slate-200 bg-white text-slate-700 cursor-pointer transition-all hover:bg-slate-50" onclick="selectPill(this, 'taskCompletion', 'Partially')">
+                      <span data-i18n="fd_feedback_partially">Partially</span>
+                    </button>
+                    <button type="button" class="pill-option px-3.5 py-1.5 rounded-full text-xs font-bold border-2 border-slate-200 bg-white text-slate-700 cursor-pointer transition-all hover:bg-slate-50" onclick="selectPill(this, 'taskCompletion', 'No')">
+                      <span data-i18n="fd_feedback_no">No</span>
+                    </button>
+                    <input type="hidden" id="taskCompletionVal" name="taskCompletion" value="">
+                  </div>
+                </td>
+              </tr>
+
+              <!-- Communication -->
+              <tr class="hover:bg-slate-50/50 transition-colors">
+                <td class="p-3.5">
+                  <div>
+                    <strong class="block text-slate-900" data-i18n="fd_feedback_communication">Communication</strong>
+                    <span class="text-[11px] text-slate-500" data-i18n="fd_feedback_communication_sub">Politeness and responsiveness</span>
+                  </div>
+                </td>
+                <td class="p-3.5">
+                  <div class="inline-flex items-center gap-3">
+                    <div class="star-rating inline-flex gap-1 cursor-pointer text-2xl select-none" data-metric="communication" onmouseleave="resetStarRating('communication')">
+                      <span class="star text-slate-300 hover:text-amber-400 transition-colors" data-val="1" onclick="setStarRating('communication', 1)" onmouseenter="hoverStarRating('communication', 1)">★</span>
+                      <span class="star text-slate-300 hover:text-amber-400 transition-colors" data-val="2" onclick="setStarRating('communication', 2)" onmouseenter="hoverStarRating('communication', 2)">★</span>
+                      <span class="star text-slate-300 hover:text-amber-400 transition-colors" data-val="3" onclick="setStarRating('communication', 3)" onmouseenter="hoverStarRating('communication', 3)">★</span>
+                      <span class="star text-slate-300 hover:text-amber-400 transition-colors" data-val="4" onclick="setStarRating('communication', 4)" onmouseenter="hoverStarRating('communication', 4)">★</span>
+                      <span class="star text-slate-300 hover:text-amber-400 transition-colors" data-val="5" onclick="setStarRating('communication', 5)" onmouseenter="hoverStarRating('communication', 5)">★</span>
+                      <input type="hidden" id="communicationVal" value="0">
+                    </div>
+                    <span class="star-score-badge text-xs font-bold text-slate-500 bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-xl min-w-[90px] text-center" id="communicationText" data-i18n="fd_feedback_select_rating">Select Rating</span>
+                  </div>
+                </td>
+              </tr>
+
+              <!-- Would you choose this volunteer again? -->
+              <tr class="hover:bg-slate-50/50 transition-colors">
+                <td class="p-3.5">
+                  <div>
+                    <strong class="block text-slate-900" data-i18n="fd_feedback_choose_again">Would you choose this volunteer again?</strong>
+                    <span class="text-[11px] text-slate-500" data-i18n="fd_feedback_choose_again_sub">Overall trust and recommendation</span>
+                  </div>
+                </td>
+                <td class="p-3.5">
+                  <div class="inline-flex gap-2 flex-wrap" id="chooseAgainGroup">
+                    <button type="button" class="pill-option px-3.5 py-1.5 rounded-full text-xs font-bold border-2 border-slate-200 bg-white text-slate-700 cursor-pointer transition-all hover:bg-slate-50" onclick="selectPill(this, 'chooseAgain', 'Yes')">
+                      <span data-i18n="fd_feedback_yes">Yes</span>
+                    </button>
+                    <button type="button" class="pill-option px-3.5 py-1.5 rounded-full text-xs font-bold border-2 border-slate-200 bg-white text-slate-700 cursor-pointer transition-all hover:bg-slate-50" onclick="selectPill(this, 'chooseAgain', 'Maybe')">
+                      <span data-i18n="fd_feedback_maybe">Maybe</span>
+                    </button>
+                    <button type="button" class="pill-option px-3.5 py-1.5 rounded-full text-xs font-bold border-2 border-slate-200 bg-white text-slate-700 cursor-pointer transition-all hover:bg-slate-50" onclick="selectPill(this, 'chooseAgain', 'No')">
+                      <span data-i18n="fd_feedback_no">No</span>
+                    </button>
+                    <input type="hidden" id="chooseAgainVal" name="chooseAgain" value="">
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Additional Feedback -->
+        <div class="pt-2">
+          <label for="additionalFeedback" class="block font-bold text-slate-800 text-xs uppercase tracking-wider mb-2" data-i18n="fd_feedback_additional">Additional feedback (optional)</label>
+          <textarea id="additionalFeedback" rows="3" class="w-full px-4 py-3 text-sm border border-slate-200 rounded-2xl focus:ring-2 focus:ring-brand-500 focus:border-brand-500 font-sans" data-i18n="placeholder_feedback_additional" placeholder="Share any extra thoughts, appreciation, or suggestions for the volunteer..."></textarea>
+        </div>
+
+        <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+          <button type="button" class="btn-skip px-4 py-2.5 rounded-xl border border-slate-200 text-slate-700 font-bold text-sm hover:bg-slate-50 transition-all active:scale-95" onclick="skipFeedbackAndGoHome()" data-i18n="btn_skip_close">Skip &amp; Close</button>
+          <button type="submit" id="btnSubmitFeedback" class="btn-submit-feedback px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-sm transition-all active:scale-95" data-i18n="btn_submit_rating_finish">Submit Rating &amp; Finish</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Professional Report Issue / Revision Modal -->
+  <div id="reportIssueModal" class="modal-overlay fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[2000] flex items-center justify-center p-4" style="display: none;">
+    <div class="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-7 shadow-2xl border border-slate-200 relative overflow-hidden">
+      <!-- Modal Header -->
+      <div class="flex items-start justify-between pb-4 border-b border-slate-100 mb-4">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-2xl bg-rose-50 border border-rose-200 text-rose-600 flex items-center justify-center flex-shrink-0">
+            <svg class="w-5 h-5 text-rose-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/>
+            </svg>
+          </div>
+          <div>
+            <h3 class="text-base font-extrabold text-slate-900" id="reportIssueModalTitle">Report Issue with Delivery</h3>
+            <p class="text-xs text-slate-500 font-medium">Explain what needs correction so the volunteer can fix it.</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeReportIssueModal()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-700 flex items-center justify-center cursor-pointer transition-colors border-none">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <!-- Form Body -->
+      <form id="reportIssueForm" onsubmit="handleReportIssueSubmit(event)" class="space-y-4">
+        <input type="hidden" id="reportIssueRequestId" value="">
+
+        <!-- Preset Reason Quick Chips -->
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-2">Quick Issue Options</label>
+          <div class="grid grid-cols-2 gap-2" id="reportIssuePresetChips">
+            <button type="button" class="px-3 py-2 text-xs font-semibold rounded-xl border border-slate-200 bg-slate-50 hover:bg-rose-50 hover:border-rose-300 hover:text-rose-800 text-slate-700 text-left cursor-pointer transition-all active:scale-98" onclick="setReportIssuePreset('Missing or incomplete items from the store bill')">
+              Missing Items
+            </button>
+            <button type="button" class="px-3 py-2 text-xs font-semibold rounded-xl border border-slate-200 bg-slate-50 hover:bg-rose-50 hover:border-rose-300 hover:text-rose-800 text-slate-700 text-left cursor-pointer transition-all active:scale-98" onclick="setReportIssuePreset('Receipt is unclear or bill amount is mismatched')">
+              Receipt / Bill Unclear
+            </button>
+            <button type="button" class="px-3 py-2 text-xs font-semibold rounded-xl border border-slate-200 bg-slate-50 hover:bg-rose-50 hover:border-rose-300 hover:text-rose-800 text-slate-700 text-left cursor-pointer transition-all active:scale-98" onclick="setReportIssuePreset('Damaged or wrong item quality delivered')">
+              Wrong / Damaged Item
+            </button>
+            <button type="button" class="px-3 py-2 text-xs font-semibold rounded-xl border border-slate-200 bg-slate-50 hover:bg-rose-50 hover:border-rose-300 hover:text-rose-800 text-slate-700 text-left cursor-pointer transition-all active:scale-98" onclick="setReportIssuePreset('Delivery not yet received at senior address')">
+              Delivery Not Received
+            </button>
+          </div>
         </div>
 
         <!-- Custom Feedback Note Textarea -->
@@ -1295,12 +1609,15 @@
   </div>
 
   <!-- Global Footer -->
-  <footer class="global-footer w-full text-center mt-4 py-6 px-4 bg-[#0b3d70] text-white">
+  <footer class="global-footer w-full text-center mt-1 py-6 px-4 bg-[#0b3d70] text-white">
     <p class="text-xs sm:text-sm font-semibold text-white/90" data-i18n="footer_text">&copy; 2026 AgeWell Platform. Designed with care for Senior Citizens, Volunteers, and Admins.</p>
   </footer>
 
   <!-- Scripts -->
-  <script src="/js/api.js?v=363"></script>
-  <script src="/js/family.js?v=363"></script>
+  <script src="/js/i18n.js?v=423"></script>
+  <script src="/js/api.js?v=423"></script>
+  <script src="/js/family.js?v=423"></script>
 </body>
+</html>
+
 </html>

@@ -175,7 +175,7 @@
       </div>
 
       <div>
-        <a href="family-dashboard.html" class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-white/10 hover:bg-white/15 text-slate-100 transition-all border border-white/10 no-underline">
+        <a href="/family-dashboard.html?tab=approvals" class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-white/10 hover:bg-white/15 text-slate-100 transition-all border border-white/10 no-underline cursor-pointer">
           <svg class="w-4 h-4 text-slate-300" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
           </svg>
@@ -200,73 +200,76 @@
             <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" />
           </svg>
         </div>
-        <h1 class="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">Payment &amp; Delivery Authorization</h1>
-        <p class="text-xs sm:text-sm font-medium text-slate-500 mt-1 max-w-md mx-auto">
-          Review the cost summary and complete your secure authorization to finalize service release.
-        </p>
+        <h1 class="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight" id="paymentPageMainTitle">Caregiver Escrow Payment Authorization</h1>
+        <p class="text-xs sm:text-sm text-slate-500 font-semibold mt-1">Review item budget, volunteer service charge, and complete payment.</p>
       </div>
 
-      <!-- Target Request & Senior Details Banner -->
-      <div id="requestMetaBanner" class="bg-brand-50/80 border border-brand-200/80 rounded-2xl p-4 mb-6 shadow-2xs" style="display: none;">
-        <div class="flex items-start gap-3">
-          <div class="w-8 h-8 rounded-xl bg-brand-100 text-brand-700 flex items-center justify-center flex-shrink-0 mt-0.5">
-            <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z" />
-            </svg>
-          </div>
-          <div class="flex-1 min-w-0">
-            <h2 id="metaTitle" class="text-sm font-extrabold text-brand-950 tracking-tight leading-snug">Loading request...</h2>
-            <div class="flex items-center gap-1.5 text-xs text-brand-800 font-medium mt-1">
-              <svg class="w-3.5 h-3.5 text-brand-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
-              </svg>
-              <span id="metaSenior">Senior Citizen: Loading...</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-
-
-      <!-- Payment Summary Section -->
-      <div class="mb-6">
-        <div class="flex items-center gap-2 mb-3">
-          <div class="w-6 h-6 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
-            </svg>
-          </div>
-          <h3 class="text-sm font-extrabold text-slate-900 tracking-tight uppercase">Payment Summary</h3>
-        </div>
-
-        <div class="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 space-y-2.5 shadow-2xs">
-          <div class="flex justify-between items-center text-xs font-semibold text-slate-600">
-            <span>Items Purchased (Store Bill)</span>
-            <span class="text-sm font-extrabold text-slate-900" id="summaryItemsCost">₹0</span>
-          </div>
-
-          <div class="flex justify-between items-center text-xs font-semibold text-slate-600">
-            <span>Volunteer Service Charge</span>
-            <span class="text-sm font-extrabold text-slate-900" id="summaryVolunteerFee">₹0</span>
-          </div>
-
-          <div class="flex justify-between items-center text-xs font-semibold text-slate-600" id="summaryTipRow" style="display: none;">
-            <span class="flex items-center gap-1 text-emerald-700">
-              <svg class="w-3.5 h-3.5 text-emerald-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
-              </svg>
-              <span>Caregiver Tip</span>
+      <!-- Request Snapshot Header (Title, Senior Name, Volunteer Name, Category) -->
+      <div class="bg-slate-50/80 border border-slate-200/80 rounded-2xl p-4 sm:p-5 mb-6 space-y-3 shadow-2xs">
+        <div class="flex items-start justify-between gap-3">
+          <div class="space-y-1">
+            <span class="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-brand-100 text-brand-700 uppercase tracking-wider" id="paymentCategoryBadge">
+              Help Request
             </span>
-            <span class="text-sm font-extrabold text-emerald-700" id="summaryTipAmount">₹0</span>
+            <h2 class="text-base sm:text-lg font-extrabold text-slate-900 leading-snug" id="summaryRequestTitle">
+              Help Request
+            </h2>
+          </div>
+          <span class="flex-shrink-0 px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200/80 rounded-full text-xs font-extrabold flex items-center gap-1.5 shadow-2xs">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+            Verified Task
+          </span>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2 border-t border-slate-200/60 text-xs font-semibold text-slate-600">
+          <div class="flex items-center gap-2">
+            <div class="w-6 h-6 rounded-lg bg-white border border-slate-200 text-brand-600 flex items-center justify-center flex-shrink-0">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"/></svg>
+            </div>
+            <span>Senior: <strong class="text-slate-800" id="summarySeniorName">Senior Citizen</strong></span>
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="w-6 h-6 rounded-lg bg-white border border-slate-200 text-emerald-600 flex items-center justify-center flex-shrink-0">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z"/></svg>
+            </div>
+            <span>Volunteer: <strong class="text-slate-800" id="summaryVolunteerName">Assigned Volunteer</strong></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Itemized Price Breakdown Table -->
+      <div class="mb-6">
+        <h2 class="text-xs font-extrabold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+          <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg>
+          Payment Summary
+        </h2>
+
+        <div class="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 space-y-3">
+          <div class="flex justify-between items-center text-xs font-semibold text-slate-600" id="rowItemsCost">
+            <span>Estimated Purchase Budget (Escrow)</span>
+            <span class="font-bold text-slate-900" id="summaryItemsCost">₹0</span>
           </div>
 
-          <div class="flex justify-between items-center text-xs font-semibold text-slate-600">
+          <div class="flex justify-between items-center text-xs font-semibold text-slate-600" id="rowVolunteerFee">
+            <span>Volunteer Service Charge (Escrow)</span>
+            <span class="font-bold text-slate-900" id="summaryVolunteerFee">₹0</span>
+          </div>
+
+          <div class="flex justify-between items-center text-xs font-semibold text-slate-600" id="summaryPlatformFeeRow">
             <span>Platform Fee</span>
-            <span class="text-xs font-extrabold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200" id="summaryPlatformFee">Free (₹0)</span>
+            <span class="font-bold text-emerald-700 bg-emerald-100/70 border border-emerald-200/60 px-2 py-0.5 rounded-md text-[11px]" id="summaryPlatformFee">₹0</span>
           </div>
 
-          <div class="pt-2.5 border-t border-slate-200 flex justify-between items-center">
-            <span class="text-sm font-extrabold text-slate-900">Total Payable Amount</span>
+          <!-- Tip Row (Hidden by default, shown if tip given) -->
+          <div class="flex justify-between items-center text-xs font-semibold text-brand-700" id="summaryTipRow" style="display: none;">
+            <span>Volunteer Appreciation Tip</span>
+            <span class="font-bold text-brand-700" id="summaryTipAmount">₹0</span>
+          </div>
+
+          <div class="pt-3 border-t border-slate-200/80 flex justify-between items-center">
+            <div>
+              <span class="text-sm font-extrabold text-slate-900 block">Total Payable Amount</span>
+            </div>
             <span class="text-xl font-black text-brand-600 tracking-tight" id="summaryTotal">₹0</span>
           </div>
         </div>
@@ -299,6 +302,15 @@
           </svg>
           <span id="btnPayText">Pay Securely via Razorpay</span>
         </button>
+
+        <div class="text-center pt-2">
+          <a href="/family-dashboard.html?tab=approvals" class="text-xs font-bold text-slate-500 hover:text-slate-800 transition-colors bg-transparent border-none cursor-pointer inline-flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-lg hover:bg-slate-100 no-underline">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+            </svg>
+            <span>Cancel &amp; Return to Volunteer Approvals (Don't Pay Now)</span>
+          </a>
+        </div>
       </div>
     </div>
 
@@ -353,7 +365,7 @@
   </main>
 
   <!-- Global Footer -->
-  <footer class="global-footer w-full text-center mt-4 py-6 px-4 bg-[#0b3d70] text-white">
+  <footer class="global-footer w-full text-center mt-1 py-6 px-4 bg-[#0b3d70] text-white">
     <p class="text-xs sm:text-sm font-semibold text-white/90" data-i18n="footer_text">&copy; 2026 AgeWell Platform. Designed with care for Senior Citizens, Volunteers, and Admins.</p>
   </footer>
 
@@ -787,7 +799,7 @@
   </div>
 
   <!-- Scripts -->
-  <script src="js/api.js?v=361"></script>
-  <script src="js/payment.js?v=361"></script>
+  <script src="js/api.js?v=408"></script>
+  <script src="js/payment.js?v=408"></script>
 </body>
 </html>

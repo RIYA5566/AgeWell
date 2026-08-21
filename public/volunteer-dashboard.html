@@ -12,7 +12,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
   <link rel="stylesheet" href="/css/style.css?v=322">
-  <script src="/js/i18n.js?v=306"></script>
+  <script src="/js/i18n.js?v=421"></script>
 
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -997,13 +997,17 @@
             You are offering to assist with request: <strong id="quoteRequestTitle" class="text-brand-700 font-extrabold">Help Request</strong>. Please enter your voluntary or service charge quote below:
           </p>
 
-          <!-- Caregiver Shopping Preference Banner -->
-          <div id="quoteModalPrefContainer" style="display: none;" class="p-3.5 bg-amber-50/80 border border-amber-200/80 rounded-2xl">
+          <!-- Caregiver Shopping Preference & Budget Banner -->
+          <div id="quoteModalPrefContainer" style="display: none;" class="p-3.5 bg-amber-50/80 border border-amber-200/80 rounded-2xl space-y-2">
             <div class="flex items-center gap-2 text-xs font-bold text-amber-900 mb-0.5">
               <svg class="w-4 h-4 text-amber-600 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25c-.669 0-1.189-.578-1.119-1.243l1.263-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/></svg>
               <span>Caregiver Shopping Preference:</span>
             </div>
             <p id="quoteModalPrefText" class="text-xs font-extrabold text-amber-800 pl-6"></p>
+            <div id="quoteModalBudgetContainer" style="display: none;" class="pt-2 border-t border-amber-200/60 flex items-center gap-2 text-xs font-extrabold text-emerald-800">
+              <svg class="w-4 h-4 text-emerald-600 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              <span>Caregiver Allowed Budget: <span id="quoteModalBudgetText" class="font-extrabold text-emerald-700 text-sm"></span></span>
+            </div>
           </div>
 
           <div>
@@ -1076,21 +1080,36 @@
         </div>
 
         <form id="completionForm" novalidate class="space-y-4">
+          <!-- Attached Documents from Pay for Purchase -->
+          <div id="attachedDocsContainer" style="display: none;" class="p-3.5 bg-emerald-50/80 border border-emerald-200/90 rounded-2xl space-y-2.5">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-extrabold text-emerald-900 flex items-center gap-1.5">
+                <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                Already Attached from Purchase
+              </span>
+              <span id="attachedDocsCount" class="text-[10px] font-extrabold bg-emerald-200/80 text-emerald-900 px-2 py-0.5 rounded-full">0 Records</span>
+            </div>
+            <div id="attachedDocsList" class="space-y-1.5 max-h-48 overflow-y-auto"></div>
+            <p class="text-[11px] font-medium text-emerald-800 leading-tight">
+              All payment details and receipts from your purchases are saved with this task. Click below to complete.
+            </p>
+          </div>
+
           <div>
             <label for="resolutionNotes" class="block text-xs font-extrabold text-slate-900 mb-1.5">
               Description of Assistance Provided <span class="text-rose-600">*</span>
             </label>
             <textarea 
               id="resolutionNotes" 
-              class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs font-medium text-slate-900 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100 transition-all outline-none min-h-[80px]" 
-              placeholder="e.g. Bought items from the supermarket and delivered them to the senior's doorstep..." 
+              class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs font-medium text-slate-900 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100 transition-all outline-none min-h-[70px]" 
+              placeholder="e.g. Delivered purchased items to senior's doorstep..." 
               required
             ></textarea>
           </div>
 
           <div>
             <label for="receiptPhoto" class="block text-xs font-extrabold text-slate-900 mb-1.5">
-              Upload Receipt / Delivery Photo Proof
+              <span id="labelDeliveryPhotoText">Upload Delivery / Item Handover Photo (Optional)</span>
             </label>
             <input 
               type="file" 
@@ -1100,16 +1119,90 @@
               accept="image/*" 
               multiple
             >
-            <span class="text-[11px] text-slate-400 font-medium block mt-1">Upload delivery proof or store purchase bill (multiple photos supported).</span>
+            <span class="text-[11px] text-slate-400 font-medium block mt-1">Optional additional delivery handover proof.</span>
           </div>
 
           <div class="flex gap-2.5 pt-2">
             <button type="button" id="btnCancelComplete" class="flex-1 py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-extrabold rounded-2xl transition-all cursor-pointer border-none">
               Cancel
             </button>
-            <button type="submit" class="flex-2 py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold rounded-2xl transition-all cursor-pointer border-none shadow-xs">
-              Save &amp; Complete Task
+            <button type="submit" id="btnSubmitCompleteTask" class="flex-2 py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold rounded-2xl transition-all cursor-pointer border-none shadow-xs flex items-center justify-center gap-1.5">
+              <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
+              <span>Save &amp; Complete Task</span>
             </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!-- MARK TASK DONE MODAL (Service-Only / Mixed No-Purchase)            -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <div id="markDoneModal" class="modal" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="markDoneModalTitle">
+      <div class="modal-content" style="max-width: 480px;">
+        <div class="flex items-start justify-between gap-3 pb-3.5 border-b border-slate-100 mb-4">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-2xl bg-teal-50 border border-teal-200/70 text-teal-600 flex items-center justify-center shadow-2xs">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+            <div>
+              <h2 id="markDoneModalTitle" class="text-base font-extrabold text-slate-900 tracking-tight">Mark Task as Done</h2>
+              <span class="text-[11px] text-slate-400 font-semibold block">Task: <span id="markDoneTaskTitle" class="text-slate-600"></span></span>
+            </div>
+          </div>
+          <button onclick="closeMarkDoneModal()" class="text-slate-400 hover:text-slate-600 transition-colors p-1 rounded-xl hover:bg-slate-100 active:scale-95" aria-label="Close">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        </div>
+
+        <!-- Info Banner: No bill required -->
+        <div class="mb-4 p-3.5 bg-teal-50 border border-teal-200 rounded-2xl text-xs text-teal-900 font-semibold">
+          <p class="font-bold text-teal-800 mb-1">✓ No Bill or Receipt Required</p>
+          <p class="font-medium text-teal-700">For this type of task, no financial proof is needed. Simply confirm you performed the service and the senior/caregiver will verify your completion.</p>
+        </div>
+
+        <form id="markDoneForm" onsubmit="handleMarkDoneSubmit(event)" class="space-y-4">
+          <input type="hidden" id="markDoneRequestId">
+          <input type="hidden" id="markDoneProofType" value="service_only">
+
+          <!-- Completion Note -->
+          <div>
+            <label for="markDoneNote" class="block text-xs font-extrabold text-slate-700 mb-1.5 uppercase tracking-wider">Completion Notes <span class="text-slate-400 font-normal normal-case">(Optional)</span></label>
+            <textarea
+              id="markDoneNote"
+              rows="3"
+              placeholder="e.g. Helped senior set up video call with family. Spent approx. 45 minutes."
+              class="w-full px-3.5 py-2.5 border border-slate-200 rounded-2xl text-sm text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-teal-400 resize-none bg-slate-50"
+            ></textarea>
+          </div>
+
+          <!-- Optional Photo -->
+          <div>
+            <label for="markDonePhoto" class="block text-xs font-extrabold text-slate-700 mb-1.5 uppercase tracking-wider">Completion Photo <span class="text-slate-400 font-normal normal-case">(Optional — selfie with senior, screenshot, etc.)</span></label>
+            <input
+              id="markDonePhoto"
+              type="file"
+              accept="image/*"
+              multiple
+              onchange="markDonePhotoPreview(this)"
+              class="block w-full text-xs text-slate-600 file:mr-3 file:py-2 file:px-3.5 file:rounded-xl file:border-0 file:bg-teal-50 file:text-teal-700 file:font-bold hover:file:bg-teal-100 transition-all cursor-pointer"
+            >
+            <div id="markDonePhotoPreview" class="mt-2 hidden">
+              <p class="text-[11px] text-teal-700 font-semibold">Photo selected ✓</p>
+            </div>
+          </div>
+
+          <div class="flex gap-3 pt-2">
+            <button
+              type="button"
+              onclick="closeMarkDoneModal()"
+              class="flex-1 py-2.5 border border-slate-200 rounded-2xl text-sm font-bold text-slate-600 hover:bg-slate-50 transition-all"
+            >Cancel</button>
+            <button
+              id="btnMarkDone"
+              type="submit"
+              class="flex-1 py-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-2xl text-sm font-extrabold shadow-xs transition-all active:scale-95"
+            >Mark as Done</button>
           </div>
         </form>
       </div>
@@ -1138,6 +1231,15 @@
         <form id="purchaseCostForm" onsubmit="handlePurchaseCostSubmit(event)" class="space-y-4">
           <input type="hidden" id="purchaseCostRequestId" value="">
 
+          <!-- Caregiver Allowed Budget Estimate Notice in Purchase Cost Modal -->
+          <div id="purchaseCostBudgetBanner" style="display: none;" class="p-3.5 bg-emerald-50/90 border border-emerald-200/80 rounded-2xl">
+            <div class="flex items-center gap-2 text-xs font-bold text-emerald-950">
+              <svg class="w-4 h-4 text-emerald-600 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              <span>Caregiver Allowed Budget: <strong id="purchaseCostBudgetText" class="text-emerald-700 font-extrabold text-sm">₹0</strong></span>
+            </div>
+            <p class="text-[11px] text-emerald-800 font-medium mt-1">Please ensure purchase costs stay within or close to this caregiver-approved budget estimate.</p>
+          </div>
+
           <div>
             <label for="purchaseCostInput" class="block text-xs font-extrabold text-slate-900 mb-1.5">
               Actual Purchase Cost (in ₹) <span class="text-rose-600">*</span>
@@ -1148,10 +1250,110 @@
               min="0" 
               step="1" 
               required 
-              placeholder="e.g. 450" 
+              placeholder="e.g. 1350" 
               class="w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl text-sm font-extrabold text-slate-900 focus:border-brand-600 focus:ring-2 focus:ring-brand-100 transition-all outline-none" 
               oninput="togglePurchaseProofRequired(this.value)"
             >
+          </div>
+
+          <!-- Merchant / Shop Direct Payment Details -->
+          <div class="p-4 bg-slate-50/90 border border-slate-200/90 rounded-2xl space-y-3 text-left">
+            <div class="flex items-center justify-between pb-2 border-b border-slate-200/80">
+              <span class="text-xs font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 21v-7.5a.75.75 0 01.75-.75h3a.75.75 0 01.75.75V21m-4.5 0H2.36m11.14 0H18m0 0h3.64m-1.39 0V9.349m-16.5 11.65V9.35m0 0a3.001 3.001 0 003.75-.615A2.993 2.993 0 009 9.35c.692 0 1.348-.235 1.875-.635a3 3 0 003.75 0c.527.4 1.183.635 1.875.635 1.185 0 2.222-.686 2.727-1.688"/></svg>
+                Merchant / Shop Direct Payment Info
+              </span>
+              <span class="text-[10px] font-extrabold text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded-full">Caregiver Pays Shop</span>
+            </div>
+
+            <!-- Shop Name -->
+            <div>
+              <label for="merchantShopNameInput" class="block text-[11px] font-extrabold text-slate-800 mb-1">
+                Shop / Store Name <span class="text-rose-600">*</span>
+              </label>
+              <input
+                type="text"
+                id="merchantShopNameInput"
+                placeholder="e.g. Apollo Pharmacy, Local Kirana Store, Blinkit"
+                required
+                class="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:border-brand-600 focus:ring-2 focus:ring-brand-100 transition-all outline-none"
+              >
+            </div>
+
+            <!-- Payment Type Radio Selector -->
+            <div>
+              <label class="block text-[11px] font-extrabold text-slate-800 mb-1.5">
+                Merchant Payment Provider Channel:
+              </label>
+              <div class="grid grid-cols-2 gap-2">
+                <label class="flex items-center gap-2 p-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 cursor-pointer transition-all">
+                  <input type="radio" name="merchantPaymentTypeRadio" value="offline_qr" checked onchange="toggleMerchantPaymentMethodUI(this.value)" class="text-brand-600">
+                  <span class="text-xs font-bold text-slate-800">Offline (Merchant UPI QR)</span>
+                </label>
+                <label class="flex items-center gap-2 p-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 cursor-pointer transition-all">
+                  <input type="radio" name="merchantPaymentTypeRadio" value="online_link" onchange="toggleMerchantPaymentMethodUI(this.value)" class="text-brand-600">
+                  <span class="text-xs font-bold text-slate-800">Online (Payment / Order Link)</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Offline Section: UPI QR image and UPI ID -->
+            <div id="merchantOfflineFields" class="space-y-2.5">
+              <div>
+                <label for="merchantQrFile" class="block text-[11px] font-extrabold text-slate-800 mb-1">
+                  Upload Merchant's UPI QR Code Photo
+                </label>
+                <input
+                  type="file"
+                  id="merchantQrFile"
+                  accept="image/*"
+                  class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-700 cursor-pointer file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-emerald-50 file:text-emerald-700"
+                  onchange="previewMerchantQrImage(this)"
+                >
+                <div id="merchantQrPreview" style="display: none;" class="mt-2 text-center">
+                  <img id="merchantQrPreviewImg" src="" alt="Merchant QR Preview" class="max-w-[130px] max-h-[130px] mx-auto rounded-xl border border-slate-200 object-contain shadow-2xs">
+                </div>
+              </div>
+
+              <div>
+                <label for="merchantUpiIdInput" class="block text-[11px] font-extrabold text-slate-800 mb-1">
+                  Merchant UPI ID / Phone (Optional if QR photo uploaded)
+                </label>
+                <input
+                  type="text"
+                  id="merchantUpiIdInput"
+                  placeholder="e.g. apollostore@icici or 9876543210@paytm"
+                  class="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:border-brand-600 focus:ring-2 focus:ring-brand-100 transition-all outline-none"
+                >
+              </div>
+            </div>
+
+            <!-- Online Section: Payment / Order Link -->
+            <div id="merchantOnlineFields" style="display: none;" class="space-y-2.5">
+              <div>
+                <label for="merchantPaymentLinkInput" class="block text-[11px] font-extrabold text-slate-800 mb-1">
+                  Merchant Payment / Cart Order Link
+                </label>
+                <input
+                  type="url"
+                  id="merchantPaymentLinkInput"
+                  placeholder="https://..."
+                  class="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:border-brand-600 focus:ring-2 focus:ring-brand-100 transition-all outline-none"
+                >
+              </div>
+
+              <div>
+                <label for="merchantOrderNumberInput" class="block text-[11px] font-extrabold text-slate-800 mb-1">
+                  Order / Bill Reference # (Optional)
+                </label>
+                <input
+                  type="text"
+                  id="merchantOrderNumberInput"
+                  placeholder="e.g. ORD-109283"
+                  class="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:border-brand-600 focus:ring-2 focus:ring-brand-100 transition-all outline-none"
+                >
+              </div>
+            </div>
           </div>
 
           <div>
@@ -1163,7 +1365,6 @@
               id="purchaseProofFile" 
               accept="image/*" 
               multiple 
-              required 
               class="w-full px-3 py-2 bg-slate-50 border border-slate-200/90 rounded-2xl text-xs text-slate-700 cursor-pointer file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-extrabold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100" 
               onchange="previewPurchaseProofImage(this)"
             >
@@ -1178,9 +1379,204 @@
             </label>
             <textarea 
               id="purchaseNotesInput" 
-              rows="3" 
-              placeholder="e.g. Paracetamol 10 tabs (₹60), Rice bag 5kg (₹320)" 
-              class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs font-medium text-slate-900 focus:border-brand-600 focus:ring-2 focus:ring-brand-100 transition-all outline-none"
+              rows="2" 
+              placeholder="e.g. Medicines ₹1,350 as prescribed" 
+              class="w-full px-4 py-2 bg-white border border-slate-200 rounded-2xl text-xs font-medium text-slate-900 focus:border-brand-600 focus:ring-2 focus:ring-brand-100 transition-all outline-none"
+            ></textarea>
+          </div>
+
+          <div class="flex gap-2.5 pt-2">
+            <button type="button" class="flex-1 py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-extrabold rounded-2xl transition-all cursor-pointer border-none" onclick="closePurchaseCostModal()">
+              Cancel
+            </button>
+            <button type="submit" id="btnSubmitPurchaseCost" class="flex-2 py-3 px-4 bg-brand-600 hover:bg-brand-700 text-white text-xs font-extrabold rounded-2xl transition-all cursor-pointer border-none shadow-xs">
+              Submit Purchase Cost &amp; Proof
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!-- MODAL: VOLUNTEER PAY FOR PURCHASE (PRE-FUNDED ESCROW MOCK GATEWAY)  -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <div id="volunteerPayPurchaseModal" class="modal" role="dialog" aria-modal="true" style="display: none;">
+      <div class="modal-content" style="max-width: 580px; max-height: 90vh; overflow-y: auto;">
+        <div class="flex items-center justify-between pb-3.5 border-b border-slate-100 mb-3.5 sticky top-0 bg-white z-10">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-2xl bg-emerald-100 border border-emerald-300 text-emerald-700 flex items-center justify-center flex-shrink-0 font-extrabold shadow-2xs">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z"/></svg>
+            </div>
+            <div>
+              <h3 class="text-base font-extrabold text-slate-900 leading-tight">Pay Using AgeWell Allocated Funds</h3>
+              <span class="text-xs font-bold text-emerald-700">Pre-Funded Task Budget</span>
+            </div>
+          </div>
+          <button type="button" onclick="closeVolunteerPayPurchaseModal()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold flex items-center justify-center text-sm transition-all cursor-pointer border-none p-0">
+            ✕
+          </button>
+        </div>
+
+        <!-- 1. Task Fund Summary -->
+        <div class="grid grid-cols-3 gap-2.5 p-3.5 bg-emerald-50/70 border border-emerald-200/80 rounded-2xl text-center mb-3 shadow-2xs">
+          <div class="p-2.5 bg-white rounded-xl border border-emerald-100">
+            <span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">Allocated</span>
+            <span id="modalPayAuthBudget" class="text-sm font-black text-slate-900 block mt-0.5">₹0</span>
+          </div>
+          <div class="p-2.5 bg-white rounded-xl border border-emerald-100">
+            <span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">Used</span>
+            <span id="modalPaySpentBudget" class="text-sm font-black text-amber-700 block mt-0.5">₹0</span>
+          </div>
+          <div class="p-2.5 bg-white rounded-xl border border-emerald-100">
+            <span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">Remaining</span>
+            <span id="modalPayRemainingBudget" class="text-sm font-black text-emerald-700 block mt-0.5">₹0</span>
+          </div>
+        </div>
+
+        <div class="p-3 bg-brand-50/70 border border-brand-200/80 rounded-2xl flex items-start gap-2.5 text-left mb-4">
+          <svg class="w-4 h-4 text-brand-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z"/></svg>
+          <p class="text-[11px] text-brand-950 font-medium leading-relaxed">
+            Payment will be made to the merchant using the payment details provided below. The purchase remains linked to this task and its allocated budget.
+          </p>
+        </div>
+
+        <form id="volunteerPayPurchaseForm" onsubmit="event.preventDefault(); handleVolunteerPayPurchaseSubmit(event);" novalidate class="space-y-4 text-left">
+          <input type="hidden" id="payPurchaseRequestId" value="">
+
+          <!-- 2. Merchant Details -->
+          <div class="p-3.5 bg-slate-50/80 border border-slate-200 rounded-2xl space-y-3">
+            <span class="text-xs font-extrabold text-slate-900 uppercase tracking-wider block border-b border-slate-200/80 pb-1.5">
+              1. Merchant Details
+            </span>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label for="payPurchaseMerchantInput" class="block text-[11px] font-extrabold text-slate-800 mb-1">
+                  Merchant / Shop Name <span class="text-rose-600">*</span>
+                </label>
+                <input 
+                  type="text" 
+                  id="payPurchaseMerchantInput" 
+                  required 
+                  placeholder="e.g. ABC Pharmacy" 
+                  class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:border-brand-600 focus:ring-2 focus:ring-brand-100 transition-all outline-none"
+                >
+              </div>
+              <div>
+                <label for="payPurchaseMerchantTypeInput" class="block text-[11px] font-extrabold text-slate-800 mb-1">
+                  Merchant Type
+                </label>
+                <select 
+                  id="payPurchaseMerchantTypeInput" 
+                  class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:border-brand-600 focus:ring-2 focus:ring-brand-100 transition-all outline-none"
+                >
+                  <option value="Pharmacy">Pharmacy / Chemist</option>
+                  <option value="Grocery">Grocery / Kirana Store</option>
+                  <option value="Supermarket">Supermarket / Retail</option>
+                  <option value="Clinic / Hospital">Clinic / Hospital / Diagnostics</option>
+                  <option value="Other">Other Store / Vendor</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label for="payPurchaseMerchantLocationInput" class="block text-[11px] font-extrabold text-slate-800 mb-1">
+                  Merchant Location (Optional)
+                </label>
+                <input 
+                  type="text" 
+                  id="payPurchaseMerchantLocationInput" 
+                  placeholder="e.g. Pune, Maharashtra / MG Road" 
+                  class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-900 focus:border-brand-600 focus:ring-2 focus:ring-brand-100 transition-all outline-none"
+                >
+              </div>
+              <div>
+                <label for="payPurchaseMerchantPhoneInput" class="block text-[11px] font-extrabold text-slate-800 mb-1">
+                  Merchant Contact (Optional)
+                </label>
+                <input 
+                  type="tel" 
+                  id="payPurchaseMerchantPhoneInput" 
+                  placeholder="e.g. 9876543210" 
+                  class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-900 focus:border-brand-600 focus:ring-2 focus:ring-brand-100 transition-all outline-none"
+                >
+              </div>
+            </div>
+          </div>
+
+          <!-- 3. Payment Destination ⭐ -->
+          <div class="p-3.5 bg-slate-50/80 border border-slate-200 rounded-2xl space-y-3">
+            <span class="text-xs font-extrabold text-slate-900 uppercase tracking-wider block border-b border-slate-200/80 pb-1.5">
+              2. Payment Destination ⭐
+            </span>
+
+            <div>
+              <label class="block text-[11px] font-extrabold text-slate-800 mb-2">How should the merchant be paid?</label>
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <label class="flex items-center gap-1.5 p-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 cursor-pointer transition-all text-xs font-bold text-slate-800">
+                  <input type="radio" name="payDestinationType" value="upi_id" checked onchange="togglePayDestinationFields(this.value)" class="text-brand-600">
+                  <span>UPI ID</span>
+                </label>
+                <label class="flex items-center gap-1.5 p-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 cursor-pointer transition-all text-xs font-bold text-slate-800">
+                  <input type="radio" name="payDestinationType" value="upi_qr" onchange="togglePayDestinationFields(this.value)" class="text-brand-600">
+                  <span>UPI QR</span>
+                </label>
+                <label class="flex items-center gap-1.5 p-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 cursor-pointer transition-all text-xs font-bold text-slate-800">
+                  <input type="radio" name="payDestinationType" value="payment_link" onchange="togglePayDestinationFields(this.value)" class="text-brand-600">
+                  <span>Payment Link</span>
+                </label>
+                <label class="flex items-center gap-1.5 p-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 cursor-pointer transition-all text-xs font-bold text-slate-800">
+                  <input type="radio" name="payDestinationType" value="online_order" onchange="togglePayDestinationFields(this.value)" class="text-brand-600">
+                  <span>Order Link</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Dynamic Destination Input Fields -->
+            <div id="destFieldUpiId">
+              <label for="payUpiIdInput" class="block text-[11px] font-extrabold text-slate-800 mb-1">
+                Merchant UPI ID <span class="text-rose-600">*</span>
+              </label>
+              <input 
+                type="text" 
+                id="payUpiIdInput" 
+                placeholder="e.g. abcpharmacy@upi, 9876543210@paytm" 
+                class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:border-brand-600 focus:ring-2 focus:ring-brand-100 transition-all outline-none"
+              >
+            </div>
+
+            <div id="destFieldUpiQr" style="display: none;" class="space-y-2">
+              <label for="payUpiQrFile" class="block text-[11px] font-extrabold text-slate-800 mb-1">
+                Merchant UPI QR Photo / Scan <span class="text-rose-600">*</span>
+              </label>
+              <input 
+                type="file" 
+                id="payUpiQrFile" 
+                accept="image/*" 
+                class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-700 cursor-pointer file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-emerald-50 file:text-emerald-700"
+              >
+            </div>
+
+            <div id="destFieldPaymentLink" style="display: none;">
+              <label for="payPaymentLinkInput" class="block text-[11px] font-extrabold text-slate-800 mb-1">
+                Merchant Payment Link <span class="text-rose-600">*</span>
+              onchange="previewPurchaseProofImage(this)"
+            >
+            <div id="purchaseProofPreview" style="display: none;" class="mt-3 text-center">
+              <img id="purchaseProofPreviewImg" src="" alt="Bill Proof Preview" class="max-w-full max-h-[160px] mx-auto rounded-xl border border-slate-200 object-contain shadow-2xs">
+            </div>
+          </div>
+
+          <div>
+            <label for="purchaseNotesInput" class="block text-xs font-extrabold text-slate-900 mb-1.5">
+              Items Breakdown Notes (Optional)
+            </label>
+            <textarea 
+              id="purchaseNotesInput" 
+              rows="2" 
+              placeholder="e.g. Medicines ₹1,350 as prescribed" 
+              class="w-full px-4 py-2 bg-white border border-slate-200 rounded-2xl text-xs font-medium text-slate-900 focus:border-brand-600 focus:ring-2 focus:ring-brand-100 transition-all outline-none"
             ></textarea>
           </div>
 
@@ -1308,12 +1704,12 @@
   </main>
 
   <!-- Global Footer -->
-  <footer class="global-footer w-full text-center mt-4 py-6 px-4 bg-[#0b3d70] text-white">
+  <footer class="global-footer w-full text-center mt-1 py-6 px-4 bg-[#0b3d70] text-white">
     <p class="text-xs sm:text-sm font-semibold text-white/90" data-i18n="footer_text">&copy; 2026 AgeWell Platform. Designed with care for Senior Citizens, Volunteers, and Admins.</p>
   </footer>
 
   <!-- Scripts -->
-  <script src="/js/api.js?v=363"></script>
-  <script src="/js/volunteer.js?v=363"></script>
+  <script src="/js/api.js?v=423"></script>
+  <script src="/js/volunteer.js?v=423"></script>
 </body>
 </html>

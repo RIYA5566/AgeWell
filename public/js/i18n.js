@@ -227,9 +227,7 @@ const translations = {
     sd_voice_confirm_prompt: "\"Should I send this request?\"",
     sd_voice_confirm_desc: "Simply say \"YES\" to send or \"NO\" to cancel.",
     btn_voice_confirm_yes: "Send Request",
-    btn_voice_confirm_no: "Discard",
-    nav_language_label: "Lang:",
-    sd_actions_panel: "Actions Panel",
+    nav_language_label: `<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true" style="vertical-align: middle; display: inline-block;"><circle cx="12" cy="12" r="9" /><path stroke-linecap="round" stroke-linejoin="round" d="M3.6 9h16.8M3.6 15h16.8" /><path stroke-linecap="round" stroke-linejoin="round" d="M11.5 3a17 17 0 000 18M12.5 3a17 17 0 010 18" /></svg>`,
     sd_support_requests: "My Support Requests",
     sd_urgency_label: "5. How Urgent Is This?",
 
@@ -339,7 +337,7 @@ const translations = {
     fd_volunteers_quoted_count: "Volunteers Who Accepted & Quoted Service Fees ({count}):",
     fd_quoted_service_charge: "Quoted Service Charge:",
     fd_extra_purchase_costs_help: "Extra purchase costs (receipts) added upon completion.",
-    btn_select_approve_vol: "Select & Approve {name} ({fee})",
+    btn_select_approve_vol: "Select & Approve {name}",
     btn_reject_all_quotes: "Reject All Volunteer Quotes",
     fd_select_vol_assigned_help: "Once you select a volunteer, the task will be assigned exclusively to them.",
     btn_release_service_charge: "Release Volunteer Service Charge (₹{fee})",
@@ -376,6 +374,9 @@ const translations = {
     fd_pref_other: "Other (type it)",
     fd_pref_type_other: "Type Other Preference:",
     placeholder_pref_other: "Organic items only, buy from local dairy, etc.",
+    fd_pref_allowed_budget: "Allowed Budget (₹)",
+    fd_pref_allowed_budget_optional: "(optional spend limit)",
+    fd_pref_allowed_budget_hint: "Sets an estimated budget limit for item purchases/expenses so volunteers know the acceptable spending range.",
     btn_allot_task: "Allot Task to Volunteer",
     fd_confirm_vol_title: "Confirm Volunteer Selection",
     fd_confirm_vol_body: "Are you sure you want to select and approve this volunteer to fulfill the request?",
@@ -698,7 +699,7 @@ const translations = {
     sd_voice_confirm_desc: "भेजने के लिए बस \"हाँ\" कहें या रद्द करने के लिए \"नहीं\" कहें।",
     btn_voice_confirm_yes: "अनुरोध भेजें",
     btn_voice_confirm_no: "रद्द करें",
-    nav_language_label: "भाषा:",
+    nav_language_label: `<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true" style="vertical-align: middle; display: inline-block;"><circle cx="12" cy="12" r="9" /><path stroke-linecap="round" stroke-linejoin="round" d="M3.6 9h16.8M3.6 15h16.8" /><path stroke-linecap="round" stroke-linejoin="round" d="M11.5 3a17 17 0 000 18M12.5 3a17 17 0 010 18" /></svg>`,
     sd_actions_panel: "कार्रवाई पैनल",
     sd_support_requests: "मेरे सहायता अनुरोध",
     sd_urgency_label: "५. यह कितना जरूरी है?",
@@ -809,7 +810,7 @@ const translations = {
     fd_volunteers_quoted_count: "स्वयंसेवक जिन्होंने सहमति दी और सेवा शुल्क उद्धृत किया ({count}):",
     fd_quoted_service_charge: "उद्धृत सेवा शुल्क:",
     fd_extra_purchase_costs_help: "कार्य पूरा होने पर अतिरिक्त खरीद लागत (रसीदें) जोड़ी जाती हैं।",
-    btn_select_approve_vol: "{name} को चुनें और स्वीकृत करें ({fee})",
+    btn_select_approve_vol: "{name} को चुनें और स्वीकृत करें",
     btn_reject_all_quotes: "सभी स्वयंसेवक कोटों को अस्वीकार करें",
     fd_select_vol_assigned_help: "एक बार जब आप एक स्वयंसेवक का चयन कर लेते हैं, तो कार्य विशेष रूप से उन्हें सौंप दिया जाएगा।",
     btn_release_service_charge: "स्वयंसेवक सेवा शुल्क जारी करें (₹{fee})",
@@ -846,6 +847,9 @@ const translations = {
     fd_pref_other: "अन्य (लिखें)",
     fd_pref_type_other: "अन्य प्राथमिकता लिखें:",
     placeholder_pref_other: "केवल जैविक वस्तुएं, स्थानीय डेयरी से खरीदें, आदि।",
+    fd_pref_allowed_budget: "स्वीकृत बजट अनुमान (₹)",
+    fd_pref_allowed_budget_optional: "(वैकल्पिक खर्च सीमा)",
+    fd_pref_allowed_budget_hint: "वस्तुओं की खरीद/खर्च के लिए एक अनुमानित बजट सीमा निर्धारित करता है ताकि स्वयंसेवकों को स्वीकार्य खर्च सीमा पता रहे।",
     btn_allot_task: "स्वयंसेवक को कार्य आवंटित करें",
     fd_confirm_vol_title: "स्वयंसेवक चयन की पुष्टि करें",
     fd_confirm_vol_body: "क्या आप वाकई इस अनुरोध को पूरा करने के लिए इस स्वयंसेवक को चुनना और स्वीकृत करना चाहते हैं?",
@@ -1168,7 +1172,7 @@ const translations = {
     sd_voice_confirm_desc: "पाठवण्यासाठी फक्त \"हो\" म्हणा किंवा रद्द करण्यासाठी \"नाही\" म्हणा.",
     btn_voice_confirm_yes: "विनंती पाठवा",
     btn_voice_confirm_no: "रद्द करा",
-    nav_language_label: "भाषा:",
+    nav_language_label: `<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true" style="vertical-align: middle; display: inline-block;"><circle cx="12" cy="12" r="9" /><path stroke-linecap="round" stroke-linejoin="round" d="M3.6 9h16.8M3.6 15h16.8" /><path stroke-linecap="round" stroke-linejoin="round" d="M11.5 3a17 17 0 000 18M12.5 3a17 17 0 010 18" /></svg>`,
     sd_actions_panel: "कृती पॅनेल",
     sd_support_requests: "माझ्या मदतीच्या विनंत्या",
     sd_urgency_label: "५. ही विनंती किती तातडीची आहे?",
@@ -1279,7 +1283,7 @@ const translations = {
     fd_volunteers_quoted_count: "स्वयंसेवक ज्यांनी स्वीकारले आणि सेवा शुल्क कोट केले ({count}):",
     fd_quoted_service_charge: "कोट केलेले सेवा शुल्क:",
     fd_extra_purchase_costs_help: "काम पूर्ण झाल्यावर अतिरिक्त खरेदी खर्च (पावत्या) जोडले जातात.",
-    btn_select_approve_vol: "{name} निवडा आणि मंजूर करा ({fee})",
+    btn_select_approve_vol: "{name} निवडा आणि मंजूर करा",
     btn_reject_all_quotes: "सर्व स्वयंसेवक कोट नाकारा",
     fd_select_vol_assigned_help: "एकदा आपण स्वयंसेवक निवडल्यास, काम केवळ त्यांनाच दिले जाईल.",
     btn_release_service_charge: "स्वयंसेवक सेवा शुल्क मुक्त करा (₹{fee})",
@@ -1316,6 +1320,9 @@ const translations = {
     fd_pref_other: "इतर (टाईप करा)",
     fd_pref_type_other: "इतर प्राधान्य टाईप करा:",
     placeholder_pref_other: "फक्त सेंद्रिय वस्तू, स्थानिक डेअरीमधून खरेदी करा, इत्यादी.",
+    fd_pref_allowed_budget: "मान्य बजेट अंदाज (₹)",
+    fd_pref_allowed_budget_optional: "(पर्यायी खर्च मर्यादा)",
+    fd_pref_allowed_budget_hint: "वस्तू खरेदी/खर्चासाठी अंदाजे बजेट मर्यादा ठरवतो जेणेकरून स्वयंसेवकांना स्वीकार्य खर्च मर्यादा समजेल.",
     btn_allot_task: "स्वयंसेवकाला काम सोपवा",
     fd_confirm_vol_title: "स्वयंसेवक निवडीची खात्री करा",
     fd_confirm_vol_body: "तुम्हाला खात्री आहे की तुम्ही या विनंतीसाठी हा स्वयंसेवक निवडू आणि मंजूर करू इच्छिता?",
@@ -1463,14 +1470,14 @@ window.getLang = getLang;
 window.t = t;
 window.applyTranslations = applyTranslations;
 
-// Update flag/text buttons style state
 function updateLangSwitcherUI(lang) {
   const btnEn = document.getElementById("langBtnEn");
   const btnHi = document.getElementById("langBtnHi");
   const btnMr = document.getElementById("langBtnMr");
 
-  const activeStyle = "font-weight: 800; background: #026bc9; color: #ffffff; border: 2px solid #026bc9; padding: 4px 10px; border-radius: 8px; cursor: pointer; transition: all 0.2s; box-shadow: 0 1px 3px rgba(2, 107, 201, 0.25);";
-  const inactiveStyle = "font-weight: 600; background: transparent; color: #475569; border: 2px solid #cbd5e1; padding: 4px 10px; border-radius: 8px; cursor: pointer; transition: all 0.2s;";
+  const baseStyle = "width: 32px; height: 32px; min-width: 32px; border-radius: 9px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1); user-select: none; padding: 0; ";
+  const activeStyle = baseStyle + "font-weight: 800; background: #026bc9; color: #ffffff; border: 1.5px solid #026bc9; box-shadow: 0 2px 8px rgba(2, 107, 201, 0.35); transform: scale(1.05);";
+  const inactiveStyle = baseStyle + "font-weight: 700; background: #ffffff; color: #475569; border: 1.5px solid #cbd5e1; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);";
 
   if (btnEn) btnEn.style.cssText = lang === "en" ? activeStyle : inactiveStyle;
   if (btnHi) btnHi.style.cssText = lang === "hi" ? activeStyle : inactiveStyle;

@@ -1,6 +1,7 @@
 const HelpRequest = require('../models/HelpRequest');
 const User = require('../models/User');
 const Earning = require('../models/Earning');
+const Payment = require('../models/Payment');
 const { recommendPlatforms } = require('../utils/platformRecommender');
 
 // ─── Helper: check if a senior has any linked family members ──────────────
@@ -9,12 +10,23 @@ const seniorHasFamily = async (seniorId) => {
   return count > 0;
 };
 
+// ─── Helper: derive taskProofType from category ────────────────────────────
+const PROOF_TYPE_MAP = {
+  'Grocery Shopping':  'financial',     // always involves purchasing goods
+  'Medical Escort':    'mixed',         // may or may not involve buying medicine/tests
+  'Tech Support':      'service_only',  // pure service, no goods
+  'Housekeeping':      'service_only',  // pure service, no goods
+  'Companionship':     'service_only',  // pure service, no goods
+  'Other':             'mixed'          // unknown; volunteer decides at completion
+};
+const getProofType = (category) => PROOF_TYPE_MAP[category] || 'mixed';
+
 // @desc    Create a new help request
 // @route   POST /api/requests
 // @access  Private (Senior Citizens only)
 exports.createRequest = async (req, res) => {
   try {
-    const { title, description, category, urgency, transcript, aiConfidenceScore, aiLowConfidence, shoppingPreference } = req.body;
+    const { title, description, category, urgency, transcript, aiConfidenceScore, aiLowConfidence, shoppingPreference, allowedBudget, fundingMode } = req.body;
     const audioFile = req.file?.cloudinaryUrl || '';
 
     // Ensure at least some content was provided
@@ -84,6 +96,9 @@ exports.createRequest = async (req, res) => {
       suggestedPlatforms,
       senior: req.user.id,
       shoppingPreference: shoppingPreference ? shoppingPreference.trim() : 'No Preference',
+      allowedBudget: (allowedBudget !== undefined && allowedBudget !== null && allowedBudget !== '' && !isNaN(Number(allowedBudget)) && Number(allowedBudget) >= 0) ? Number(allowedBudget) : null,
+      fundingMode: (fundingMode && ['pre_fund', 'caregiver_direct'].includes(fundingMode)) ? fundingMode : 'caregiver_direct',
+      taskProofType: getProofType(category || 'Other'),
       status: initialStatus,
       familyApprovalStatus: initialFamilyApproval
     });
@@ -348,8 +363,9 @@ exports.familyApproveRequest = async (req, res) => {
       .populate('senior', 'name');
 
     if (!request) return res.status(404).json({ success: false, message: 'Help request not found' });
-    if (request.status !== 'pending' && request.status !== 'awaiting_approval') {
-      return res.status(400).json({ success: false, message: 'This request is not pending family decision' });
+    const allowedStatuses = ['pending', 'awaiting_approval', 'accepted', 'purchase_cost_submitted', 'purchase_funded', 'in_progress'];
+    if (!allowedStatuses.includes(request.status)) {
+      return res.status(400).json({ success: false, message: 'This request is not eligible for caregiver preference updates' });
     }
 
     // Verify this family member is linked to the request's senior
@@ -357,18 +373,41 @@ exports.familyApproveRequest = async (req, res) => {
       return res.status(403).json({ success: false, message: 'You are not the caregiver for this senior' });
     }
 
-    const { volunteerId, shoppingPreference } = req.body || {};
+    const { volunteerId, shoppingPreference, allowedBudget, fundingMode, taskProofType } = req.body || {};
     let selectedVolId = volunteerId || request.volunteer;
 
-    if (shoppingPreference && typeof shoppingPreference === 'string') {
-      request.shoppingPreference = shoppingPreference.trim();
+    if (taskProofType && ['service_only', 'financial', 'mixed'].includes(taskProofType)) {
+      request.taskProofType = taskProofType;
     }
 
-    if (selectedVolId) {
-      request.volunteer = selectedVolId;
-      request.status = 'accepted';
-      request.acceptedAt = Date.now();
+    if (request.taskProofType === 'service_only') {
+      request.allowedBudget = null;
+      request.shoppingPreference = '';
+    } else {
+      if (shoppingPreference && typeof shoppingPreference === 'string') {
+        request.shoppingPreference = shoppingPreference.trim();
+      }
 
+      if (fundingMode && ['pre_fund', 'caregiver_direct'].includes(fundingMode)) {
+        request.fundingMode = fundingMode;
+      }
+
+      if (allowedBudget !== undefined) {
+        if (allowedBudget === null || allowedBudget === '') {
+          request.allowedBudget = null;
+        } else {
+          const parsedBudget = Number(allowedBudget);
+          request.allowedBudget = (!isNaN(parsedBudget) && parsedBudget >= 0) ? parsedBudget : null;
+        }
+      }
+    }
+
+    // Pre-Fund payment: Caregiver selected pre_fund mode with estimated budget + service fee
+    const isPreFundMode = (fundingMode === 'pre_fund' || request.fundingMode === 'pre_fund');
+    const totalPreFundDeposit = (Number(request.allowedBudget || 0)) + (Number(request.serviceFee || 0));
+    const requiresPreFundPayment = !!(selectedVolId && isPreFundMode && totalPreFundDeposit > 0 && !request.purchaseFunded);
+
+    if (selectedVolId) {
       // Set final service fee & notes from the selected volunteer's quote
       if (request.volunteerQuotes && request.volunteerQuotes.length > 0) {
         const match = request.volunteerQuotes.find(q => q.volunteer && (q.volunteer._id || q.volunteer).toString() === selectedVolId.toString());
@@ -377,7 +416,20 @@ exports.familyApproveRequest = async (req, res) => {
           request.volunteerNotes = match.volunteerNotes;
         }
       }
-    } else {
+
+      if (requiresPreFundPayment) {
+        // Do NOT mark as accepted until pre-fund escrow deposit is paid on payment gateway!
+        request.pendingVolunteer = selectedVolId;
+        request.fundingMode = 'pre_fund';
+      } else {
+        request.volunteer = selectedVolId;
+        request.pendingVolunteer = null;
+        if (request.status === 'pending' || request.status === 'awaiting_approval' || request.status === 'quoted') {
+          request.status = 'accepted';
+          request.acceptedAt = Date.now();
+        }
+      }
+    } else if (request.status === 'pending' || request.status === 'awaiting_approval') {
       // Caregiver allotting request to community volunteers
       request.status = 'pending';
       request.aiLowConfidence = false;
@@ -390,7 +442,7 @@ exports.familyApproveRequest = async (req, res) => {
     // ── Create PENDING Earning record when a volunteer is approved ────────────
     // Only create if a specific volunteer was selected (not a community allotment)
     // and the service fee is > 0 (voluntary/free tasks still get a ₹0 record for history)
-    if (selectedVolId) {
+    if (selectedVolId && !requiresPreFundPayment) {
       try {
         // Avoid duplicate: remove any pre-existing PENDING earning for same request+volunteer
         await Earning.deleteOne({ request: request._id, volunteer: selectedVolId, status: 'PENDING', type: 'SERVICE_CHARGE' });
@@ -412,20 +464,102 @@ exports.familyApproveRequest = async (req, res) => {
     request = await HelpRequest.findById(request._id)
       .populate('senior', 'name phone address emergencyContact')
       .populate('volunteer', 'name phone email skills')
+      .populate('pendingVolunteer', 'name phone email skills')
       .populate('volunteerQuotes.volunteer', 'name phone email skills');
 
     const approveMsg = request.volunteer
       ? `Volunteer approved! They can now proceed to assist ${request.senior.name}.`
       : `Request allotted to community volunteers! Volunteers can now assist ${request.senior.name}.`;
 
+    // ── Tell frontend if caregiver must pre-pay service fee or pre-fund deposit ──
+    const proofType = request.taskProofType || getProofType(request.category);
+    const requiresServiceFeePayment = !!(selectedVolId && proofType === 'service_only' && Number(request.serviceFee || 0) > 0 && !request.serviceFeePrePaid);
+
     res.status(200).json({
       success: true,
       message: approveMsg,
-      request
+      request,
+      requiresServiceFeePayment,
+      requiresPreFundPayment,
+      serviceFee: request.serviceFee || 0,
+      allowedBudget: request.allowedBudget || 0,
+      totalPreFundDeposit
     });
   } catch (error) {
     console.error('Family Approve Error:', error);
     res.status(500).json({ success: false, message: 'Server error approving request' });
+  }
+};
+
+// @desc    Caregiver records upfront service fee pre-payment for service_only tasks
+//          Called by payment.js after Razorpay success for type=service_fee_upfront
+// @route   PUT /api/requests/:id/prepay-service-fee
+// @access  Private (Family only)
+exports.prepayServiceFee = async (req, res) => {
+  try {
+    const request = await HelpRequest.findById(req.params.id);
+    if (!request) return res.status(404).json({ success: false, message: 'Help request not found' });
+
+    if (req.user.linkedSenior?.toString() !== request.senior.toString()) {
+      return res.status(403).json({ success: false, message: 'Not authorized for this request' });
+    }
+
+    const { paymentMethod, transactionId, razorpayOrderId, razorpayPaymentId, amountPaid, volunteerId } = req.body || {};
+
+    const volToAssign = volunteerId || request.pendingVolunteer || (request.volunteerQuotes && request.volunteerQuotes[0]?.volunteer);
+    if (volToAssign) {
+      request.volunteer = volToAssign;
+      request.pendingVolunteer = null;
+      request.acceptedAt = request.acceptedAt || Date.now();
+    }
+
+    request.serviceFeePrePaid = true;
+    request.serviceFeePrePaidAt = Date.now();
+    request.fundingMode = 'caregiver_direct';
+    request.serviceFeePrePaymentDetails = {
+      amountPaid: Number(amountPaid || request.serviceFee || 0),
+      transactionId: transactionId || razorpayPaymentId || `TXN_${Date.now()}`,
+      paymentMethod: paymentMethod || 'Razorpay',
+      razorpayOrderId: razorpayOrderId || '',
+      razorpayPaymentId: razorpayPaymentId || '',
+      paidAt: Date.now()
+    };
+
+    // Ensure status is accepted (payment confirms allotment)
+    if (request.status !== 'accepted') request.status = 'accepted';
+
+    await request.save();
+
+    // Create PENDING Earning record for volunteer
+    if (request.volunteer && Number(request.serviceFee || amountPaid || 0) > 0) {
+      try {
+        await Earning.deleteOne({ request: request._id, volunteer: request.volunteer, status: 'PENDING', type: 'SERVICE_CHARGE' });
+        await Earning.create({
+          volunteer: request.volunteer,
+          request: request._id,
+          amount: Number(request.serviceFee || amountPaid || 0),
+          type: 'SERVICE_CHARGE',
+          status: 'PENDING',
+          taskTitle: request.title || 'Help Request',
+          taskCategory: request.category || 'Other'
+        });
+      } catch (earnErr) {
+        console.error('Earning creation error (prepayServiceFee):', earnErr);
+      }
+    }
+
+    const updated = await HelpRequest.findById(request._id)
+      .populate('senior', 'name phone address')
+      .populate('volunteer', 'name phone email');
+
+    res.status(200).json({
+      success: true,
+      message: `Service fee of ₹${request.serviceFee} pre-paid & escrowed! Volunteer can now begin the task.`,
+      request: updated
+    });
+  } catch (error) {
+    console.error('Prepay Service Fee Error:', error);
+    res.status(500).json({ success: false, message: 'Server error recording service fee pre-payment' });
   }
 };
 
@@ -536,7 +670,26 @@ exports.submitPurchaseCost = async (req, res) => {
       return res.status(403).json({ success: false, message: 'Not authorized to submit purchase cost for this request' });
     }
 
-    const { actualPurchaseCost, purchaseNotes } = req.body;
+    // Guard: service_only tasks never have purchase costs
+    const proofType = request.taskProofType || getProofType(request.category);
+    if (proofType === 'service_only') {
+      return res.status(400).json({
+        success: false,
+        message: `"${request.category}" tasks do not involve purchases. Please use "Mark Task Done" instead.`
+      });
+    }
+
+    const { 
+      actualPurchaseCost, 
+      purchaseNotes,
+      shopName,
+      paymentType,
+      upiId,
+      paymentLink,
+      orderNumber,
+      merchantPhone
+    } = req.body;
+
     const costNum = Number(actualPurchaseCost);
     if (isNaN(costNum) || costNum < 0) {
       return res.status(400).json({ success: false, message: 'Please enter a valid purchase cost amount' });
@@ -544,22 +697,42 @@ exports.submitPurchaseCost = async (req, res) => {
 
     request.actualPurchaseCost = costNum;
     request.purchaseNotes = purchaseNotes ? purchaseNotes.trim() : '';
+
+    // Handle Merchant Details for Direct Merchant Payment
+    let qrImagePath = '';
+    const proofDocPaths = [];
+
     if (req.files && req.files.length > 0) {
-      const uniqueFiles = [];
-      const seenFileKeys = new Set();
       for (const f of req.files) {
-        const key = `${f.originalname}_${f.size}`;
-        if (!seenFileKeys.has(key)) {
-          seenFileKeys.add(key);
-          uniqueFiles.push(f);
+        if (f.fieldname === 'merchantQrFile') {
+          qrImagePath = `/uploads/proofs/${f.filename}`;
+        } else {
+          proofDocPaths.push(`/uploads/proofs/${f.filename}`);
         }
       }
-      request.purchaseProofDoc = `/uploads/proofs/${uniqueFiles[0].filename}`;
-      request.purchaseProofDocs = uniqueFiles.map(f => `/uploads/proofs/${f.filename}`);
     } else if (req.file) {
-      request.purchaseProofDoc = `/uploads/proofs/${req.file.filename}`;
-      request.purchaseProofDocs = [`/uploads/proofs/${req.file.filename}`];
+      if (req.file.fieldname === 'merchantQrFile') {
+        qrImagePath = `/uploads/proofs/${req.file.filename}`;
+      } else {
+        proofDocPaths.push(`/uploads/proofs/${req.file.filename}`);
+      }
     }
+
+    if (proofDocPaths.length > 0) {
+      request.purchaseProofDoc = proofDocPaths[0];
+      request.purchaseProofDocs = proofDocPaths;
+    }
+
+    request.merchantDetails = {
+      shopName: shopName ? shopName.trim() : (request.merchantDetails?.shopName || ''),
+      paymentType: paymentType && ['offline_qr', 'online_link', 'upi_id', 'other'].includes(paymentType) ? paymentType : (request.merchantDetails?.paymentType || 'offline_qr'),
+      upiId: upiId ? upiId.trim() : (request.merchantDetails?.upiId || ''),
+      upiQrImage: qrImagePath || (request.merchantDetails?.upiQrImage || ''),
+      paymentLink: paymentLink ? paymentLink.trim() : (request.merchantDetails?.paymentLink || ''),
+      orderNumber: orderNumber ? orderNumber.trim() : (request.merchantDetails?.orderNumber || ''),
+      merchantPhone: merchantPhone ? merchantPhone.trim() : (request.merchantDetails?.merchantPhone || '')
+    };
+
     request.purchaseCostSubmittedAt = Date.now();
     request.status = 'purchase_cost_submitted';
 
@@ -571,7 +744,7 @@ exports.submitPurchaseCost = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: 'Actual purchase cost & cart proof submitted! Waiting for caregiver payment approval.',
+      message: 'Purchase cost & merchant payment details submitted! Waiting for caregiver direct payment to merchant.',
       request: updated
     });
   } catch (error) {
@@ -580,7 +753,7 @@ exports.submitPurchaseCost = async (req, res) => {
   }
 };
 
-// @desc    Step 6-7: Caregiver approves payment for actual purchase cost -> funds released for purchase
+// @desc    Step 6-7: Caregiver approves direct payment to merchant -> moves status to purchase_funded
 // @route   PUT /api/requests/:id/approve-purchase-funding
 // @access  Private (Family Caregiver)
 exports.approvePurchaseFunding = async (req, res) => {
@@ -596,7 +769,7 @@ exports.approvePurchaseFunding = async (req, res) => {
     request.purchasePaymentDetails = {
       amountPaid: request.actualPurchaseCost || 0,
       transactionId: transactionId || `TXN_${Date.now()}`,
-      paymentMethod: paymentMethod || 'Escrow UPI',
+      paymentMethod: paymentMethod || 'Direct Merchant Payment',
       paidAt: Date.now()
     };
 
@@ -606,9 +779,10 @@ exports.approvePurchaseFunding = async (req, res) => {
       .populate('senior', 'name phone address emergencyContact')
       .populate('volunteer', 'name phone email skills');
 
+    const shopLabel = request.merchantDetails?.shopName ? ` to ${request.merchantDetails.shopName}` : '';
     res.status(200).json({
       success: true,
-      message: `Purchase funds of ₹${request.actualPurchaseCost} approved & released to volunteer! Volunteer can now buy the items and complete the task.`,
+      message: `Direct payment of ₹${request.actualPurchaseCost}${shopLabel} confirmed! Volunteer can now collect the items and deliver to senior.`,
       request: updated
     });
   } catch (error) {
@@ -647,7 +821,8 @@ exports.rejectPurchaseCost = async (req, res) => {
   }
 };
 
-// @desc    Step 8-9: Volunteer completes task & uploads final store cash receipt photo
+// @desc    Step 8-9 (financial) OR direct completion (service_only / mixed-no-purchase):
+//          Volunteer marks task done and uploads proof (receipt for financial; optional photo for service_only)
 // @route   PUT /api/requests/:id/complete
 // @access  Private (Volunteer or Admin)
 exports.completeRequest = async (req, res) => {
@@ -659,13 +834,38 @@ exports.completeRequest = async (req, res) => {
       return res.status(403).json({ success: false, message: 'Not authorized to complete this request' });
     }
 
-    const { resolutionNotes } = req.body;
-    request.status = 'awaiting_verification';
+    const { resolutionNotes, volunteerDeclaredPurchase } = req.body;
+
+    // ── Determine proof path ──────────────────────────────────────────────────
+    const proofType = request.taskProofType || getProofType(request.category);
+    // volunteerDeclaredPurchase is relevant only for 'mixed' tasks
+    const declaredPurchase = (volunteerDeclaredPurchase === true || volunteerDeclaredPurchase === 'true');
+    const requiresEscrow = (proofType === 'financial') || (proofType === 'mixed' && declaredPurchase);
+
+    if (proofType === 'mixed') {
+      request.volunteerDeclaredPurchase = declaredPurchase;
+    }
+
+    // ── Validate required proof for financial tasks ───────────────────────────
+    const hasPriorProof = (request.merchantPurchases && request.merchantPurchases.length > 0) ||
+      (request.purchaseProofDocs && request.purchaseProofDocs.length > 0) ||
+      !!request.purchaseProofDoc ||
+      !!request.purchaseFunded ||
+      (request.fundingMode === 'pre_fund');
+
+    const hasUploadedProof = (req.files && req.files.length > 0) || !!req.file;
+    if (proofType === 'financial' && !hasUploadedProof && !hasPriorProof) {
+      return res.status(400).json({
+        success: false,
+        message: 'A store receipt / bill photo is required to complete a Grocery Shopping task.'
+      });
+    }
+
     request.completedAt = Date.now();
     request.receiptUploadedAt = Date.now();
-    request.resolutionNotes = resolutionNotes || 'Task completed & store receipt uploaded.';
+    request.resolutionNotes = (resolutionNotes && resolutionNotes.trim()) ? resolutionNotes.trim() : '';
 
-    // Save final receipt / delivery photo proof if uploaded
+    // ── Save uploaded proof photo if provided ─────────────────────────────────
     if (req.files && req.files.length > 0) {
       const uniqueFiles = [];
       const seenFileKeys = new Set();
@@ -683,31 +883,74 @@ exports.completeRequest = async (req, res) => {
       request.finalReceiptDoc = `/uploads/proofs/${req.file.filename}`;
       request.completionProof = `/uploads/proofs/${req.file.filename}`;
       request.finalReceiptDocs = [`/uploads/proofs/${req.file.filename}`];
+    } else if (!request.finalReceiptDoc && hasPriorProof) {
+      if (request.purchaseProofDocs && request.purchaseProofDocs.length > 0) {
+        request.finalReceiptDoc = request.purchaseProofDocs[0];
+        request.completionProof = request.purchaseProofDocs[0];
+        request.finalReceiptDocs = request.purchaseProofDocs;
+      } else if (request.merchantPurchases && request.merchantPurchases.length > 0) {
+        const withDoc = request.merchantPurchases.find(p => p.receiptDoc);
+        if (withDoc) {
+          request.finalReceiptDoc = withDoc.receiptDoc;
+          request.completionProof = withDoc.receiptDoc;
+          request.finalReceiptDocs = request.merchantPurchases.filter(p => p.receiptDoc).map(p => p.receiptDoc);
+        }
+      }
     }
 
     const seniorId = request.senior._id || request.senior;
     const hasFamily = await seniorHasFamily(seniorId);
 
-    request.completionVerified = 'pending_verification';
-    request.verificationRejectionReason = '';
+    // ── Route based on proof type ─────────────────────────────────────────────
+    if (requiresEscrow) {
+      // Financial path: requires caregiver purchase-cost funding first (existing escrow steps)
+      // Volunteer must have already gone through submit-purchase-cost and purchase_funded.
+      // This completion marks receipt upload for caregiver final verification.
+      request.status = 'awaiting_verification';
+      request.completionVerified = 'pending_verification';
+      request.verificationRejectionReason = '';
 
-    if (hasFamily) {
-      request.requiresSeniorVoiceCall = false;
-      await request.save();
-      return res.status(200).json({
-        success: true,
-        message: 'Task marked completed & final receipt uploaded! Submitted to family caregiver for verification and service charge release.',
-        request,
-        verificationChannel: 'family'
-      });
+      if (hasFamily) {
+        request.requiresSeniorVoiceCall = false;
+        await request.save();
+        return res.status(200).json({
+          success: true,
+          message: 'Task completed & final receipt uploaded! Submitted to family caregiver for verification and service charge release.',
+          request,
+          verificationChannel: 'family',
+          proofType,
+          requiresEscrow: true
+        });
+      } else {
+        request.requiresSeniorVoiceCall = true;
+        await request.save();
+        return res.status(200).json({
+          success: true,
+          message: 'Task completed & final receipt uploaded! Automated IVR voice confirmation call dispatched to senior citizen.',
+          request,
+          verificationChannel: 'senior_voice_ivr',
+          proofType,
+          requiresEscrow: true
+        });
+      }
     } else {
-      request.requiresSeniorVoiceCall = true;
+      // Service-only path (or mixed with no purchase): skip escrow entirely.
+      // Transition directly to awaiting_verification for task completion sign-off.
+      request.status = 'awaiting_verification';
+      request.completionVerified = 'pending_verification';
+      request.verificationRejectionReason = '';
+      request.requiresSeniorVoiceCall = !hasFamily;
+
       await request.save();
       return res.status(200).json({
         success: true,
-        message: 'Task marked completed & final receipt uploaded! Automated IVR voice confirmation call dispatched to senior citizen.',
+        message: hasFamily
+          ? 'Task marked as done! Awaiting family caregiver confirmation to release your service charge.'
+          : 'Task marked as done! An IVR confirmation call has been dispatched to the senior citizen.',
         request,
-        verificationChannel: 'senior_voice_ivr'
+        verificationChannel: hasFamily ? 'family' : 'senior_voice_ivr',
+        proofType,
+        requiresEscrow: false
       });
     }
   } catch (error) {
@@ -725,6 +968,20 @@ exports.verifyCompletionByFamily = async (req, res) => {
     if (!request) return res.status(404).json({ success: false, message: 'Help request not found' });
 
     const { approved, rejectionReason, paymentDetails } = req.body;
+
+    // ── Guard: service_only tasks require pre-payment before releasing service charge ──
+    if (approved) {
+      const proofType = request.taskProofType || getProofType(request.category);
+      const serviceFeeAmt = Number(request.serviceFee || 0);
+      if (proofType === 'service_only' && serviceFeeAmt > 0 && !request.serviceFeePrePaid) {
+        return res.status(402).json({
+          success: false,
+          message: `Service fee of ₹${serviceFeeAmt} must be paid before the service charge can be released. Please complete the payment first.`,
+          requiresPayment: true,
+          serviceFee: serviceFeeAmt
+        });
+      }
+    }
 
     request.verifiedBy = req.user.id;
     request.verifierRole = 'family';
@@ -861,6 +1118,109 @@ exports.verifyCompletionBySeniorVoice = async (req, res) => {
   }
 };
 
+// @desc    Senior citizen directly confirms task was performed & releases service charge
+//          Works in parallel with caregiver verification — whoever acts first completes the task
+// @route   PUT /api/requests/:id/verify-completion-senior
+// @access  Private (Senior only)
+exports.verifyCompletionBySenior = async (req, res) => {
+  try {
+    const request = await HelpRequest.findById(req.params.id);
+    if (!request) return res.status(404).json({ success: false, message: 'Help request not found' });
+
+    // Only the senior who owns the request can verify it
+    if (request.senior.toString() !== req.user.id.toString()) {
+      return res.status(403).json({ success: false, message: 'Only the senior who raised this request can verify it' });
+    }
+
+    // Already completed — idempotent
+    if (request.status === 'completed') {
+      return res.status(200).json({ success: true, message: 'This task has already been completed.', request });
+    }
+
+    const { approved, rejectionReason } = req.body;
+
+    // ── Guard: service_only tasks require pre-payment by caregiver before releasing service charge ──
+    if (approved) {
+      const proofType = request.taskProofType || getProofType(request.category);
+      const serviceFeeAmt = Number(request.serviceFee || 0);
+      if (proofType === 'service_only' && serviceFeeAmt > 0 && !request.serviceFeePrePaid) {
+        return res.status(402).json({
+          success: false,
+          message: `Your caregiver has not yet completed the service fee payment (₹${serviceFeeAmt}). Once the payment is made, the service charge can be released.`,
+          requiresPayment: true,
+          serviceFee: serviceFeeAmt
+        });
+      }
+    }
+
+    request.verifiedBy = req.user.id;
+    request.verifierRole = 'senior';
+    request.verifiedAt = Date.now();
+
+    if (approved) {
+      request.status = 'completed';
+      request.completionVerified = 'verified';
+      request.completedAt = new Date();
+      request.serviceChargeReleased = true;
+      request.serviceChargeReleasedAt = Date.now();
+
+      await request.save();
+
+      // Release the PENDING service-charge earning
+      if (request.volunteer) {
+        try {
+          const releasedAt = new Date();
+          const updated = await Earning.findOneAndUpdate(
+            { request: request._id, volunteer: request.volunteer, type: 'SERVICE_CHARGE', status: 'PENDING' },
+            { $set: { status: 'RELEASED', releasedAt } }
+          );
+          if (!updated) {
+            await Earning.create({
+              volunteer: request.volunteer,
+              request: request._id,
+              amount: request.serviceFee || 0,
+              type: 'SERVICE_CHARGE',
+              status: 'RELEASED',
+              taskTitle: request.title || 'Completed Task',
+              taskCategory: request.category || 'Other',
+              releasedAt
+            });
+          }
+        } catch (earnErr) {
+          console.error('Earning update error (verifyCompletionBySenior):', earnErr);
+        }
+      }
+
+      const populatedRequest = await HelpRequest.findById(request._id)
+        .populate('senior', 'name phone address emergencyContact')
+        .populate('volunteer', 'name phone email skills');
+
+      return res.status(200).json({
+        success: true,
+        message: 'Thank you for confirming! The volunteer\'s service charge has been released.',
+        request: populatedRequest
+      });
+    } else {
+      // Senior says task was NOT done — return to volunteer for correction
+      const proofType = request.taskProofType || getProofType(request.category);
+      request.status = proofType === 'service_only' ? 'accepted' : 'purchase_funded';
+      request.completionVerified = 'rejected';
+      request.verificationRejectionReason = rejectionReason || 'Senior reported the task was not completed.';
+
+      await request.save();
+
+      return res.status(200).json({
+        success: true,
+        message: 'Noted. The volunteer has been notified that the task needs attention.',
+        request
+      });
+    }
+  } catch (error) {
+    console.error('Senior Verify Completion Error:', error);
+    res.status(500).json({ success: false, message: 'Server error recording senior verification' });
+  }
+};
+
 // @desc    Submit volunteer feedback for completed request after payment
 // @route   PUT /api/requests/:id/feedback
 // @access  Private (family, senior, admin)
@@ -931,5 +1291,185 @@ exports.payVolunteerTip = async (req, res) => {
   } catch (error) {
     console.error('Pay Tip Error:', error);
     res.status(500).json({ success: false, message: 'Server error processing tip payment' });
+  }
+};
+
+// @desc    Volunteer pays a merchant using the pre-funded escrow budget (Mock Gateway)
+// @route   POST /api/requests/:id/volunteer-pay-purchase
+// @access  Private (Volunteer only)
+exports.volunteerPayPurchase = async (req, res) => {
+  try {
+    const {
+      merchant,
+      merchantType,
+      merchantLocation,
+      merchantPhone,
+      paymentDestinationType,
+      upiId,
+      paymentLink,
+      orderLink,
+      itemName,
+      quantity,
+      amount,
+      description,
+      hasReceipt,
+      noReceiptReason
+    } = req.body;
+
+    const request = await HelpRequest.findById(req.params.id);
+
+    if (!request) {
+      return res.status(404).json({ success: false, message: 'Help request not found' });
+    }
+
+    // Check 1: Volunteer assigned to this task?
+    const assignedVolId = request.volunteer ? String(request.volunteer._id || request.volunteer.id || request.volunteer) : null;
+    if (assignedVolId !== String(req.user.id)) {
+      return res.status(403).json({ success: false, message: 'You are not the assigned volunteer for this task.' });
+    }
+
+    // Check 2: Task active?
+    if (request.status !== 'accepted' && request.status !== 'purchase_funded' && request.status !== 'in_progress') {
+      return res.status(400).json({ success: false, message: `Cannot make merchant payment for task in status: ${request.status}` });
+    }
+
+    const amountNum = Math.round(Number(amount));
+    if (isNaN(amountNum) || amountNum <= 0) {
+      return res.status(400).json({ success: false, message: 'Please enter a valid purchase amount in ₹.' });
+    }
+
+    const merchantName = (merchant && merchant.trim()) || 'Merchant / Shop';
+    const authorizedBudget = Number(request.allowedBudget || 0);
+
+    // Calculate current spent from recorded purchases
+    let currentSpent = 0;
+    if (request.merchantPurchases && request.merchantPurchases.length > 0) {
+      currentSpent = request.merchantPurchases.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+    } else if (request.fundingMode !== 'pre_fund' && request.actualPurchaseCost && Number(request.actualPurchaseCost) > 0) {
+      currentSpent = Number(request.actualPurchaseCost);
+    }
+
+    const remainingBudget = authorizedBudget > 0 ? (authorizedBudget - currentSpent) : Infinity;
+
+    // Check 3: Amount <= Remaining Authorized Budget?
+    if (authorizedBudget > 0 && amountNum > remainingBudget) {
+      return res.status(400).json({
+        success: false,
+        message: `Amount ₹${amountNum} exceeds the remaining allocated budget of ₹${remainingBudget} (Allocated: ₹${authorizedBudget}, Spent: ₹${currentSpent}).`
+      });
+    }
+
+    // Handle files uploaded (Receipt / QR photo)
+    let receiptDocUrl = '';
+    let upiQrImageUrl = '';
+    if (req.files && req.files.length > 0) {
+      for (const f of req.files) {
+        const url = f.filename ? `/uploads/proofs/${f.filename}` : (f.secure_url || f.path);
+        if (paymentDestinationType === 'upi_qr' && !upiQrImageUrl) {
+          upiQrImageUrl = url;
+        } else if (!receiptDocUrl) {
+          receiptDocUrl = url;
+        }
+      }
+    }
+
+    const destType = paymentDestinationType || 'upi_id';
+    let destDetail = '';
+    if (destType === 'upi_id') destDetail = upiId ? ` (UPI ID: ${upiId})` : '';
+    else if (destType === 'payment_link') destDetail = paymentLink ? ` (Link: ${paymentLink})` : '';
+    else if (destType === 'online_order') destDetail = orderLink ? ` (Order: ${orderLink})` : '';
+    else if (destType === 'upi_qr') destDetail = ' (via UPI QR)';
+
+    const txnId = `TXN_AGEWELL_${Date.now()}`;
+    const newPurchase = {
+      merchant: merchantName,
+      merchantType: merchantType || 'Pharmacy',
+      merchantLocation: (merchantLocation && merchantLocation.trim()) || '',
+      merchantPhone: (merchantPhone && merchantPhone.trim()) || '',
+      paymentDestinationType: destType,
+      upiId: (upiId && upiId.trim()) || '',
+      upiQrImage: upiQrImageUrl,
+      paymentLink: (paymentLink && paymentLink.trim()) || '',
+      orderLink: (orderLink && orderLink.trim()) || '',
+      itemName: (itemName && itemName.trim()) || (request.title || 'Purchase Item'),
+      quantity: (quantity && String(quantity).trim()) || '1',
+      amount: amountNum,
+      description: (description && description.trim()) || '',
+      hasReceipt: hasReceipt !== 'false' && hasReceipt !== false,
+      noReceiptReason: (noReceiptReason && noReceiptReason.trim()) || '',
+      receiptDoc: receiptDocUrl,
+      transactionId: txnId,
+      paidAt: new Date(),
+      paymentProvider: 'MOCK_GATEWAY',
+      status: 'SUCCESS'
+    };
+
+    if (!request.merchantPurchases) request.merchantPurchases = [];
+    request.merchantPurchases.push(newPurchase);
+
+    // Update total actualPurchaseCost
+    const newTotalSpent = currentSpent + amountNum;
+    request.actualPurchaseCost = newTotalSpent;
+    request.purchaseFunded = true;
+    request.purchaseFundedAt = new Date();
+    request.status = 'purchase_funded';
+    if (!request.merchantDetails) request.merchantDetails = {};
+    request.merchantDetails.shopName = merchantName;
+    if (upiId) request.merchantDetails.upiId = upiId;
+    if (paymentLink) request.merchantDetails.paymentLink = paymentLink;
+
+    if (receiptDocUrl) {
+      if (!request.purchaseProofDocs) request.purchaseProofDocs = [];
+      request.purchaseProofDocs.push(receiptDocUrl);
+      request.purchaseProofDoc = receiptDocUrl;
+    }
+
+    await request.save();
+
+    // Create Payment record log
+    try {
+      await Payment.create({
+        request: request._id,
+        caregiver: request.familyReviewedBy || request.senior,
+        volunteer: req.user.id,
+        paymentType: 'purchase',
+        serviceCharge: 0,
+        shoppingAmount: amountNum,
+        totalAmount: amountNum,
+        razorpayOrderId: txnId,
+        razorpayPaymentId: `PAY_${txnId}`,
+        status: 'Paid',
+        paidAt: new Date()
+      });
+    } catch (payErr) {
+      console.warn('Payment record log error:', payErr);
+    }
+
+    const updatedPopulated = await HelpRequest.findById(request._id)
+      .populate('senior', 'name phone address emergencyContact')
+      .populate('volunteer', 'name phone email skills');
+
+    return res.status(200).json({
+      success: true,
+      message: `Payment Successful! ₹${amountNum} paid to ${merchantName}`,
+      payment: {
+        taskId: request._id,
+        volunteerId: req.user.id,
+        merchant: merchantName,
+        amount: amountNum,
+        type: 'PURCHASE',
+        status: 'SUCCESS',
+        paymentProvider: 'MOCK_GATEWAY'
+      },
+      budgetSummary: {
+        authorized: authorizedBudget,
+        spent: newTotalSpent,
+        remaining: Math.max(0, authorizedBudget - newTotalSpent)
+      },
+      request: updatedPopulated
+    });
+  } catch (error) {
+    console.error('Volunteer Pay Purchase Error:', error);
+    return res.status(500).json({ success: false, message: 'Server error processing merchant payment.' });
   }
 };
