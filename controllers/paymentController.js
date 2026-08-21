@@ -331,11 +331,11 @@ async function executeLifecycleTransition(payment, user, clientTipAmount = 0) {
 
   // ── PRE-FUND: upfront deposit of allowed budget + volunteer service fee ──
   if (payment.paymentType === 'pre_fund') {
-    if (request.pendingVolunteer) {
+    if (payment.volunteer && !request.volunteer) {
+      request.volunteer = payment.volunteer;
+    } else if (request.pendingVolunteer) {
       request.volunteer = request.pendingVolunteer;
       request.pendingVolunteer = null;
-    } else if (payment.volunteer && !request.volunteer) {
-      request.volunteer = payment.volunteer;
     } else if (!request.volunteer && request.volunteerQuotes && request.volunteerQuotes.length > 0) {
       request.volunteer = request.volunteerQuotes[0].volunteer;
     }
@@ -351,13 +351,22 @@ async function executeLifecycleTransition(payment, user, clientTipAmount = 0) {
 
     request.serviceFeePrePaid = true;
     request.serviceFeePrePaidAt = new Date();
-    request.purchaseFunded = true;
-    request.purchaseFundedAt = new Date();
-    request.fundingMode = 'pre_fund';
-    if (!request.merchantPurchases || request.merchantPurchases.length === 0) {
-      request.actualPurchaseCost = 0;
+
+    const isServiceOnly = (request.taskProofType === 'service_only' || ['Tech Support', 'Housekeeping', 'Companionship'].includes(request.category));
+    if (isServiceOnly) {
+      request.taskProofType = 'service_only';
+      request.fundingMode = 'caregiver_direct';
+      request.allowedBudget = null;
+      request.status = 'accepted';
+    } else {
+      request.purchaseFunded = true;
+      request.purchaseFundedAt = new Date();
+      request.fundingMode = 'pre_fund';
+      if (!request.merchantPurchases || request.merchantPurchases.length === 0) {
+        request.actualPurchaseCost = 0;
+      }
+      request.status = 'purchase_funded';
     }
-    request.status = 'purchase_funded';
     request.acceptedAt = request.acceptedAt || Date.now();
     request.serviceFeePrePaymentDetails = {
       amountPaid: payment.serviceCharge,

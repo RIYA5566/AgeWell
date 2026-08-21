@@ -2846,14 +2846,20 @@ function openSelectVolunteerConfirmModal(requestId, volunteerId, volName, feeTex
     bodyEl.innerHTML = `Are you sure you want to select and approve <strong>${escapeHTML(volName)}</strong> (${escapeHTML(feeText)}) to fulfill this request for your senior citizen?`;
   }
 
-  const isServiceOnly = req?.taskProofType === 'service_only';
+  const isServiceOnly = req?.taskProofType === 'service_only' || ['Tech Support', 'Housekeeping', 'Companionship'].includes(req?.category);
   if (workflowContainer) {
     workflowContainer.style.display = isServiceOnly ? 'none' : 'block';
   }
 
+  const radioCaregiverDirect = document.querySelector('input[name="confirmFundingMode"][value="caregiver_direct"]');
   const radioPreFund = document.querySelector('input[name="confirmFundingMode"][value="pre_fund"]');
-  if (radioPreFund) radioPreFund.checked = true;
-  updateConfirmModalWorkflowText('pre_fund');
+  if (isServiceOnly) {
+    if (radioCaregiverDirect) radioCaregiverDirect.checked = true;
+    updateConfirmModalWorkflowText('caregiver_direct');
+  } else {
+    if (radioPreFund) radioPreFund.checked = true;
+    updateConfirmModalWorkflowText('pre_fund');
+  }
 
   if (modal) modal.style.display = 'flex';
 }
@@ -2878,7 +2884,6 @@ async function confirmSelectVolunteerAssignment() {
     btnConfirm.disabled = true;
   }
 
-  const chosenFundingMode = document.querySelector('input[name="confirmFundingMode"]:checked')?.value || 'pre_fund';
   const volName = pendingSelectVolunteerName || 'Volunteer';
   const reqId = pendingSelectVolunteerRequestId;
   const volId = pendingSelectVolunteerId;
@@ -2890,6 +2895,45 @@ async function confirmSelectVolunteerAssignment() {
     if (q && q.serviceFee) fee = Number(q.serviceFee);
     else if (req.volunteerQuotes[0]?.serviceFee) fee = Number(req.volunteerQuotes[0].serviceFee);
   }
+
+  const isServiceOnly = req?.taskProofType === 'service_only' || ['Tech Support', 'Housekeeping', 'Companionship'].includes(req?.category);
+
+  // ── SERVICE-ONLY: ALWAYS pure service flow (no shopping budget, no pre-fund shopping) ──
+  if (isServiceOnly) {
+    if (fee > 0) {
+      showToast(`Redirecting to escrow service fee of ₹${fee}...`, 'info');
+      closeSelectVolunteerConfirmModal();
+      setTimeout(() => {
+        window.location.href = `/payment.html?requestId=${reqId}&type=service_fee_upfront&volunteerId=${volId}&serviceFee=${fee}&itemsCost=0&volunteerName=${encodeURIComponent(volName)}`;
+      }, 400);
+      return;
+    }
+
+    // Voluntary / ₹0 fee: approve and assign immediately
+    const payload = {
+      volunteerId: volId,
+      fundingMode: 'caregiver_direct',
+      taskProofType: 'service_only'
+    };
+
+    const res = await apiCall(`/requests/${reqId}/family-approve`, 'PUT', payload);
+
+    if (btnConfirm) {
+      btnConfirm.innerHTML = origText;
+      btnConfirm.disabled = false;
+    }
+
+    if (res.ok && res.data.success) {
+      showToast(res.data.message || `${volName} approved and task assigned successfully!`, 'success');
+      closeSelectVolunteerConfirmModal();
+      loadFamilyDashboard();
+    } else {
+      showToast(res.data?.message || 'Error approving volunteer.', 'error');
+    }
+    return;
+  }
+
+  const chosenFundingMode = document.querySelector('input[name="confirmFundingMode"]:checked')?.value || 'pre_fund';
 
   // ── PRE-FUND: Redirect directly to payment (Budget + Fee) WITHOUT mutating database upfront ──
   if (chosenFundingMode === 'pre_fund') {

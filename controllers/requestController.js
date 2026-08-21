@@ -383,6 +383,7 @@ exports.familyApproveRequest = async (req, res) => {
     if (request.taskProofType === 'service_only') {
       request.allowedBudget = null;
       request.shoppingPreference = '';
+      request.fundingMode = 'caregiver_direct';
     } else {
       if (shoppingPreference && typeof shoppingPreference === 'string') {
         request.shoppingPreference = shoppingPreference.trim();
@@ -402,8 +403,8 @@ exports.familyApproveRequest = async (req, res) => {
       }
     }
 
-    // Pre-Fund payment: Caregiver selected pre_fund mode with estimated budget + service fee
-    const isPreFundMode = (fundingMode === 'pre_fund' || request.fundingMode === 'pre_fund');
+    // Pre-Fund payment: Caregiver selected pre_fund mode with estimated budget + service fee (purchase tasks only)
+    const isPreFundMode = (request.taskProofType !== 'service_only') && (fundingMode === 'pre_fund' || request.fundingMode === 'pre_fund');
     const totalPreFundDeposit = (Number(request.allowedBudget || 0)) + (Number(request.serviceFee || 0));
     const requiresPreFundPayment = !!(selectedVolId && isPreFundMode && totalPreFundDeposit > 0 && !request.purchaseFunded);
 
