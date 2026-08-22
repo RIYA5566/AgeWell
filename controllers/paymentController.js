@@ -352,16 +352,20 @@ async function executeLifecycleTransition(payment, user, clientTipAmount = 0) {
     request.serviceFeePrePaid = true;
     request.serviceFeePrePaidAt = new Date();
 
-    const isServiceOnly = (request.taskProofType === 'service_only' || ['Tech Support', 'Housekeeping', 'Companionship'].includes(request.category));
+    const isServiceOnly = (request.taskProofType === 'service_only' && (!payment.shoppingAmount || payment.shoppingAmount <= 0));
     if (isServiceOnly) {
       request.taskProofType = 'service_only';
       request.fundingMode = 'caregiver_direct';
       request.allowedBudget = null;
       request.status = 'accepted';
     } else {
+      request.taskProofType = 'financial';
       request.purchaseFunded = true;
       request.purchaseFundedAt = new Date();
       request.fundingMode = 'pre_fund';
+      if (payment.shoppingAmount > 0) {
+        request.allowedBudget = payment.shoppingAmount;
+      }
       if (!request.merchantPurchases || request.merchantPurchases.length === 0) {
         request.actualPurchaseCost = 0;
       }

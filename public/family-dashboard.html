@@ -1014,8 +1014,8 @@
   </div>
 
   <!-- Select Volunteer Confirmation Modal -->
-  <div id="selectVolunteerConfirmModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="selectVolunteerConfirmTitle" style="display: none; z-index: 10050;">
-    <div class="modal-content max-w-lg p-6 sm:p-7">
+  <div id="selectVolunteerConfirmModal" class="modal fixed inset-0 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="selectVolunteerConfirmTitle" style="display: none; z-index: 10050; background: rgba(0,0,0,0.4);">
+    <div class="modal-content max-w-lg w-full bg-white rounded-3xl p-6 sm:p-7 max-h-[85vh] overflow-y-auto flex flex-col">
       <div class="flex justify-between items-center border-b border-slate-100 pb-3 mb-4">
         <h3 id="selectVolunteerConfirmTitle" class="text-lg font-extrabold text-slate-900 flex items-center gap-2" data-i18n="fd_confirm_vol_title">
           Confirm Volunteer Selection
@@ -1030,46 +1030,113 @@
           Are you sure you want to select and approve this volunteer to fulfill the request?
         </p>
 
-        <!-- Payment Workflow Selection (Pre-Fund Escrow vs Caregiver Direct) -->
-        <div id="confirmModalWorkflowContainer" class="space-y-2.5 pt-1">
-          <label class="block text-xs font-extrabold text-slate-800 uppercase tracking-wider">
-            Choose Store Payment Mode:
+        <!-- Task Type Selection -->
+        <div>
+          <label class="block text-xs font-extrabold text-slate-800 uppercase tracking-wider mb-2">
+            Select Task Type:
           </label>
-          <div class="grid grid-cols-1 gap-2.5">
-            <!-- Option 1: Pre-Fund Upfront -->
-            <label class="flex items-start gap-3 p-3.5 rounded-2xl border-2 border-emerald-500 bg-emerald-50/60 cursor-pointer transition-all hover:bg-emerald-50" id="labelWorkflowPreFund" onclick="updateConfirmModalWorkflowText('pre_fund')">
-              <input type="radio" name="confirmFundingMode" value="pre_fund" checked class="mt-1 text-emerald-600 focus:ring-emerald-500 w-4 h-4 cursor-pointer" onchange="updateConfirmModalWorkflowText('pre_fund')">
-              <div class="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center flex-shrink-0 mt-0.5">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z"/></svg>
-              </div>
-              <div class="space-y-0.5 flex-1 min-w-0">
-                <div class="flex items-center gap-2 flex-wrap">
-                  <span class="text-xs font-extrabold text-slate-900 block">Pre-Fund Escrow Allocation</span>
-                  <span class="text-[10px] font-extrabold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-md border border-emerald-300">Fastest Checkout</span>
-                </div>
-                <p class="text-[11px] text-slate-600 font-medium leading-tight">
-                  Pre-fund the budget &amp; service charge now. The volunteer can pay merchants instantly up to your limit.
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5" id="confirmModalTaskTypeSelector">
+            <!-- Option 1: Service Task Only -->
+            <label class="flex items-start gap-3 p-3.5 rounded-2xl border-2 border-slate-200 bg-white hover:bg-slate-50 cursor-pointer transition-all has-[:checked]:border-brand-500 has-[:checked]:bg-brand-50/50" id="labelConfirmTaskService" onclick="handleConfirmModalTaskTypeChange('service_only')">
+              <input type="radio" name="confirmTaskTypeChoice" value="service_only" class="mt-0.5 text-brand-600 focus:ring-brand-500 w-4 h-4 cursor-pointer" onchange="handleConfirmModalTaskTypeChange('service_only')">
+              <div class="space-y-0.5">
+                <span class="text-xs font-extrabold text-slate-900 block">🛠️ Service Task Only</span>
+                <p class="text-[11px] text-slate-500 font-medium leading-tight">
+                  Pure assistance. No store purchases or budget needed.
                 </p>
               </div>
             </label>
 
-            <!-- Option 2: Caregiver Direct Payment -->
-            <label class="flex items-start gap-3 p-3.5 rounded-2xl border-2 border-slate-200 bg-white cursor-pointer transition-all hover:bg-slate-50" id="labelWorkflowDirect" onclick="updateConfirmModalWorkflowText('caregiver_direct')">
-              <input type="radio" name="confirmFundingMode" value="caregiver_direct" class="mt-1 text-brand-600 focus:ring-brand-500 w-4 h-4 cursor-pointer" onchange="updateConfirmModalWorkflowText('caregiver_direct')">
-              <div class="w-8 h-8 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center flex-shrink-0 mt-0.5">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z"/></svg>
-              </div>
-              <div class="space-y-0.5 flex-1 min-w-0">
-                <div class="flex items-center gap-2 flex-wrap">
-                  <span class="text-xs font-extrabold text-slate-900 block">Direct Merchant Settlement</span>
-                  <span class="text-[10px] font-extrabold bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md border border-slate-200">Pay Store on Purchase</span>
-                </div>
-                <p class="text-[11px] text-slate-600 font-medium leading-tight">
-                  Pay volunteer fee now. For purchases, volunteer will submit the merchant QR/link at checkout, and you pay the store directly.
+            <!-- Option 2: Purchase Task -->
+            <label class="flex items-start gap-3 p-3.5 rounded-2xl border-2 border-slate-200 bg-white hover:bg-slate-50 cursor-pointer transition-all has-[:checked]:border-emerald-500 has-[:checked]:bg-emerald-50/60" id="labelConfirmTaskPurchase" onclick="handleConfirmModalTaskTypeChange('purchase')">
+              <input type="radio" name="confirmTaskTypeChoice" value="purchase" class="mt-0.5 text-emerald-600 focus:ring-emerald-500 w-4 h-4 cursor-pointer" onchange="handleConfirmModalTaskTypeChange('purchase')" checked>
+              <div class="space-y-0.5">
+                <span class="text-xs font-extrabold text-emerald-950 block">🛒 Purchase Task</span>
+                <p class="text-[11px] text-emerald-800 font-medium leading-tight">
+                  Involves buying groceries, medicines, or items from stores.
                 </p>
               </div>
             </label>
           </div>
+        </div>
+
+        <!-- Purchase Details Container (Only active if Purchase Task is selected) -->
+        <div id="confirmModalPurchaseContainer" class="space-y-3">
+          <!-- Allowed Budget Allocation Field -->
+          <div class="p-3.5 bg-emerald-50/60 border border-emerald-200/90 rounded-2xl">
+            <label for="inputConfirmAllowedBudget" class="block font-bold text-slate-800 mb-1 text-xs tracking-wider">
+              <div class="flex items-center justify-between flex-wrap gap-1">
+                <span class="inline-flex items-center gap-1.5 font-extrabold text-emerald-950 uppercase">
+                  <svg class="w-4 h-4 text-emerald-600 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                  <span>Allowed Budget Allocation (₹)</span>
+                  <span class="text-rose-500 text-sm font-extrabold leading-none">*</span>
+                </span>
+                <span class="text-[11px] font-bold text-emerald-700 lowercase">(spending limit for volunteer)</span>
+              </div>
+            </label>
+            <div class="relative mt-1">
+              <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-500 font-extrabold text-sm pointer-events-none">₹</span>
+              <input
+                type="number"
+                id="inputConfirmAllowedBudget"
+                min="1"
+                step="1"
+                placeholder="e.g. 500"
+                class="w-full pl-8 pr-4 py-2 text-sm font-extrabold text-slate-900 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 font-sans"
+              />
+            </div>
+            <p class="text-[11px] text-slate-500 font-medium mt-1">
+              Allocates an authorized purchase budget so the volunteer can pay merchants from AgeWell funds.
+            </p>
+          </div>
+
+          <!-- Payment Workflow Selection (Pre-Fund Escrow vs Caregiver Direct) -->
+          <div id="confirmModalWorkflowContainer" class="space-y-2 pt-1">
+            <label class="block text-xs font-extrabold text-slate-800 uppercase tracking-wider">
+              Choose Store Payment Mode:
+            </label>
+            <div class="grid grid-cols-1 gap-2.5">
+              <!-- Option 1: Pre-Fund Upfront -->
+              <label class="flex items-start gap-3 p-3.5 rounded-2xl border-2 border-emerald-500 bg-emerald-50/60 cursor-pointer transition-all hover:bg-emerald-50" id="labelWorkflowPreFund" onclick="updateConfirmModalWorkflowText('pre_fund')">
+                <input type="radio" name="confirmFundingMode" value="pre_fund" checked class="mt-1 text-emerald-600 focus:ring-emerald-500 w-4 h-4 cursor-pointer" onchange="updateConfirmModalWorkflowText('pre_fund')">
+                <div class="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z"/></svg>
+                </div>
+                <div class="space-y-0.5 flex-1 min-w-0">
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <span class="text-xs font-extrabold text-slate-900 block">Pre-Fund Escrow Allocation</span>
+                    <span class="text-[10px] font-extrabold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-md border border-emerald-300">Fastest Checkout</span>
+                  </div>
+                  <p class="text-[11px] text-slate-600 font-medium leading-tight">
+                    Pre-fund the budget &amp; service charge now. The volunteer can pay merchants instantly up to your limit.
+                  </p>
+                </div>
+              </label>
+
+              <!-- Option 2: Caregiver Direct Payment -->
+              <label class="flex items-start gap-3 p-3.5 rounded-2xl border-2 border-slate-200 bg-white cursor-pointer transition-all hover:bg-slate-50" id="labelWorkflowDirect" onclick="updateConfirmModalWorkflowText('caregiver_direct')">
+                <input type="radio" name="confirmFundingMode" value="caregiver_direct" class="mt-1 text-brand-600 focus:ring-brand-500 w-4 h-4 cursor-pointer" onchange="updateConfirmModalWorkflowText('caregiver_direct')">
+                <div class="w-8 h-8 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z"/></svg>
+                </div>
+                <div class="space-y-0.5 flex-1 min-w-0">
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <span class="text-xs font-extrabold text-slate-900 block">Direct Merchant Settlement</span>
+                    <span class="text-[10px] font-extrabold bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md border border-slate-200">Pay Store on Purchase</span>
+                  </div>
+                  <p class="text-[11px] text-slate-600 font-medium leading-tight">
+                    Pay volunteer fee now. For purchases, volunteer will submit the merchant QR/link at checkout, and you pay the store directly.
+                  </p>
+                </div>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Service Only Notice in Confirm Modal -->
+        <div id="confirmModalServiceOnlyNotice" class="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs text-slate-600 font-medium flex items-center gap-2.5" style="display: none;">
+          <svg class="w-5 h-5 text-brand-600 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z"/></svg>
+          <p>This task is purely service-oriented. You will only pay the volunteer service fee. No item purchase budget is required.</p>
         </div>
 
         <div class="p-3.5 bg-brand-50/70 border border-brand-200 rounded-2xl text-xs text-brand-900 font-medium" data-i18n="fd_confirm_vol_note">

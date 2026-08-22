@@ -828,10 +828,22 @@ function renderSeniorHelpRequests(seniorRequests) {
           </div>
           ${merchant.upiQrImage ? `
             <div class="pt-2 border-t border-amber-200/60 flex items-center gap-3">
-              <img src="${merchant.upiQrImage}" alt="Store QR" class="w-20 h-20 object-contain rounded-xl border border-emerald-300 bg-white p-1">
+              <div class="relative cursor-pointer group flex-shrink-0" onclick="event.stopPropagation(); openImageLightbox('${escapeHTML(normalizeDocUrl(merchant.upiQrImage))}', '${req._id}'); return false;">
+                <img src="${normalizeDocUrl(merchant.upiQrImage)}" alt="Store QR" class="w-20 h-20 object-contain rounded-xl border border-emerald-300 bg-white p-1 group-hover:scale-105 transition-transform shadow-2xs">
+                <span class="absolute bottom-0.5 right-0.5 bg-black/80 text-white text-[9px] font-bold px-1.5 py-0.5 rounded flex items-center gap-1 shadow-xs">
+                  <svg class="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607zM10.5 7.5v6m3-3h-6"/></svg>
+                  <span>Zoom</span>
+                </span>
+              </div>
               <div class="text-xs text-slate-700 font-medium">
                 <span>Scan this QR with GPay / PhonePe / Paytm to pay <strong>₹${req.actualPurchaseCost || 0}</strong> directly to ${escapeHTML(shopName)}.</span>
-                ${merchant.upiId ? `<span class="block text-slate-900 font-bold mt-0.5">UPI ID: ${escapeHTML(merchant.upiId)}</span>` : ''}
+                <div class="flex items-center gap-2 mt-1">
+                  <button type="button" onclick="event.stopPropagation(); openImageLightbox('${escapeHTML(normalizeDocUrl(merchant.upiQrImage))}', '${req._id}'); return false;" class="text-[11px] font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 px-2.5 py-1 rounded-lg flex items-center gap-1 cursor-pointer transition-all">
+                    <svg class="w-3.5 h-3.5 text-emerald-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"/><path stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                    <span>View Full Photo</span>
+                  </button>
+                  ${merchant.upiId ? `<span class="text-slate-900 font-bold">UPI ID: ${escapeHTML(merchant.upiId)}</span>` : ''}
+                </div>
               </div>
             </div>` : (merchant.upiId ? `<div class="text-xs text-slate-800 font-bold">UPI ID: ${escapeHTML(merchant.upiId)}</div>` : '')}
         </div>`;
@@ -1363,8 +1375,20 @@ function renderCompletionVerificationQueue(pendingVerifications) {
             <div class="flex flex-col sm:flex-row items-center gap-4">
               ${merchant.upiQrImage ? `
                 <div class="p-2.5 bg-white rounded-2xl border border-emerald-300 shadow-2xs flex-shrink-0 text-center">
-                  <img src="${merchant.upiQrImage}" alt="Merchant UPI QR Code" class="w-32 h-32 object-contain rounded-xl mx-auto">
+                  <div class="relative cursor-pointer group overflow-hidden rounded-xl" onclick="event.stopPropagation(); openImageLightbox('${escapeHTML(normalizeDocUrl(merchant.upiQrImage))}', '${req._id}'); return false;">
+                    <img src="${normalizeDocUrl(merchant.upiQrImage)}" alt="Merchant UPI QR Code" class="w-36 h-36 object-contain rounded-xl mx-auto group-hover:scale-105 transition-transform">
+                    <div class="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-xl">
+                      <span class="text-white text-[11px] font-extrabold bg-black/80 backdrop-blur-xs px-2.5 py-1 rounded-xl flex items-center gap-1.5 shadow-md">
+                        <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607zM10.5 7.5v6m3-3h-6"/></svg>
+                        <span>Click to Enlarge</span>
+                      </span>
+                    </div>
+                  </div>
                   <span class="text-[10px] font-black text-emerald-900 block mt-1">Merchant UPI QR</span>
+                  <button type="button" onclick="event.stopPropagation(); openImageLightbox('${escapeHTML(normalizeDocUrl(merchant.upiQrImage))}', '${req._id}'); return false;" class="mt-2 w-full px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-extrabold rounded-xl shadow-2xs transition-all active:scale-95 flex items-center justify-center gap-1.5 border-none cursor-pointer">
+                    <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"/><path stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                    <span>View Full Photo</span>
+                  </button>
                 </div>` : ''}
 
               <div class="space-y-2 flex-1 text-left w-full">
@@ -1413,14 +1437,15 @@ function renderCompletionVerificationQueue(pendingVerifications) {
           <!-- Merchant Payment Details Box -->
           ${merchantPaymentBlockHtml}
 
-          <!-- Photo Proof Section -->
+          <!-- Photo Proof Section (Only displayed when separate bill/proof documents were uploaded) -->
+          ${proofSlider ? `
           <div>
             <div class="text-xs font-bold text-amber-950 uppercase tracking-wider mb-2 flex items-center gap-1.5">
               <svg class="w-3.5 h-3.5 text-amber-700" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z"/><path stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z"/></svg>
               <span>Uploaded Store Bill / Receipt</span>
             </div>
             ${proofSlider}
-          </div>
+          </div>` : ''}
 
           <!-- Actions Bar -->
           <div class="flex flex-col sm:flex-row items-center justify-end gap-2.5 pt-2 border-t border-amber-200/70 flex-wrap">
@@ -2787,11 +2812,41 @@ function renderAllRequests(requests) {
 // ──────────────────────────────────────────────────────────
 // SELECT VOLUNTEER CONFIRMATION POPUP MODAL
 // ──────────────────────────────────────────────────────────
+window.handleConfirmModalTaskTypeChange = function(type) {
+  const purchaseContainer = document.getElementById('confirmModalPurchaseContainer');
+  const serviceNotice = document.getElementById('confirmModalServiceOnlyNotice');
+  const labelService = document.getElementById('labelConfirmTaskService');
+  const labelPurchase = document.getElementById('labelConfirmTaskPurchase');
+
+  if (type === 'service_only') {
+    if (purchaseContainer) purchaseContainer.style.display = 'none';
+    if (serviceNotice) serviceNotice.style.display = 'flex';
+    if (labelService) labelService.className = "flex items-start gap-3 p-3.5 rounded-2xl border-2 border-brand-500 bg-brand-50/50 cursor-pointer transition-all";
+    if (labelPurchase) labelPurchase.className = "flex items-start gap-3 p-3.5 rounded-2xl border-2 border-slate-200 bg-white cursor-pointer transition-all hover:bg-slate-50";
+    updateConfirmModalWorkflowText('caregiver_direct');
+  } else {
+    if (purchaseContainer) purchaseContainer.style.display = 'block';
+    if (serviceNotice) serviceNotice.style.display = 'none';
+    if (labelService) labelService.className = "flex items-start gap-3 p-3.5 rounded-2xl border-2 border-slate-200 bg-white cursor-pointer transition-all hover:bg-slate-50";
+    if (labelPurchase) labelPurchase.className = "flex items-start gap-3 p-3.5 rounded-2xl border-2 border-emerald-500 bg-emerald-50/60 cursor-pointer transition-all";
+    const mode = document.querySelector('input[name="confirmFundingMode"]:checked')?.value || 'pre_fund';
+    updateConfirmModalWorkflowText(mode);
+  }
+};
+
 window.updateConfirmModalWorkflowText = function(mode) {
   const labelPreFund = document.getElementById('labelWorkflowPreFund');
   const labelDirect = document.getElementById('labelWorkflowDirect');
   const btnConfirm = document.getElementById('btnConfirmSelectVolunteer');
   const volName = pendingSelectVolunteerName || 'Volunteer';
+  const isServiceOnly = document.querySelector('input[name="confirmTaskTypeChoice"]:checked')?.value === 'service_only';
+
+  if (isServiceOnly) {
+    if (btnConfirm) {
+      btnConfirm.innerHTML = `<span class="inline-flex items-center gap-1.5"><svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg><span>Pay Fee &amp; Assign ${escapeHTML(volName)}</span></span>`;
+    }
+    return;
+  }
 
   if (mode === 'pre_fund') {
     if (labelPreFund) {
@@ -2840,26 +2895,25 @@ function openSelectVolunteerConfirmModal(requestId, volunteerId, volName, feeTex
 
   const modal = document.getElementById('selectVolunteerConfirmModal');
   const bodyEl = document.getElementById('selectVolunteerConfirmBody');
-  const workflowContainer = document.getElementById('confirmModalWorkflowContainer');
+  const budgetInput = document.getElementById('inputConfirmAllowedBudget');
 
   if (bodyEl) {
     bodyEl.innerHTML = `Are you sure you want to select and approve <strong>${escapeHTML(volName)}</strong> (${escapeHTML(feeText)}) to fulfill this request for your senior citizen?`;
   }
 
-  const isServiceOnly = req?.taskProofType === 'service_only' || ['Tech Support', 'Housekeeping', 'Companionship'].includes(req?.category);
-  if (workflowContainer) {
-    workflowContainer.style.display = isServiceOnly ? 'none' : 'block';
+  // Pre-fill budget input if set
+  if (budgetInput) {
+    budgetInput.value = (req && req.allowedBudget !== undefined && req.allowedBudget !== null && !isNaN(req.allowedBudget)) ? req.allowedBudget : '';
   }
 
-  const radioCaregiverDirect = document.querySelector('input[name="confirmFundingMode"][value="caregiver_direct"]');
-  const radioPreFund = document.querySelector('input[name="confirmFundingMode"][value="pre_fund"]');
-  if (isServiceOnly) {
-    if (radioCaregiverDirect) radioCaregiverDirect.checked = true;
-    updateConfirmModalWorkflowText('caregiver_direct');
-  } else {
-    if (radioPreFund) radioPreFund.checked = true;
-    updateConfirmModalWorkflowText('pre_fund');
-  }
+  // Determine initial selection: default to purchase if financial, medical escort, groceries, or if budget is already set
+  const isExplicitServiceOnly = req?.taskProofType === 'service_only' && (!req?.allowedBudget || req?.allowedBudget <= 0) && !['Grocery Shopping', 'Medical Escort'].includes(req?.category);
+  const initialTaskType = isExplicitServiceOnly ? 'service_only' : 'purchase';
+
+  const radioChoice = document.querySelector(`input[name="confirmTaskTypeChoice"][value="${initialTaskType}"]`);
+  if (radioChoice) radioChoice.checked = true;
+
+  handleConfirmModalTaskTypeChange(initialTaskType);
 
   if (modal) modal.style.display = 'flex';
 }
@@ -2896,10 +2950,10 @@ async function confirmSelectVolunteerAssignment() {
     else if (req.volunteerQuotes[0]?.serviceFee) fee = Number(req.volunteerQuotes[0].serviceFee);
   }
 
-  const isServiceOnly = req?.taskProofType === 'service_only' || ['Tech Support', 'Housekeeping', 'Companionship'].includes(req?.category);
+  const selectedTaskType = document.querySelector('input[name="confirmTaskTypeChoice"]:checked')?.value || 'purchase';
 
-  // ── SERVICE-ONLY: ALWAYS pure service flow (no shopping budget, no pre-fund shopping) ──
-  if (isServiceOnly) {
+  // ── SERVICE-ONLY FLOW (Pure Service, no store shopping) ──
+  if (selectedTaskType === 'service_only') {
     if (fee > 0) {
       showToast(`Redirecting to escrow service fee of ₹${fee}...`, 'info');
       closeSelectVolunteerConfirmModal();
@@ -2933,22 +2987,35 @@ async function confirmSelectVolunteerAssignment() {
     return;
   }
 
+  // ── PURCHASE TASK FLOW (Pre-Fund Escrow vs Caregiver Direct) ──
+  const budgetInput = document.getElementById('inputConfirmAllowedBudget');
+  const budgetVal = budgetInput ? Number(budgetInput.value) : Number(req?.allowedBudget || 0);
+
+  if (!budgetVal || isNaN(budgetVal) || budgetVal <= 0) {
+    showToast('Please enter an Allowed Budget Allocation (₹) for the purchase task.', 'warning');
+    if (budgetInput) budgetInput.focus();
+    if (btnConfirm) {
+      btnConfirm.innerHTML = origText;
+      btnConfirm.disabled = false;
+    }
+    return;
+  }
+
   const chosenFundingMode = document.querySelector('input[name="confirmFundingMode"]:checked')?.value || 'pre_fund';
 
-  // ── PRE-FUND: Redirect directly to payment (Budget + Fee) WITHOUT mutating database upfront ──
+  // PRE-FUND ESCROW: Deposit budget + fee upfront
   if (chosenFundingMode === 'pre_fund') {
-    const budget = Number(req?.allowedBudget || 0);
-    const totalDep = budget + fee;
+    const totalDep = budgetVal + fee;
 
-    showToast(`Redirecting to pre-fund ₹${totalDep} (Budget: ₹${budget} + Fee: ₹${fee})...`, 'info');
+    showToast(`Redirecting to pre-fund ₹${totalDep} (Budget: ₹${budgetVal} + Fee: ₹${fee})...`, 'info');
     closeSelectVolunteerConfirmModal();
     setTimeout(() => {
-      window.location.href = `/payment.html?requestId=${reqId}&type=pre_fund&volunteerId=${volId}&itemsCost=${budget}&serviceFee=${fee}&volunteerName=${encodeURIComponent(volName)}`;
+      window.location.href = `/payment.html?requestId=${reqId}&type=pre_fund&volunteerId=${volId}&itemsCost=${budgetVal}&serviceFee=${fee}&volunteerName=${encodeURIComponent(volName)}`;
     }, 400);
     return;
   }
 
-  // ── DIRECT MERCHANT SETTLEMENT: Redirect to pay volunteer fee upfront without mutating database ──
+  // CAREGIVER DIRECT: Pay volunteer service fee upfront into escrow, pay store on checkout
   if (fee > 0) {
     showToast(`Redirecting to pay volunteer fee of ₹${fee}...`, 'info');
     closeSelectVolunteerConfirmModal();
@@ -2961,7 +3028,9 @@ async function confirmSelectVolunteerAssignment() {
   // If voluntary / ₹0 fee: approve and assign immediately
   const payload = {
     volunteerId: volId,
-    fundingMode: 'caregiver_direct'
+    fundingMode: 'caregiver_direct',
+    taskProofType: 'financial',
+    allowedBudget: budgetVal
   };
 
   const res = await apiCall(`/requests/${reqId}/family-approve`, 'PUT', payload);
