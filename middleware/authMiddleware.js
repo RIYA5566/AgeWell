@@ -5,13 +5,13 @@ const User = require('../models/User');
 const protect = async (req, res, next) => {
   let token;
 
-  // 1. Check for token in cookies
-  if (req.cookies && req.cookies.token) {
-    token = req.cookies.token;
-  }
-  // 2. Fallback to Authorization Header
-  else if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+  // 1. Check Authorization Header first (preferred for multi-tab sessions / explicit Bearer tokens)
+  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
     token = req.headers.authorization.split(' ')[1];
+  }
+  // 2. Fallback to token in cookies
+  else if (req.cookies && req.cookies.token) {
+    token = req.cookies.token;
   }
 
   if (!token) {
