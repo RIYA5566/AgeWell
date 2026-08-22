@@ -4,6 +4,7 @@ const HelpRequest = require('../models/HelpRequest');
 const Payment = require('../models/Payment');
 const Earning = require('../models/Earning');
 const User = require('../models/User');
+const WalletTransaction = require('../models/WalletTransaction');
 
 // ─── Razorpay SDK instance ─────────────────────────────────────────────────────
 // Initialised lazily so the server starts fine even without keys in .env.
@@ -363,8 +364,14 @@ async function executeLifecycleTransition(payment, user, clientTipAmount = 0) {
       request.purchaseFunded = true;
       request.purchaseFundedAt = new Date();
       request.fundingMode = 'pre_fund';
-      if (payment.shoppingAmount > 0) {
-        request.allowedBudget = payment.shoppingAmount;
+      const authAmt = Number(payment.shoppingAmount || request.allowedBudget || 0);
+      if (authAmt > 0) {
+        request.allowedBudget = authAmt;
+        request.authorizedAmount = authAmt;
+        request.remainingAmount = authAmt;
+        request.spentAmount = 0;
+        request.fundingStatus = 'funded';
+        request.settlementStatus = 'unsettled';
       }
       if (!request.merchantPurchases || request.merchantPurchases.length === 0) {
         request.actualPurchaseCost = 0;
@@ -387,6 +394,30 @@ async function executeLifecycleTransition(payment, user, clientTipAmount = 0) {
       paidAt: new Date()
     };
     await request.save();
+
+    // Log WalletTransaction for Pre-Fund
+    try {
+      if (payment.caregiver && authAmt > 0) {
+        await WalletTransaction.create({
+          caregiver: payment.caregiver,
+          request: request._id,
+          volunteer: request.volunteer,
+          type: 'TASK_FUND',
+          amount: authAmt,
+          direction: 'DEBIT',
+          status: 'SUCCESS',
+          description: `Task Pre-Fund Allocated: "${request.title || 'Help Request'}"`,
+          metadata: {
+            taskId: request._id,
+            paymentId: payment._id,
+            authorizedBudget: authAmt,
+            serviceFee: payment.serviceCharge
+          }
+        });
+      }
+    } catch (wTxnErr) {
+      console.warn('Wallet transaction log error in paymentController:', wTxnErr);
+    }
 
     // Create PENDING Earning record for volunteer now that pre-fund is verified
     if (request.volunteer && Number(payment.serviceCharge || request.serviceFee || 0) > 0) {

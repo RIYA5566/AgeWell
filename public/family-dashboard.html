@@ -405,17 +405,20 @@
 
       <!-- Language Switcher Container -->
       <div class="accessibility-panel flex flex-wrap items-center gap-2.5 bg-slate-50 rounded-xl p-1.5 border border-slate-200/60 text-sm" role="region" aria-label="Language Controls"></div>
-
-      <!-- User Nav info and Logout -->
-      <div class="flex items-center gap-3 sm:gap-4">
+      <!-- User Nav info, Wallet Link and Logout -->
+      <div class="flex items-center gap-2.5 sm:gap-3 flex-wrap justify-end">
+        <a href="/caregiver-wallet.html" class="px-3.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-200/80 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 shadow-2xs no-underline active:scale-95">
+          <svg class="w-3.5 h-3.5 text-emerald-600" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+          <span>Wallet: <strong id="headerWalletBal">₹5,000</strong></span>
+        </a>
         <div class="flex items-center gap-2 bg-brand-50 border border-brand-200/80 rounded-xl px-3.5 py-1.5">
-          <span class="text-sm font-extrabold text-brand-900" id="navUserName">Hello, Caregiver</span>
+          <span class="text-xs sm:text-sm font-extrabold text-brand-900" id="navUserName">Hello, Caregiver</span>
         </div>
-        <button id="btnLogout" class="px-4 py-2 text-brand-700 font-bold text-sm bg-brand-50 hover:bg-brand-100 border border-brand-200 rounded-xl transition-all active:scale-95 shadow-xs flex items-center gap-1.5">
+        <button id="btnLogout" class="px-3.5 py-1.5 text-brand-700 font-bold text-xs sm:text-sm bg-brand-50 hover:bg-brand-100 border border-brand-200 rounded-xl transition-all active:scale-95 shadow-xs flex items-center gap-1.5 cursor-pointer">
           <svg class="w-4 h-4 text-brand-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
           </svg>
-          Log Out
+          <span class="hidden sm:inline">Log Out</span>
         </button>
       </div>
     </div>
@@ -557,6 +560,56 @@
               <span id="countFamilyHistory" class="bg-slate-100 text-slate-700 text-xs font-extrabold px-2.5 py-0.5 rounded-full border border-slate-200/80 flex-shrink-0">0</span>
             </button>
 
+          </div>
+        </div>
+
+        <!-- AgeWell Caregiver Wallet Widget -->
+        <div class="bg-white rounded-3xl border border-slate-200/90 shadow-premium p-5 relative overflow-hidden space-y-3.5" id="caregiverWalletWidget">
+          <div class="h-1.5 bg-gradient-to-r from-emerald-500 via-teal-500 to-brand-600 -mx-5 -mt-5 mb-4"></div>
+          
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+              <div class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center font-black text-sm border border-emerald-200/80">
+                ₹
+              </div>
+              <div>
+                <span class="text-xs font-black text-slate-900 block leading-tight">AgeWell Wallet</span>
+                <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Task Funding &amp; Escrow</span>
+              </div>
+            </div>
+            <a href="/caregiver-wallet.html" class="text-[11px] font-bold text-brand-600 hover:text-brand-800 no-underline">View Full &rarr;</a>
+          </div>
+
+          <!-- 3 Balance Rows -->
+          <div class="space-y-2 pt-1 text-xs">
+            <div class="flex items-center justify-between p-2 rounded-xl bg-slate-50 border border-slate-200/70">
+              <span class="text-slate-600 font-bold flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-emerald-500"></span> Available
+              </span>
+              <span class="font-black text-slate-900" id="widgetAvailableBalance">₹0</span>
+            </div>
+            <div class="flex items-center justify-between p-2 rounded-xl bg-slate-50 border border-slate-200/70">
+              <span class="text-slate-600 font-bold flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-amber-500"></span> Reserved
+              </span>
+              <span class="font-black text-amber-700" id="widgetReservedBalance">₹0</span>
+            </div>
+            <div class="flex items-center justify-between p-2 rounded-xl bg-brand-50/70 border border-brand-200/70">
+              <span class="text-brand-900 font-extrabold flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-brand-600"></span> Total
+              </span>
+              <span class="font-black text-brand-900" id="widgetTotalBalance">₹0</span>
+            </div>
+          </div>
+
+          <!-- Quick Actions -->
+          <div class="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100">
+            <a href="/caregiver-wallet.html#txnsSection" class="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold rounded-xl text-center no-underline transition-all shadow-2xs">
+              History
+            </a>
+            <a href="/caregiver-wallet.html" class="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl text-center no-underline transition-all shadow-xs flex items-center justify-center gap-1">
+              <span>+ Add Money</span>
+            </a>
           </div>
         </div>
 
@@ -1681,8 +1734,8 @@
   </footer>
 
   <!-- Scripts -->
-  <script src="/js/i18n.js?v=430"></script>
-  <script src="/js/api.js?v=430"></script>
-  <script src="/js/family.js?v=430"></script>
+  <script src="/js/i18n.js?v=435"></script>
+  <script src="/js/api.js?v=435"></script>
+  <script src="/js/family.js?v=435"></script>
 </body>
 </html>

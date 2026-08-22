@@ -3,6 +3,11 @@ const User = require('../models/User');
 const Earning = require('../models/Earning');
 const Payment = require('../models/Payment');
 const { recommendPlatforms } = require('../utils/platformRecommender');
+const {
+  fundTaskFromWallet,
+  recordMerchantPurchaseTransaction,
+  settleTaskWalletFunds
+} = require('./walletController');
 
 // ─── Helper: check if a senior has any linked family members ──────────────
 const seniorHasFamily = async (seniorId) => {
@@ -419,9 +424,28 @@ exports.familyApproveRequest = async (req, res) => {
       }
 
       if (requiresPreFundPayment) {
-        // Do NOT mark as accepted until pre-fund escrow deposit is paid on payment gateway!
-        request.pendingVolunteer = selectedVolId;
-        request.fundingMode = 'pre_fund';
+        // Attempt seamless funding from Caregiver Wallet
+        const fundResult = await fundTaskFromWallet(req.user.id, request, request.allowedBudget || 0, selectedVolId);
+        if (fundResult.success) {
+          // Successfully pre-funded from Caregiver Wallet!
+          request.volunteer = selectedVolId;
+          request.pendingVolunteer = null;
+          request.fundingMode = 'pre_fund';
+          request.authorizedAmount = Number(request.allowedBudget || 0);
+          request.remainingAmount = Number(request.allowedBudget || 0);
+          request.spentAmount = 0;
+          request.fundingStatus = 'funded';
+          request.settlementStatus = 'unsettled';
+          request.purchaseFunded = true;
+          request.purchaseFundedAt = new Date();
+          request.status = 'purchase_funded';
+          request.acceptedAt = Date.now();
+        } else {
+          // Insufficient wallet funds: prompt caregiver to top up wallet or complete checkout
+          request.pendingVolunteer = selectedVolId;
+          request.fundingMode = 'pre_fund';
+          request.fundingStatus = 'not_funded';
+        }
       } else {
         request.volunteer = selectedVolId;
         request.pendingVolunteer = null;
@@ -1001,6 +1025,16 @@ exports.verifyCompletionByFamily = async (req, res) => {
           paidAt: Date.now()
         };
       }
+      request.fundingStatus = 'settled';
+      request.settlementStatus = 'settled';
+
+      // ── Settle wallet funds (release unspent remaining to availableBalance, log refund & volunteer earning) ──
+      var settleResult = null;
+      try {
+        settleResult = await settleTaskWalletFunds(req.user.id, request, request.volunteer, request.serviceFee);
+      } catch (settleErr) {
+        console.error('Wallet settlement error in verifyCompletionByFamily:', settleErr);
+      }
     } else {
       // Unmark completed: return task to active status ('purchase_funded') for volunteer to re-upload receipt
       request.status = 'purchase_funded';
@@ -1061,9 +1095,13 @@ exports.verifyCompletionByFamily = async (req, res) => {
       .populate('senior', 'name phone address emergencyContact')
       .populate('volunteer', 'name phone email skills');
 
+    const unspentRefundAmt = (typeof settleResult !== 'undefined' && settleResult && settleResult.unspentRefund) ? Number(settleResult.unspentRefund) : 0;
+
     res.status(200).json({
       success: true,
       message: approved ? 'Final receipt verified & volunteer service charge released!' : 'Receipt verification rejected. Returned to volunteer to re-upload valid receipt.',
+      unspentRefund: unspentRefundAmt,
+      refundNotification: unspentRefundAmt > 0 ? `₹${unspentRefundAmt.toLocaleString('en-IN')} unspent funds returned to your Available Balance` : null,
       request: populatedRequest
     });
   } catch (error) {
@@ -1397,9 +1435,12 @@ exports.volunteerPayPurchase = async (req, res) => {
     if (!request.merchantPurchases) request.merchantPurchases = [];
     request.merchantPurchases.push(newPurchase);
 
-    // Update total actualPurchaseCost
+    // Update total actualPurchaseCost and task financial tracking fields
     const newTotalSpent = currentSpent + amountNum;
     request.actualPurchaseCost = newTotalSpent;
+    request.spentAmount = newTotalSpent;
+    request.remainingAmount = authorizedBudget > 0 ? Math.max(0, authorizedBudget - newTotalSpent) : 0;
+    request.fundingStatus = 'in_progress';
     request.purchaseFunded = true;
     request.purchaseFundedAt = new Date();
     request.status = 'purchase_funded';
@@ -1415,6 +1456,20 @@ exports.volunteerPayPurchase = async (req, res) => {
     }
 
     await request.save();
+
+    // Record wallet merchant purchase transaction
+    try {
+      let caregiverUser = request.familyReviewedBy;
+      if (!caregiverUser) {
+        const famUser = await User.findOne({ role: 'family', linkedSenior: request.senior });
+        if (famUser) caregiverUser = famUser._id;
+      }
+      if (caregiverUser) {
+        await recordMerchantPurchaseTransaction(caregiverUser, request, req.user.id, newPurchase);
+      }
+    } catch (wTxnErr) {
+      console.warn('Wallet transaction log error (volunteerPayPurchase):', wTxnErr);
+    }
 
     // Create Payment record log
     try {

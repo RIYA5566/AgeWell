@@ -100,6 +100,32 @@ const helpRequestSchema = new mongoose.Schema({
     enum: ['pre_fund', 'caregiver_direct'],
     default: 'caregiver_direct'
   },
+  // Task Wallet & Financial Tracking Fields
+  authorizedAmount: {
+    type: Number,
+    min: 0,
+    default: 0
+  },
+  spentAmount: {
+    type: Number,
+    min: 0,
+    default: 0
+  },
+  remainingAmount: {
+    type: Number,
+    min: 0,
+    default: 0
+  },
+  fundingStatus: {
+    type: String,
+    enum: ['not_funded', 'funded', 'in_progress', 'settled'],
+    default: 'not_funded'
+  },
+  settlementStatus: {
+    type: String,
+    enum: ['unsettled', 'settled'],
+    default: 'unsettled'
+  },
 
   // ─── Workflow status (11-Step Escrow Lifecycle) ────────────────────────────
   // pending                 → Step 1: Senior raises request

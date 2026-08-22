@@ -35,6 +35,12 @@ app.use('/api/admin', require('./routes/adminRoutes'));
 app.use('/api/family', require('./routes/familyRoutes'));
 app.use('/api/volunteer', require('./routes/volunteerRoutes'));
 app.use('/api/payments', require('./routes/paymentRoutes'));
+app.use('/api/wallet', require('./routes/walletRoutes'));
+
+// Clean URL Route for Caregiver Wallet
+app.get(['/caregiver/wallet', '/wallet'], (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'caregiver-wallet.html'));
+});
 
 // Fallback: Send static frontend HTML for any non-API routes (SPA routing style if users manually type links)
 app.get('*', (req, res, next) => {

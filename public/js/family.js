@@ -357,6 +357,9 @@ async function loadFamilyDashboard(silent = false) {
   // Show senior info banner
   populateSeniorBanner(senior);
 
+  // Sync Caregiver Wallet Widget
+  fetchAndRenderCaregiverWalletWidget();
+
   // Separate active senior requests (pending decision, allotted, accepted, in-progress) from volunteer quote approvals & receipt verifications
   const seniorRequests = requests.filter(r => 
     ( (r.status === 'pending' || r.status === 'awaiting_approval') && (!r.volunteerQuotes || r.volunteerQuotes.length === 0) ) ||
@@ -1915,6 +1918,12 @@ async function verifyTaskCompletion(requestId, approved) {
           proofType = res.data.request.taskProofType || 'mixed';
         }
 
+        // Check if unspent funds were returned as a refund
+        const refundAmt = Number(res.data?.unspentRefund || 0);
+        if (refundAmt > 0) {
+          showToast(`💰 Unspent Task Refund: ₹${refundAmt.toLocaleString('en-IN')} has been returned to your AgeWell Wallet Available Balance!`, 'success');
+        }
+
         if (serviceFeePrePaid || proofType === 'service_only') {
           // Service charge was pre-escrowed — no payment page needed
           showToast('Task confirmed & volunteer service charge released!', 'success');
@@ -1924,6 +1933,7 @@ async function verifyTaskCompletion(requestId, approved) {
           showToast('Receipt verified & funds released successfully!', 'success');
           promptForVolunteerTip(requestId, volName, { serviceFee, itemsCost: 0, actionType: 'direct' });
         }
+        await fetchAndRenderCaregiverWalletWidget();
       } else {
         alert(res.data?.message || 'Error verifying completion');
       }
@@ -2299,12 +2309,17 @@ window.directReleaseServiceCharge = async function(requestId, feeAmount, volName
     });
 
     if (res.ok && res.data.success) {
+      const refundAmt = Number(res.data?.unspentRefund || 0);
+      if (refundAmt > 0) {
+        showToast(`💰 Unspent Task Refund: ₹${refundAmt.toLocaleString('en-IN')} returned to your AgeWell Wallet Available Balance!`, 'success');
+      }
       showToast('Volunteer service charge released!', 'success');
       currentFeedbackRequestId = requestId;
       let resolvedVolName = volName || 'Assigned Volunteer';
       if (res.data.request && res.data.request.volunteer) {
         resolvedVolName = typeof res.data.request.volunteer === 'object' ? res.data.request.volunteer.name : resolvedVolName;
       }
+      await fetchAndRenderCaregiverWalletWidget();
       // Open TIP modal first. After tip decision → feedback modal (once at end).
       promptForVolunteerTip(requestId, resolvedVolName, { serviceFee: feeAmount, itemsCost: 0, actionType: 'direct' });
     } else {
@@ -2424,6 +2439,35 @@ window.submitPurchaseCostRevision = async function() {
     alert('Network error submitting feedback note');
   }
 };
+
+// ── Caregiver Wallet Live Synchronization Widget ─────────────────────────────
+async function fetchAndRenderCaregiverWalletWidget() {
+  try {
+    const res = await apiCall('/wallet/caregiver', 'GET');
+    if (res.ok && res.data && res.data.success && res.data.wallet) {
+      const w = res.data.wallet;
+      const avail = Number(w.availableBalance || 0);
+      const resvd = Number(w.reservedBalance || 0);
+      const total = Number(w.totalBalance || (avail + resvd));
+
+      const headerEl = document.getElementById('headerWalletBal');
+      if (headerEl) headerEl.textContent = `₹${avail.toLocaleString('en-IN')}`;
+
+      const wAvail = document.getElementById('widgetAvailableBalance');
+      const wResvd = document.getElementById('widgetReservedBalance');
+      const wTotal = document.getElementById('widgetTotalBalance');
+
+      if (wAvail) wAvail.textContent = `₹${avail.toLocaleString('en-IN')}`;
+      if (wResvd) wResvd.textContent = `₹${resvd.toLocaleString('en-IN')}`;
+      if (wTotal) wTotal.textContent = `₹${total.toLocaleString('en-IN')}`;
+
+      window.caregiverAvailableWalletBalance = avail;
+    }
+  } catch (err) {
+    console.warn('Wallet widget sync error:', err);
+  }
+}
+window.fetchAndRenderCaregiverWalletWidget = fetchAndRenderCaregiverWalletWidget;
 
 // Caregiver Fulfills Request Self Action
 async function fulfillRequestSelf(requestId) {
@@ -3042,9 +3086,38 @@ async function confirmSelectVolunteerAssignment() {
 
   const chosenFundingMode = document.querySelector('input[name="confirmFundingMode"]:checked')?.value || 'pre_fund';
 
-  // PRE-FUND ESCROW: Deposit budget + fee upfront
+  // PRE-FUND: Check if caregiver has sufficient wallet balance or route through payment
   if (chosenFundingMode === 'pre_fund') {
     const totalDep = budgetVal + fee;
+
+    // Check if caregiver wallet has sufficient balance for immediate allocation
+    const currentAvail = Number(window.caregiverAvailableWalletBalance || 0);
+
+    if (currentAvail >= budgetVal) {
+      showToast(`Reserving ₹${budgetVal} from your AgeWell Wallet Available Balance...`, 'info');
+      try {
+        const payload = {
+          volunteerId: volId,
+          fundingMode: 'pre_fund',
+          taskProofType: 'financial',
+          allowedBudget: budgetVal
+        };
+        const res = await apiCall(`/requests/${reqId}/family-approve`, 'PUT', payload);
+        if (res.ok && res.data.success) {
+          closeSelectVolunteerConfirmModal();
+          showToast(`✓ Task pre-funded! ₹${budgetVal} reserved from wallet. Volunteer assigned.`, 'success');
+          await fetchAndRenderCaregiverWalletWidget();
+          loadFamilyDashboard();
+          return;
+        } else if (res.data?.insufficientWalletBalance) {
+          // Fallback to payment page
+          window.location.href = `/payment.html?requestId=${reqId}&type=pre_fund&volunteerId=${volId}&itemsCost=${budgetVal}&serviceFee=${fee}&volunteerName=${encodeURIComponent(volName)}`;
+          return;
+        }
+      } catch (fundErr) {
+        console.warn('Wallet direct fund fallback:', fundErr);
+      }
+    }
 
     showToast(`Redirecting to pre-fund ₹${totalDep} (Budget: ₹${budgetVal} + Fee: ₹${fee})...`, 'info');
     closeSelectVolunteerConfirmModal();
