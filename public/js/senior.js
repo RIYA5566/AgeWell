@@ -29,6 +29,104 @@ window.openRequestWithCategory = function(category) {
   }
 };
 
+// ─── Senior Daily Vitality & Routine Tracker ─────────────────────────────────
+const SENIOR_DAILY_TIPS = [
+  "A gentle 10-minute morning walk in natural light strengthens bones and promotes healthy sleep.",
+  "Drinking 4 to 6 glasses of clean water daily helps maintain vitality, digestion, and sharp focus.",
+  "Taking a few deep, relaxed breaths before each meal aids digestion and relaxes the heart.",
+  "Staying in touch with caring neighbors and family brings happiness and peace of mind.",
+  "Simple arm and ankle stretches while seated help improve circulation and joint comfort."
+];
+
+function getTodayDateKey() {
+  const d = new Date();
+  return `senior_vitality_${d.getFullYear()}_${d.getMonth() + 1}_${d.getDate()}`;
+}
+
+window.initSeniorDailyVitality = function() {
+  // Set rotating daily tip based on day of month
+  const tipEl = document.getElementById('dailySeniorTip');
+  if (tipEl) {
+    const dayIndex = new Date().getDate() % SENIOR_DAILY_TIPS.length;
+    tipEl.textContent = `"${SENIOR_DAILY_TIPS[dayIndex]}"`;
+  }
+
+  // Load saved routine state for today
+  try {
+    const key = getTodayDateKey();
+    const saved = JSON.parse(localStorage.getItem(key)) || { glasses: 0, meds: false, walk: false };
+    
+    // Restore hydration glasses
+    window.currentHydrationCount = Number(saved.glasses || 0);
+    renderHydrationState();
+
+    // Restore checkboxes
+    const medsCheckbox = document.getElementById('routineMeds');
+    if (medsCheckbox) medsCheckbox.checked = !!saved.meds;
+
+    const walkCheckbox = document.getElementById('routineWalk');
+    if (walkCheckbox) walkCheckbox.checked = !!saved.walk;
+  } catch (e) {
+    window.currentHydrationCount = 0;
+  }
+};
+
+window.toggleHydrationGlass = function(glassNum) {
+  if (window.currentHydrationCount === glassNum) {
+    window.currentHydrationCount = glassNum - 1;
+  } else {
+    window.currentHydrationCount = glassNum;
+  }
+  renderHydrationState();
+  saveSeniorRoutineState();
+
+  // Play gentle chime when reaching full 4 glasses
+  if (window.currentHydrationCount === 4 && typeof playMessageNotificationSound === 'function') {
+    playMessageNotificationSound();
+  }
+};
+
+function renderHydrationState() {
+  const count = window.currentHydrationCount || 0;
+  const statusEl = document.getElementById('hydrationStatusText');
+  if (statusEl) {
+    statusEl.textContent = count === 4 ? '🎉 4 / 4 Complete!' : `${count} / 4 Glasses`;
+    statusEl.className = count === 4 ? 'text-[11px] font-black text-emerald-600' : 'text-[11px] font-extrabold text-sky-700';
+  }
+
+  for (let i = 1; i <= 4; i++) {
+    const glassBtn = document.getElementById(`waterGlass${i}`);
+    if (glassBtn) {
+      if (i <= count) {
+        glassBtn.className = 'py-2.5 rounded-xl bg-sky-500 text-white font-black text-xs transition-all active:scale-95 shadow-xs flex flex-col items-center gap-1 border border-sky-600 scale-102';
+        glassBtn.innerHTML = `
+          <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+          <span class="text-[10px]">Drunk</span>`;
+      } else {
+        glassBtn.className = 'py-2.5 rounded-xl bg-white border border-sky-200 text-sky-500 hover:border-sky-400 font-extrabold text-xs transition-all active:scale-95 shadow-2xs flex flex-col items-center gap-1';
+        glassBtn.innerHTML = `
+          <svg class="w-4 h-4 text-sky-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" /></svg>
+          <span class="text-[10px]">Glass ${i}</span>`;
+      }
+    }
+  }
+}
+
+window.saveSeniorRoutineState = function() {
+  try {
+    const key = getTodayDateKey();
+    const medsCheckbox = document.getElementById('routineMeds');
+    const walkCheckbox = document.getElementById('routineWalk');
+    
+    const state = {
+      glasses: window.currentHydrationCount || 0,
+      meds: medsCheckbox ? medsCheckbox.checked : false,
+      walk: walkCheckbox ? walkCheckbox.checked : false
+    };
+    localStorage.setItem(key, JSON.stringify(state));
+  } catch (e) {}
+};
+
 document.addEventListener('DOMContentLoaded', () => {
   // Validate authentication
   const auth = checkAuthAndRedirect('senior');
@@ -57,6 +155,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Initialize Voice Confirmation Assistant workflow
   initVoiceConfirmationAssistant();
+
+  // Initialize Senior Daily Vitality & Routine Tracker
+  initSeniorDailyVitality();
 
 
   // --- SOS Alert Logic ---

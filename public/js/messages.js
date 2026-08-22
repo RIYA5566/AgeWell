@@ -19,6 +19,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     return;
   }
 
+  // Pre-unlock AudioContext on user interaction
+  const unlockAudio = () => {
+    getUnlockedAudioContext();
+  };
+  window.addEventListener('click', unlockAudio, { once: true });
+  window.addEventListener('keydown', unlockAudio, { once: true });
+  window.addEventListener('touchstart', unlockAudio, { once: true });
+
   // Setup user info in header
   setupNavbarUserInfo();
 
@@ -602,51 +610,70 @@ async function handleSendMessageSubmit(e) {
   } catch (err) {
     console.error('Error sending message:', err);
     alert('Failed to send message. Please check your network connection.');
-  } finally {
-    if (btnSend) btnSend.disabled = false;
+// ─── Modern Message Notification Chime (Web Audio API with Autoplay Unlock) ─
+let globalAudioCtx = null;
+
+function getUnlockedAudioContext() {
+  if (!globalAudioCtx) {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (AudioCtx) {
+      globalAudioCtx = new AudioCtx();
+    }
   }
+  if (globalAudioCtx && globalAudioCtx.state === 'suspended') {
+    globalAudioCtx.resume().catch(() => {});
+  }
+  return globalAudioCtx;
 }
 
-// ─── Modern Message Notification Chime (Web Audio API) ──────────────────────
-function playMessageNotificationSound() {
+function playChimeTones(ctx) {
   try {
-    const AudioCtx = window.AudioContext || window.webkitAudioContext;
-    if (!AudioCtx) return;
-    const ctx = new AudioCtx();
-    if (ctx.state === 'suspended') {
-      ctx.resume().catch(() => {});
-    }
-
     const now = ctx.currentTime;
 
-    // Dual-tone Marimba Chime (Tone 1: 587.33 Hz - D5, Tone 2: 880 Hz - A5)
+    // Tone 1: Bright pleasant chime (659.25 Hz - E5)
     const osc1 = ctx.createOscillator();
     const gain1 = ctx.createGain();
-    osc1.type = 'sine';
-    osc1.frequency.setValueAtTime(587.33, now);
+    osc1.type = 'triangle';
+    osc1.frequency.setValueAtTime(659.25, now);
     gain1.gain.setValueAtTime(0, now);
-    gain1.gain.linearRampToValueAtTime(0.2, now + 0.02);
-    gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+    gain1.gain.linearRampToValueAtTime(0.4, now + 0.015);
+    gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
 
     osc1.connect(gain1);
     gain1.connect(ctx.destination);
     osc1.start(now);
-    osc1.stop(now + 0.35);
+    osc1.stop(now + 0.28);
 
+    // Tone 2: Harmonious high chime (987.77 Hz - B5)
     const osc2 = ctx.createOscillator();
     const gain2 = ctx.createGain();
     osc2.type = 'sine';
-    osc2.frequency.setValueAtTime(880, now + 0.08);
-    gain2.gain.setValueAtTime(0, now + 0.08);
-    gain2.gain.linearRampToValueAtTime(0.25, now + 0.10);
-    gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+    osc2.frequency.setValueAtTime(987.77, now + 0.07);
+    gain2.gain.setValueAtTime(0, now + 0.07);
+    gain2.gain.linearRampToValueAtTime(0.5, now + 0.085);
+    gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.42);
 
     osc2.connect(gain2);
     gain2.connect(ctx.destination);
-    osc2.start(now + 0.08);
-    osc2.stop(now + 0.45);
+    osc2.start(now + 0.07);
+    osc2.stop(now + 0.42);
+  } catch (e) {
+    console.warn('Tone synth error:', e);
+  }
+}
+
+function playMessageNotificationSound() {
+  try {
+    const ctx = getUnlockedAudioContext();
+    if (!ctx) return;
+
+    if (ctx.state === 'suspended') {
+      ctx.resume().then(() => playChimeTones(ctx)).catch(() => playChimeTones(ctx));
+    } else {
+      playChimeTones(ctx);
+    }
   } catch (err) {
-    // Non-fatal if audio context blocked before user interaction
+    console.warn('Audio notification warning:', err);
   }
 }
 
@@ -655,7 +682,7 @@ function handleIncomingSocketMessage(message) {
   if (!message || !message.conversationId) return;
 
   const myId = (currentUser._id || currentUser.id || '').toString();
-  const isFromOther = message.senderId?._id?.toString() !== myId;
+  const isFromOther = (message.senderId?._id || message.senderId || '').toString() !== myId;
 
   // Play notification chime for messages from other users
   if (isFromOther) {

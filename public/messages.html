@@ -61,7 +61,12 @@
       </div>
 
       <!-- User Profile Header & Status -->
-      <div class="flex items-center gap-3">
+      <div class="flex items-center gap-2.5 sm:gap-3">
+        <button type="button" onclick="playMessageNotificationSound()" class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs rounded-xl transition-all active:scale-95 flex items-center gap-1.5 cursor-pointer" title="Test Notification Chime">
+          <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" /></svg>
+          <span class="hidden sm:inline">Sound</span>
+        </button>
+
         <button type="button" onclick="openNewDirectChatModal()" class="px-3.5 py-1.5 bg-brand-600 hover:bg-brand-700 text-white font-extrabold text-xs rounded-xl shadow-xs transition-all active:scale-95 flex items-center gap-1.5 cursor-pointer">
           <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
           <span>New Chat</span>
@@ -313,7 +318,7 @@
     </div>
   </div>
 
-  <script src="/js/api.js?v=948"></script>
-  <script src="/js/messages.js?v=948"></script>
+  <script src="/js/api.js?v=949"></script>
+  <script src="/js/messages.js?v=949"></script>
 </body>
 </html>
