@@ -641,16 +641,20 @@
       <div class="flex flex-1 overflow-hidden">
         <!-- Sidebar -->
         <div class="w-44 sm:w-52 bg-slate-50 border-r border-slate-200 flex flex-col text-xs sm:text-sm font-bold text-slate-600">
-          <div class="p-4 cursor-pointer border-l-4 border-brand-600 bg-white text-brand-700 flex items-center gap-2.5 transition-all" id="rzpTabLinkUpi" onclick="switchRzpMockTab('upi')">
+          <div class="p-3.5 sm:p-4 cursor-pointer border-l-4 border-brand-600 bg-white text-brand-700 flex items-center gap-2.5 transition-all" id="rzpTabLinkUpi" onclick="switchRzpMockTab('upi')">
+            <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 013.75 9.375v-4.5zM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5zM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0113.5 9.375v-4.5zM13.5 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5z"/></svg>
             <span>UPI / QR</span>
           </div>
-          <div class="p-4 cursor-pointer border-l-4 border-transparent hover:bg-slate-100 flex items-center gap-2.5 transition-all" id="rzpTabLinkCard" onclick="switchRzpMockTab('card')">
+          <div class="p-3.5 sm:p-4 cursor-pointer border-l-4 border-transparent hover:bg-slate-100 flex items-center gap-2.5 transition-all" id="rzpTabLinkCard" onclick="switchRzpMockTab('card')">
+            <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-6.75 4.5h18a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0020.25 4.5H3.75A2.25 2.25 0 001.5 6.75v10.5A2.25 2.25 0 003.75 21z"/></svg>
             <span>Card</span>
           </div>
-          <div class="p-4 cursor-pointer border-l-4 border-transparent hover:bg-slate-100 flex items-center gap-2.5 transition-all" id="rzpTabLinkNet" onclick="switchRzpMockTab('net')">
+          <div class="p-3.5 sm:p-4 cursor-pointer border-l-4 border-transparent hover:bg-slate-100 flex items-center gap-2.5 transition-all" id="rzpTabLinkNet" onclick="switchRzpMockTab('net')">
+            <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.5M4.5 21V10.5M3 21h18M12 6.75h.008v.008H12V6.75z"/></svg>
             <span>Netbanking</span>
           </div>
-          <div class="p-4 cursor-pointer border-l-4 border-transparent hover:bg-slate-100 flex items-center gap-2.5 transition-all" id="rzpTabLinkWallet" onclick="switchRzpMockTab('wallet')">
+          <div class="p-3.5 sm:p-4 cursor-pointer border-l-4 border-transparent hover:bg-slate-100 flex items-center gap-2.5 transition-all" id="rzpTabLinkWallet" onclick="switchRzpMockTab('wallet')">
+            <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a2.25 2.25 0 00-2.25-2.25H15a3 3 0 11-6 0H5.25A2.25 2.25 0 003 12m18 0v6a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 18v-6m18 0V9M3 12V9m18 0a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 9m18 0V6a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 6v3"/></svg>
             <span>Wallets</span>
           </div>
         </div>
@@ -672,10 +676,30 @@
             <!-- UPI App Select Grid -->
             <div id="upiAppsContainer">
               <div class="grid grid-cols-2 gap-2.5 mb-4" id="rzpUpiAppGrid">
-                <button type="button" class="p-3 border-2 border-brand-600 bg-brand-50 rounded-xl text-brand-900 font-bold text-xs sm:text-sm text-left cursor-pointer transition-all shadow-2xs rzp-upi-btn" onclick="selectRzpMockUpiApp(this, 'gpay')">Google Pay</button>
-                <button type="button" class="p-3 border-2 border-slate-200 bg-white hover:bg-slate-50 rounded-xl text-slate-700 font-bold text-xs sm:text-sm text-left cursor-pointer transition-all shadow-2xs rzp-upi-btn" onclick="selectRzpMockUpiApp(this, 'phonepe')">PhonePe</button>
-                <button type="button" class="p-3 border-2 border-slate-200 bg-white hover:bg-slate-50 rounded-xl text-slate-700 font-bold text-xs sm:text-sm text-left cursor-pointer transition-all shadow-2xs rzp-upi-btn" onclick="selectRzpMockUpiApp(this, 'paytm')">Paytm UPI</button>
-                <button type="button" class="p-3 border-2 border-slate-200 bg-white hover:bg-slate-50 rounded-xl text-slate-700 font-bold text-xs sm:text-sm text-left cursor-pointer transition-all shadow-2xs rzp-upi-btn" onclick="selectRzpMockUpiApp(this, 'ybl')">BHIM UPI</button>
+                <button type="button" class="p-3 border-2 border-brand-600 bg-brand-50 rounded-2xl text-brand-900 font-bold text-xs sm:text-sm text-left cursor-pointer transition-all shadow-2xs rzp-upi-btn flex items-center gap-3" onclick="selectRzpMockUpiApp(this, 'gpay')">
+                  <div class="w-8 h-8 rounded-xl bg-white border border-slate-200 flex items-center justify-center flex-shrink-0 shadow-2xs">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24"><path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"/><path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"/><path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.98 0 12s.45 3.82 1.25 5.42l4.03-3.15z"/><path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/></svg>
+                  </div>
+                  <span class="font-bold">Google Pay</span>
+                </button>
+                <button type="button" class="p-3 border-2 border-slate-200 bg-white hover:bg-slate-50 rounded-2xl text-slate-700 font-bold text-xs sm:text-sm text-left cursor-pointer transition-all shadow-2xs rzp-upi-btn flex items-center gap-3" onclick="selectRzpMockUpiApp(this, 'phonepe')">
+                  <div class="w-8 h-8 rounded-xl bg-[#5f259f] flex items-center justify-center flex-shrink-0 shadow-2xs">
+                    <svg class="w-5 h-5" viewBox="0 0 48 48"><circle cx="24" cy="24" r="24" fill="#5f259f"/><path fill="#ffffff" d="M26.2 9.8h-4.9c-.4 0-.7.3-.7.7v1.8c0 .4.3.7.7.7h1.4v13.6c0 3.8 2.3 6.1 6.1 6.1h2.5c.4 0 .7-.3.7-.7v-1.8c0-.4-.3-.7-.7-.7h-2.1c-1.8 0-2.8-.9-2.8-2.9V13h4.4c.4 0 .7-.3.7-.7v-1.8c0-.4-.3-.7-.7-.7h-4.4v-4c0-.4-.3-.7-.7-.7h-2.1c-.4 0-.7.3-.7.7v4zM16.5 13h2.1c.4 0 .7-.3.7-.7v-1.8c0-.4-.3-.7-.7-.7h-4.9c-.4 0-.7.3-.7.7v27c0 .4.3.7.7.7h2.1c.4 0 .7-.3.7-.7v-9.6h2.8c4.8 0 8.3-3.4 8.3-7.5s-3.5-7.4-8.4-7.4zm0 12.3v-9.4h2.8c2.9 0 4.9 1.9 4.9 4.7s-2 4.7-4.9 4.7h-2.8z"/></svg>
+                  </div>
+                  <span class="font-bold">PhonePe</span>
+                </button>
+                <button type="button" class="p-3 border-2 border-slate-200 bg-white hover:bg-slate-50 rounded-2xl text-slate-700 font-bold text-xs sm:text-sm text-left cursor-pointer transition-all shadow-2xs rzp-upi-btn flex items-center gap-3" onclick="selectRzpMockUpiApp(this, 'paytm')">
+                  <div class="w-8 h-8 rounded-xl bg-[#002e6e] flex items-center justify-center flex-shrink-0 shadow-2xs">
+                    <svg class="w-6 h-4" viewBox="0 0 60 30" fill="none"><path d="M4 8h6c4 0 7 2.5 7 7s-3 7-7 7H4V8zm4 3.5v7h2c2 0 3.5-1.2 3.5-3.5s-1.5-3.5-3.5-3.5H8z" fill="#00b9f5"/><path d="M19 8h4.5v14H19V8zm6 0h4.5v4h4.5v3.5h-4.5v6.5H25V8z" fill="#ffffff"/><path d="M37 8l3 8 3-8h4.5l-6 15h-4l2-4-5.5-11H37z" fill="#00b9f5"/></svg>
+                  </div>
+                  <span class="font-bold">Paytm UPI</span>
+                </button>
+                <button type="button" class="p-3 border-2 border-slate-200 bg-white hover:bg-slate-50 rounded-2xl text-slate-700 font-bold text-xs sm:text-sm text-left cursor-pointer transition-all shadow-2xs rzp-upi-btn flex items-center gap-3" onclick="selectRzpMockUpiApp(this, 'ybl')">
+                  <div class="w-8 h-8 rounded-xl bg-white border border-slate-200 flex items-center justify-center flex-shrink-0 shadow-2xs">
+                    <svg class="w-5 h-5" viewBox="0 0 36 36"><path fill="#008444" d="M12 6l12 12-12 12z"/><path fill="#00a352" d="M12 6l6 12-6 12z"/><path fill="#f37021" d="M18 12l8 6-8 6z"/></svg>
+                  </div>
+                  <span class="font-bold">BHIM UPI</span>
+                </button>
               </div>
 
               <div class="mb-5">
@@ -749,10 +773,30 @@
           <div class="flex-1 flex-col" id="rzpPanelNet" style="display: none;">
             <div class="font-extrabold text-slate-900 text-sm mb-3" data-i18n="rzp_mock_net_title">Select Bank</div>
             <div class="grid grid-cols-2 gap-2.5 mb-4" id="rzpNetbankingGrid">
-              <button type="button" class="p-3 border-2 border-brand-600 bg-brand-50 rounded-xl text-brand-900 font-bold text-xs sm:text-sm text-left shadow-2xs rzp-bank-btn cursor-pointer" onclick="selectRzpMockBank(this, 'SBI')">State Bank of India</button>
-              <button type="button" class="p-3 border-2 border-slate-200 bg-white hover:bg-slate-50 rounded-xl text-slate-700 font-bold text-xs sm:text-sm text-left shadow-2xs rzp-bank-btn cursor-pointer" onclick="selectRzpMockBank(this, 'HDFC')">HDFC Bank</button>
-              <button type="button" class="p-3 border-2 border-slate-200 bg-white hover:bg-slate-50 rounded-xl text-slate-700 font-bold text-xs sm:text-sm text-left shadow-2xs rzp-bank-btn cursor-pointer" onclick="selectRzpMockBank(this, 'ICICI')">ICICI Bank</button>
-              <button type="button" class="p-3 border-2 border-slate-200 bg-white hover:bg-slate-50 rounded-xl text-slate-700 font-bold text-xs sm:text-sm text-left shadow-2xs rzp-bank-btn cursor-pointer" onclick="selectRzpMockBank(this, 'AXIS')">Axis Bank</button>
+              <button type="button" class="p-3 border-2 border-brand-600 bg-brand-50 rounded-2xl text-brand-900 font-bold text-xs sm:text-sm text-left shadow-2xs rzp-bank-btn cursor-pointer flex items-center gap-2.5" onclick="selectRzpMockBank(this, 'SBI')">
+                <div class="w-7 h-7 rounded-lg bg-[#00a1e0] flex items-center justify-center flex-shrink-0">
+                  <svg class="w-4 h-4" viewBox="0 0 48 48"><circle cx="24" cy="24" r="22" fill="#00a1e0"/><circle cx="24" cy="24" r="7" fill="#ffffff"/><rect x="22" y="24" width="4" height="14" fill="#ffffff"/></svg>
+                </div>
+                <span class="truncate">State Bank of India</span>
+              </button>
+              <button type="button" class="p-3 border-2 border-slate-200 bg-white hover:bg-slate-50 rounded-2xl text-slate-700 font-bold text-xs sm:text-sm text-left shadow-2xs rzp-bank-btn cursor-pointer flex items-center gap-2.5" onclick="selectRzpMockBank(this, 'HDFC')">
+                <div class="w-7 h-7 rounded-lg bg-[#004c8f] flex items-center justify-center flex-shrink-0">
+                  <svg class="w-4 h-4" viewBox="0 0 48 48"><rect width="48" height="48" rx="8" fill="#004c8f"/><rect x="14" y="14" width="20" height="20" fill="#ed232a"/><rect x="19" y="10" width="10" height="28" fill="#004c8f"/><rect x="10" y="19" width="28" height="10" fill="#004c8f"/><rect x="19" y="19" width="10" height="10" fill="#ffffff"/></svg>
+                </div>
+                <span class="truncate">HDFC Bank</span>
+              </button>
+              <button type="button" class="p-3 border-2 border-slate-200 bg-white hover:bg-slate-50 rounded-2xl text-slate-700 font-bold text-xs sm:text-sm text-left shadow-2xs rzp-bank-btn cursor-pointer flex items-center gap-2.5" onclick="selectRzpMockBank(this, 'ICICI')">
+                <div class="w-7 h-7 rounded-lg bg-[#b02a30] flex items-center justify-center flex-shrink-0">
+                  <svg class="w-4 h-4" viewBox="0 0 48 48"><circle cx="24" cy="24" r="22" fill="#b02a30"/><path fill="#f58220" d="M24 8c8.8 0 16 7.2 16 16s-7.2 16-16 16c-3.5 0-6.8-1.1-9.5-3.1l4.2-4.2C20.3 33.7 22.1 34 24 34c5.5 0 10-4.5 10-10s-4.5-10-10-10c-3.1 0-5.8 1.4-7.6 3.6l-4.5-4.5C14.7 9.9 19.1 8 24 8z"/><circle cx="24" cy="24" r="5" fill="#f58220"/></svg>
+                </div>
+                <span class="truncate">ICICI Bank</span>
+              </button>
+              <button type="button" class="p-3 border-2 border-slate-200 bg-white hover:bg-slate-50 rounded-2xl text-slate-700 font-bold text-xs sm:text-sm text-left shadow-2xs rzp-bank-btn cursor-pointer flex items-center gap-2.5" onclick="selectRzpMockBank(this, 'AXIS')">
+                <div class="w-7 h-7 rounded-lg bg-[#97144d] flex items-center justify-center flex-shrink-0">
+                  <svg class="w-4 h-4" viewBox="0 0 48 48"><rect width="48" height="48" rx="8" fill="#97144d"/><path fill="#ffffff" d="M24 10l12 28h-8l-4-9.3L20 38h-8z"/></svg>
+                </div>
+                <span class="truncate">Axis Bank</span>
+              </button>
             </div>
 
             <div class="mb-4">
@@ -778,10 +822,30 @@
           <div class="flex-1 flex-col" id="rzpPanelWallet" style="display: none;">
             <div class="font-extrabold text-slate-900 text-sm mb-3" data-i18n="rzp_mock_wallet_title">Select Wallet</div>
             <div class="grid grid-cols-2 gap-2.5 mb-4" id="rzpWalletGrid">
-              <button type="button" class="p-3.5 border-2 border-brand-600 bg-brand-50 rounded-xl text-brand-900 font-bold text-xs sm:text-sm text-left shadow-2xs rzp-wallet-btn cursor-pointer" onclick="selectRzpMockWallet(this, 'Paytm')">Paytm Wallet</button>
-              <button type="button" class="p-3.5 border-2 border-slate-200 bg-white hover:bg-slate-50 rounded-xl text-slate-700 font-bold text-xs sm:text-sm text-left shadow-2xs rzp-wallet-btn cursor-pointer" onclick="selectRzpMockWallet(this, 'PhonePe')">PhonePe Wallet</button>
-              <button type="button" class="p-3.5 border-2 border-slate-200 bg-white hover:bg-slate-50 rounded-xl text-slate-700 font-bold text-xs sm:text-sm text-left shadow-2xs rzp-wallet-btn cursor-pointer" onclick="selectRzpMockWallet(this, 'AmazonPay')">Amazon Pay</button>
-              <button type="button" class="p-3.5 border-2 border-slate-200 bg-white hover:bg-slate-50 rounded-xl text-slate-700 font-bold text-xs sm:text-sm text-left shadow-2xs rzp-wallet-btn cursor-pointer" onclick="selectRzpMockWallet(this, 'MobiKwik')">MobiKwik</button>
+              <button type="button" class="p-3.5 border-2 border-brand-600 bg-brand-50 rounded-2xl text-brand-900 font-bold text-xs sm:text-sm text-left shadow-2xs rzp-wallet-btn cursor-pointer flex items-center gap-2.5" onclick="selectRzpMockWallet(this, 'Paytm')">
+                <div class="w-7 h-7 rounded-lg bg-[#002e6e] flex items-center justify-center flex-shrink-0">
+                  <svg class="w-5 h-3.5" viewBox="0 0 60 30" fill="none"><path d="M4 8h6c4 0 7 2.5 7 7s-3 7-7 7H4V8zm4 3.5v7h2c2 0 3.5-1.2 3.5-3.5s-1.5-3.5-3.5-3.5H8z" fill="#00b9f5"/><path d="M19 8h4.5v14H19V8zm6 0h4.5v4h4.5v3.5h-4.5v6.5H25V8z" fill="#ffffff"/><path d="M37 8l3 8 3-8h4.5l-6 15h-4l2-4-5.5-11H37z" fill="#00b9f5"/></svg>
+                </div>
+                <span>Paytm Wallet</span>
+              </button>
+              <button type="button" class="p-3.5 border-2 border-slate-200 bg-white hover:bg-slate-50 rounded-2xl text-slate-700 font-bold text-xs sm:text-sm text-left shadow-2xs rzp-wallet-btn cursor-pointer flex items-center gap-2.5" onclick="selectRzpMockWallet(this, 'PhonePe')">
+                <div class="w-7 h-7 rounded-lg bg-[#5f259f] flex items-center justify-center flex-shrink-0">
+                  <svg class="w-4 h-4" viewBox="0 0 48 48"><circle cx="24" cy="24" r="24" fill="#5f259f"/><path fill="#ffffff" d="M26.2 9.8h-4.9c-.4 0-.7.3-.7.7v1.8c0 .4.3.7.7.7h1.4v13.6c0 3.8 2.3 6.1 6.1 6.1h2.5c.4 0 .7-.3.7-.7v-1.8c0-.4-.3-.7-.7-.7h-2.1c-1.8 0-2.8-.9-2.8-2.9V13h4.4c.4 0 .7-.3.7-.7v-1.8c0-.4-.3-.7-.7-.7h-4.4v-4c0-.4-.3-.7-.7-.7h-2.1c-.4 0-.7.3-.7.7v4zM16.5 13h2.1c.4 0 .7-.3.7-.7v-1.8c0-.4-.3-.7-.7-.7h-4.9c-.4 0-.7.3-.7.7v27c0 .4.3.7.7.7h2.1c.4 0 .7-.3.7-.7v-9.6h2.8c4.8 0 8.3-3.4 8.3-7.5s-3.5-7.4-8.4-7.4zm0 12.3v-9.4h2.8c2.9 0 4.9 1.9 4.9 4.7s-2 4.7-4.9 4.7h-2.8z"/></svg>
+                </div>
+                <span>PhonePe Wallet</span>
+              </button>
+              <button type="button" class="p-3.5 border-2 border-slate-200 bg-white hover:bg-slate-50 rounded-2xl text-slate-700 font-bold text-xs sm:text-sm text-left shadow-2xs rzp-wallet-btn cursor-pointer flex items-center gap-2.5" onclick="selectRzpMockWallet(this, 'AmazonPay')">
+                <div class="w-7 h-7 rounded-lg bg-[#232f3e] flex items-center justify-center flex-shrink-0">
+                  <svg class="w-4 h-4" viewBox="0 0 48 48"><rect width="48" height="48" rx="8" fill="#232f3e"/><path fill="#ff9900" d="M12 32c7 4 17 4 24 0 1-.5 2 .5 1.5 1.5-8 7-20 7-27 0-.5-1 .5-2 1.5-1.5z"/><path fill="#ff9900" d="M34.5 29c.5-1 2.5-.5 3.5 0 1 .5 1 2 .5 3-1 1-3 1-4-.5-.5-1-.5-2 0-2.5z"/></svg>
+                </div>
+                <span>Amazon Pay</span>
+              </button>
+              <button type="button" class="p-3.5 border-2 border-slate-200 bg-white hover:bg-slate-50 rounded-2xl text-slate-700 font-bold text-xs sm:text-sm text-left shadow-2xs rzp-wallet-btn cursor-pointer flex items-center gap-2.5" onclick="selectRzpMockWallet(this, 'MobiKwik')">
+                <div class="w-7 h-7 rounded-lg bg-[#0073e6] flex items-center justify-center flex-shrink-0">
+                  <svg class="w-4 h-4" viewBox="0 0 48 48"><rect width="48" height="48" rx="8" fill="#0073e6"/><circle cx="24" cy="24" r="14" fill="#ffffff"/><path fill="#0073e6" d="M18 16h4v16h-4zm8 0h4v16h-4z"/></svg>
+                </div>
+                <span>MobiKwik</span>
+              </button>
             </div>
 
             <div class="mb-5">

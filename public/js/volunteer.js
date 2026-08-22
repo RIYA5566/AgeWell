@@ -1179,11 +1179,11 @@ async function loadVolunteerRequests(silent = false) {
 
               actionBtnHtml = `
                 <div class="flex items-center gap-2 flex-wrap">
-                  <button class="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-brand-600 hover:bg-brand-700 text-white font-extrabold text-xs sm:text-sm rounded-2xl shadow-xs transition-all active:scale-95 border-none cursor-pointer" onclick="openVolunteerPayPurchaseModal('${req._id}')">
+                  <button type="button" data-action="open-pay-purchase" data-req-id="${req._id}" class="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-brand-600 hover:bg-brand-700 text-white font-extrabold text-xs sm:text-sm rounded-2xl shadow-xs transition-all active:scale-95 border-none cursor-pointer" onclick="event.stopPropagation(); openVolunteerPayPurchaseModal('${req._id}'); return false;">
                     <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z"/></svg>
                     <span>Pay for Purchase</span>
                   </button>
-                  <button class="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm rounded-2xl shadow-xs transition-all active:scale-95 border-none cursor-pointer" onclick="openCompletionModal('${req._id}')">
+                  <button type="button" class="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm rounded-2xl shadow-xs transition-all active:scale-95 border-none cursor-pointer" onclick="event.stopPropagation(); openCompletionModal('${req._id}'); return false;">
                     <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                     <span>Upload Proof &amp; Complete</span>
                   </button>
@@ -1298,11 +1298,11 @@ async function loadVolunteerRequests(silent = false) {
 
               actionBtnHtml = `
                 <div class="flex items-center gap-2 flex-wrap">
-                  <button class="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-brand-600 hover:bg-brand-700 text-white font-extrabold text-xs sm:text-sm rounded-2xl shadow-xs transition-all active:scale-95 border-none cursor-pointer" onclick="openVolunteerPayPurchaseModal('${req._id}')">
+                  <button type="button" data-action="open-pay-purchase" data-req-id="${req._id}" class="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-brand-600 hover:bg-brand-700 text-white font-extrabold text-xs sm:text-sm rounded-2xl shadow-xs transition-all active:scale-95 border-none cursor-pointer" onclick="event.stopPropagation(); openVolunteerPayPurchaseModal('${req._id}'); return false;">
                     <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z"/></svg>
                     <span>Pay for Purchase</span>
                   </button>
-                  <button class="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm rounded-2xl shadow-xs transition-all active:scale-95 border-none cursor-pointer" onclick="openCompletionModal('${req._id}')">
+                  <button type="button" class="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm rounded-2xl shadow-xs transition-all active:scale-95 border-none cursor-pointer" onclick="event.stopPropagation(); openCompletionModal('${req._id}'); return false;">
                     <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                     <span>Upload Proof &amp; Complete</span>
                   </button>
@@ -2321,7 +2321,7 @@ async function handlePurchaseCostSubmit(e) {
 // ─────────────────────────────────────────────────────────────────────────────
 // VOLUNTEER PAY FOR PURCHASE (PRE-FUNDED ESCROW MOCK GATEWAY)
 // ─────────────────────────────────────────────────────────────────────────────
-window.togglePayDestinationFields = function(destType) {
+function togglePayDestinationFields(destType) {
   const fUpiId = document.getElementById('destFieldUpiId');
   const fUpiQr = document.getElementById('destFieldUpiQr');
   const fLink = document.getElementById('destFieldPaymentLink');
@@ -2331,17 +2331,19 @@ window.togglePayDestinationFields = function(destType) {
   if (fUpiQr) fUpiQr.style.display = destType === 'upi_qr' ? 'block' : 'none';
   if (fLink) fLink.style.display = destType === 'payment_link' ? 'block' : 'none';
   if (fOrder) fOrder.style.display = destType === 'online_order' ? 'block' : 'none';
-};
+}
+window.togglePayDestinationFields = togglePayDestinationFields;
 
-window.togglePayProofOption = function(proofOption) {
+function togglePayProofOption(proofOption) {
   const uploadContainer = document.getElementById('payProofUploadContainer');
   const noReceiptContainer = document.getElementById('payNoReceiptReasonContainer');
 
   if (uploadContainer) uploadContainer.style.display = proofOption === 'has_receipt' ? 'block' : 'none';
   if (noReceiptContainer) noReceiptContainer.style.display = proofOption === 'no_receipt' ? 'block' : 'none';
-};
+}
+window.togglePayProofOption = togglePayProofOption;
 
-window.updatePaymentSummaryLive = function(amountVal) {
+function updatePaymentSummaryLive(amountVal) {
   const reqId = document.getElementById('payPurchaseRequestId')?.value;
   const req = (window.allVolunteerRequestsMap && window.allVolunteerRequestsMap[reqId]);
   const authorized = Number(req?.allowedBudget || 0);
@@ -2365,83 +2367,108 @@ window.updatePaymentSummaryLive = function(amountVal) {
   if (elPayRem) elPayRem.textContent = `₹${remaining}`;
   if (elPayAfter) elPayAfter.textContent = `₹${remainingAfter}`;
   if (btnText) btnText.textContent = costNum > 0 ? `Pay Merchant ₹${costNum}` : 'Pay Merchant';
-};
+}
+window.updatePaymentSummaryLive = updatePaymentSummaryLive;
 
-window.openVolunteerPayPurchaseModal = function(requestId) {
-  const modal = document.getElementById('volunteerPayPurchaseModal');
-  const reqIdInput = document.getElementById('payPurchaseRequestId');
-  const merchantInput = document.getElementById('payPurchaseMerchantInput');
-  const merchantTypeInput = document.getElementById('payPurchaseMerchantTypeInput');
-  const locationInput = document.getElementById('payPurchaseMerchantLocationInput');
-  const phoneInput = document.getElementById('payPurchaseMerchantPhoneInput');
-  const upiIdInput = document.getElementById('payUpiIdInput');
-  const qrFileInput = document.getElementById('payUpiQrFile');
-  const linkInput = document.getElementById('payPaymentLinkInput');
-  const orderInput = document.getElementById('payOrderLinkInput');
-  const itemNameInput = document.getElementById('payItemNameInput');
-  const quantityInput = document.getElementById('payQuantityInput');
-  const amountInput = document.getElementById('payPurchaseAmountInput');
-  const descInput = document.getElementById('payDescriptionInput');
-  const proofFileInput = document.getElementById('payPurchaseProofFile');
-  const noReceiptInput = document.getElementById('payNoReceiptReasonInput');
+function openVolunteerPayPurchaseModal(requestId) {
+  try {
+    const modal = document.getElementById('volunteerPayPurchaseModal');
+    if (!modal) {
+      console.error('volunteerPayPurchaseModal element not found');
+      return;
+    }
 
-  const authEl = document.getElementById('modalPayAuthBudget');
-  const spentEl = document.getElementById('modalPaySpentBudget');
-  const remEl = document.getElementById('modalPayRemainingBudget');
+    const reqIdInput = document.getElementById('payPurchaseRequestId');
+    const merchantInput = document.getElementById('payPurchaseMerchantInput');
+    const merchantTypeInput = document.getElementById('payPurchaseMerchantTypeInput');
+    const locationInput = document.getElementById('payPurchaseMerchantLocationInput');
+    const phoneInput = document.getElementById('payPurchaseMerchantPhoneInput');
+    const upiIdInput = document.getElementById('payUpiIdInput');
+    const qrFileInput = document.getElementById('payUpiQrFile');
+    const linkInput = document.getElementById('payPaymentLinkInput');
+    const orderInput = document.getElementById('payOrderLinkInput');
+    const itemNameInput = document.getElementById('payItemNameInput');
+    const quantityInput = document.getElementById('payQuantityInput');
+    const amountInput = document.getElementById('payPurchaseAmountInput');
+    const descInput = document.getElementById('payDescriptionInput');
+    const proofFileInput = document.getElementById('payPurchaseProofFile');
+    const noReceiptInput = document.getElementById('payNoReceiptReasonInput');
 
-  if (reqIdInput) reqIdInput.value = requestId || '';
-  if (merchantInput) merchantInput.value = '';
-  if (merchantTypeInput) merchantTypeInput.value = 'Pharmacy';
-  if (locationInput) locationInput.value = '';
-  if (phoneInput) phoneInput.value = '';
-  if (upiIdInput) upiIdInput.value = '';
-  if (qrFileInput) qrFileInput.value = '';
-  if (linkInput) linkInput.value = '';
-  if (orderInput) orderInput.value = '';
-  if (quantityInput) quantityInput.value = '1';
-  if (amountInput) amountInput.value = '';
-  if (descInput) descInput.value = '';
-  if (proofFileInput) proofFileInput.value = '';
-  if (noReceiptInput) noReceiptInput.value = '';
+    const authEl = document.getElementById('modalPayAuthBudget');
+    const spentEl = document.getElementById('modalPaySpentBudget');
+    const remEl = document.getElementById('modalPayRemainingBudget');
 
-  const req = (window.allVolunteerRequestsMap && window.allVolunteerRequestsMap[requestId]);
-  if (itemNameInput) itemNameInput.value = req?.title || '';
+    if (reqIdInput) reqIdInput.value = requestId || '';
+    if (merchantInput) merchantInput.value = '';
+    if (merchantTypeInput) merchantTypeInput.value = 'Pharmacy';
+    if (locationInput) locationInput.value = '';
+    if (phoneInput) phoneInput.value = '';
+    if (upiIdInput) upiIdInput.value = '';
+    if (qrFileInput) qrFileInput.value = '';
+    if (linkInput) linkInput.value = '';
+    if (orderInput) orderInput.value = '';
+    if (quantityInput) quantityInput.value = '1';
+    if (amountInput) amountInput.value = '';
+    if (descInput) descInput.value = '';
+    if (proofFileInput) proofFileInput.value = '';
+    if (noReceiptInput) noReceiptInput.value = '';
 
-  const authorized = Number(req?.allowedBudget || 0);
-  let spent = 0;
-  if (req?.merchantPurchases && req.merchantPurchases.length > 0) {
-    spent = req.merchantPurchases.reduce((s, p) => s + (Number(p.amount) || 0), 0);
-  } else if (req?.fundingMode !== 'pre_fund' && req?.actualPurchaseCost) {
-    spent = Number(req.actualPurchaseCost);
+    const req = (window.allVolunteerRequestsMap && window.allVolunteerRequestsMap[requestId]);
+    if (itemNameInput) itemNameInput.value = req?.title || '';
+
+    const authorized = Number(req?.allowedBudget || 0);
+    let spent = 0;
+    if (req?.merchantPurchases && req.merchantPurchases.length > 0) {
+      spent = req.merchantPurchases.reduce((s, p) => s + (Number(p.amount) || 0), 0);
+    } else if (req?.fundingMode !== 'pre_fund' && req?.actualPurchaseCost) {
+      spent = Number(req.actualPurchaseCost);
+    }
+    const remaining = authorized > 0 ? Math.max(0, authorized - spent) : Infinity;
+
+    if (authEl) authEl.textContent = `₹${authorized}`;
+    if (spentEl) spentEl.textContent = `₹${spent}`;
+    if (remEl) remEl.textContent = `₹${authorized > 0 ? remaining : 'No Limit'}`;
+
+    if (amountInput && authorized > 0) {
+      amountInput.max = remaining > 0 ? remaining : authorized;
+    }
+
+    // Set default radio selections
+    const defaultDestRadio = document.querySelector('input[name="payDestinationType"][value="upi_id"]');
+    if (defaultDestRadio) defaultDestRadio.checked = true;
+    togglePayDestinationFields('upi_id');
+
+    const defaultProofRadio = document.querySelector('input[name="payProofOption"][value="has_receipt"]');
+    if (defaultProofRadio) defaultProofRadio.checked = true;
+    togglePayProofOption('has_receipt');
+
+    updatePaymentSummaryLive(0);
+
+    modal.style.display = 'flex';
+  } catch (err) {
+    console.error('Error opening volunteer pay purchase modal:', err);
+    const modal = document.getElementById('volunteerPayPurchaseModal');
+    if (modal) modal.style.display = 'flex';
   }
-  const remaining = authorized > 0 ? Math.max(0, authorized - spent) : Infinity;
+}
+window.openVolunteerPayPurchaseModal = openVolunteerPayPurchaseModal;
 
-  if (authEl) authEl.textContent = `₹${authorized}`;
-  if (spentEl) spentEl.textContent = `₹${spent}`;
-  if (remEl) remEl.textContent = `₹${authorized > 0 ? remaining : 'No Limit'}`;
-
-  if (amountInput && authorized > 0) {
-    amountInput.max = remaining > 0 ? remaining : authorized;
-  }
-
-  // Set default radio selections
-  const defaultDestRadio = document.querySelector('input[name="payDestinationType"][value="upi_id"]');
-  if (defaultDestRadio) defaultDestRadio.checked = true;
-  togglePayDestinationFields('upi_id');
-
-  const defaultProofRadio = document.querySelector('input[name="payProofOption"][value="has_receipt"]');
-  if (defaultProofRadio) defaultProofRadio.checked = true;
-  togglePayProofOption('has_receipt');
-
-  updatePaymentSummaryLive(0);
-
-  if (modal) modal.style.display = 'flex';
-};
-
-window.closeVolunteerPayPurchaseModal = function() {
+function closeVolunteerPayPurchaseModal() {
   const modal = document.getElementById('volunteerPayPurchaseModal');
   if (modal) modal.style.display = 'none';
-};
+}
+window.closeVolunteerPayPurchaseModal = closeVolunteerPayPurchaseModal;
+
+// Event Delegation for Guaranteed Triggering
+document.addEventListener('click', function(e) {
+  const btn = e.target && e.target.closest ? e.target.closest('[data-action="open-pay-purchase"]') : null;
+  if (btn) {
+    e.preventDefault();
+    e.stopPropagation();
+    const reqId = btn.getAttribute('data-req-id');
+    if (reqId) openVolunteerPayPurchaseModal(reqId);
+  }
+});
 
 window.handleVolunteerPayPurchaseSubmit = async function(e) {
   e.preventDefault();

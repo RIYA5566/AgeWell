@@ -1476,10 +1476,31 @@ function renderCompletionVerificationQueue(pendingVerifications) {
       );
       const isServiceOnlyVerif = proofType === 'service_only' || (proofType === 'mixed' && !req.volunteerDeclaredPurchase);
 
-      let finalImages = req.finalReceiptDocs && req.finalReceiptDocs.length > 0 
-        ? req.finalReceiptDocs 
-        : (req.completionProof ? [req.completionProof] : []);
-      let proofSlider = renderProofSliderHtml(req._id, finalImages);
+      // Gather all merchant bills / receipts / QR codes that are already displayed in store/merchant sections
+      const alreadyDisplayedDocs = new Set(
+        (req.merchantPurchases || [])
+          .map(p => p.receiptDoc ? normalizeDocUrl(p.receiptDoc) : null)
+          .concat([
+            req.merchantDetails?.upiQrImage ? normalizeDocUrl(req.merchantDetails.upiQrImage) : null,
+            req.purchaseProofDoc ? normalizeDocUrl(req.purchaseProofDoc) : null
+          ])
+          .concat((req.purchaseProofDocs || []).map(normalizeDocUrl))
+          .filter(Boolean)
+      );
+
+      let rawFinalImages = (req.deliveryProofDocs && req.deliveryProofDocs.length > 0)
+        ? req.deliveryProofDocs
+        : (req.finalReceiptDocs && req.finalReceiptDocs.length > 0
+            ? req.finalReceiptDocs
+            : (req.completionProof ? [req.completionProof] : []));
+
+      // Only include explicit delivery photos that were not already shown as store receipts
+      let finalImages = rawFinalImages
+        .filter(Boolean)
+        .map(normalizeDocUrl)
+        .filter(img => img && img.length > 1 && !alreadyDisplayedDocs.has(img));
+
+      let proofSlider = finalImages.length > 0 ? renderProofSliderHtml(req._id, finalImages, 'Delivery & Handover Photo') : '';
 
       if (isServiceOnlyVerif) {
         // ── SERVICE-ONLY: gate on whether service fee was pre-paid ──────────────
@@ -2202,7 +2223,7 @@ function normalizeDocUrl(rawUrl) {
 window.proofSliderData = window.proofSliderData || {};
 window.proofSliderIndex = window.proofSliderIndex || {};
 
-function renderProofSliderHtml(reqId, rawImages) {
+function renderProofSliderHtml(reqId, rawImages, titleLabel = 'Delivery & Handover Photo Proof') {
   if (!rawImages || rawImages.length === 0) return '';
 
   const images = Array.from(new Set(
@@ -2229,7 +2250,7 @@ function renderProofSliderHtml(reqId, rawImages) {
         </div>
         <div class="min-w-0">
           <span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">Attached Photo Proof</span>
-          <span class="text-xs sm:text-sm font-extrabold text-slate-800 truncate block">Store Receipt &amp; Delivery Proof</span>
+          <span class="text-xs sm:text-sm font-extrabold text-slate-800 truncate block">${escapeHTML(titleLabel)}</span>
           <span class="text-[11px] text-slate-500 font-semibold block">${count} photo${count > 1 ? 's' : ''} uploaded</span>
         </div>
       </div>
@@ -2746,11 +2767,29 @@ function renderAllRequests(requests) {
         </div>`;
     }
 
-    let finalImages = req.finalReceiptDocs && req.finalReceiptDocs.length > 0 
-      ? req.finalReceiptDocs 
-      : (req.completionProof ? [req.completionProof] : []);
+    const allReqAlreadyDisplayedDocs = new Set(
+      (req.merchantPurchases || [])
+        .map(p => p.receiptDoc ? normalizeDocUrl(p.receiptDoc) : null)
+        .concat([
+          req.merchantDetails?.upiQrImage ? normalizeDocUrl(req.merchantDetails.upiQrImage) : null,
+          req.purchaseProofDoc ? normalizeDocUrl(req.purchaseProofDoc) : null
+        ])
+        .concat((req.purchaseProofDocs || []).map(normalizeDocUrl))
+        .filter(Boolean)
+    );
 
-    let proofSlider = renderProofSliderHtml(req._id, finalImages);
+    let rawAllReqFinalImages = (req.deliveryProofDocs && req.deliveryProofDocs.length > 0)
+      ? req.deliveryProofDocs
+      : (req.finalReceiptDocs && req.finalReceiptDocs.length > 0
+          ? req.finalReceiptDocs
+          : (req.completionProof ? [req.completionProof] : []));
+
+    let finalImages = rawAllReqFinalImages
+      .filter(Boolean)
+      .map(normalizeDocUrl)
+      .filter(img => img && img.length > 1 && !allReqAlreadyDisplayedDocs.has(img));
+
+    let proofSlider = finalImages.length > 0 ? renderProofSliderHtml(req._id, finalImages, 'Delivery & Handover Photo') : '';
     let proofHtml = proofSlider ? `
       <div class="mt-3 p-3 bg-slate-50 border border-slate-200/70 rounded-2xl">
         <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">${t('fd_uploaded_proof')}</label>

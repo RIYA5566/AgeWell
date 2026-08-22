@@ -879,24 +879,13 @@ exports.completeRequest = async (req, res) => {
       }
       request.finalReceiptDoc = `/uploads/proofs/${uniqueFiles[0].filename}`;
       request.completionProof = `/uploads/proofs/${uniqueFiles[0].filename}`;
+      request.deliveryProofDocs = uniqueFiles.map(f => `/uploads/proofs/${f.filename}`);
       request.finalReceiptDocs = uniqueFiles.map(f => `/uploads/proofs/${f.filename}`);
     } else if (req.file) {
       request.finalReceiptDoc = `/uploads/proofs/${req.file.filename}`;
       request.completionProof = `/uploads/proofs/${req.file.filename}`;
+      request.deliveryProofDocs = [`/uploads/proofs/${req.file.filename}`];
       request.finalReceiptDocs = [`/uploads/proofs/${req.file.filename}`];
-    } else if (!request.finalReceiptDoc && hasPriorProof) {
-      if (request.purchaseProofDocs && request.purchaseProofDocs.length > 0) {
-        request.finalReceiptDoc = request.purchaseProofDocs[0];
-        request.completionProof = request.purchaseProofDocs[0];
-        request.finalReceiptDocs = request.purchaseProofDocs;
-      } else if (request.merchantPurchases && request.merchantPurchases.length > 0) {
-        const withDoc = request.merchantPurchases.find(p => p.receiptDoc);
-        if (withDoc) {
-          request.finalReceiptDoc = withDoc.receiptDoc;
-          request.completionProof = withDoc.receiptDoc;
-          request.finalReceiptDocs = request.merchantPurchases.filter(p => p.receiptDoc).map(p => p.receiptDoc);
-        }
-      }
     }
 
     const seniorId = request.senior._id || request.senior;
