@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="/css/style.css?v=900">
+  <link rel="stylesheet" href="/css/style.css?v=944">
   <script src="/js/i18n.js?v=421"></script>
 
   <!-- Tailwind CSS CDN -->
@@ -206,17 +206,26 @@
       <!-- Language Switcher Container -->
       <div class="accessibility-panel flex flex-wrap items-center gap-2 bg-slate-50 rounded-2xl p-1.5 border border-slate-200/70 text-xs" role="region" aria-label="Language Controls"></div>
 
-      <!-- User Nav info, Wallet Link and Logout -->
-      <div class="flex items-center gap-2.5 sm:gap-3 flex-wrap justify-end">
-        <button type="button" onclick="openEarningsModal()" class="px-3.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-200/80 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 shadow-2xs no-underline active:scale-95 cursor-pointer">
+      <!-- User Nav info, Wallet Link, Messages and Logout -->
+      <div class="flex items-center gap-2 sm:gap-2.5 flex-nowrap flex-shrink-0">
+        <!-- Messages Link -->
+        <a href="/messages.html" class="px-3.5 py-2 text-brand-700 font-bold text-xs sm:text-sm bg-brand-50 hover:bg-brand-100 border border-brand-200 rounded-xl transition-all active:scale-95 shadow-xs flex items-center gap-1.5 no-underline whitespace-nowrap cursor-pointer relative" title="Open Real-Time Messages">
+          <svg class="w-4 h-4 text-brand-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a.75.75 0 01-1.074-.865 5.25 5.25 0 001.026-2.613C3.96 16.05 3 14.14 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" />
+          </svg>
+          <span>Messages</span>
+          <span id="navChatUnreadBadge" class="hidden px-1.5 py-0.2 bg-rose-500 text-white rounded-full text-[10px] font-black shadow-xs">0</span>
+        </a>
+
+        <button type="button" onclick="openEarningsModal()" class="px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-200/80 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 shadow-2xs no-underline active:scale-95 cursor-pointer whitespace-nowrap">
           <svg class="w-3.5 h-3.5 text-emerald-600" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
           <span>Wallet: <strong id="headerWalletBal">₹0</strong></span>
         </button>
-        <div class="flex items-center gap-2 bg-brand-50 border border-brand-200/80 rounded-xl px-3.5 py-1.5">
+        <div class="flex items-center gap-2 bg-brand-50 border border-brand-200/80 rounded-xl px-3.5 py-2 whitespace-nowrap">
           <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
           <span class="text-xs sm:text-sm font-extrabold text-brand-900" id="navUserName">Hello, Volunteer</span>
         </div>
-        <button id="btnLogout" class="px-3.5 py-1.5 text-brand-700 font-bold text-xs sm:text-sm bg-brand-50 hover:bg-brand-100 border border-brand-200/80 rounded-xl transition-all active:scale-95 shadow-xs flex items-center gap-1.5 cursor-pointer">
+        <button id="btnLogout" class="px-3.5 py-2 text-brand-700 font-bold text-xs sm:text-sm bg-brand-50 hover:bg-brand-100 border border-brand-200 rounded-xl transition-all active:scale-95 shadow-xs flex items-center gap-1.5 cursor-pointer whitespace-nowrap">
           <svg class="w-4 h-4 text-brand-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
           </svg>
@@ -1921,7 +1930,7 @@
   </footer>
 
   <!-- Scripts -->
-  <script src="/js/api.js?v=930"></script>
-  <script src="/js/volunteer.js?v=940"></script>
+  <script src="/js/api.js?v=948"></script>
+  <script src="/js/volunteer.js?v=943"></script>
 </body>
 </html>

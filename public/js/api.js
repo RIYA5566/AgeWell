@@ -193,9 +193,9 @@ document.addEventListener('DOMContentLoaded', () => {
     langWrapper.className = 'lang-switcher';
     const hasTextSizeButtons = document.getElementById('btnTextIncrease') !== null;
     if (hasTextSizeButtons) {
-      langWrapper.style.cssText = 'display: inline-flex; gap: 8px; margin-left: 15px; align-items: center; border-left: 2px solid rgba(148, 163, 184, 0.3); padding-left: 12px;';
+      langWrapper.style.cssText = 'display: inline-flex; gap: 4px; margin-left: 8px; align-items: center; border-left: 2px solid rgba(148, 163, 184, 0.3); padding-left: 8px; flex-shrink: 0; flex-wrap: nowrap; white-space: nowrap;';
     } else {
-      langWrapper.style.cssText = 'display: inline-flex; gap: 8px; align-items: center;';
+      langWrapper.style.cssText = 'display: inline-flex; gap: 4px; align-items: center; flex-shrink: 0; flex-wrap: nowrap; white-space: nowrap;';
     }
     
     // Globe icon indicator for language switcher
@@ -535,3 +535,80 @@ function awConfirm({ title = 'Are you sure?', message = '', confirmText = 'Confi
     document.addEventListener('keydown', onKey);
   });
 }
+
+/* =============================================================
+/* =============================================================
+   Real-Time Chat Unread Badge Poller & Notification Chime
+   ============================================================= */
+let lastKnownUnreadCount = 0;
+
+function playMessageNotificationSound() {
+  try {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtx) return;
+    const ctx = new AudioCtx();
+    if (ctx.state === 'suspended') {
+      ctx.resume().catch(() => {});
+    }
+
+    const now = ctx.currentTime;
+    const osc1 = ctx.createOscillator();
+    const gain1 = ctx.createGain();
+    osc1.type = 'sine';
+    osc1.frequency.setValueAtTime(587.33, now);
+    gain1.gain.setValueAtTime(0, now);
+    gain1.gain.linearRampToValueAtTime(0.18, now + 0.02);
+    gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+
+    osc1.connect(gain1);
+    gain1.connect(ctx.destination);
+    osc1.start(now);
+    osc1.stop(now + 0.35);
+
+    const osc2 = ctx.createOscillator();
+    const gain2 = ctx.createGain();
+    osc2.type = 'sine';
+    osc2.frequency.setValueAtTime(880, now + 0.08);
+    gain2.gain.setValueAtTime(0, now + 0.08);
+    gain2.gain.linearRampToValueAtTime(0.22, now + 0.10);
+    gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+
+    osc2.connect(gain2);
+    gain2.connect(ctx.destination);
+    osc2.start(now + 0.08);
+    osc2.stop(now + 0.45);
+  } catch (e) {}
+}
+
+async function updateNavChatUnreadBadge() {
+  const badge = document.getElementById('navChatUnreadBadge');
+  const user = JSON.parse(localStorage.getItem('user'));
+  if (!user) return;
+
+  try {
+    const res = await apiCall('/chat/unread-count', 'GET');
+    if (res && res.ok && res.data) {
+      const count = Number(res.data.unreadCount || 0);
+      if (badge) {
+        if (count > 0) {
+          badge.textContent = count;
+          badge.classList.remove('hidden');
+        } else {
+          badge.classList.add('hidden');
+        }
+      }
+      if (count > lastKnownUnreadCount && lastKnownUnreadCount !== 0 && !window.location.pathname.includes('messages')) {
+        playMessageNotificationSound();
+      }
+      lastKnownUnreadCount = count;
+    }
+  } catch (e) {}
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  updateNavChatUnreadBadge();
+  setInterval(updateNavChatUnreadBadge, 15000);
+});
+window.updateNavChatUnreadBadge = updateNavChatUnreadBadge;
+window.playMessageNotificationSound = playMessageNotificationSound;
+

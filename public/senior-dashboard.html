@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="/css/style.css?v=900">
+  <link rel="stylesheet" href="/css/style.css?v=944">
   <script src="/js/i18n.js?v=421"></script>
 
   <!-- Tailwind CSS CDN -->
@@ -159,24 +159,34 @@
       </div>
 
       <!-- Text Sizing and Accessibility Panel -->
-      <div class="accessibility-panel flex flex-wrap items-center gap-3 bg-slate-50 rounded-xl p-1.5 border border-slate-200/60 text-sm" role="region" aria-label="Accessibility Sizing Controls">
-        <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider px-1.5" data-i18n="nav_text_size">Text Size</span>
-        <button id="btnTextDecrease" class="bg-white hover:bg-slate-100 text-slate-700 font-bold w-8 h-8 rounded-lg border border-slate-200 transition-all flex items-center justify-center text-xs active:scale-95 shadow-xs" aria-label="Make text smaller">-A</button>
-        <button id="btnTextReset" class="bg-white hover:bg-slate-100 text-slate-700 font-semibold px-2.5 h-8 rounded-lg border border-slate-200 transition-all flex items-center justify-center text-xs active:scale-95 shadow-xs" aria-label="Reset text size to normal" data-i18n="nav_reset">Reset</button>
-        <button id="btnTextIncrease" class="bg-white hover:bg-slate-100 text-slate-700 font-bold w-8 h-8 rounded-lg border border-slate-200 transition-all flex items-center justify-center text-xs active:scale-95 shadow-xs" aria-label="Make text larger">+A</button>
-        <span id="fontSizeIndicator" class="bg-brand-600 text-white font-bold px-2 py-1 rounded-lg text-xs shadow-xs ml-1">18px</span>
+      <div class="accessibility-panel flex flex-nowrap items-center gap-2 bg-slate-50 rounded-xl p-1.5 border border-slate-200/60 text-xs sm:text-sm whitespace-nowrap flex-shrink-0" role="region" aria-label="Accessibility Sizing Controls">
+        <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider px-1" data-i18n="nav_text_size">Text Size</span>
+        <button id="btnTextDecrease" class="bg-white hover:bg-slate-100 text-slate-700 font-bold w-7 h-7 sm:w-8 sm:h-8 rounded-lg border border-slate-200 transition-all flex items-center justify-center text-xs active:scale-95 shadow-xs" aria-label="Make text smaller">-A</button>
+        <button id="btnTextReset" class="bg-white hover:bg-slate-100 text-slate-700 font-semibold px-2 h-7 sm:h-8 rounded-lg border border-slate-200 transition-all flex items-center justify-center text-xs active:scale-95 shadow-xs" aria-label="Reset text size to normal" data-i18n="nav_reset">Reset</button>
+        <button id="btnTextIncrease" class="bg-white hover:bg-slate-100 text-slate-700 font-bold w-7 h-7 sm:w-8 sm:h-8 rounded-lg border border-slate-200 transition-all flex items-center justify-center text-xs active:scale-95 shadow-xs" aria-label="Make text larger">+A</button>
+        <span id="fontSizeIndicator" class="bg-brand-600 text-white font-bold px-2 py-0.5 rounded-lg text-xs shadow-xs">18px</span>
       </div>
 
       <!-- User Nav info and Logout -->
-      <div class="flex items-center gap-3 sm:gap-4">
-        <div class="flex items-center gap-2 bg-brand-50 border border-brand-200/80 rounded-xl px-3.5 py-1.5">
+      <div class="flex items-center gap-2 sm:gap-2.5 flex-nowrap flex-shrink-0">
+        <!-- Messages Link -->
+        <a href="/messages.html" class="px-3.5 py-2 text-brand-700 font-bold text-sm bg-brand-50 hover:bg-brand-100 border border-brand-200 rounded-xl transition-all active:scale-95 shadow-xs flex items-center gap-1.5 no-underline whitespace-nowrap cursor-pointer relative" title="Open Real-Time Messages">
+          <svg class="w-4 h-4 text-brand-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a.75.75 0 01-1.074-.865 5.25 5.25 0 001.026-2.613C3.96 16.05 3 14.14 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" />
+          </svg>
+          <span>Messages</span>
+          <span id="navChatUnreadBadge" class="hidden px-1.5 py-0.2 bg-rose-500 text-white rounded-full text-[10px] font-black shadow-xs">0</span>
+        </a>
+
+        <div class="flex items-center gap-2 bg-brand-50 border border-brand-200/80 rounded-xl px-3.5 py-2 whitespace-nowrap">
           <span class="text-sm font-extrabold text-brand-900" id="navUserName">Hello, Senior Citizen</span>
         </div>
-        <button id="btnLogout" class="px-4 py-2 text-brand-700 font-bold text-sm bg-brand-50 hover:bg-brand-100 border border-brand-200 rounded-xl transition-all active:scale-95 shadow-xs flex items-center gap-1.5">
+
+        <button id="btnLogout" class="px-3.5 py-2 text-brand-700 font-bold text-sm bg-brand-50 hover:bg-brand-100 border border-brand-200 rounded-xl transition-all active:scale-95 shadow-xs flex items-center gap-1.5 whitespace-nowrap cursor-pointer">
           <svg class="w-4 h-4 text-brand-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
           </svg>
-          Log Out
+          <span class="hidden sm:inline">Log Out</span>
         </button>
       </div>
     </div>
@@ -930,7 +940,7 @@
 
   <!-- Scripts -->
   <script src="/js/i18n.js?v=423"></script>
-  <script src="/js/api.js?v=930"></script>
+  <script src="/js/api.js?v=948"></script>
   <script src="/js/senior.js?v=900"></script>
 </body>
 </html>
