@@ -102,6 +102,11 @@ exports.getUserConversations = async (req, res) => {
       } else if (req.user.role === 'family') {
         if (req.user.linkedSenior) {
           userTasks = await HelpRequest.find({ senior: req.user.linkedSenior }).select('_id');
+        } else if (req.user.seniorEmail) {
+          const linkedSeniorUser = await User.findOne({ email: req.user.seniorEmail, role: 'senior' }).select('_id');
+          if (linkedSeniorUser) {
+            userTasks = await HelpRequest.find({ senior: linkedSeniorUser._id }).select('_id');
+          }
         }
       }
       

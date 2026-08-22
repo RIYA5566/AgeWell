@@ -610,6 +610,11 @@ async function handleSendMessageSubmit(e) {
   } catch (err) {
     console.error('Error sending message:', err);
     alert('Failed to send message. Please check your network connection.');
+  } finally {
+    if (btnSend) btnSend.disabled = false;
+  }
+}
+
 // ─── Modern Message Notification Chime (Web Audio API with Autoplay Unlock) ─
 let globalAudioCtx = null;
 
