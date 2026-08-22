@@ -110,7 +110,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const meRes = await apiCall('/auth/me', 'GET');
     if (meRes && meRes.data && meRes.data.user) {
       currentVolunteerUser = meRes.data.user;
-      localStorage.setItem('user', JSON.stringify(resDataUser(meRes.data.user)));
+      localStorage.setItem('user', JSON.stringify(meRes.data.user));
       if (welcomeTitle) {
         welcomeTitle.textContent = `Welcome back, ${currentVolunteerUser.name || 'Volunteer'}!`;
       }
@@ -192,7 +192,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (res.ok && res.data && res.data.user) {
         showToast('KYC Documents submitted! Admin & Police clearance is now pending review.', 'success');
         currentVolunteerUser = res.data.user;
-        localStorage.setItem('user', JSON.stringify(resDataUser(res.data.user)));
+        localStorage.setItem('user', JSON.stringify(res.data.user));
         renderKycStatus(res.data.user);
         closeKycModal();
       } else {
@@ -545,6 +545,234 @@ function renderKycStatus(user) {
   }
 }
 
+// Render dynamic Care Champion Impact sidebar card
+async function renderRatingProfileCard(user) {
+  const u = user || currentVolunteerUser || JSON.parse(localStorage.getItem('user'));
+  if (!u) return;
+  const volId = u._id || u.id;
+  
+  const ratingEl = document.getElementById('sideRatingVal');
+  const tasksEl = document.getElementById('sideCompletedTasks');
+  const tierBadgeEl = document.getElementById('sideBadgeTier');
+  const milestoneLabelEl = document.getElementById('sideMilestoneLabel');
+  const milestoneBarEl = document.getElementById('sideMilestoneBar');
+  const milestoneSubEl = document.getElementById('sideMilestoneSub');
+  const skillsContainer = document.getElementById('sideSkillsPills');
+
+  let stats = {
+    reviewsCount: 0,
+    tasksCompleted: 0,
+    overallRating: 5.0
+  };
+
+  if (volId) {
+    try {
+      const statsRes = await apiCall(`/auth/volunteer-stats/${volId}`, 'GET');
+      if (statsRes && statsRes.ok && statsRes.data && statsRes.data.stats) {
+        stats = statsRes.data.stats;
+      }
+    } catch (e) {
+      console.warn('Could not fetch volunteer stats:', e);
+    }
+  }
+
+  // Fallback to user.ratingStats if available
+  if (stats.tasksCompleted === 0 && u.ratingStats && u.ratingStats.tasksCompleted > 0) {
+    stats = u.ratingStats;
+  }
+
+  const tasksDone = Number(stats.tasksCompleted || 0);
+  const reviewsCount = Number(stats.reviewsCount || 0);
+  const rating = reviewsCount > 0 ? Number(stats.overallRating || 5.0).toFixed(1) : (stats.overallRating ? Number(stats.overallRating).toFixed(1) : '5.0');
+
+  if (ratingEl) ratingEl.textContent = rating;
+  if (tasksEl) tasksEl.textContent = `${tasksDone} ${tasksDone === 1 ? 'Task' : 'Tasks'}`;
+
+  const welcomeTierIcon = document.getElementById('welcomeTierIcon');
+  const welcomeTierText = document.getElementById('welcomeTierText');
+
+  // Milestone progression calculation
+  if (tasksDone < 5) {
+    if (tierBadgeEl) tierBadgeEl.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Level 1 Helper`;
+    if (milestoneLabelEl) milestoneLabelEl.textContent = 'Silver Guardian';
+    const needed = 5 - tasksDone;
+    if (milestoneSubEl) milestoneSubEl.textContent = `Complete ${needed} more ${needed === 1 ? 'task' : 'tasks'} to reach Silver Guardian`;
+    const pct = Math.max(15, Math.min(100, Math.round((tasksDone / 5) * 100)));
+    if (milestoneBarEl) milestoneBarEl.style.width = `${pct}%`;
+    if (welcomeTierIcon) welcomeTierIcon.textContent = '🥉';
+    if (welcomeTierText) welcomeTierText.textContent = 'Level 1 Helper';
+  } else if (tasksDone < 15) {
+    if (tierBadgeEl) tierBadgeEl.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span> Silver Guardian`;
+    if (milestoneLabelEl) milestoneLabelEl.textContent = 'Gold Hero';
+    const needed = 15 - tasksDone;
+    if (milestoneSubEl) milestoneSubEl.textContent = `Complete ${needed} more ${needed === 1 ? 'task' : 'tasks'} to reach Gold Hero`;
+    const pct = Math.max(15, Math.min(100, Math.round(((tasksDone - 5) / 10) * 100)));
+    if (milestoneBarEl) milestoneBarEl.style.width = `${pct}%`;
+    if (welcomeTierIcon) welcomeTierIcon.textContent = '🥈';
+    if (welcomeTierText) welcomeTierText.textContent = 'Silver Guardian';
+  } else {
+    if (tierBadgeEl) tierBadgeEl.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Gold Champion`;
+    if (milestoneLabelEl) milestoneLabelEl.textContent = 'Platinum Master';
+    if (milestoneSubEl) milestoneSubEl.textContent = 'Top-tier volunteer excellence badge active';
+    if (milestoneBarEl) milestoneBarEl.style.width = `100%`;
+    if (welcomeTierIcon) welcomeTierIcon.textContent = '🥇';
+    if (welcomeTierText) welcomeTierText.textContent = 'Gold Champion';
+  }
+
+  // Skills
+  if (skillsContainer) {
+    const userSkills = (u.skills && u.skills.length > 0) ? u.skills : ['Grocery', 'Medicine', 'Companion'];
+    skillsContainer.innerHTML = userSkills.map(s => `
+      <span class="px-2 py-0.5 bg-slate-100 text-slate-700 rounded-lg text-[10px] font-bold">
+        ${escapeHTML(s)}
+      </span>
+    `).join('');
+  }
+}
+
+// ── Care Champion Performance Review Modal ──────────────────────────────────
+window.openCareChampionModal = async function() {
+  const modal = document.getElementById('careChampionModal');
+  if (!modal) return;
+
+  const user = currentVolunteerUser || JSON.parse(localStorage.getItem('user'));
+  const volId = user ? (user._id || user.id) : '';
+
+  const nameEl = document.getElementById('modalChampionVolunteerName');
+  const tierNameEl = document.getElementById('modalChampionTierName');
+  const overallScoreEl = document.getElementById('modalOverallScore');
+  const reviewsCountSubEl = document.getElementById('modalReviewsCountSub');
+  const nextMilestoneTierEl = document.getElementById('modalNextMilestoneTier');
+  const milestonePctEl = document.getElementById('modalMilestonePct');
+  const milestoneProgressBarEl = document.getElementById('modalMilestoneProgressBar');
+  const milestoneNoteEl = document.getElementById('modalMilestoneNote');
+
+  const speedScoreEl = document.getElementById('modalSpeedScore');
+  const commScoreEl = document.getElementById('modalCommScore');
+  const costScoreEl = document.getElementById('modalCostScore');
+  const recommendRateEl = document.getElementById('modalRecommendRate');
+  const reviewsHeaderCountEl = document.getElementById('modalReviewsHeaderCount');
+  const reviewsListEl = document.getElementById('modalReviewsList');
+
+  if (nameEl) nameEl.textContent = user?.name || 'Volunteer';
+
+  let stats = {
+    reviewsCount: 0,
+    tasksCompleted: 0,
+    costUtilization: 5.0,
+    speedTimeliness: 5.0,
+    communication: 5.0,
+    overallRating: 5.0,
+    recommendationRate: 100
+  };
+  let reviews = [];
+
+  if (volId) {
+    try {
+      const res = await apiCall(`/auth/volunteer-stats/${volId}`, 'GET');
+      if (res && res.ok && res.data) {
+        if (res.data.stats) stats = res.data.stats;
+        if (res.data.reviews) reviews = res.data.reviews;
+      }
+    } catch (e) {
+      console.warn('Error loading stats in Care Champion modal:', e);
+    }
+  }
+
+  const tasksDone = Number(stats.tasksCompleted || 0);
+  const reviewsCount = Number(stats.reviewsCount || 0);
+  const rating = reviewsCount > 0 ? Number(stats.overallRating || 5.0).toFixed(1) : (stats.overallRating ? Number(stats.overallRating).toFixed(1) : '5.0');
+
+  if (overallScoreEl) overallScoreEl.textContent = `${rating} ★`;
+  if (reviewsCountSubEl) reviewsCountSubEl.textContent = `${tasksDone} ${tasksDone === 1 ? 'Task Completed' : 'Tasks Completed'}`;
+
+  // Breakdown scores
+  if (speedScoreEl) speedScoreEl.textContent = stats.speedTimeliness ? `${Number(stats.speedTimeliness).toFixed(1)} ★` : '5.0 ★';
+  if (commScoreEl) commScoreEl.textContent = stats.communication ? `${Number(stats.communication).toFixed(1)} ★` : '5.0 ★';
+  if (costScoreEl) costScoreEl.textContent = stats.costUtilization ? `${Number(stats.costUtilization).toFixed(1)} ★` : '5.0 ★';
+  if (recommendRateEl) recommendRateEl.textContent = stats.recommendationRate ? `${stats.recommendationRate}%` : '100%';
+
+  const badgeIconEl = document.getElementById('modalChampionBadgeIcon');
+
+  // Milestone and tier logic
+  if (tasksDone < 5) {
+    if (tierNameEl) tierNameEl.innerHTML = `🥉 Level 1 Helper`;
+    if (badgeIconEl) badgeIconEl.textContent = `🥉`;
+    if (nextMilestoneTierEl) nextMilestoneTierEl.textContent = 'Silver Guardian (5 Visits)';
+    const needed = 5 - tasksDone;
+    const pct = Math.max(15, Math.min(100, Math.round((tasksDone / 5) * 100)));
+    if (milestonePctEl) milestonePctEl.textContent = `${pct}% (${tasksDone}/5)`;
+    if (milestoneProgressBarEl) milestoneProgressBarEl.style.width = `${pct}%`;
+    if (milestoneNoteEl) milestoneNoteEl.textContent = `Complete ${needed} more ${needed === 1 ? 'visit' : 'visits'} to unlock Silver tier perks & priority requests.`;
+  } else if (tasksDone < 15) {
+    if (tierNameEl) tierNameEl.innerHTML = `🥈 Silver Guardian`;
+    if (badgeIconEl) badgeIconEl.textContent = `🥈`;
+    if (nextMilestoneTierEl) nextMilestoneTierEl.textContent = 'Gold Hero (15 Visits)';
+    const needed = 15 - tasksDone;
+    const pct = Math.max(15, Math.min(100, Math.round(((tasksDone - 5) / 10) * 100)));
+    if (milestonePctEl) milestonePctEl.textContent = `${pct}% (${tasksDone}/15)`;
+    if (milestoneProgressBarEl) milestoneProgressBarEl.style.width = `${pct}%`;
+    if (milestoneNoteEl) milestoneNoteEl.textContent = `Complete ${needed} more ${needed === 1 ? 'visit' : 'visits'} to unlock Gold Champion & instant escrow releases.`;
+  } else {
+    if (tierNameEl) tierNameEl.innerHTML = `🥇 Gold Champion`;
+    if (badgeIconEl) badgeIconEl.textContent = `🥇`;
+    if (nextMilestoneTierEl) nextMilestoneTierEl.textContent = 'Platinum Master (30 Visits)';
+    if (milestonePctEl) milestonePctEl.textContent = '100%';
+    if (milestoneProgressBarEl) milestoneProgressBarEl.style.width = '100%';
+    if (milestoneNoteEl) milestoneNoteEl.textContent = 'Top-tier volunteer badge active. Zero commission & highest priority allotment!';
+  }
+
+  // Caregiver Feedback & Reviews List
+  const feedbacksListEl = document.getElementById('modalCaregiverFeedbacksList');
+  const feedbacksCountBadge = document.getElementById('modalFeedbacksCountBadge');
+
+  if (feedbacksCountBadge) {
+    feedbacksCountBadge.textContent = `${reviews.length} ${reviews.length === 1 ? 'Review' : 'Reviews'}`;
+  }
+
+  if (feedbacksListEl) {
+    if (reviews && reviews.length > 0) {
+      feedbacksListEl.innerHTML = reviews.map(r => `
+        <div class="p-3 bg-white rounded-xl border border-slate-200/80 shadow-2xs space-y-1.5 transition-all hover:border-brand-200">
+          <div class="flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2">
+              <div class="w-6 h-6 rounded-full bg-brand-50 text-brand-700 font-extrabold text-[10px] flex items-center justify-center border border-brand-200/60 flex-shrink-0">
+                ${escapeHTML((r.seniorName || r.reviewerName || 'Caregiver').charAt(0).toUpperCase())}
+              </div>
+              <div>
+                <span class="text-xs font-extrabold text-slate-900 block leading-tight">${escapeHTML(r.seniorName || r.reviewerName || 'Family Caregiver')}</span>
+                <span class="text-[10px] text-slate-400 font-medium">${r.title ? escapeHTML(r.title) : 'Verified Elder Assistance'}</span>
+              </div>
+            </div>
+            <div class="flex items-center gap-1 text-amber-500 text-xs font-black bg-amber-50 border border-amber-200/70 px-2 py-0.5 rounded-lg flex-shrink-0">
+              <span>★</span>
+              <span>${Number(r.overallRating || 5).toFixed(1)}</span>
+            </div>
+          </div>
+          ${r.comment ? `<p class="text-xs text-slate-600 font-medium leading-relaxed bg-slate-50/90 p-2.5 rounded-lg border border-slate-100 italic">"${escapeHTML(r.comment)}"</p>` : `<p class="text-[11px] text-slate-400 italic">Completed task satisfactorily.</p>`}
+          <div class="flex items-center justify-between text-[10px] text-slate-400 font-medium pt-0.5">
+            <span class="text-emerald-700 font-bold">✓ Verified Family Rating</span>
+            <span>${r.submittedAt ? new Date(r.submittedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Recently'}</span>
+          </div>
+        </div>
+      `).join('');
+    } else {
+      feedbacksListEl.innerHTML = `
+        <div class="p-4 bg-white rounded-xl border border-slate-200/80 text-center space-y-1">
+          <p class="text-xs font-extrabold text-slate-700">No written reviews yet</p>
+          <p class="text-[11px] text-slate-400">Complete elder assistance requests to receive verified ratings &amp; testimonials from family caregivers.</p>
+        </div>`;
+    }
+  }
+
+  modal.style.display = 'flex';
+};
+
+window.closeCareChampionModal = function() {
+  const modal = document.getElementById('careChampionModal');
+  if (modal) modal.style.display = 'none';
+};
+
 // Volunteer opens quote modal to accept request and specify service charge
 function acceptHelpRequest(id, title, pref = '', allowedBudget = null) {
   const user = JSON.parse(localStorage.getItem('user'));
@@ -647,17 +875,29 @@ async function loadVolunteerRequests(silent = false) {
       return isMyApprovedTask(r);
     };
 
+    const isMyRejectedQuote = (r) => {
+      if (!r || !currentUserId) return false;
+      if (r.rejectedVolunteerQuotes && r.rejectedVolunteerQuotes.length > 0) {
+        return r.rejectedVolunteerQuotes.some(q => q.volunteer && String(q.volunteer._id || q.volunteer.id || q.volunteer) === String(currentUserId));
+      }
+      return false;
+    };
+
     const dismissedKey = currentUserId ? `dismissed_notifications_${currentUserId}` : 'dismissed_notifications';
     const dismissedList = JSON.parse(localStorage.getItem(dismissedKey) || '[]');
 
     // Split by status:
-    // 0. Task Assignment Notifications: Requests where this volunteer submitted a quote, but caregiver selected another volunteer (excluding dismissed)
+    // 0. Task Assignment Notifications:
+    // a. Requests where this volunteer submitted a quote, but caregiver selected another volunteer (excluding dismissed)
     const notifiedRequests  = requests.filter(r => (r.status === 'accepted' || r.status === 'completed') && hasMyQuote(r) && !isMyApprovedTask(r) && !dismissedList.includes(r._id));
     
-    // Requests where this volunteer was allotted, but the senior cancelled
+    // b. Requests where this volunteer submitted a quote, but caregiver rejected quotes (excluding dismissed)
+    const quoteRejectedRequests = requests.filter(r => isMyRejectedQuote(r) && !isMyApprovedTask(r) && !dismissedList.includes(r._id));
+
+    // c. Requests where this volunteer was allotted, but the senior cancelled
     const cancelledRequests = requests.filter(r => r.status === 'cancelled' && isMyApprovedTask(r) && !dismissedList.includes(r._id));
     
-    const allNotifRequests = [...notifiedRequests, ...cancelledRequests];
+    const allNotifRequests = [...notifiedRequests, ...quoteRejectedRequests, ...cancelledRequests];
 
     // 1. Available Help Requests: Open requests with status 'pending' or 'awaiting_approval'
     const pendingRequests   = requests.filter(r => r.status === 'pending' || r.status === 'awaiting_approval');
@@ -739,6 +979,23 @@ async function loadVolunteerRequests(silent = false) {
         notificationsCard.style.display = 'block';
         notificationsList.innerHTML = allNotifRequests.map(req => {
           const seniorName = req.senior ? escapeHTML(req.senior.name) : 'Senior Citizen';
+
+          if (isMyRejectedQuote(req)) {
+            return `
+              <div class="bg-white rounded-2xl border border-rose-200/80 shadow-2xs p-4 relative overflow-hidden">
+                <div class="h-1 bg-rose-500 -mx-4 -mt-4 mb-3"></div>
+                <div class="flex justify-between items-start gap-3 flex-wrap mb-2">
+                  <h4 class="text-sm font-extrabold text-slate-900 tracking-tight">${escapeHTML(req.title)}</h4>
+                  <div class="flex items-center gap-2">
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-extrabold bg-rose-50 text-rose-700 border border-rose-200">Quote Declined</span>
+                    <button type="button" onclick="dismissTaskNotification('${req._id}')" class="px-2.5 py-1 text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl border border-slate-200 transition-all cursor-pointer">Dismiss</button>
+                  </div>
+                </div>
+                <div class="p-3 bg-rose-50/70 border border-rose-200/70 rounded-xl text-xs text-rose-950 font-medium">
+                  The caregiver reviewed and rejected your quoted service fee for this task. Thank you for your voluntary support to <strong>${seniorName}</strong>! You can browse other available requests below.
+                </div>
+              </div>`;
+          }
 
           if (req.status === 'cancelled') {
             return `
@@ -1918,75 +2175,6 @@ function closeImageLightbox() {
   if (modal) modal.style.display = 'none';
 }
 
-async function renderRatingProfileCard(user) {
-  if (!user) return;
-
-  let stats = user.ratingStats;
-  const volId = user._id || user.id;
-
-  if (volId) {
-    try {
-      const statsRes = await apiCall(`/auth/volunteer-stats/${volId}`, 'GET');
-      if (statsRes && statsRes.ok && statsRes.data && statsRes.data.stats) {
-        stats = statsRes.data.stats;
-        user.ratingStats = stats;
-      }
-    } catch (err) {
-      console.warn('Error fetching volunteer rating stats:', err);
-    }
-  }
-
-  if (!stats) return;
-
-  const simpleOverallBadge = document.getElementById('simpleOverallBadge');
-  const simpleCost = document.getElementById('simpleCost');
-  const simpleSpeed = document.getElementById('simpleSpeed');
-  const simpleComm = document.getElementById('simpleComm');
-  const simpleRecommend = document.getElementById('simpleRecommend');
-  const simpleTasks = document.getElementById('simpleTasks');
-  const simpleReviews = document.getElementById('simpleReviews');
-
-  if (simpleOverallBadge) {
-    const rVal = (stats.reviewsCount > 0 && stats.overallRating) ? stats.overallRating.toFixed(1) : (stats.tasksCompleted > 0 ? '5.0' : '0.0');
-    simpleOverallBadge.innerHTML = `<span class="text-xl font-extrabold text-slate-900 tracking-tight">${rVal}</span><span class="text-[11px] font-bold text-slate-400">/ 5.0</span>`;
-  }
-
-  const quickRatingText = document.getElementById('quickRatingText');
-  if (quickRatingText) {
-    if (stats.reviewsCount > 0) {
-      quickRatingText.textContent = `${stats.overallRating.toFixed(1)} ★ Rating`;
-    } else if (stats.tasksCompleted > 0) {
-      quickRatingText.textContent = `${stats.tasksCompleted} Completed`;
-    } else {
-      quickRatingText.textContent = `5.0 ★ Rating`;
-    }
-  }
-
-  if (simpleCost) {
-    const val = stats.costUtilization > 0 ? stats.costUtilization.toFixed(1) : (stats.tasksCompleted > 0 ? '5.0' : '0.0');
-    simpleCost.innerHTML = `<span class="text-xl font-extrabold text-slate-900 tracking-tight">${val}</span><span class="text-[11px] font-bold text-slate-400">/ 5.0</span>`;
-  }
-  if (simpleSpeed) {
-    const val = stats.speedTimeliness > 0 ? stats.speedTimeliness.toFixed(1) : (stats.tasksCompleted > 0 ? '5.0' : '0.0');
-    simpleSpeed.innerHTML = `<span class="text-xl font-extrabold text-slate-900 tracking-tight">${val}</span><span class="text-[11px] font-bold text-slate-400">/ 5.0</span>`;
-  }
-  if (simpleComm) {
-    const val = stats.communication > 0 ? stats.communication.toFixed(1) : (stats.tasksCompleted > 0 ? '5.0' : '0.0');
-    simpleComm.innerHTML = `<span class="text-xl font-extrabold text-slate-900 tracking-tight">${val}</span><span class="text-[11px] font-bold text-slate-400">/ 5.0</span>`;
-  }
-  if (simpleRecommend) {
-    simpleRecommend.textContent = `${stats.recommendationRate || 100}% Families Recommend`;
-  }
-  if (simpleTasks) {
-    const count = stats.tasksCompleted || 0;
-    simpleTasks.textContent = `${count} task${count === 1 ? '' : 's'}`;
-  }
-  if (simpleReviews) {
-    const count = stats.reviewsCount || 0;
-    simpleReviews.textContent = `${count} review${count === 1 ? '' : 's'}`;
-  }
-}
-
 // ── Mark Task Done Modal (service_only / mixed-no-purchase) ──────────────────
 // Opens a lightweight completion modal — no bill needed, optional photo + note
 window.openMarkDoneModal = function(requestId, taskTitle, proofType) {
@@ -2715,6 +2903,11 @@ async function loadVolunteerEarnings(silent = false) {
     const availEl = document.getElementById('walletAvailable');
     const pendEl  = document.getElementById('walletPending');
     const quickWalletEl = document.getElementById('quickWalletBalance');
+    const headerWalletEl = document.getElementById('headerWalletBal');
+
+    const widgetAvailEl = document.getElementById('widgetVolunteerAvailable');
+    const widgetPendEl = document.getElementById('widgetVolunteerPending');
+    const widgetTotalEl = document.getElementById('widgetVolunteerTotal');
 
     if (silent) {
       // Silent refresh: just update text without animation
@@ -2722,11 +2915,19 @@ async function loadVolunteerEarnings(silent = false) {
       if (availEl) availEl.textContent = `₹${wallet.available.toLocaleString('en-IN')}`;
       if (pendEl)  pendEl.textContent  = `₹${wallet.pending.toLocaleString('en-IN')}`;
       if (quickWalletEl) quickWalletEl.textContent = `₹${wallet.available.toLocaleString('en-IN')}`;
+      if (headerWalletEl) headerWalletEl.textContent = `₹${wallet.available.toLocaleString('en-IN')}`;
+      if (widgetAvailEl) widgetAvailEl.textContent = `₹${wallet.available.toLocaleString('en-IN')}`;
+      if (widgetPendEl) widgetPendEl.textContent = `₹${wallet.pending.toLocaleString('en-IN')}`;
+      if (widgetTotalEl) widgetTotalEl.textContent = `₹${wallet.totalEarned.toLocaleString('en-IN')}`;
     } else {
       animateCounter(totalEl, wallet.totalEarned);
       animateCounter(availEl, wallet.available);
       animateCounter(pendEl,  wallet.pending);
       animateCounter(quickWalletEl, wallet.available);
+      if (headerWalletEl) headerWalletEl.textContent = `₹${wallet.available.toLocaleString('en-IN')}`;
+      if (widgetAvailEl) animateCounter(widgetAvailEl, wallet.available);
+      if (widgetPendEl) animateCounter(widgetPendEl, wallet.pending);
+      if (widgetTotalEl) animateCounter(widgetTotalEl, wallet.totalEarned);
     }
 
     // Update withdraw button label
@@ -2984,7 +3185,7 @@ window.clearAllTaskNotifications = function() {
 };
 
 // Switch between Task dashboard tabs: Browse Requests, Active, Awaiting Approval, History
-window.switchTaskTab = function(tab) {
+window.switchTaskTab = function(tab, shouldScroll = false) {
   window.currentVolunteerTab = tab;
   const tabs = ['pending', 'active', 'awaiting', 'history'];
   const tabBtnIds = { pending: 'tabBtnPending', active: 'tabBtnActive', awaiting: 'tabBtnAwaiting', history: 'tabBtnHistory' };
@@ -3061,5 +3262,33 @@ window.switchTaskTab = function(tab) {
       pane.style.display = isActive ? 'block' : 'none';
     }
   });
+
+  if (shouldScroll) {
+    setTimeout(() => {
+      const pane = document.getElementById(paneIds[tab]);
+      if (pane) {
+        const listMap = {
+          pending: document.getElementById('pendingList'),
+          active: document.getElementById('activeList'),
+          awaiting: document.getElementById('awaitingList'),
+          history: document.getElementById('historyList')
+        };
+        const listEl = listMap[tab] || pane;
+        const firstCard = listEl.querySelector('[id^="reqCard-"], article, .border, .bg-white, [class*="rounded-3xl"]') || pane;
+        if (firstCard) {
+          const yOffset = -90; // offset for sticky navbar
+          const y = firstCard.getBoundingClientRect().top + window.pageYOffset + yOffset;
+          window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
+        }
+      }
+    }, 60);
+  }
 };
+
+window.addEventListener('click', (e) => {
+  const championModal = document.getElementById('careChampionModal');
+  if (championModal && e.target === championModal) {
+    window.closeCareChampionModal();
+  }
+});
 

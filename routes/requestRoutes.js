@@ -92,6 +92,7 @@ const {
   familyApproveRequest,
   familyFulfillSelf,
   familyRejectRequest,
+  rejectVolunteerQuotes,
   verifyCompletionByFamily,
   verifyCompletionBySeniorVoice,
   verifyCompletionBySenior,
@@ -175,6 +176,7 @@ router.put('/:id/approve-purchase-funding', authorize('family'), approvePurchase
 router.put('/:id/reject-purchase-cost', authorize('family'), rejectPurchaseCost);
 router.put('/:id/family-fulfill', authorize('family'), familyFulfillSelf);
 router.put('/:id/family-reject', authorize('family'), familyRejectRequest);
+router.put('/:id/reject-volunteer-quotes', authorize('family'), rejectVolunteerQuotes);
 
 // Task Completion Verification Workflow (Family Caregiver, Senior & Voice IVR)
 router.put('/:id/verify-completion-family', authorize('family'), verifyCompletionByFamily);

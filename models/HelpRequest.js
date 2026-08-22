@@ -339,6 +339,20 @@ const helpRequestSchema = new mongoose.Schema({
       default: Date.now
     }
   }],
+  rejectedVolunteerQuotes: [{
+    volunteer: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    },
+    serviceFee: {
+      type: Number,
+      default: 0
+    },
+    rejectedAt: {
+      type: Date,
+      default: Date.now
+    }
+  }],
 
   // ─── Family / Caregiver decision & fulfillment ────────────────────────────
   // 'none'                → no decision taken yet

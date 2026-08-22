@@ -91,7 +91,18 @@ async function apiCall(endpoint, method = 'GET', data = null) {
 
   try {
     const response = await fetch(`${API_BASE}${endpoint}`, config);
-    const result = await response.json();
+    let result;
+    const contentType = response.headers.get('content-type') || '';
+    if (contentType.includes('application/json')) {
+      result = await response.json();
+    } else {
+      const text = await response.text();
+      try {
+        result = JSON.parse(text);
+      } catch (e) {
+        result = { message: text || `Error (${response.status})` };
+      }
+    }
 
     if (response.status === 401) {
       // Session expired, clear storage and send to landing
@@ -112,7 +123,7 @@ async function apiCall(endpoint, method = 'GET', data = null) {
     return {
       status: 500,
       ok: false,
-      data: { message: 'Network connection error. Please make sure the server is running.' }
+      data: { message: error.message || 'Network connection error. Please make sure the server is running.' }
     };
   }
 }
@@ -158,12 +169,23 @@ function resetFontSize() {
   applyFontSize(currentFontSize);
 }
 
+// Clean up any previously cached dark mode class or setting
+try {
+  localStorage.removeItem('agewell_theme');
+  document.documentElement.classList.remove('dark', 'dark-theme');
+  if (document.body) document.body.classList.remove('dark', 'dark-theme');
+} catch (e) {}
+
 // Initialize Accessibility Panel handlers on load
 document.addEventListener('DOMContentLoaded', () => {
+  // Clear any residual dark mode class
+  document.documentElement.classList.remove('dark', 'dark-theme');
+  if (document.body) document.body.classList.remove('dark', 'dark-theme');
+
   // Apply saved font size immediately
   applyFontSize(currentFontSize);
 
-  // Auto-inject language switcher next to accessibility size indicators
+  // Auto-inject language switcher into accessibility panel
   const accPanel = document.querySelector('.accessibility-panel');
   if (accPanel) {
     // Create language switcher wrapper
@@ -171,7 +193,7 @@ document.addEventListener('DOMContentLoaded', () => {
     langWrapper.className = 'lang-switcher';
     const hasTextSizeButtons = document.getElementById('btnTextIncrease') !== null;
     if (hasTextSizeButtons) {
-      langWrapper.style.cssText = 'display: inline-flex; gap: 8px; margin-left: 20px; align-items: center; border-left: 2px solid #ccc; padding-left: 15px;';
+      langWrapper.style.cssText = 'display: inline-flex; gap: 8px; margin-left: 15px; align-items: center; border-left: 2px solid rgba(148, 163, 184, 0.3); padding-left: 12px;';
     } else {
       langWrapper.style.cssText = 'display: inline-flex; gap: 8px; align-items: center;';
     }
@@ -237,7 +259,7 @@ document.addEventListener('DOMContentLoaded', () => {
       
       const navUser = document.getElementById('navUserName');
       if (navUser) {
-        navUser.textContent = `Hello, ${user.name} (${user.role === 'senior' ? 'Senior' : user.role === 'volunteer' ? 'Volunteer' : 'Admin'})`;
+        navUser.textContent = `Hello, ${user.name} (${user.role === 'senior' ? 'Senior' : user.role === 'volunteer' ? 'Volunteer' : user.role === 'family' ? (user.relationship || 'Caregiver') : 'Admin'})`;
       }
     } catch (e) {
       console.error(e);
@@ -360,4 +382,156 @@ function showToast(message, type = 'info') {
       setTimeout(() => toast.remove(), 350);
     }
   }, 4500);
+}
+
+/* =============================================================
+   awConfirm() — Custom Styled Confirm Dialog
+   Replaces native browser confirm() across all portals.
+   Usage: const ok = await awConfirm({ title, message, confirmText, danger })
+   ============================================================= */
+function awConfirm({ title = 'Are you sure?', message = '', confirmText = 'Confirm', cancelText = 'Cancel', danger = false } = {}) {
+  return new Promise(resolve => {
+    // ── Remove any stale instance ──────────────────────────
+    const existing = document.getElementById('aw-confirm-overlay');
+    if (existing) existing.remove();
+
+    // ── Styles ─────────────────────────────────────────────
+    const overlayStyle = `
+      position:fixed;inset:0;z-index:99999;
+      display:flex;align-items:center;justify-content:center;
+      background:rgba(15,23,42,0.45);
+      backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+      animation:awFadeIn 0.18s ease;
+    `;
+
+    const dialogStyle = `
+      width:100%;max-width:440px;margin:16px;
+      background:#ffffff;
+      border:1px solid rgba(226,232,240,0.9);
+      border-radius:22px;
+      box-shadow:0 25px 50px -12px rgba(15,23,42,0.25), 0 0 0 1px rgba(0,0,0,0.02);
+      animation:awSlideUp 0.22s cubic-bezier(0.34,1.56,0.64,1);
+      overflow:hidden;
+    `;
+
+    const iconBg    = danger ? '#fee2e2' : '#eff6ff';
+    const iconColor = danger ? '#dc2626' : '#2563eb';
+    const confirmBg = danger ? '#dc2626' : '#2563eb';
+    const titleColor   = '#0f172a';
+    const messageColor = '#475569';
+    const cancelBg     = '#f1f5f9';
+    const cancelColor  = '#475569';
+    const cancelBorder = '#cbd5e1';
+
+    // ── SVG icons ──────────────────────────────────────────
+    const iconSVG = danger
+      ? `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="${iconColor}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+           <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+           <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+         </svg>`
+      : `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="${iconColor}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+           <circle cx="12" cy="12" r="10"/>
+           <line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+         </svg>`;
+
+    // ── HTML ───────────────────────────────────────────────
+    const overlay = document.createElement('div');
+    overlay.id = 'aw-confirm-overlay';
+    overlay.setAttribute('role', 'dialog');
+    overlay.setAttribute('aria-modal', 'true');
+    overlay.setAttribute('aria-labelledby', 'aw-confirm-title');
+    overlay.style.cssText = overlayStyle;
+
+    overlay.innerHTML = `
+      <style>
+        @keyframes awFadeIn   { from { opacity:0 } to { opacity:1 } }
+        @keyframes awSlideUp  { from { opacity:0; transform:translateY(24px) scale(0.97) } to { opacity:1; transform:translateY(0) scale(1) } }
+        #aw-confirm-dialog { ${dialogStyle} }
+        #aw-confirm-dialog * { box-sizing:border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+        #aw-btn-confirm { cursor:pointer;transition:all 0.15s ease; }
+        #aw-btn-confirm:hover { filter:brightness(1.1); transform:translateY(-1px); }
+        #aw-btn-confirm:active { transform:scale(0.97); }
+        #aw-btn-cancel  { cursor:pointer;transition:all 0.15s ease; }
+        #aw-btn-cancel:hover  { background:#e2e8f0 !important; }
+        #aw-btn-cancel:active { transform:scale(0.97); }
+      </style>
+
+      <div id="aw-confirm-dialog">
+        <!-- Top accent line -->
+        <div style="height:4px;background:${danger ? 'linear-gradient(90deg,#ef4444,#f97316)' : 'linear-gradient(90deg,#2563eb,#38bdf8)'};"></div>
+
+        <!-- Header -->
+        <div style="display:flex;align-items:flex-start;gap:14px;padding:24px 24px 16px;">
+          <!-- Icon -->
+          <div style="
+            flex-shrink:0;width:46px;height:46px;border-radius:14px;
+            background:${iconBg};border:1px solid ${danger ? '#fca5a5' : '#bfdbfe'};
+            display:flex;align-items:center;justify-content:center;
+          ">${iconSVG}</div>
+
+          <!-- Title + message -->
+          <div style="flex:1;min-width:0;">
+            <h3 id="aw-confirm-title" style="
+              margin:0 0 6px;font-size:16px;font-weight:800;line-height:1.3;
+              color:${titleColor};letter-spacing:-0.01em;
+            ">${title}</h3>
+            <p style="
+              margin:0;font-size:13.5px;line-height:1.55;
+              color:${messageColor};
+            ">${message}</p>
+          </div>
+        </div>
+
+        <!-- Divider -->
+        <div style="height:1px;background:#f1f5f9;margin:0 24px;"></div>
+
+        <!-- Actions -->
+        <div style="display:flex;align-items:center;justify-content:flex-end;gap:10px;padding:16px 24px;">
+          <button id="aw-btn-cancel" style="
+            padding:10px 20px;border-radius:12px;font-size:13.5px;font-weight:700;
+            background:${cancelBg};color:${cancelColor};
+            border:1px solid ${cancelBorder};
+            outline:none;
+          ">${cancelText}</button>
+          <button id="aw-btn-confirm" style="
+            padding:10px 22px;border-radius:12px;font-size:13.5px;font-weight:800;
+            background:${confirmBg};color:#fff;
+            border:none;outline:none;
+            box-shadow:${danger ? '0 4px 14px rgba(220,38,38,0.3)' : '0 4px 14px rgba(37,99,235,0.3)'};
+          ">${confirmText}</button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    // ── Focus confirm button ───────────────────────────────
+    const btnConfirm = overlay.querySelector('#aw-btn-confirm');
+    const btnCancel  = overlay.querySelector('#aw-btn-cancel');
+    setTimeout(() => btnConfirm.focus(), 50);
+
+    // ── Close helper ───────────────────────────────────────
+    function close(result) {
+      overlay.style.opacity = '0';
+      overlay.style.transition = 'opacity 0.15s ease';
+      setTimeout(() => overlay.remove(), 150);
+      resolve(result);
+    }
+
+    // ── Event listeners ────────────────────────────────────
+    btnConfirm.addEventListener('click', () => close(true));
+    btnCancel.addEventListener('click',  () => close(false));
+
+    // Click outside to dismiss
+    overlay.addEventListener('click', e => {
+      if (e.target === overlay) close(false);
+    });
+
+    // Escape key
+    function onKey(e) {
+      if (e.key === 'Escape') { close(false); document.removeEventListener('keydown', onKey); }
+      if (e.key === 'Enter')  { close(true);  document.removeEventListener('keydown', onKey); }
+    }
+    document.addEventListener('keydown', onKey);
+  });
 }

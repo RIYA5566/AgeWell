@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="/css/style.css?v=322">
+  <link rel="stylesheet" href="/css/style.css?v=900">
   <script src="/js/i18n.js?v=421"></script>
 
   <!-- Tailwind CSS CDN -->
@@ -206,17 +206,21 @@
       <!-- Language Switcher Container -->
       <div class="accessibility-panel flex flex-wrap items-center gap-2 bg-slate-50 rounded-2xl p-1.5 border border-slate-200/70 text-xs" role="region" aria-label="Language Controls"></div>
 
-      <!-- User Nav info and Logout -->
-      <div class="flex items-center gap-3">
-        <div class="flex items-center gap-2 bg-brand-50 border border-brand-200/80 rounded-2xl px-3.5 py-1.5">
+      <!-- User Nav info, Wallet Link and Logout -->
+      <div class="flex items-center gap-2.5 sm:gap-3 flex-wrap justify-end">
+        <button type="button" onclick="openEarningsModal()" class="px-3.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-200/80 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 shadow-2xs no-underline active:scale-95 cursor-pointer">
+          <svg class="w-3.5 h-3.5 text-emerald-600" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+          <span>Wallet: <strong id="headerWalletBal">₹0</strong></span>
+        </button>
+        <div class="flex items-center gap-2 bg-brand-50 border border-brand-200/80 rounded-xl px-3.5 py-1.5">
           <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
           <span class="text-xs sm:text-sm font-extrabold text-brand-900" id="navUserName">Hello, Volunteer</span>
         </div>
-        <button id="btnLogout" class="px-3.5 py-1.5 text-brand-700 font-bold text-xs sm:text-sm bg-brand-50 hover:bg-brand-100 border border-brand-200/80 rounded-2xl transition-all active:scale-95 shadow-xs flex items-center gap-1.5">
+        <button id="btnLogout" class="px-3.5 py-1.5 text-brand-700 font-bold text-xs sm:text-sm bg-brand-50 hover:bg-brand-100 border border-brand-200/80 rounded-xl transition-all active:scale-95 shadow-xs flex items-center gap-1.5 cursor-pointer">
           <svg class="w-4 h-4 text-brand-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
           </svg>
-          <span data-i18n="nav_logout">Log Out</span>
+          <span data-i18n="nav_logout" class="hidden sm:inline">Log Out</span>
         </button>
       </div>
     </div>
@@ -246,6 +250,12 @@
       </div>
       
       <div class="flex flex-wrap items-center gap-2 relative z-10 self-stretch sm:self-auto justify-end">
+        <!-- Live Care Champion Tier Badge Pill -->
+        <button type="button" onclick="openCareChampionModal()" id="welcomeTierPill" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-400/20 hover:bg-amber-400/30 backdrop-blur-md rounded-xl border border-amber-300/40 text-xs font-black text-amber-200 shadow-xs cursor-pointer transition-all active:scale-95" title="Click to view Care Champion Milestones">
+          <span id="welcomeTierIcon">🥈</span>
+          <span id="welcomeTierText">Silver Guardian</span>
+        </button>
+
         <div id="welcomeVerificationPill" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/20 backdrop-blur-md rounded-xl border border-emerald-400/40 text-xs font-bold text-emerald-100 shadow-xs">
           <svg class="w-3.5 h-3.5 text-emerald-300" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
           <span id="welcomeVerificationText">Community Volunteer — Verified</span>
@@ -346,89 +356,10 @@
       </div>
     </section>
 
-    <!-- Top Summary Metrics Grid (Sleek SaaS Stat Cards) -->
-    <section id="topMetricsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 mb-6" aria-label="Volunteer Quick Metrics">
-      <!-- 1. Available Requests -->
-      <div onclick="switchTaskTab('pending')" class="bg-white rounded-3xl border border-slate-200/90 shadow-premium hover:shadow-cardHover p-5 sm:p-6 transition-all duration-200 cursor-pointer group flex flex-col justify-between relative overflow-hidden">
-        <div>
-          <div class="flex items-center justify-between gap-3 mb-3">
-            <span class="text-xs font-extrabold text-slate-500 uppercase tracking-wider">Available Requests</span>
-            <div class="w-10 h-10 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-600 flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform flex-shrink-0">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
-            </div>
-          </div>
-          <div id="countQuickPending" class="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">0</div>
-        </div>
-        <div class="flex items-center gap-1.5 mt-3 pt-3 border-t border-slate-100">
-          <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200/70">
-            <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
-            Open to Accept
-          </span>
-        </div>
-      </div>
-
-      <!-- 2. Active Commitments -->
-      <div onclick="switchTaskTab('active')" class="bg-white rounded-3xl border border-slate-200/90 shadow-premium hover:shadow-cardHover p-5 sm:p-6 transition-all duration-200 cursor-pointer group flex flex-col justify-between relative overflow-hidden">
-        <div>
-          <div class="flex items-center justify-between gap-3 mb-3">
-            <span class="text-xs font-extrabold text-slate-500 uppercase tracking-wider">In Progress Tasks</span>
-            <div class="w-10 h-10 rounded-2xl bg-brand-500/10 border border-brand-500/20 text-brand-600 flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform flex-shrink-0">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-            </div>
-          </div>
-          <div id="countQuickActive" class="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">0</div>
-        </div>
-        <div class="flex items-center gap-1.5 mt-3 pt-3 border-t border-slate-100">
-          <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-brand-50 text-brand-700 border border-brand-200/70">
-            <span class="w-1.5 h-1.5 rounded-full bg-brand-500"></span>
-            Active Commitments
-          </span>
-        </div>
-      </div>
-
-      <!-- 3. Completed Tasks & Rating -->
-      <div onclick="switchTaskTab('history')" class="bg-white rounded-3xl border border-slate-200/90 shadow-premium hover:shadow-cardHover p-5 sm:p-6 transition-all duration-200 cursor-pointer group flex flex-col justify-between relative overflow-hidden">
-        <div>
-          <div class="flex items-center justify-between gap-3 mb-3">
-            <span class="text-xs font-extrabold text-slate-500 uppercase tracking-wider">Service Record</span>
-            <div class="w-10 h-10 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform flex-shrink-0">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-            </div>
-          </div>
-          <div id="countQuickCompleted" class="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">0</div>
-        </div>
-        <div class="flex items-center gap-1.5 mt-3 pt-3 border-t border-slate-100">
-          <span id="quickOverallRatingBadge" class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200/70">
-            <svg class="w-3.5 h-3.5 text-amber-500 fill-amber-400" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
-            <span id="quickRatingText">5.0 ★ Rating</span>
-          </span>
-        </div>
-      </div>
-
-      <!-- 4. Earnings Wallet -->
-      <div onclick="openEarningsModal()" class="bg-white rounded-3xl border border-slate-200/90 shadow-premium hover:shadow-cardHover p-5 sm:p-6 transition-all duration-200 cursor-pointer group flex flex-col justify-between relative overflow-hidden">
-        <div>
-          <div class="flex items-center justify-between gap-3 mb-3">
-            <span class="text-xs font-extrabold text-slate-500 uppercase tracking-wider">Wallet Balance</span>
-            <div class="w-10 h-10 rounded-2xl bg-purple-500/10 border border-purple-500/20 text-purple-600 flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform flex-shrink-0">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a2.25 2.25 0 00-2.25-2.25H15a3 3 0 11-6 0H5.25A2.25 2.25 0 003 12m18 0v6a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 18v-6m18 0V9M3 12V9m18 0a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 9m18 0V6a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 6v3"/></svg>
-            </div>
-          </div>
-          <div id="quickWalletBalance" class="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">₹0</div>
-        </div>
-        <div class="flex items-center gap-1.5 mt-3 pt-3 border-t border-slate-100">
-          <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-purple-50 text-purple-800 border border-purple-200/70 group-hover:bg-purple-100 transition-colors">
-            <span>View &amp; Payout</span>
-            <svg class="w-3 h-3 text-purple-600 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/></svg>
-          </span>
-        </div>
-      </div>
-    </section>
-
     <!-- Main Content Workspace (Vertical Navigation Sidebar on Left, Content Panes on Right) -->
     <div id="volunteerWorkspaceGrid" class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
       
-      <!-- LEFT COLUMN: Vertical Navigation Menu, Profile, Wallet & KYC (col-span-1) -->
+      <!-- LEFT COLUMN: Vertical Navigation Menu, Profile & KYC (col-span-1) -->
       <div class="space-y-6">
         
         <!-- Vertical Tab Navigation Card -->
@@ -446,7 +377,7 @@
             <!-- 1. Browse Requests -->
             <button 
               id="tabBtnPending" 
-              onclick="switchTaskTab('pending')" 
+              onclick="switchTaskTab('pending', true)" 
               class="w-full p-3.5 rounded-2xl transition-all duration-150 flex items-center justify-between gap-3 text-left cursor-pointer border-2 bg-brand-50/90 border-brand-500 shadow-xs ring-2 ring-brand-100/50" 
               role="tab" 
               aria-selected="true"
@@ -466,7 +397,7 @@
             <!-- 2. Active Tasks -->
             <button 
               id="tabBtnActive" 
-              onclick="switchTaskTab('active')" 
+              onclick="switchTaskTab('active', true)" 
               class="w-full p-3.5 rounded-2xl transition-all duration-150 flex items-center justify-between gap-3 text-left cursor-pointer border bg-white hover:bg-slate-50 border-slate-200/80 shadow-2xs" 
               role="tab" 
               aria-selected="false"
@@ -486,7 +417,7 @@
             <!-- 3. Awaiting Approval -->
             <button 
               id="tabBtnAwaiting" 
-              onclick="switchTaskTab('awaiting')" 
+              onclick="switchTaskTab('awaiting', true)" 
               class="w-full p-3.5 rounded-2xl transition-all duration-150 flex items-center justify-between gap-3 text-left cursor-pointer border bg-white hover:bg-slate-50 border-slate-200/80 shadow-2xs" 
               role="tab" 
               aria-selected="false"
@@ -506,7 +437,7 @@
             <!-- 4. Completed History -->
             <button 
               id="tabBtnHistory" 
-              onclick="switchTaskTab('history')" 
+              onclick="switchTaskTab('history', true)" 
               class="w-full p-3.5 rounded-2xl transition-all duration-150 flex items-center justify-between gap-3 text-left cursor-pointer border bg-white hover:bg-slate-50 border-slate-200/80 shadow-2xs" 
               role="tab" 
               aria-selected="false"
@@ -526,52 +457,115 @@
           </div>
         </div>
 
-        <!-- Earnings Wallet Card -->
-        <div id="earningsWalletCard" class="bg-gradient-to-br from-slate-900 via-brand-950 to-brand-900 rounded-3xl shadow-xl overflow-hidden p-6 text-white relative" style="display: none;">
-          <!-- Top accent bar -->
-          <div class="h-1.5 bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 -mx-6 -mt-6 mb-5"></div>
-
-          <div>
-            <!-- Header row -->
-            <div class="flex items-center justify-between mb-4 gap-2 flex-wrap">
-              <div class="flex items-center gap-2.5">
-                <div class="w-8 h-8 rounded-xl bg-amber-400/20 flex items-center justify-center text-amber-300">
-                  <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a2.25 2.25 0 00-2.25-2.25H15a3 3 0 11-6 0H5.25A2.25 2.25 0 003 12m18 0v6a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 18v-6m18 0V9M3 12V9m18 0a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 9m18 0V6a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 6v3"/></svg>
-                </div>
-                <h2 class="text-sm font-extrabold tracking-tight uppercase text-slate-200" data-i18n="vd_wallet_title">Earnings Wallet</h2>
+        <!-- AgeWell Volunteer Earnings Wallet Widget (Sleek SaaS Card matching Caregiver) -->
+        <div class="bg-white rounded-3xl border border-slate-200/90 shadow-premium p-5 relative overflow-hidden space-y-3.5" id="volunteerWalletWidget">
+          <div class="h-1.5 bg-gradient-to-r from-emerald-500 via-teal-500 to-brand-600 -mx-5 -mt-5 mb-4"></div>
+          
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+              <div class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center font-black text-sm border border-emerald-200/80">
+                ₹
               </div>
-              <span id="walletLastUpdated" class="text-[10px] text-slate-400 font-semibold">Updating...</span>
-            </div>
-
-            <!-- Balance Box -->
-            <div class="bg-white/10 rounded-2xl p-4 border border-white/15 backdrop-blur-md text-center mb-4">
-              <div id="walletAvailable" class="text-3xl font-extrabold text-white tracking-tight">₹0</div>
-              <div class="text-[10px] font-bold text-slate-300 uppercase tracking-widest mt-1" data-i18n="vd_wallet_available">Available Balance</div>
-            </div>
-
-            <div class="grid grid-cols-2 gap-3 mb-4">
-              <!-- Total Earned -->
-              <div class="bg-white/5 rounded-2xl p-3 text-center border border-white/10">
-                <div id="walletTotalEarned" class="text-base font-bold text-amber-300">₹0</div>
-                <div class="text-[9px] font-bold text-slate-400 uppercase tracking-wider mt-0.5" data-i18n="vd_wallet_total">Total Earned</div>
-              </div>
-              <!-- Pending -->
-              <div class="bg-white/5 rounded-2xl p-3 text-center border border-white/10">
-                <div id="walletPending" class="text-base font-bold text-amber-200">₹0</div>
-                <div class="text-[9px] font-bold text-slate-400 uppercase tracking-wider mt-0.5" data-i18n="vd_wallet_pending">Pending</div>
+              <div>
+                <span class="text-xs font-black text-slate-900 block leading-tight">AgeWell Wallet</span>
+                <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Earnings &amp; Payouts</span>
               </div>
             </div>
+            <button type="button" onclick="openEarningsModal()" class="text-[11px] font-bold text-brand-600 hover:text-brand-800 bg-transparent border-none p-0 cursor-pointer">View Full &rarr;</button>
+          </div>
 
-            <!-- Action Buttons -->
-            <div class="flex gap-2">
-              <button id="btnViewEarnings" onclick="openEarningsModal()" class="flex-1 py-2.5 px-3 bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs font-bold rounded-2xl transition-all cursor-pointer flex items-center justify-center gap-1.5 focus:outline-none shadow-xs">
-                <svg class="w-3.5 h-3.5 text-slate-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z"/></svg>
-                <span data-i18n="vd_view_earnings">View Stats</span>
-              </button>
-              <button id="btnWithdrawEarnings" onclick="openWithdrawPanel()" class="flex-1 py-2.5 px-3 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 text-slate-950 text-xs font-extrabold rounded-2xl transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-md shadow-amber-500/10 focus:outline-none">
-                <svg class="w-3.5 h-3.5 text-slate-950" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.5M4.5 21V10.5"/></svg>
-                <span data-i18n="vd_withdraw">Withdraw</span>
-              </button>
+          <!-- 3 Balance Rows -->
+          <div class="space-y-2 pt-1 text-xs">
+            <div class="flex items-center justify-between p-2 rounded-xl bg-slate-50 border border-slate-200/70">
+              <span class="text-slate-600 font-bold flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-emerald-500"></span> Available
+              </span>
+              <span class="font-black text-slate-900" id="widgetVolunteerAvailable">₹0</span>
+            </div>
+            <div class="flex items-center justify-between p-2 rounded-xl bg-slate-50 border border-slate-200/70">
+              <span class="text-slate-600 font-bold flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-amber-500"></span> Pending / In-Escrow
+              </span>
+              <span class="font-black text-amber-700" id="widgetVolunteerPending">₹0</span>
+            </div>
+            <div class="flex items-center justify-between p-2 rounded-xl bg-brand-50/70 border border-brand-200/70">
+              <span class="text-brand-900 font-extrabold flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-brand-600"></span> Total Earned
+              </span>
+              <span class="font-black text-brand-900" id="widgetVolunteerTotal">₹0</span>
+            </div>
+          </div>
+
+          <!-- Quick Actions -->
+          <div class="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100">
+            <button type="button" onclick="openEarningsModal(); switchEarningsTab('transactions');" class="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold rounded-xl text-center transition-all shadow-2xs cursor-pointer border-none">
+              History
+            </button>
+            <button type="button" onclick="openEarningsModal(); switchEarningsTab('withdraw');" class="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl text-center transition-all shadow-xs flex items-center justify-center gap-1 cursor-pointer border-none">
+              <span>+ Withdraw</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Volunteer Care Champion & Community Impact Card -->
+        <div onclick="openCareChampionModal()" class="bg-white rounded-3xl border border-slate-200/90 hover:border-amber-300 shadow-premium hover:shadow-cardHover p-5 relative overflow-hidden space-y-3.5 transition-all cursor-pointer group" id="volunteerImpactCard">
+          <div class="h-1.5 bg-gradient-to-r from-amber-400 via-brand-500 to-emerald-500 -mx-5 -mt-5 mb-4"></div>
+          
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+              <div class="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold text-sm border border-amber-200/80 shadow-2xs group-hover:scale-105 group-hover:bg-amber-500 group-hover:text-white transition-all">
+                ★
+              </div>
+              <div>
+                <span class="text-xs font-black text-slate-900 block leading-tight">Care Champion</span>
+                <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Impact &amp; Badges</span>
+              </div>
+            </div>
+            <span id="sideBadgeTier" class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-50 text-amber-900 border border-amber-200 shadow-2xs">
+              <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+              Level 1 Helper
+            </span>
+          </div>
+
+          <!-- Trust & Performance Metric Strip -->
+          <div class="grid grid-cols-2 gap-2 pt-1">
+            <div class="p-2.5 bg-slate-50 border border-slate-200/70 rounded-2xl text-center">
+              <span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">Care Rating</span>
+              <span class="text-sm font-black text-amber-600 flex items-center justify-center gap-1 mt-0.5">
+                <span>★</span> <span id="sideRatingVal">5.0</span> <span class="text-slate-400 text-[10px] font-normal">/ 5.0</span>
+              </span>
+            </div>
+            <div class="p-2.5 bg-slate-50 border border-slate-200/70 rounded-2xl text-center">
+              <span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">Completed</span>
+              <span class="text-sm font-black text-emerald-700 block mt-0.5" id="sideCompletedTasks">0 Tasks</span>
+            </div>
+          </div>
+
+          <!-- Next Milestone Progress Bar -->
+          <div class="p-3 bg-brand-50/60 rounded-2xl border border-brand-200/70 space-y-1.5">
+            <div class="flex items-center justify-between text-[11px] font-bold text-brand-950">
+              <span>Next Milestone</span>
+              <span id="sideMilestoneLabel" class="text-brand-700 font-extrabold">Silver Guardian</span>
+            </div>
+            <div class="w-full bg-white rounded-full h-2 border border-brand-200/80 overflow-hidden">
+              <div id="sideMilestoneBar" class="bg-gradient-to-r from-brand-500 to-emerald-500 h-full rounded-full transition-all duration-500" style="width: 25%;"></div>
+            </div>
+            <span id="sideMilestoneSub" class="text-[10px] text-slate-500 font-medium block">Complete 3 more elder visits to upgrade badge</span>
+          </div>
+
+          <!-- Service Specializations & View Action -->
+          <div class="space-y-2 pt-1">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">Active Skills</span>
+              <span class="text-[11px] font-bold text-brand-600 group-hover:text-brand-800 flex items-center gap-1">
+                <span>View Details</span>
+                <svg class="w-3 h-3 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/></svg>
+              </span>
+            </div>
+            <div class="flex flex-wrap gap-1.5" id="sideSkillsPills">
+              <span class="px-2 py-0.5 bg-slate-100 text-slate-700 rounded-lg text-[10px] font-bold">🛒 Grocery</span>
+              <span class="px-2 py-0.5 bg-slate-100 text-slate-700 rounded-lg text-[10px] font-bold">💊 Medicine</span>
+              <span class="px-2 py-0.5 bg-slate-100 text-slate-700 rounded-lg text-[10px] font-bold">🤝 Companion</span>
             </div>
           </div>
         </div>
@@ -624,11 +618,81 @@
           </div>
         </div>
 
+        <!-- 24/7 Field Safety & Helpline Card -->
+        <div class="bg-gradient-to-br from-slate-900 via-slate-800 to-brand-950 rounded-3xl p-5 text-white shadow-premium relative overflow-hidden space-y-3">
+          <div class="h-1 bg-gradient-to-r from-emerald-400 to-teal-400 -mx-5 -mt-5 mb-3"></div>
+          
+          <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-xl bg-white/10 text-emerald-300 flex items-center justify-center flex-shrink-0 font-bold border border-white/15">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"/></svg>
+            </div>
+            <div>
+              <span class="text-xs font-black text-white block leading-tight">24/7 Field Support</span>
+              <span class="text-[10px] text-slate-300 font-medium">Volunteer Emergency Desk</span>
+            </div>
+          </div>
+
+          <p class="text-[11px] text-slate-300 font-medium leading-relaxed">
+            Need immediate guidance during a senior visit or on-field escalation? Contact AgeWell coordinators 24/7.
+          </p>
+
+          <div class="pt-1">
+            <a href="tel:18001234567" class="w-full py-2.5 px-3 bg-emerald-500 hover:bg-emerald-600 text-white font-extrabold text-xs rounded-xl shadow-xs transition-all flex items-center justify-center gap-2 no-underline active:scale-95">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z"/></svg>
+              <span>Call Hotline: 1800-123-4567</span>
+            </a>
+          </div>
+        </div>
+
       </div>
 
       <!-- RIGHT COLUMN: Active Content Panes & Tasks (col-span-2, aligned in line with left) -->
       <div class="lg:col-span-2 flex flex-col gap-6">
         
+        <!-- 1. Stats Metric Tiles Overview (Modular 3-Col strip matching Caregiver Portal) -->
+        <div class="grid grid-cols-3 gap-3 sm:gap-4" aria-label="Volunteer Overview Metrics">
+          
+          <!-- Available Requests Tile -->
+          <div onclick="switchTaskTab('pending', true)" class="bg-white rounded-3xl border border-slate-200/80 hover:border-amber-300 p-4 sm:p-5 shadow-premium hover:shadow-cardHover transition-all flex items-center gap-3.5 sm:gap-4 group cursor-pointer">
+            <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-amber-50 border border-amber-200/70 text-amber-600 flex items-center justify-center flex-shrink-0 shadow-2xs group-hover:scale-105 group-hover:bg-amber-500 group-hover:text-white transition-all">
+              <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+              </svg>
+            </div>
+            <div>
+              <span class="text-xl sm:text-2xl font-extrabold text-amber-600 block leading-tight tracking-tight" id="countQuickPending">0</span>
+              <span class="text-[10px] sm:text-[11px] font-extrabold text-amber-700/80 uppercase tracking-wider block mt-0.5">Available</span>
+            </div>
+          </div>
+
+          <!-- In Progress Tasks Tile -->
+          <div onclick="switchTaskTab('active', true)" class="bg-white rounded-3xl border border-slate-200/80 hover:border-brand-300 p-4 sm:p-5 shadow-premium hover:shadow-cardHover transition-all flex items-center gap-3.5 sm:gap-4 group cursor-pointer">
+            <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-brand-50 border border-brand-200/70 text-brand-600 flex items-center justify-center flex-shrink-0 shadow-2xs group-hover:scale-105 group-hover:bg-brand-600 group-hover:text-white transition-all">
+              <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div>
+              <span class="text-xl sm:text-2xl font-extrabold text-brand-700 block leading-tight tracking-tight" id="countQuickActive">0</span>
+              <span class="text-[10px] sm:text-[11px] font-extrabold text-slate-400 uppercase tracking-wider block mt-0.5">In Progress</span>
+            </div>
+          </div>
+
+          <!-- Completed History Tile -->
+          <div onclick="switchTaskTab('history', true)" class="bg-white rounded-3xl border border-slate-200/80 hover:border-emerald-300 p-4 sm:p-5 shadow-premium hover:shadow-cardHover transition-all flex items-center gap-3.5 sm:gap-4 group cursor-pointer">
+            <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-emerald-50 border border-emerald-200/70 text-emerald-600 flex items-center justify-center flex-shrink-0 shadow-2xs group-hover:scale-105 group-hover:bg-emerald-600 group-hover:text-white transition-all">
+              <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div>
+              <span class="text-xl sm:text-2xl font-extrabold text-emerald-600 block leading-tight tracking-tight" id="countQuickCompleted">0</span>
+              <span class="text-[10px] sm:text-[11px] font-extrabold text-emerald-700/80 uppercase tracking-wider block mt-0.5">Completed</span>
+            </div>
+          </div>
+
+        </div>
+
         <!-- Task Assignment Notifications (Toast style header banner) -->
         <div id="notificationsCard" class="bg-white border border-brand-200/80 rounded-3xl p-5 sm:p-6 shadow-premium relative overflow-hidden" style="display: none;">
           <div class="h-1.5 bg-gradient-to-r from-brand-500 to-brand-600 -mx-5 sm:-mx-6 -mt-5 sm:-mt-6 mb-4"></div>
@@ -731,130 +795,6 @@
       </div> <!-- end lg:col-span-2 -->
 
     </div> <!-- end grid-cols-1 lg:grid-cols-3 -->
-
-    <!-- ═══════════════════════════════════════════════════════════════════ -->
-    <!-- MODULAR HELPER PERFORMANCE & COMMUNITY TRUST SECTION                 -->
-    <!-- ═══════════════════════════════════════════════════════════════════ -->
-    <section id="helperPerformanceSection" class="mt-8 mb-6 w-full bg-white rounded-3xl border border-slate-200/90 shadow-premium p-6 sm:p-7 relative overflow-hidden" aria-label="Volunteer Performance Summary">
-      <!-- Subtle top accent gradient line -->
-      <div class="h-1 bg-gradient-to-r from-amber-500 via-brand-500 to-emerald-500 -mx-6 sm:-mx-7 -mt-6 sm:-mt-7 mb-6"></div>
-      
-      <!-- Tier 1: Header Module (Title, Subtitle & Trust Badges) -->
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-slate-100">
-        <div class="flex items-center gap-3.5">
-          <div class="w-11 h-11 bg-amber-500/10 border border-amber-500/20 rounded-2xl flex items-center justify-center text-amber-600 shadow-2xs flex-shrink-0">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z"/>
-            </svg>
-          </div>
-          <div>
-            <div class="flex items-center gap-2.5 flex-wrap">
-              <h2 id="sidebarProfileHeading" class="text-base sm:text-lg font-extrabold text-slate-900 tracking-tight">Helper Performance &amp; Trust Score</h2>
-              <button id="btnViewTrustStatus" class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200/80 transition-all cursor-pointer shadow-xs focus:outline-none" style="display: none;">
-                <svg class="w-3.5 h-3.5 text-emerald-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"/></svg>
-                Verified Clearance
-              </button>
-            </div>
-            <p class="text-xs text-slate-500 font-medium mt-0.5">Calculated from verified elder task completions and direct family caregiver feedback</p>
-          </div>
-        </div>
-
-        <div class="flex items-center gap-2 self-start sm:self-center flex-shrink-0">
-          <div class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-800 border border-emerald-200/80 rounded-2xl text-xs font-extrabold shadow-2xs">
-            <svg class="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6.633 10.5c.806 0 1.533-.446 2.031-1.08a9.041 9.041 0 012.861-2.4c.723-.384 1.35-.956 1.653-1.715a4.498 4.498 0 00.322-1.672V3a.75.75 0 01.75-.75A2.25 2.25 0 0116.5 4.5c0 1.152-.26 2.243-.723 3.218-.266.558.107 1.282.725 1.282h3.126c1.026 0 1.945.694 2.054 1.715.045.422.068.85.068 1.285a11.95 11.95 0 01-2.649 7.521c-.388.482-.987.729-1.605.729H14.25c-.483 0-.964-.078-1.423-.23l-3.114-1.038a4.5 4.5 0 00-1.423-.23H7.5"/></svg>
-            <span id="simpleRecommend">100% Families Recommend</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Tier 2: 4 Modular Metric Stat Cards (Compact Size) -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 my-3.5">
-        
-        <!-- Module A: Overall Rating -->
-        <div class="bg-slate-50/80 hover:bg-slate-50 border border-slate-200/80 rounded-xl p-3 transition-all duration-200 shadow-2xs">
-          <div class="flex items-center justify-between gap-1.5 mb-1.5">
-            <span class="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">Overall Rating</span>
-            <div class="w-6 h-6 rounded-lg bg-amber-500/15 text-amber-600 flex items-center justify-center flex-shrink-0">
-              <svg class="w-3 h-3 fill-amber-400 text-amber-500" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
-            </div>
-          </div>
-          <div id="simpleOverallBadge" class="flex items-baseline gap-1">
-            <span class="text-xl font-extrabold text-slate-900 tracking-tight">5.0</span>
-            <span class="text-[11px] font-bold text-slate-400">/ 5.0</span>
-          </div>
-          <span class="block text-[10px] font-medium text-slate-500 mt-0.5">Caregiver Satisfaction</span>
-        </div>
-
-        <!-- Module B: Fair Cost -->
-        <div class="bg-slate-50/80 hover:bg-slate-50 border border-slate-200/80 rounded-xl p-3 transition-all duration-200 shadow-2xs">
-          <div class="flex items-center justify-between gap-1.5 mb-1.5">
-            <span class="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">Fair Cost</span>
-            <div class="w-6 h-6 rounded-lg bg-brand-500/15 text-brand-600 flex items-center justify-center flex-shrink-0">
-              <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-            </div>
-          </div>
-          <div id="simpleCost" class="flex items-baseline gap-1">
-            <span class="text-xl font-extrabold text-slate-900 tracking-tight">5.0</span>
-            <span class="text-[11px] font-bold text-slate-400">/ 5.0</span>
-          </div>
-          <span class="block text-[10px] font-medium text-slate-500 mt-0.5">Honest &amp; Reasonable Fee</span>
-        </div>
-
-        <!-- Module C: Promptness -->
-        <div class="bg-slate-50/80 hover:bg-slate-50 border border-slate-200/80 rounded-xl p-3 transition-all duration-200 shadow-2xs">
-          <div class="flex items-center justify-between gap-1.5 mb-1.5">
-            <span class="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">Promptness</span>
-            <div class="w-6 h-6 rounded-lg bg-indigo-500/15 text-indigo-600 flex items-center justify-center flex-shrink-0">
-              <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-            </div>
-          </div>
-          <div id="simpleSpeed" class="flex items-baseline gap-1">
-            <span class="text-xl font-extrabold text-slate-900 tracking-tight">5.0</span>
-            <span class="text-[11px] font-bold text-slate-400">/ 5.0</span>
-          </div>
-          <span class="block text-[10px] font-medium text-slate-500 mt-0.5">On-Time Task Execution</span>
-        </div>
-
-        <!-- Module D: Kindness & Care -->
-        <div class="bg-slate-50/80 hover:bg-slate-50 border border-slate-200/80 rounded-xl p-3 transition-all duration-200 shadow-2xs">
-          <div class="flex items-center justify-between gap-1.5 mb-1.5">
-            <span class="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">Kindness &amp; Care</span>
-            <div class="w-6 h-6 rounded-lg bg-rose-500/15 text-rose-600 flex items-center justify-center flex-shrink-0">
-              <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"/></svg>
-            </div>
-          </div>
-          <div id="simpleComm" class="flex items-baseline gap-1">
-            <span class="text-xl font-extrabold text-slate-900 tracking-tight">5.0</span>
-            <span class="text-[11px] font-bold text-slate-400">/ 5.0</span>
-          </div>
-          <span class="block text-[10px] font-medium text-slate-500 mt-0.5">Polite &amp; Respectful</span>
-        </div>
-
-      </div>
-
-      <!-- Tier 3: Bottom Activity Counters Strip -->
-      <div class="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-slate-100 text-xs font-semibold text-slate-600">
-        <div class="flex items-center gap-4 flex-wrap">
-          <div class="flex items-center gap-2">
-            <div class="w-2 h-2 rounded-full bg-emerald-500"></div>
-            <span>Tasks Completed:</span>
-            <strong id="simpleTasks" class="font-extrabold text-slate-900">0 tasks</strong>
-          </div>
-          <span class="text-slate-300 hidden sm:inline">&bull;</span>
-          <div class="flex items-center gap-2">
-            <div class="w-2 h-2 rounded-full bg-brand-500"></div>
-            <span>Verified Reviews:</span>
-            <strong id="simpleReviews" class="font-extrabold text-slate-900">0 reviews</strong>
-          </div>
-        </div>
-
-        <div class="text-[11px] text-slate-400 font-medium">
-          Updated in real-time from AgeWell caregiver ratings
-        </div>
-      </div>
-
-    </section>
-
 
     <!-- ═══════════════════════════════════════════════════════════════════ -->
     <!-- EARNINGS HISTORY & WITHDRAWAL MODAL                                 -->
@@ -1846,6 +1786,133 @@
       </div>
     </div>
 
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!-- CARE CHAMPION & PERFORMANCE REVIEWS MODAL                            -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <div id="careChampionModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="careChampionModalTitle" style="display: none;">
+      <div class="modal-content" style="max-width: 600px;">
+        <!-- Modal Header -->
+        <div class="flex items-start justify-between gap-3 pb-3.5 border-b border-slate-100 mb-4">
+          <div class="flex items-center gap-3">
+            <div class="w-11 h-11 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-600 flex items-center justify-center flex-shrink-0 shadow-2xs">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 013 3h-15a3 3 0 013-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.504-1.125 1.125-1.125h.872m5.003 0V4.5a2.25 2.25 0 00-2.25-2.25h-1.5A2.25 2.25 0 008.625 4.5v9.75"/></svg>
+            </div>
+            <div>
+              <h2 id="careChampionModalTitle" class="text-base sm:text-lg font-extrabold text-slate-900 tracking-tight">Volunteer Care Champion &amp; Recognition</h2>
+              <p class="text-xs text-slate-500 font-medium mt-0.5">Live performance metrics, skill badges, and milestone progress.</p>
+            </div>
+          </div>
+          <button type="button" onclick="closeCareChampionModal()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-700 flex items-center justify-center transition-all border-none cursor-pointer p-0 active:scale-95 flex-shrink-0" aria-label="Close">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        </div>
+
+        <div class="space-y-4">
+          <!-- Top Champion Tier Showcase Card (Blue Box) -->
+          <div class="p-4 sm:p-5 rounded-3xl bg-gradient-to-br from-brand-900 via-brand-950 to-slate-900 text-white shadow-md relative overflow-hidden">
+            <div class="absolute -top-12 -right-12 w-36 h-36 bg-amber-400/20 rounded-full blur-xl pointer-events-none"></div>
+            <div class="flex items-center justify-between gap-3 flex-wrap relative z-10">
+              <div class="flex items-center gap-3.5">
+                <div class="w-12 h-12 rounded-2xl bg-amber-400/20 border border-amber-400/30 text-amber-300 flex items-center justify-center font-black text-2xl shadow-inner flex-shrink-0" id="modalChampionBadgeIcon">
+                  🥈
+                </div>
+                <div>
+                  <div class="flex items-center gap-2 mb-1">
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-black bg-white/10 text-amber-300 border border-amber-300/40 uppercase tracking-wider" id="modalChampionTierName">
+                      🥈 Silver Guardian
+                    </span>
+                  </div>
+                  <span class="text-lg sm:text-xl font-extrabold text-white tracking-tight" id="modalChampionVolunteerName">Volunteer</span>
+                </div>
+              </div>
+              <div class="text-right">
+                <div class="text-2xl font-black text-amber-300" id="modalOverallScore">5.0 ★</div>
+                <div class="text-[10px] text-slate-300 font-semibold" id="modalReviewsCountSub">0 Tasks Completed</div>
+              </div>
+            </div>
+
+            <!-- Milestone Progress Bar -->
+            <div class="mt-4 pt-3 border-t border-white/10 space-y-1.5">
+              <div class="flex items-center justify-between text-xs font-bold text-slate-200">
+                <span>Milestone Progress to <strong class="text-amber-300" id="modalNextMilestoneTier">Silver Guardian</strong></span>
+                <span id="modalMilestonePct" class="font-extrabold text-emerald-300">25%</span>
+              </div>
+              <div class="w-full bg-white/20 rounded-full h-2.5 overflow-hidden">
+                <div id="modalMilestoneProgressBar" class="bg-gradient-to-r from-amber-400 to-emerald-400 h-full rounded-full transition-all duration-500" style="width: 25%;"></div>
+              </div>
+              <p class="text-[11px] text-slate-300 font-medium" id="modalMilestoneNote">Complete 3 more tasks to unlock Silver tier perks.</p>
+            </div>
+          </div>
+
+          <!-- 4 Breakdown Metric Tiles -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+            <div class="p-3 bg-slate-50 border border-slate-200/80 rounded-2xl text-center shadow-2xs">
+              <span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">Speed &amp; Arrival</span>
+              <span class="text-sm sm:text-base font-black text-slate-900 block mt-0.5" id="modalSpeedScore">5.0 ★</span>
+            </div>
+            <div class="p-3 bg-slate-50 border border-slate-200/80 rounded-2xl text-center shadow-2xs">
+              <span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">Communication</span>
+              <span class="text-sm sm:text-base font-black text-slate-900 block mt-0.5" id="modalCommScore">5.0 ★</span>
+            </div>
+            <div class="p-3 bg-slate-50 border border-slate-200/80 rounded-2xl text-center shadow-2xs">
+              <span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">Cost Honesty</span>
+              <span class="text-sm sm:text-base font-black text-slate-900 block mt-0.5" id="modalCostScore">5.0 ★</span>
+            </div>
+            <div class="p-3 bg-slate-50 border border-slate-200/80 rounded-2xl text-center shadow-2xs">
+              <span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block whitespace-nowrap">Recommended</span>
+              <span class="text-sm sm:text-base font-black text-emerald-700 block mt-0.5" id="modalRecommendRate">100%</span>
+            </div>
+          </div>
+
+          <!-- Tier Badges Progression Map -->
+          <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-2.5">
+            <h4 class="text-xs font-extrabold text-slate-900 uppercase tracking-wider">Badge Progression &amp; Privileges</h4>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+              <div class="p-2.5 bg-white rounded-xl border border-slate-200 shadow-2xs space-y-1">
+                <strong class="font-extrabold text-slate-900 block text-xs">🥉 Bronze Helper</strong>
+                <span class="text-[11px] text-slate-500 block">0–4 completed visits</span>
+                <span class="text-[10px] font-bold text-emerald-700 block">Standard Escrow Payouts</span>
+              </div>
+              <div class="p-2.5 bg-white rounded-xl border border-slate-200 shadow-2xs space-y-1">
+                <strong class="font-extrabold text-slate-900 block text-xs">🥈 Silver Guardian</strong>
+                <span class="text-[11px] text-slate-500 block">5–14 completed visits</span>
+                <span class="text-[10px] font-bold text-brand-700 block">Priority Task Matching</span>
+              </div>
+              <div class="p-2.5 bg-white rounded-xl border border-slate-200 shadow-2xs space-y-1">
+                <strong class="font-extrabold text-slate-900 block text-xs">🥇 Gold Hero</strong>
+                <span class="text-[11px] text-slate-500 block">15+ completed visits</span>
+                <span class="text-[10px] font-bold text-purple-700 block">Instant Payouts &amp; Perks</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Caregiver Feedbacks & Testimonials Section -->
+          <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-3">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <div class="w-2.5 h-2.5 rounded-full bg-emerald-500"></div>
+                <h4 class="text-xs font-extrabold text-slate-900 uppercase tracking-wider">Caregiver Feedbacks &amp; Reviews</h4>
+              </div>
+              <span class="text-[11px] font-extrabold px-2.5 py-0.5 bg-white text-brand-700 border border-brand-200/80 rounded-full shadow-2xs" id="modalFeedbacksCountBadge">0 Reviews</span>
+            </div>
+
+            <!-- List of Feedbacks -->
+            <div id="modalCaregiverFeedbacksList" class="space-y-2.5 max-h-56 overflow-y-auto pr-1">
+              <div class="p-4 bg-white rounded-xl border border-slate-200/80 text-xs text-slate-500 text-center italic">
+                Loading caregiver feedback...
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="pt-4 border-t border-slate-100 flex justify-end">
+          <button type="button" onclick="closeCareChampionModal()" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-extrabold text-xs rounded-xl transition-all cursor-pointer border-none">
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+
   </main>
 
   <!-- Global Footer -->
@@ -1854,7 +1921,7 @@
   </footer>
 
   <!-- Scripts -->
-  <script src="/js/api.js?v=430"></script>
-  <script src="/js/volunteer.js?v=430"></script>
+  <script src="/js/api.js?v=930"></script>
+  <script src="/js/volunteer.js?v=940"></script>
 </body>
 </html>

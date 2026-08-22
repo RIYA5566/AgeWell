@@ -139,17 +139,20 @@ exports.getRequests = async (req, res) => {
       // 1. Pending & awaiting_approval requests allotted by family ('approved')
       // 2. Tasks where this volunteer is the assigned volunteer (accepted / completed)
       // 3. Tasks where this volunteer submitted a quote, but another volunteer was selected (for notification)
+      // 4. Tasks where this volunteer submitted a quote, and caregiver declined quotes (for notification)
       requests = await HelpRequest.find({
         $or: [
           { status: 'pending', familyApprovalStatus: 'approved' },
           { status: 'awaiting_approval', familyApprovalStatus: 'approved' },
           { volunteer: req.user.id },
-          { 'volunteerQuotes.volunteer': req.user.id, status: { $in: ['accepted', 'completed'] } }
+          { 'volunteerQuotes.volunteer': req.user.id, status: { $in: ['accepted', 'completed'] } },
+          { 'rejectedVolunteerQuotes.volunteer': req.user.id }
         ]
       })
         .populate('senior', 'name phone address emergencyContact')
         .populate('volunteer', 'name phone email skills')
         .populate('volunteerQuotes.volunteer', 'name phone email skills')
+        .populate('rejectedVolunteerQuotes.volunteer', 'name phone email skills')
         .sort({ createdAt: -1 });
 
     } else if (req.user.role === 'family') {
@@ -680,6 +683,62 @@ exports.familyRejectRequest = async (req, res) => {
   } catch (error) {
     console.error('Family Reject Error:', error);
     res.status(500).json({ success: false, message: 'Server error rejecting volunteer' });
+  }
+};
+
+// @desc    Family/Caregiver rejects all submitted volunteer quotes (does not cancel the senior request)
+// @route   PUT /api/requests/:id/reject-volunteer-quotes
+// @access  Private (Family only)
+exports.rejectVolunteerQuotes = async (req, res) => {
+  try {
+    let request = await HelpRequest.findById(req.params.id)
+      .populate('senior', 'name');
+
+    if (!request) return res.status(404).json({ success: false, message: 'Help request not found' });
+
+    // Verify caregiver link
+    if (req.user.linkedSenior?.toString() !== request.senior._id.toString()) {
+      return res.status(403).json({ success: false, message: 'You are not the caregiver for this senior' });
+    }
+
+    if (!request.volunteerQuotes || request.volunteerQuotes.length === 0) {
+      return res.status(400).json({ success: false, message: 'No volunteer quotes found for this request' });
+    }
+
+    // Initialize rejected quotes tracking array
+    if (!request.rejectedVolunteerQuotes) {
+      request.rejectedVolunteerQuotes = [];
+    }
+
+    // Archive all submitted quotes into rejectedVolunteerQuotes
+    request.volunteerQuotes.forEach(q => {
+      if (q.volunteer) {
+        request.rejectedVolunteerQuotes.push({
+          volunteer: q.volunteer._id || q.volunteer,
+          serviceFee: q.serviceFee || 0,
+          rejectedAt: new Date()
+        });
+      }
+    });
+
+    // Clear quotes section and reset assignment state
+    request.volunteerQuotes = [];
+    request.volunteer = null;
+    request.pendingVolunteer = null;
+    request.serviceFee = 0;
+    request.status = 'pending';
+    request.familyApprovalStatus = 'approved'; // Keep request approved so new volunteers can accept/quote
+
+    await request.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Volunteer quotes declined. The help request remains open for other volunteers.',
+      request
+    });
+  } catch (error) {
+    console.error('Reject Volunteer Quotes Error:', error);
+    res.status(500).json({ success: false, message: 'Server error declining volunteer quotes' });
   }
 };
 

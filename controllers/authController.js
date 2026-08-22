@@ -1,4 +1,5 @@
 const User = require('../models/User');
+const HelpRequest = require('../models/HelpRequest');
 const jwt = require('jsonwebtoken');
 
 // Helper: create JWT, set cookie, and return user payload
@@ -319,10 +320,42 @@ exports.getVolunteerStats = async (req, res) => {
     const stats = await getVolunteerRatingStats(req.params.id);
     const volunteerUser = await User.findById(req.params.id).select('name email phone skills verificationStatus isIdVerified isPoliceVerified createdAt');
 
+    // Also fetch recent completed requests with reviews/feedback
+    const reviewedRequests = await HelpRequest.find({
+      volunteer: req.params.id,
+      status: 'completed'
+    })
+      .select('title category feedback createdAt senior')
+      .populate('senior', 'name')
+      .sort({ 'feedback.submittedAt': -1, createdAt: -1 })
+      .limit(20);
+
+    const reviews = reviewedRequests.map(r => {
+      const fb = r.feedback || {};
+      const cost = fb.costUtilization || 5;
+      const speed = fb.speedTimeliness || 5;
+      const comm = fb.communication || 5;
+      const avg = Number(((cost + speed + comm) / 3).toFixed(1));
+      return {
+        id: r._id,
+        title: r.title,
+        category: r.category,
+        seniorName: r.senior?.name || 'Senior Citizen',
+        costUtilization: cost,
+        speedTimeliness: speed,
+        communication: comm,
+        overallRating: avg,
+        chooseAgain: fb.chooseAgain || 'Yes',
+        comment: fb.additionalFeedback || fb.notes || '',
+        submittedAt: fb.submittedAt || r.createdAt
+      };
+    });
+
     res.status(200).json({
       success: true,
       stats,
-      volunteer: volunteerUser
+      volunteer: volunteerUser,
+      reviews
     });
   } catch (error) {
     console.error('Get Volunteer Stats Error:', error);

@@ -533,13 +533,24 @@ async function viewVolunteerProfile(volId) {
 
   const memberSince = vol.createdAt ? new Date(vol.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : t('fd_registered_volunteer');
   const initials = (vName.split(' ').map(n => n[0]).join('').substring(0, 2) || 'V').toUpperCase();
-  const ratingVal = stats.reviewsCount > 0 ? stats.overallRating.toFixed(1) : 'New';
+  const tasksCompleted = Number(stats.tasksCompleted || 0);
+  const ratingVal = (stats.reviewsCount > 0 && stats.overallRating) ? stats.overallRating.toFixed(1) : (tasksCompleted > 0 ? (stats.overallRating ? stats.overallRating.toFixed(1) : '5.0') : '5.0');
+  
+  let tierBadgePill = '';
+  if (tasksCompleted >= 15) {
+    tierBadgePill = `<span class="inline-flex items-center gap-1 px-2.5 py-1 bg-purple-50 border border-purple-200 text-purple-900 rounded-full text-xs font-black shadow-2xs">🥇 Gold Champion</span>`;
+  } else if (tasksCompleted >= 5) {
+    tierBadgePill = `<span class="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-100 border border-slate-300 text-slate-800 rounded-full text-xs font-black shadow-2xs">🥈 Silver Guardian</span>`;
+  } else {
+    tierBadgePill = `<span class="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-50 border border-amber-200 text-amber-900 rounded-full text-xs font-extrabold shadow-2xs">🥉 Level 1 Helper</span>`;
+  }
+
   const ratingPill = stats.reviewsCount > 0
     ? `<span class="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-50 border border-amber-200 text-amber-900 rounded-full text-xs font-extrabold shadow-2xs">
          <span class="text-amber-500">★</span> ${ratingVal} / 5.0 <span class="text-slate-400 font-normal">(${stats.reviewsCount} reviews)</span>
        </span>`
     : `<span class="inline-flex items-center gap-1 px-3 py-1 bg-brand-50 border border-brand-200 text-brand-700 rounded-full text-xs font-extrabold shadow-2xs">
-         ★ New Volunteer
+         ★ ${ratingVal} Rating
        </span>`;
 
   detailsEl.innerHTML = `
@@ -561,7 +572,8 @@ async function viewVolunteerProfile(volId) {
           </div>
         </div>
       </div>
-      <div>
+      <div class="flex items-center gap-2 flex-wrap">
+        ${tierBadgePill}
         ${ratingPill}
       </div>
     </div>
@@ -1188,13 +1200,23 @@ function renderApprovalQueue(awaitingRequests) {
                   : `<span class="text-[10px] text-slate-400 font-semibold">${t('fd_no_skills_listed')}</span>`;
 
                 const feeText = (q.serviceFee !== undefined && q.serviceFee > 0) ? `₹${q.serviceFee}` : '₹0 (Voluntary)';
-                const tasksCompleted = typeof volObj === 'object' ? (volObj.tasksCompleted || 0) : 0;
+                const tasksCompleted = typeof volObj === 'object' ? (volObj.tasksCompleted || (volObj.ratingStats && volObj.ratingStats.tasksCompleted) || 0) : 0;
                 
-                let newVolunteerBadge = '';
-                if (tasksCompleted === 0) {
-                  newVolunteerBadge = `
-                    <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-50 text-amber-700 border border-amber-200/80 rounded-md text-[10px] font-extrabold">
-                      New Volunteer
+                let tierBadge = '';
+                if (tasksCompleted >= 15) {
+                  tierBadge = `
+                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 bg-purple-50 text-purple-900 border border-purple-200/80 rounded-md text-[10px] font-black shadow-2xs">
+                      🥇 Gold Champion
+                    </span>`;
+                } else if (tasksCompleted >= 5) {
+                  tierBadge = `
+                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 bg-slate-100 text-slate-800 border border-slate-300 rounded-md text-[10px] font-black shadow-2xs">
+                      🥈 Silver Guardian
+                    </span>`;
+                } else {
+                  tierBadge = `
+                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 bg-amber-50 text-amber-800 border border-amber-200/80 rounded-md text-[10px] font-extrabold shadow-2xs">
+                      🥉 Level 1 Helper
                     </span>`;
                 }
 
@@ -1208,7 +1230,7 @@ function renderApprovalQueue(awaitingRequests) {
                       <div class="space-y-1">
                         <div class="flex items-center gap-2 flex-wrap">
                           <h4 class="text-sm font-extrabold text-slate-900">${vName}</h4>
-                          ${newVolunteerBadge}
+                          ${tierBadge}
                           <button type="button" onclick="viewVolunteerProfile('${vId}')" class="px-2.5 py-0.5 bg-brand-50 hover:bg-brand-100 text-brand-700 border border-brand-200 rounded-lg text-[10px] font-bold transition-all">
                             ${t('btn_view_profile')}
                           </button>
@@ -1254,9 +1276,9 @@ function renderApprovalQueue(awaitingRequests) {
 
           <button
             type="button"
-            onclick="openRejectModal('${req._id}')"
+            onclick="rejectAllVolunteerQuotes('${req._id}')"
             class="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-white hover:bg-rose-50 text-rose-600 border border-rose-200 hover:border-rose-300 font-bold text-xs sm:text-sm rounded-xl shadow-xs transition-all active:scale-95"
-            aria-label="Reject volunteer requests"
+            aria-label="Reject volunteer quotes"
           >
             <svg class="w-4 h-4 text-rose-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
             ${t('btn_reject_all_quotes')}
@@ -3384,7 +3406,38 @@ window.openShoppingPrefModal = openShoppingPrefModal;
 window.closeShoppingPrefModal = closeShoppingPrefModal;
 
 // ──────────────────────────────────────────────────────────
-// OPEN REJECT MODAL
+// REJECT ALL VOLUNTEER QUOTES (DECLINE QUOTES, KEEP TASK OPEN)
+// ──────────────────────────────────────────────────────────
+async function rejectAllVolunteerQuotes(requestId) {
+  if (!requestId) return;
+
+  if (typeof awConfirm === 'function') {
+    const ok = await awConfirm({
+      title: 'Reject Volunteer Quotes?',
+      message: 'Are you sure you want to decline the submitted volunteer quotes for this request? The help request will remain open on the platform for other volunteers to accept, and the quoted volunteers will receive a notification.',
+      confirmText: 'Reject Quotes',
+      cancelText: 'Keep Quotes',
+      danger: true
+    });
+    if (!ok) return;
+  } else {
+    if (!confirm('Are you sure you want to decline the volunteer quotes? The help request will remain open for other volunteers.')) {
+      return;
+    }
+  }
+
+  const res = await apiCall(`/requests/${requestId}/reject-volunteer-quotes`, 'PUT');
+  if (res.ok && res.data.success) {
+    showToast(res.data.message || 'Volunteer quotes declined. Task remains open for new volunteers.', 'info');
+    loadFamilyDashboard();
+  } else {
+    showToast(res.data?.message || 'Error declining volunteer quotes. Please try again.', 'error');
+  }
+}
+window.rejectAllVolunteerQuotes = rejectAllVolunteerQuotes;
+
+// ──────────────────────────────────────────────────────────
+// OPEN REJECT MODAL (REJECT SENIOR REQUEST BEFORE ALLOTMENT)
 // ──────────────────────────────────────────────────────────
 function openRejectModal(requestId) {
   activeRejectRequestId = requestId;
@@ -3510,7 +3563,7 @@ function closeImageLightbox() {
 // ──────────────────────────────────────────────────────────
 window.currentFamilyTab = 'requests';
 
-window.switchFamilyTab = function(tab) {
+window.switchFamilyTab = function(tab, shouldScroll = false) {
   window.currentFamilyTab = tab;
   const tabs = ['requests', 'approvals', 'verifications', 'history'];
   const tabBtnIds = { requests: 'tabBtnRequests', approvals: 'tabBtnApprovals', verifications: 'tabBtnVerifications', history: 'tabBtnHistory' };
@@ -3561,6 +3614,88 @@ window.switchFamilyTab = function(tab) {
       pane.style.display = isActive ? 'block' : 'none';
     }
   });
+
+  if (shouldScroll) {
+    setTimeout(() => {
+      const pane = document.getElementById(paneIds[tab]);
+      if (pane) {
+        const listMap = {
+          requests: document.getElementById('seniorRequestsList'),
+          approvals: document.getElementById('approvalList'),
+          verifications: document.getElementById('completionVerificationList') || document.getElementById('verificationList'),
+          history: document.getElementById('allRequestsList')
+        };
+        const listEl = listMap[tab] || pane;
+        const firstCard = listEl.querySelector('[id^="seniorCard-"], [id^="approvalCard-"], [id^="completionCard-"], [id^="allReqCard-"], article, .border, .bg-white, [class*="rounded-3xl"]') || pane;
+        if (firstCard) {
+          const yOffset = -90; // offset for sticky navbar
+          const y = firstCard.getBoundingClientRect().top + window.pageYOffset + yOffset;
+          window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
+        }
+      }
+    }, 70);
+  }
+};
+
+// ─── Caregiver Overview Stat Metrics Scroller ────────────────────────────────
+window.scrollToCaregiverMetric = function(metricType) {
+  if (metricType === 'action_needed') {
+    const seniorBadge = document.getElementById('countFamilyRequests');
+    const approvalBadge = document.getElementById('countFamilyApprovals');
+    const verifBadge = document.getElementById('countFamilyVerifications');
+
+    const seniorCount = (seniorBadge && seniorBadge.dataset.actionNeeded === 'true') ? (parseInt(seniorBadge.textContent, 10) || 0) : 0;
+    const approvalCount = (approvalBadge && approvalBadge.dataset.actionNeeded === 'true') ? (parseInt(approvalBadge.textContent, 10) || 0) : 0;
+    const verifCount = (verifBadge && verifBadge.dataset.actionNeeded === 'true') ? (parseInt(verifBadge.textContent, 10) || 0) : 0;
+
+    if (seniorCount > 0) {
+      window.switchFamilyTab('requests', true);
+    } else if (approvalCount > 0) {
+      window.switchFamilyTab('approvals', true);
+    } else if (verifCount > 0) {
+      window.switchFamilyTab('verifications', true);
+    } else {
+      window.switchFamilyTab('requests', true);
+    }
+  } else if (metricType === 'in_progress') {
+    window.switchFamilyTab('history', false);
+    setTimeout(() => {
+      const historyList = document.getElementById('allRequestsList');
+      if (historyList) {
+        // Find first in-progress card or first card in list
+        const cards = Array.from(historyList.querySelectorAll('[id^="allReqCard-"]'));
+        const activeCard = cards.find(card => {
+          const text = card.textContent || '';
+          return text.includes('In Progress') || text.includes('Funded') || text.includes('Submitted Cost') || text.includes('Seeking Help') || text.includes('Awaiting Decision') || text.includes('Proof Verifications');
+        }) || cards[0] || historyList;
+
+        if (activeCard) {
+          const yOffset = -90;
+          const y = activeCard.getBoundingClientRect().top + window.pageYOffset + yOffset;
+          window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
+        }
+      }
+    }, 70);
+  } else if (metricType === 'completed') {
+    window.switchFamilyTab('history', false);
+    setTimeout(() => {
+      const historyList = document.getElementById('allRequestsList');
+      if (historyList) {
+        // Find first completed card
+        const cards = Array.from(historyList.querySelectorAll('[id^="allReqCard-"]'));
+        const completedCard = cards.find(card => {
+          const text = card.textContent || '';
+          return text.includes('Completed') || text.includes('Fulfilled Personally');
+        }) || cards[0] || historyList;
+
+        if (completedCard) {
+          const yOffset = -90;
+          const y = completedCard.getBoundingClientRect().top + window.pageYOffset + yOffset;
+          window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
+        }
+      }
+    }, 70);
+  }
 };
 
 // ─── Senior Citizen Service Charge Release Notifications ───────────────────────

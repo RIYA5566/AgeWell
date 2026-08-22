@@ -853,7 +853,14 @@ function renderRequestsTable() {
 
 // Moderation Action: Delete User
 async function deleteUserAccount(id, name) {
-  if (confirm(`WARNING: Are you sure you want to permanently delete user "${name}"?\nThis will automatically cancel/cleanup all requests associated with this user.`)) {
+  const ok = await awConfirm({
+    title: 'Delete User Account',
+    message: `This will permanently remove <strong>${name}</strong> and automatically cancel all requests associated with this account. This action cannot be undone.`,
+    confirmText: 'Yes, Delete',
+    cancelText: 'Keep Account',
+    danger: true
+  });
+  if (ok) {
     const res = await apiCall(`/admin/users/${id}`, 'DELETE');
     if (res.ok && res.data.success) {
       const modal = document.getElementById('adminUserProfileModal');
@@ -867,7 +874,14 @@ async function deleteUserAccount(id, name) {
 
 // Moderation Action: Delete Request
 async function deleteRequestByAdmin(id) {
-  if (confirm("Are you sure you want to delete/cancel this request from the platform?")) {
+  const ok = await awConfirm({
+    title: 'Remove Request',
+    message: 'This will permanently delete and cancel this request from the platform. The senior and volunteer will be notified.',
+    confirmText: 'Remove Request',
+    cancelText: 'Cancel',
+    danger: true
+  });
+  if (ok) {
     const res = await apiCall(`/requests/${id}`, 'DELETE');
     if (res.ok) {
       loadAdminDashboard();
